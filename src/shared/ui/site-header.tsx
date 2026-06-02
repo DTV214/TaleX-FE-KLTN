@@ -18,6 +18,16 @@ function isActiveRoute(pathname: string, href: string) {
 export function SiteHeader() {
   const pathname = usePathname();
 
+  // ĐÃ THÊM: Kiểm tra xem có đang ở trang xác thực (Auth) không
+  const isAuthPage =
+    pathname === "/login" ||
+    pathname === "/register" ||
+    pathname === "/forgot-password";
+
+  // Nếu đang ở trang Auth, trả về null để ẩn hoàn toàn Header này đi
+  if (isAuthPage) {
+    return null;
+  }
   return (
     <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-background/75 backdrop-blur-2xl">
       <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_20%_0%,rgba(212,175,55,0.10),transparent_36%),radial-gradient(circle_at_70%_0%,rgba(255,255,255,0.06),transparent_30%)]" />
