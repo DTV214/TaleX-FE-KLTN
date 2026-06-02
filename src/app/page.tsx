@@ -1,38 +1,46 @@
-import { HeroBanner } from "@/features/home/components/hero-banner";
-import { NarrativeSection } from "@/features/home/components/narrative-section";
-import { FeaturedSeries } from "@/features/home/components/featured-series";
-import { TrendingComics } from "@/features/home/components/trending-comics";
-import { ExploreChambers } from "@/features/home/components/explore-chambers";
-import { CountNumber } from "@/features/home/components/count-number";
-import { CreatorHighlight } from "@/features/home/components/creator-highlight";
-import { FinalCta } from "@/features/home/components/final-cta";
+import { MainHeroBanner } from "@/features/home/components/main-hero-banner";
+import { ContinueWatching } from "@/features/home/components/continue-watching";
+import { InterestCategories } from "@/features/home/components/interest-categories";
+import { Top10Today } from "@/features/home/components/top-10-today";
+import { FeaturedPromo } from "@/features/home/components/featured-promo";
+import { MysteryThrillerRow } from "@/features/home/components/mystery-thriller-row";
+import { ChineseSeriesRow } from "@/features/home/components/chinese-series-row";
+import { KoreanDramaRow } from "@/features/home/components/korean-drama-row";
+import { NewReleasesRow } from "@/features/home/components/new-releases-row";
+import { DailyTopVideosRow } from "@/features/home/components/daily-top-videos-row";
 
 export default function Home() {
   return (
-    <div className="flex flex-col w-full">
-      {/* 1. Màn hình chính */}
-      <HeroBanner />
+    <main className="flex flex-col w-full min-h-screen bg-[#0B0B0C] pb-20">
+      {/* 1. Main Hero Banner */}
+      <MainHeroBanner />
 
-      {/* 2. Lưới ảnh bất đối xứng & Tầm nhìn */}
-      <NarrativeSection />
+      {/* 2. Tiếp tục xem */}
+      <ContinueWatching />
 
-      {/* 3. Cụm Video Nổi Bật ngang */}
-      <FeaturedSeries />
+      {/* 3. Thể loại yêu thích */}
+      <InterestCategories />
 
-      {/* 4. Cụm Truyện Thịnh Hành dọc */}
-      <TrendingComics />
+      {/* 4. TaleX Top 10 Today */}
+      <Top10Today />
 
-      {/* 5. Khám phá Thể loại */}
-      <ExploreChambers />
+      {/* 5. Banner Quảng bá Nổi bật */}
+      <FeaturedPromo />
 
-      {/* 6. Các con số nổi bật */}
-      <CountNumber />
+      {/* 6. Mới Nhất Trên TaleX (Banner Mới) */}
+      <NewReleasesRow />
 
-      {/* 7. Góc nhìn Creators & Khung Avatar */}
-      <CreatorHighlight />
+      {/* 7. Video Hay Mỗi Ngày (Banner Mới) */}
+      <DailyTopVideosRow />
 
-      {/* 8. Lời kêu gọi hành động cuối trang (Hình nền núi) */}
-      <FinalCta />
-    </div>
+      {/* 8. Mystery & Thriller */}
+      <MysteryThrillerRow />
+
+      {/* 9. New Chinese Series */}
+      <ChineseSeriesRow />
+
+      {/* 10. Korean Drama Collection */}
+      <KoreanDramaRow />
+    </main>
   );
 }

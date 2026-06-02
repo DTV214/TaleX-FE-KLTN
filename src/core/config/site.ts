@@ -10,8 +10,12 @@ export const siteConfig = {
   // Cấu hình thanh điều hướng chính (Main Navigation)
   mainNav: [
     {
-      title: "Introduction",
+      title: "Home",
       href: "/",
+    },
+    {
+      title: "Introduction",
+      href: "/intro",
     },
     {
       title: "Series",

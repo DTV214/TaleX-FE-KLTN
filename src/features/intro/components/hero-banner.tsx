@@ -42,7 +42,7 @@ export function HeroBanner() {
         "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1200&auto=format&fit=crop",
       // Ảnh mock cho nửa phải (Nhân vật, thế giới fantasy như ảnh tinh thể)
       bgRight:
-        "https://images.unsplash.com/photo-1605806616949-1e87b487cb2a?q=80&w=1200&auto=format&fit=crop",
+        "https://plus.unsplash.com/premium_photo-1779748921527-5aeea34b3aad?q=80&w=2532&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
       rightTag: "Explore Universes",
     },
     {
