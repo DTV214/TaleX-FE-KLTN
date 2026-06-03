@@ -19,13 +19,15 @@ export function SiteHeader() {
   const pathname = usePathname();
 
   // ĐÃ THÊM: Kiểm tra xem có đang ở trang xác thực (Auth) không
-  const isAuthPage =
+  const isAuthOrAdminPage =
     pathname === "/login" ||
     pathname === "/register" ||
-    pathname === "/forgot-password";
+    pathname === "/forgot-password" ||
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/staff");
 
   // Nếu đang ở trang Auth, trả về null để ẩn hoàn toàn Header này đi
-  if (isAuthPage) {
+  if (isAuthOrAdminPage) {
     return null;
   }
   return (

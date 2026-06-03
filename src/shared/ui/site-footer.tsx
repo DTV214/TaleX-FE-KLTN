@@ -9,13 +9,16 @@ export function SiteFooter() {
   const pathname = usePathname();
 
   // Kiểm tra xem có đang ở trang xác thực (Auth) không
-  const isAuthPage =
+
+  const isAuthOrAdminPage =
     pathname === "/login" ||
     pathname === "/register" ||
-    pathname === "/forgot-password";
+    pathname === "/forgot-password" ||
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/staff"); // Chặn toàn bộ các trang nội bộ admin
 
-  // Nếu đang ở trang Auth, trả về null để ẩn hoàn toàn Footer này đi
-  if (isAuthPage) {
+  // Nếu đang ở trang Auth hoặc Admin, ẩn Footer này đi
+  if (isAuthOrAdminPage) {
     return null;
   }
 
