@@ -5,6 +5,7 @@ import "./globals.css";
 import { SiteHeader } from "@/shared/ui/site-header";
 import { SiteFooter } from "@/shared/ui/site-footer";
 import { BackToTop } from "@/shared/ui/back-to-top";
+import { AppProviders } from "@/core/providers/app-providers";
 
 // Font cho Tiêu đề (Headlines) - Hỗ trợ chuẩn vietnamese
 const montserrat = Montserrat({
@@ -34,17 +35,20 @@ export default function RootLayout({
     <html lang="vi" className="dark" suppressHydrationWarning>
       <body
         className={`${dmSans.variable} ${montserrat.variable} font-sans antialiased bg-background text-foreground flex min-h-screen flex-col relative`}
+        suppressHydrationWarning
       >
         {/* Navbar nằm ở vị trí cao nhất */}
-        <SiteHeader />
+        <AppProviders>
+          <SiteHeader />
 
         {/* Vùng chứa nội dung chính sẽ tự động đẩy giãn nhờ flex-1 */}
-        <main className="flex-1 flex flex-col">{children}</main>
+          <main className="flex-1 flex flex-col">{children}</main>
 
         {/* Footer luôn nằm ở dưới cùng của mọi trang */}
-        <SiteFooter />
+          <SiteFooter />
 
-        <BackToTop />
+          <BackToTop />
+        </AppProviders>
       </body>
     </html>
   );

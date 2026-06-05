@@ -23,6 +23,7 @@ export function SiteHeader() {
     pathname === "/login" ||
     pathname === "/register" ||
     pathname === "/forgot-password" ||
+    pathname.startsWith("/creator-dashboard") ||
     pathname.startsWith("/admin") ||
     pathname.startsWith("/staff");
 
