@@ -4,10 +4,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   useEffect,
   useMemo,
-  useRef,
   useState,
   useSyncExternalStore,
-  type ChangeEvent,
   type DragEvent,
   type FormEvent,
   type ReactNode,
@@ -34,7 +32,6 @@ import {
   Lock,
   Plus,
   Search,
-  Send,
   Settings2,
   Tag,
   Trash2,
@@ -51,7 +48,6 @@ import {
 import {
   createEpisode,
   createComicPageMedia,
-  createEpisodeMedia,
   createSeries,
   createSeason,
   deleteEpisode,
@@ -63,7 +59,6 @@ import {
   listSeasonsBySeries,
   listSeriesByCreator,
   reorderEpisodeMedia,
-  replaceMediaUrl,
   updateEpisode,
   updateSeason,
   updateSeries,
@@ -73,6 +68,8 @@ import {
   type SeriesResponse,
 } from "@/features/creator-dashboard/api/creator-content-api";
 import { uploadToCloudinary } from "@/features/creator-dashboard/api/cloudinary-api";
+import { ResumableVideoUploader } from "@/features/creator-dashboard/components/resumable-video-uploader";
+import { SignedHlsPlayer } from "@/features/playback/components/signed-hls-player";
 
 type DashboardView =
   | "series"
@@ -193,7 +190,7 @@ type DeleteModalState =
   | { kind: "series"; value: SeriesRow }
   | { kind: "season"; value: SeasonRow }
   | { kind: "episode"; value: EpisodeRow }
-  | { kind: "media"; value: ComicPage }
+  | { kind: "media"; value: ComicPage | MediaResponse }
   | null;
 
 type SeriesRow = {
@@ -254,24 +251,6 @@ type ComicPage = {
   file?: File;
 };
 
-type HlsInstance = {
-  loadSource: (source: string) => void;
-  attachMedia: (media: HTMLMediaElement) => void;
-  destroy: () => void;
-};
-
-type HlsConstructor = {
-  isSupported: () => boolean;
-  new (): HlsInstance;
-};
-
-type WindowWithHls = Window &
-  typeof globalThis & {
-    Hls?: HlsConstructor;
-  };
-
-let hlsScriptPromise: Promise<void> | null = null;
-
 const viewMeta: Record<
   DashboardView,
   { title: string; description: string; action?: string }
@@ -310,48 +289,6 @@ const viewMeta: Record<
 
 function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
-}
-
-function isHlsUrl(url: string) {
-  return /\.m3u8($|\?)/i.test(url);
-}
-
-function loadHlsScript() {
-  if (typeof window === "undefined") {
-    return Promise.resolve();
-  }
-
-  const windowWithHls = window as WindowWithHls;
-
-  if (windowWithHls.Hls) {
-    return Promise.resolve();
-  }
-
-  if (!hlsScriptPromise) {
-    hlsScriptPromise = new Promise((resolve, reject) => {
-      const existingScript = document.querySelector<HTMLScriptElement>(
-        'script[data-hls-js="true"]',
-      );
-
-      if (existingScript) {
-        existingScript.addEventListener("load", () => resolve(), {
-          once: true,
-        });
-        existingScript.addEventListener("error", reject, { once: true });
-        return;
-      }
-
-      const script = document.createElement("script");
-      script.src = "https://cdn.jsdelivr.net/npm/hls.js@latest";
-      script.async = true;
-      script.dataset.hlsJs = "true";
-      script.onload = () => resolve();
-      script.onerror = reject;
-      document.body.appendChild(script);
-    });
-  }
-
-  return hlsScriptPromise;
 }
 
 function reorderPages(pages: ComicPage[], fromId: string, toId: string) {
@@ -474,6 +411,16 @@ function formatBytes(bytes: number) {
   return `${bytes} B`;
 }
 
+function isBackendMediaTarget(
+  media: ComicPage | MediaResponse,
+): media is MediaResponse {
+  return "mediaId" in media;
+}
+
+function getMediaTargetId(media: ComicPage | MediaResponse) {
+  return isBackendMediaTarget(media) ? media.mediaId : media.id;
+}
+
 async function uploadSeriesArtwork(file: File | undefined, label: string) {
   if (!file) {
     return undefined;
@@ -546,7 +493,9 @@ function mapEpisodeResponse(episode: EpisodeResponse): EpisodeRow {
 function mapMediaResponseToComicPage(media: MediaResponse): ComicPage {
   return {
     id: media.mediaId,
-    image: normalizeAssetUrl(media.fileUrl),
+    image: normalizeAssetUrl(
+      media.fileUrl || media.originalUrl || media.playbackUrl || "",
+    ),
     title: `Page ${media.displayOrder ?? 1}`,
     mimeType: media.mimeType,
     fileSize: formatBytes(media.fileSize),
@@ -588,7 +537,6 @@ function CreatorDashboardContent() {
   const [contentType, setContentType] = useState<ContentType>("COMIC");
   const [comicPages, setComicPages] = useState<ComicPage[]>([]);
   const [draggingPageId, setDraggingPageId] = useState<string | null>(null);
-  const [selectedVideoFile, setSelectedVideoFile] = useState<File | null>(null);
   const [uploadMessage, setUploadMessage] = useState<string | null>(null);
   const [editModal, setEditModal] = useState<EditModalState>(null);
   const [deleteModal, setDeleteModal] = useState<DeleteModalState>(null);
@@ -635,11 +583,6 @@ function CreatorDashboardContent() {
   const selectedEpisode =
     displayEpisodeRows.find((episode) => episode.id === selectedEpisodeId) ??
     null;
-  const selectedVideoPreviewUrl = useMemo(
-    () =>
-      selectedVideoFile ? URL.createObjectURL(selectedVideoFile) : null,
-    [selectedVideoFile],
-  );
   const isRestoringSeriesSelection =
     Boolean(selectedSeriesId) && seriesQuery.isLoading;
   const isRestoringSeasonSelection =
@@ -650,14 +593,6 @@ function CreatorDashboardContent() {
     (isRestoringSeasonSelection ||
       episodesQuery.isLoading ||
       episodesQuery.isFetching);
-
-  useEffect(() => {
-    return () => {
-      if (selectedVideoPreviewUrl) {
-        URL.revokeObjectURL(selectedVideoPreviewUrl);
-      }
-    };
-  }, [selectedVideoPreviewUrl]);
 
   const mediaQuery = useQuery({
     queryKey: ["creator-dashboard", "media", selectedEpisode?.id],
@@ -690,67 +625,6 @@ function CreatorDashboardContent() {
         ),
     [mediaQuery.data],
   );
-
-  const videoUploadMutation = useMutation({
-    mutationFn: async () => {
-      if (!selectedEpisode) {
-        throw new Error("Select an episode before uploading video.");
-      }
-      if (!selectedVideoFile) {
-        throw new Error("Choose a video file before submitting.");
-      }
-      if (!selectedVideoFile.type.startsWith("video/")) {
-        throw new Error("Choose a valid video file.");
-      }
-
-      const upload = await uploadToCloudinary(selectedVideoFile, "video");
-      const request = {
-        fileUrl: upload.hlsUrl || upload.secureUrl,
-        mediaType: "VIDEO" as const,
-        mimeType: selectedVideoFile.type || "video/mp4",
-        fileSize: selectedVideoFile.size || upload.bytes,
-        externalPublicId: upload.publicId,
-        storageProvider: "CLOUDINARY",
-        width: upload.width,
-        height: upload.height,
-        duration: upload.duration ? Math.round(upload.duration) : undefined,
-        resolution:
-          upload.width && upload.height
-            ? `${upload.width}x${upload.height}`
-            : undefined,
-        actorId: CREATOR_DASHBOARD_ACTOR_ID,
-      };
-
-      const currentVideo = existingVideoMedia[0];
-
-      if (currentVideo) {
-        return replaceMediaUrl(currentVideo.mediaId, request);
-      }
-
-      return createEpisodeMedia(selectedEpisode.id, request);
-    },
-    onSuccess: () => {
-      setUploadMessage(
-        existingVideoMedia.length > 0
-          ? "Video replaced and saved."
-          : "Video uploaded and saved.",
-      );
-      setSelectedVideoFile(null);
-      queryClient.invalidateQueries({
-        queryKey: [
-          "creator-dashboard",
-          "episodes",
-          selectedSeason?.id ?? selectedEpisode?.seasonId,
-        ],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["creator-dashboard", "media", selectedEpisode?.id],
-      });
-    },
-    onError: (error) => {
-      setUploadMessage(error instanceof Error ? error.message : "Upload failed.");
-    },
-  });
 
   const createSeriesMutation = useMutation({
     mutationFn: async (input: CreateSeriesInput) => {
@@ -1105,16 +979,29 @@ function CreatorDashboardContent() {
   });
 
   const deleteMediaMutation = useMutation({
-    mutationFn: async (page: ComicPage) => {
-      if (isLocalPageId(page.id)) {
-        return { page, deletedFromBackend: false };
+    mutationFn: async (media: ComicPage | MediaResponse) => {
+      if (!isBackendMediaTarget(media) && isLocalPageId(media.id)) {
+        return { media, deletedFromBackend: false };
       }
 
-      await deleteMedia(page.id, CREATOR_DASHBOARD_ACTOR_ID);
-      return { page, deletedFromBackend: true };
+      await deleteMedia(getMediaTargetId(media), CREATOR_DASHBOARD_ACTOR_ID);
+      return { media, deletedFromBackend: true };
     },
-    onSuccess: ({ page, deletedFromBackend }) => {
+    onSuccess: ({ media, deletedFromBackend }) => {
       setDeleteModal(null);
+
+      if (isBackendMediaTarget(media) && media.mediaType === "VIDEO") {
+        setUploadMessage("Video deleted.");
+        queryClient.invalidateQueries({
+          queryKey: ["creator-dashboard", "media", selectedEpisode?.id],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["creator-dashboard", "episodes", selectedSeason?.id],
+        });
+        return;
+      }
+
+      const page = media as ComicPage;
       setComicPages((pages) => {
         const sourcePages = pages.length > 0 ? pages : existingMediaPages;
 
@@ -1135,7 +1022,7 @@ function CreatorDashboardContent() {
     },
     onError: (error) => {
       setUploadMessage(
-        error instanceof Error ? error.message : "Cannot delete media page.",
+        error instanceof Error ? error.message : "Cannot delete media.",
       );
     },
   });
@@ -1176,17 +1063,6 @@ function CreatorDashboardContent() {
     setComicPages([...basePages, ...nextPages]);
   }
 
-  function handleVideoFileSelected(file: File | null) {
-    if (file && !file.type.startsWith("video/")) {
-      setUploadMessage("Choose a valid video file.");
-      setSelectedVideoFile(null);
-      return;
-    }
-
-    setUploadMessage(null);
-    setSelectedVideoFile(file);
-  }
-
   function movePage(fromId: string, toId: string) {
     setComicPages((pages) =>
       reorderPages(pages.length > 0 ? pages : existingMediaPages, fromId, toId),
@@ -1209,7 +1085,6 @@ function CreatorDashboardContent() {
 
   function clearUploadDrafts() {
     setComicPages([]);
-    setSelectedVideoFile(null);
   }
 
   function openSeriesManagement() {
@@ -1251,7 +1126,6 @@ function CreatorDashboardContent() {
   function openEpisodeUpload(episode: EpisodeRow) {
     setContentType(episode.contentType);
     setUploadMessage(null);
-    setSelectedVideoFile(null);
     if (episode.contentType === "COMIC") {
       setComicPages([]);
     }
@@ -1301,6 +1175,21 @@ function CreatorDashboardContent() {
   function handleDeleteComicPage(page: ComicPage) {
     setUploadMessage(null);
     setDeleteModal({ kind: "media", value: page });
+  }
+
+  function handleDeleteVideo(video: MediaResponse) {
+    setUploadMessage(null);
+    setDeleteModal({ kind: "media", value: video });
+  }
+
+  function handleVideoUploadCompleted() {
+    setUploadMessage("Video uploaded and saved.");
+    queryClient.invalidateQueries({
+      queryKey: ["creator-dashboard", "media", selectedEpisode?.id],
+    });
+    queryClient.invalidateQueries({
+      queryKey: ["creator-dashboard", "episodes", selectedSeason?.id],
+    });
   }
 
   function handleSubmitEdit(nextValue: EditSubmitState) {
@@ -1591,14 +1480,11 @@ function CreatorDashboardContent() {
               selectedSeries={selectedSeries}
               selectedSeason={selectedSeason}
               selectedEpisode={selectedEpisode}
-              selectedFile={selectedVideoFile}
               videos={existingVideoMedia}
               isLoadingMedia={mediaQuery.isLoading}
               uploadMessage={uploadMessage}
-              isUploading={videoUploadMutation.isPending}
-              previewUrl={selectedVideoPreviewUrl}
-              onFileSelected={handleVideoFileSelected}
-              onSubmit={() => videoUploadMutation.mutate()}
+              onUploadCompleted={handleVideoUploadCompleted}
+              onDeleteVideo={handleDeleteVideo}
               onBack={() =>
                 setDashboardRouteState({
                   view: "episodes",
@@ -2052,7 +1938,9 @@ function DeleteEntityModal({
         ? modal.value.title
         : modal.kind === "episode"
           ? modal.value.title
-          : `Page ${modal.value.displayOrder}`;
+          : isBackendMediaTarget(modal.value)
+            ? `${modal.value.mediaType} media`
+            : `Page ${modal.value.displayOrder}`;
 
   return (
     <ModalShell
@@ -3385,39 +3273,23 @@ function VideoUploadView({
   selectedSeries,
   selectedSeason,
   selectedEpisode,
-  selectedFile,
   videos,
   isLoadingMedia,
   uploadMessage,
-  isUploading,
-  previewUrl,
-  onFileSelected,
-  onSubmit,
+  onUploadCompleted,
+  onDeleteVideo,
   onBack,
 }: {
   selectedSeries: SeriesRow | null;
   selectedSeason: SeasonRow | null;
   selectedEpisode: EpisodeRow;
-  selectedFile: File | null;
   videos: MediaResponse[];
   isLoadingMedia: boolean;
   uploadMessage: string | null;
-  isUploading: boolean;
-  previewUrl: string | null;
-  onFileSelected: (file: File | null) => void;
-  onSubmit: () => void;
+  onUploadCompleted: (media: MediaResponse) => void;
+  onDeleteVideo: (media: MediaResponse) => void;
   onBack: () => void;
 }) {
-  function handleVideoInputChange(event: ChangeEvent<HTMLInputElement>) {
-    onFileSelected(event.target.files?.[0] ?? null);
-    event.currentTarget.value = "";
-  }
-
-  function handleVideoDrop(event: DragEvent<HTMLDivElement>) {
-    event.preventDefault();
-    onFileSelected(event.dataTransfer.files?.[0] ?? null);
-  }
-
   return (
     <div className="space-y-4">
       <button
@@ -3518,22 +3390,31 @@ function VideoUploadView({
                       key={video.mediaId}
                       className="rounded-2xl border border-[#E5EAF3] bg-[#F8FAFF] p-3"
                     >
-                      <HlsVideoPlayer src={video.fileUrl} />
-                      <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs font-bold text-[#5D5160]">
-                        <span>
-                          {video.mimeType} . {formatBytes(video.fileSize)}
-                        </span>
-                        <a
-                          href={video.fileUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="rounded-full bg-white px-3 py-2 font-black text-[#007A8A]"
-                        >
-                          Open Video
-                        </a>
+                        <SignedHlsPlayer episodeId={video.episodeId} compact />
+                        <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs font-bold text-[#5D5160]">
+                          <span>
+                            {video.mimeType} . {formatBytes(video.fileSize)}
+                          </span>
+                          <div className="flex flex-wrap gap-2">
+                            <a
+                              href={`/watch/${video.episodeId}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="rounded-full bg-white px-3 py-2 font-black text-[#007A8A]"
+                            >
+                              Watch Page
+                            </a>
+                            <button
+                              type="button"
+                              onClick={() => onDeleteVideo(video)}
+                              className="rounded-full bg-white px-3 py-2 font-black text-[#B42318]"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               )}
             </div>
@@ -3542,45 +3423,18 @@ function VideoUploadView({
               <p className="mb-2 text-xs font-black text-[#5D5160]">
                 Video File
               </p>
-              <div
-                className="rounded-2xl border border-dashed border-[#E8AFC1] bg-[#F1F5FE] p-8 text-center transition hover:border-[#B83268] hover:bg-[#F8FAFF]"
-                onDragOver={(event) => event.preventDefault()}
-                onDrop={handleVideoDrop}
-              >
-                {previewUrl ? (
-                  <div className="overflow-hidden rounded-xl bg-black shadow-sm">
-                    <video
-                      src={previewUrl}
-                      controls
-                      className="aspect-video w-full bg-black object-contain"
-                    />
-                  </div>
-                ) : (
-                  <>
-                    <FileVideo className="mx-auto mb-4 h-10 w-10 text-[#E85D90]" />
-                    <p className="text-lg font-black text-[#151A23]">
-                      Drag and drop video here
-                    </p>
-                    <p className="mt-2 text-sm font-semibold text-[#5D5160]">
-                      Choose a video file to upload for this episode.
-                    </p>
-                  </>
-                )}
-                {selectedFile && (
-                  <p className="mt-3 text-xs font-black text-[#007A8A]">
-                    Selected: {selectedFile.name}
-                  </p>
-                )}
-                <label className="mt-5 inline-flex cursor-pointer rounded-full bg-[#B83268] px-5 py-2.5 text-xs font-black text-white">
-                  Browse Files
-                  <input
-                    type="file"
-                    accept="video/*"
-                    className="sr-only"
-                    onChange={handleVideoInputChange}
-                  />
-                </label>
-              </div>
+              <ResumableVideoUploader
+                key={selectedEpisode.id}
+                episodeId={selectedEpisode.id}
+                creatorId={CREATOR_DASHBOARD_CREATOR_ID}
+                actorId={CREATOR_DASHBOARD_ACTOR_ID}
+                disabledReason={
+                  videos.length > 0
+                    ? "Delete the current video before uploading a replacement."
+                    : undefined
+                }
+                onCompleted={onUploadCompleted}
+              />
             </div>
 
           </div>
@@ -3626,19 +3480,6 @@ function VideoUploadView({
           </div>
         )}
 
-        <button
-          type="button"
-          onClick={onSubmit}
-          disabled={isUploading || !selectedFile}
-          className="flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-[#B83268] text-sm font-black text-white shadow-lg shadow-pink-900/20 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          <Send className="h-4 w-4" />
-          {isUploading
-            ? "Uploading..."
-            : videos.length > 0
-              ? "Replace Video"
-              : "Upload Video"}
-        </button>
         <button className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-[#E8BBCB] bg-white text-sm font-black text-[#5D5160]">
           <CheckCircle2 className="h-4 w-4" />
           Save as Draft
@@ -3646,74 +3487,6 @@ function VideoUploadView({
         </aside>
       </div>
     </div>
-  );
-}
-
-function HlsVideoPlayer({ src }: { src: string }) {
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-
-  useEffect(() => {
-    const video = videoRef.current;
-
-    if (!video || !src) {
-      return;
-    }
-
-    let hls: HlsInstance | null = null;
-    let disposed = false;
-
-    if (!isHlsUrl(src)) {
-      video.src = src;
-      return () => {
-        video.removeAttribute("src");
-        video.load();
-      };
-    }
-
-    if (video.canPlayType("application/vnd.apple.mpegurl")) {
-      video.src = src;
-      return () => {
-        video.removeAttribute("src");
-        video.load();
-      };
-    }
-
-    loadHlsScript()
-      .then(() => {
-        if (disposed || !videoRef.current) {
-          return;
-        }
-
-        const Hls = (window as WindowWithHls).Hls;
-
-        if (!Hls?.isSupported()) {
-          video.src = src;
-          return;
-        }
-
-        hls = new Hls();
-        hls.loadSource(src);
-        hls.attachMedia(videoRef.current);
-      })
-      .catch(() => {
-        video.src = src;
-      });
-
-    return () => {
-      disposed = true;
-      hls?.destroy();
-      video.removeAttribute("src");
-      video.load();
-    };
-  }, [src]);
-
-  return (
-    <video
-      ref={videoRef}
-      controls
-      preload="metadata"
-      className="aspect-video w-full rounded-xl bg-black"
-    />
   );
 }
 
