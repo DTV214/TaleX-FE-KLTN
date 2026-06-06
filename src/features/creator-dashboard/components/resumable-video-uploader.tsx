@@ -215,7 +215,7 @@ export function ResumableVideoUploader({
       {upload.status === "completed" && (
         <div className="flex items-center gap-2 rounded-xl border border-[#C8F7DC] bg-[#F0FFF6] px-4 py-3 text-sm font-bold text-[#047857]">
           <CheckCircle2 className="h-4 w-4" />
-          Video uploaded and saved.
+          Video uploaded. Processing playback now.
         </div>
       )}
 

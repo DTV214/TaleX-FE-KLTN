@@ -5,8 +5,6 @@ import {
   AlertCircle,
   Gauge,
   Loader2,
-  RefreshCw,
-  ShieldCheck,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getEpisodePlayback } from "@/features/playback/api/playback-api";
@@ -56,6 +54,8 @@ type SignedHlsPlayerProps = {
 };
 
 let hlsScriptPromise: Promise<void> | null = null;
+const PROCESSING_RETRY_INTERVAL_MS = 7000;
+const MAX_PROCESSING_RETRIES = 12;
 
 function isHlsUrl(url: string) {
   return /\.m3u8($|\?)/i.test(url);
@@ -115,6 +115,22 @@ function formatLevel(level: HlsLevel, index: number) {
   return `Level ${index + 1}`;
 }
 
+function getPlaybackErrorMessage(message?: string | null) {
+  if (message === "VIDEO_PROCESSING" || message === "VIDEO_NOT_READY") {
+    return "Video is still processing. Please try again shortly.";
+  }
+
+  if (message === "VIDEO_FAILED") {
+    return "Video processing failed.";
+  }
+
+  return message ?? null;
+}
+
+function isProcessingPlaybackError(message?: string | null) {
+  return message === "VIDEO_PROCESSING" || message === "VIDEO_NOT_READY";
+}
+
 export function SignedHlsPlayer({
   episodeId,
   viewerId,
@@ -136,12 +152,14 @@ export function SignedHlsPlayer({
   const [levels, setLevels] = useState<HlsLevel[]>([]);
   const [selectedLevel, setSelectedLevel] = useState(-1);
   const [playerError, setPlayerError] = useState<string | null>(null);
+  const [processingRetryCount, setProcessingRetryCount] = useState(0);
 
   const playbackQuery = useQuery({
     queryKey,
     queryFn: () => getEpisodePlayback(episodeId, viewerId),
     staleTime: 15_000,
     refetchOnWindowFocus: false,
+    retry: false,
   });
 
   const playbackUrl =
@@ -159,6 +177,7 @@ export function SignedHlsPlayer({
 
     setPlayerError(null);
     retryCountRef.current = 0;
+    setProcessingRetryCount(0);
     void queryClient.refetchQueries({ queryKey, exact: true });
   }, [queryClient, queryKey]);
 
@@ -306,7 +325,28 @@ export function SignedHlsPlayer({
     }
   }
 
-  const errorMessage = playerError || playbackQuery.error?.message;
+  const queryErrorMessage =
+    playbackQuery.error instanceof Error ? playbackQuery.error.message : null;
+  const rawErrorMessage = playerError || queryErrorMessage;
+  const processingPlaybackError = isProcessingPlaybackError(rawErrorMessage);
+  const errorMessage = getPlaybackErrorMessage(rawErrorMessage);
+
+  useEffect(() => {
+    if (!processingPlaybackError) {
+      return;
+    }
+
+    if (processingRetryCount >= MAX_PROCESSING_RETRIES) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setProcessingRetryCount((count) => count + 1);
+      void queryClient.refetchQueries({ queryKey, exact: true });
+    }, PROCESSING_RETRY_INTERVAL_MS);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [processingPlaybackError, processingRetryCount, queryClient, queryKey]);
 
   return (
     <div
@@ -340,16 +380,7 @@ export function SignedHlsPlayer({
           )}
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/10 bg-[#10151E] px-4 py-3 text-sm text-white sm:px-5">
-          <div className="flex items-center gap-2 font-bold">
-            <ShieldCheck className="h-4 w-4 text-[#7DD3FC]" />
-            <span>
-              {playbackQuery.data?.protectionType === "NONE"
-                ? "Public playback"
-                : "Signed playback"}
-            </span>
-          </div>
-
+        <div className="flex flex-wrap items-center justify-end gap-3 border-t border-white/10 bg-[#10151E] px-4 py-3 text-sm text-white sm:px-5">
           <div className="flex flex-wrap items-center gap-2">
             {levels.length > 1 && (
               <label className="flex items-center gap-2 rounded-full bg-white/10 px-3 py-2 text-xs font-black">
@@ -375,14 +406,6 @@ export function SignedHlsPlayer({
               </label>
             )}
 
-            <button
-              type="button"
-              onClick={refreshPlayback}
-              className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-2 text-xs font-black text-[#10151E]"
-            >
-              <RefreshCw className="h-4 w-4" />
-              Refresh URL
-            </button>
           </div>
         </div>
       </div>
@@ -397,7 +420,7 @@ export function SignedHlsPlayer({
               onClick={refreshPlayback}
               className="mt-3 rounded-full bg-[#B42318] px-4 py-2 text-xs font-black text-white"
             >
-              Retry Playback
+              {processingPlaybackError ? "Check Again" : "Retry Playback"}
             </button>
           </div>
         </div>

@@ -12,6 +12,8 @@ export type EpisodeStatus = "DRAFT" | "PUBLISHED" | "HIDDEN" | "DELETED";
 export type MediaType = "VIDEO" | "IMAGE";
 export type MediaStatus =
   | "PROCESSING"
+  | "HLS_PROCESSING"
+  | "HLS_READY"
   | "ACTIVE"
   | "HIDDEN"
   | "DELETED"

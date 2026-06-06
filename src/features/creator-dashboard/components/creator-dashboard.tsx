@@ -29,6 +29,7 @@ import {
   Image as ImageIcon,
   Info,
   Library,
+  Loader2,
   Lock,
   Plus,
   Search,
@@ -63,6 +64,7 @@ import {
   updateSeason,
   updateSeries,
   type EpisodeResponse,
+  type MediaStatus,
   type MediaResponse,
   type SeasonResponse,
   type SeriesResponse,
@@ -383,6 +385,26 @@ function formatStatusLabel(status: SeriesStatus | SeasonStatus | EpisodeStatus) 
   return status;
 }
 
+function formatMediaStatusLabel(status: MediaStatus) {
+  if (status === "HLS_PROCESSING") {
+    return "Processing";
+  }
+
+  if (status === "HLS_READY") {
+    return "Ready";
+  }
+
+  return formatStatusLabel(status as EpisodeStatus);
+}
+
+function isPlayableVideoStatus(status: MediaStatus) {
+  return status === "ACTIVE" || status === "HLS_READY";
+}
+
+function isProcessingVideoStatus(status: MediaStatus) {
+  return status === "PROCESSING" || status === "HLS_PROCESSING";
+}
+
 function formatNumber(value?: number) {
   if (value == null) {
     return "-";
@@ -625,6 +647,27 @@ function CreatorDashboardContent() {
         ),
     [mediaQuery.data],
   );
+
+  const hasProcessingVideoMedia = existingVideoMedia.some((media) =>
+    isProcessingVideoStatus(media.status),
+  );
+
+  useEffect(() => {
+    if (activeView !== "video" || !selectedEpisode?.id || !hasProcessingVideoMedia) {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      void mediaQuery.refetch();
+    }, 5000);
+
+    return () => window.clearInterval(intervalId);
+  }, [
+    activeView,
+    hasProcessingVideoMedia,
+    mediaQuery,
+    selectedEpisode?.id,
+  ]);
 
   const createSeriesMutation = useMutation({
     mutationFn: async (input: CreateSeriesInput) => {
@@ -1183,7 +1226,7 @@ function CreatorDashboardContent() {
   }
 
   function handleVideoUploadCompleted() {
-    setUploadMessage("Video uploaded and saved.");
+    setUploadMessage("Video uploaded. Processing playback now.");
     queryClient.invalidateQueries({
       queryKey: ["creator-dashboard", "media", selectedEpisode?.id],
     });
@@ -3390,10 +3433,15 @@ function VideoUploadView({
                       key={video.mediaId}
                       className="rounded-2xl border border-[#E5EAF3] bg-[#F8FAFF] p-3"
                     >
+                      {isPlayableVideoStatus(video.status) ? (
                         <SignedHlsPlayer episodeId={video.episodeId} compact />
+                      ) : (
+                        <VideoProcessingState video={video} />
+                      )}
                         <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs font-bold text-[#5D5160]">
                           <span>
-                            {video.mimeType} . {formatBytes(video.fileSize)}
+                            {video.mimeType} . {formatBytes(video.fileSize)} .{" "}
+                            {formatMediaStatusLabel(video.status)}
                           </span>
                           <div className="flex flex-wrap gap-2">
                             <a
@@ -3486,6 +3534,40 @@ function VideoUploadView({
         </button>
         </aside>
       </div>
+    </div>
+  );
+}
+
+function VideoProcessingState({ video }: { video: MediaResponse }) {
+  const failed = video.status === "FAILED";
+
+  return (
+    <div
+      className={cx(
+        "flex aspect-video w-full flex-col items-center justify-center rounded-xl border px-4 text-center",
+        failed
+          ? "border-[#FFD8D4] bg-[#FFF7F6] text-[#B42318]"
+          : "border-[#D9E2F0] bg-white text-[#5D5160]",
+      )}
+    >
+      {failed ? (
+        <CircleAlert className="mb-3 h-8 w-8" />
+      ) : (
+        <Loader2 className="mb-3 h-8 w-8 animate-spin text-[#007A8A]" />
+      )}
+      <p className="text-sm font-black text-[#151A23]">
+        {failed ? "Video processing failed" : "Video is still processing"}
+      </p>
+      <p className="mt-2 max-w-md text-xs font-bold leading-relaxed">
+        {failed
+          ? video.errorMessage || "Cloudinary could not finish this video."
+          : "Please try again shortly."}
+      </p>
+      {isProcessingVideoStatus(video.status) && (
+        <span className="mt-3 rounded-full bg-[#E8F8FF] px-3 py-1 text-[11px] font-black text-[#075985]">
+          {formatMediaStatusLabel(video.status)}
+        </span>
+      )}
     </div>
   );
 }
