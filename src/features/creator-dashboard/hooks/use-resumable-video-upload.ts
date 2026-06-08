@@ -17,6 +17,8 @@ import {
 
 const DEFAULT_CHUNK_SIZE = 8 * 1024 * 1024;
 const STORAGE_PREFIX = "talex.video-upload";
+const EXPIRY_SAFETY_WINDOW_MS = 60 * 1000;
+const RETRY_DELAYS_MS = [750, 1500];
 
 export type ResumableVideoUploadStatus =
   | "idle"
@@ -48,6 +50,7 @@ export type PersistedVideoUpload = {
   uploadedBytes: number;
   lastUploadedChunkIndex: number;
   status: MediaUploadSessionStatus;
+  completedCloudinaryResponse?: CompletedCloudinaryUploadResponse;
   expiredAt?: string;
   lastModified?: number;
   updatedAt: string;
@@ -76,6 +79,23 @@ type CloudinaryChunkResponse = {
     message?: string;
   };
 };
+
+type CompletedCloudinaryUploadResponse = Omit<
+  CloudinaryChunkResponse,
+  "done" | "error"
+> & {
+  secure_url: string;
+};
+
+class UploadPipelineError extends Error {
+  readonly shouldFailSession: boolean;
+
+  constructor(message: string, shouldFailSession = false) {
+    super(message);
+    this.name = "UploadPipelineError";
+    this.shouldFailSession = shouldFailSession;
+  }
+}
 
 function toStorageKey(episodeId: string) {
   return `${STORAGE_PREFIX}.${episodeId}`;
@@ -157,6 +177,17 @@ function isSameFile(upload: PersistedVideoUpload | null, file: File) {
   );
 }
 
+function isUploadExpired(upload: PersistedVideoUpload | null) {
+  if (!upload?.expiredAt) {
+    return false;
+  }
+
+  const expiresAt = Date.parse(upload.expiredAt);
+  return Number.isFinite(expiresAt)
+    ? Date.now() + EXPIRY_SAFETY_WINDOW_MS >= expiresAt
+    : false;
+}
+
 async function readCloudinaryError(response: Response) {
   const contentType = response.headers.get("content-type") || "";
 
@@ -219,12 +250,78 @@ async function uploadCloudinaryChunk({
 
   if (!response.ok) {
     const errorMessage = await readCloudinaryError(response);
-    throw new Error(
+    const isPermanentClientError =
+      response.status >= 400 &&
+      response.status < 500 &&
+      ![408, 409, 425, 429].includes(response.status);
+
+    throw new UploadPipelineError(
       `Cloudinary chunk upload failed (${response.status}): ${errorMessage}`,
+      isPermanentClientError,
     );
   }
 
   return (await response.json()) as CloudinaryChunkResponse;
+}
+
+function toCompletedCloudinaryResponse(
+  response: CloudinaryChunkResponse,
+): CompletedCloudinaryUploadResponse | null {
+  if (!response.secure_url) {
+    return null;
+  }
+
+  return {
+    asset_id: response.asset_id,
+    public_id: response.public_id,
+    secure_url: response.secure_url,
+    resource_type: response.resource_type,
+    format: response.format,
+    bytes: response.bytes,
+    duration: response.duration,
+    width: response.width,
+    height: response.height,
+  };
+}
+
+function isRetryableUploadError(error: unknown) {
+  if (error instanceof DOMException && error.name === "AbortError") {
+    return false;
+  }
+
+  if (error instanceof UploadPipelineError) {
+    return !error.shouldFailSession;
+  }
+
+  return true;
+}
+
+function shouldFailRemoteSession(error: unknown) {
+  return error instanceof UploadPipelineError && error.shouldFailSession;
+}
+
+function delay(ms: number) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+async function withUploadRetry<T>(operation: () => Promise<T>) {
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt += 1) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error;
+
+      if (!isRetryableUploadError(error) || attempt === RETRY_DELAYS_MS.length) {
+        throw error;
+      }
+
+      await delay(RETRY_DELAYS_MS[attempt]);
+    }
+  }
+
+  throw lastError;
 }
 
 function getErrorMessage(error: unknown) {
@@ -252,7 +349,11 @@ export function useResumableVideoUpload({
         return null;
       }
 
-      return parsePersistedUpload(localStorage.getItem(toStorageKey(episodeId)));
+      const storedUpload = parsePersistedUpload(
+        localStorage.getItem(toStorageKey(episodeId)),
+      );
+
+      return isUploadExpired(storedUpload) ? null : storedUpload;
     });
   const [status, setStatus] = useState<ResumableVideoUploadStatus>(() => {
     if (typeof window === "undefined") {
@@ -264,6 +365,7 @@ export function useResumableVideoUpload({
     );
 
     return storedUpload &&
+      !isUploadExpired(storedUpload) &&
       !["COMPLETED", "CANCELLED", "EXPIRED"].includes(storedUpload.status)
       ? "paused"
       : "idle";
@@ -273,10 +375,11 @@ export function useResumableVideoUpload({
       return 0;
     }
 
-    return (
-      parsePersistedUpload(localStorage.getItem(toStorageKey(episodeId)))
-        ?.uploadedBytes ?? 0
+    const storedUpload = parsePersistedUpload(
+      localStorage.getItem(toStorageKey(episodeId)),
     );
+
+    return isUploadExpired(storedUpload) ? 0 : (storedUpload?.uploadedBytes ?? 0);
   });
   const [speedBytesPerSecond, setSpeedBytesPerSecond] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -327,6 +430,25 @@ export function useResumableVideoUpload({
     [persistUpload],
   );
 
+  const rememberCompletedCloudinaryResponse = useCallback(
+    (
+      upload: PersistedVideoUpload,
+      response: CompletedCloudinaryUploadResponse,
+    ) => {
+      const nextUpload = {
+        ...upload,
+        completedCloudinaryResponse: response,
+        updatedAt: new Date().toISOString(),
+      };
+
+      setActiveUpload(nextUpload);
+      persistUpload(nextUpload);
+
+      return nextUpload;
+    },
+    [persistUpload],
+  );
+
   const uploadChunks = useCallback(
     async (file: File, upload: PersistedVideoUpload) => {
       let currentUpload = upload;
@@ -335,7 +457,8 @@ export function useResumableVideoUpload({
         upload.lastUploadedChunkIndex >= 0
           ? upload.lastUploadedChunkIndex
           : Math.ceil(currentUploadedBytes / upload.chunkSize) - 1;
-      let finalCloudinaryResponse: CloudinaryChunkResponse | null = null;
+      let finalCloudinaryResponse =
+        currentUpload.completedCloudinaryResponse ?? null;
       const baselineBytes = currentUploadedBytes;
       const startedAt = performance.now();
 
@@ -353,14 +476,16 @@ export function useResumableVideoUpload({
         const controller = new AbortController();
         abortControllerRef.current = controller;
 
-        finalCloudinaryResponse = await uploadCloudinaryChunk({
-          upload: currentUpload,
-          file,
-          chunk: file.slice(start, end),
-          start,
-          end,
-          signal: controller.signal,
-        });
+        const chunkResponse = await withUploadRetry(() =>
+          uploadCloudinaryChunk({
+            upload: currentUpload,
+            file,
+            chunk: file.slice(start, end),
+            start,
+            end,
+            signal: controller.signal,
+          }),
+        );
         abortControllerRef.current = null;
 
         currentUploadedBytes = end;
@@ -370,6 +495,15 @@ export function useResumableVideoUpload({
           currentUploadedBytes,
           lastUploadedChunkIndex,
         );
+        const completedResponse =
+          toCompletedCloudinaryResponse(chunkResponse);
+        if (completedResponse) {
+          finalCloudinaryResponse = completedResponse;
+          currentUpload = rememberCompletedCloudinaryResponse(
+            currentUpload,
+            completedResponse,
+          );
+        }
 
         const elapsedSeconds = Math.max(
           (performance.now() - startedAt) / 1000,
@@ -379,12 +513,14 @@ export function useResumableVideoUpload({
           Math.round((currentUploadedBytes - baselineBytes) / elapsedSeconds),
         );
 
-        await updateVideoUploadProgress(currentUpload.uploadSessionId, {
-          uploadedBytes: currentUploadedBytes,
-          lastUploadedChunkIndex,
-          status: "UPLOADING",
-          actorId,
-        });
+        await withUploadRetry(() =>
+          updateVideoUploadProgress(currentUpload.uploadSessionId, {
+            uploadedBytes: currentUploadedBytes,
+            lastUploadedChunkIndex,
+            status: "UPLOADING",
+            actorId,
+          }),
+        );
       }
 
       if (pauseRequestedRef.current || cancelRequestedRef.current) {
@@ -392,12 +528,14 @@ export function useResumableVideoUpload({
       }
 
       if (!finalCloudinaryResponse?.secure_url) {
-        throw new Error("Cloudinary did not return a completed video URL.");
+        throw new UploadPipelineError(
+          "Cloudinary did not return a completed video URL.",
+          true,
+        );
       }
 
-      const completedMedia = await completeVideoUpload(
-        currentUpload.uploadSessionId,
-        {
+      const completedMedia = await withUploadRetry(() =>
+        completeVideoUpload(currentUpload.uploadSessionId, {
           assetId: finalCloudinaryResponse.asset_id,
           publicId: finalCloudinaryResponse.public_id || currentUpload.publicId,
           secureUrl: finalCloudinaryResponse.secure_url,
@@ -409,7 +547,7 @@ export function useResumableVideoUpload({
           width: finalCloudinaryResponse.width,
           height: finalCloudinaryResponse.height,
           actorId,
-        },
+        }),
       );
 
       setStatus("completed");
@@ -419,7 +557,13 @@ export function useResumableVideoUpload({
       persistUpload(null);
       onCompleted?.(completedMedia);
     },
-    [actorId, markProgress, onCompleted, persistUpload],
+    [
+      actorId,
+      markProgress,
+      onCompleted,
+      persistUpload,
+      rememberCompletedCloudinaryResponse,
+    ],
   );
 
   const selectFile = useCallback(
@@ -430,8 +574,16 @@ export function useResumableVideoUpload({
       if (!file) {
         setSelectedFile(null);
         setActiveUpload(null);
-        setUploadedBytes(persistedUpload?.uploadedBytes ?? 0);
-        setStatus(persistedUpload ? "paused" : "idle");
+        setUploadedBytes(
+          isUploadExpired(persistedUpload)
+            ? 0
+            : (persistedUpload?.uploadedBytes ?? 0),
+        );
+        setStatus(
+          persistedUpload && !isUploadExpired(persistedUpload)
+            ? "paused"
+            : "idle",
+        );
         return;
       }
 
@@ -444,9 +596,10 @@ export function useResumableVideoUpload({
         return;
       }
 
-      const resumableUpload = isSameFile(persistedUpload, file)
-        ? persistedUpload
-        : null;
+      const resumableUpload =
+        isSameFile(persistedUpload, file) && !isUploadExpired(persistedUpload)
+          ? persistedUpload
+          : null;
 
       setSelectedFile(file);
       setActiveUpload(resumableUpload);
@@ -472,10 +625,18 @@ export function useResumableVideoUpload({
     setStatus("preparing");
     setError(null);
 
-    let upload = isSameFile(activeUpload, selectedFile) ? activeUpload : null;
+    let upload =
+      isSameFile(activeUpload, selectedFile) && !isUploadExpired(activeUpload)
+        ? activeUpload
+        : null;
 
     try {
       if (!upload && isSameFile(persistedUpload, selectedFile)) {
+        if (isUploadExpired(persistedUpload)) {
+          persistUpload(null);
+          throw new Error("Upload session expired. Start a new upload session.");
+        }
+
         const remoteUpload = await getVideoUploadSession(
           persistedUpload!.uploadSessionId,
         );
@@ -554,7 +715,7 @@ export function useResumableVideoUpload({
       setError(message);
       setSpeedBytesPerSecond(0);
 
-      if (upload) {
+      if (upload && shouldFailRemoteSession(uploadError)) {
         await failVideoUpload(upload.uploadSessionId, {
           errorMessage: message,
           actorId,
