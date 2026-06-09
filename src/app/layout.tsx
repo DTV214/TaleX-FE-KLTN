@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import { Montserrat, DM_Sans } from "next/font/google";
 import "./globals.css";
-// Thêm đường dẫn import cho Navbar và Footer
 import { SiteHeader } from "@/shared/ui/site-header";
 import { SiteFooter } from "@/shared/ui/site-footer";
 import { BackToTop } from "@/shared/ui/back-to-top";
 import { AppProviders } from "@/core/providers/app-providers";
+// Thêm đường dẫn import cho AuthProvider vừa tạo ở bước trước
+import { AuthProvider } from "@/features/auth/providers/auth-provider";
 
 // Font cho Tiêu đề (Headlines) - Hỗ trợ chuẩn vietnamese
 const montserrat = Montserrat({
@@ -37,17 +38,22 @@ export default function RootLayout({
         className={`${dmSans.variable} ${montserrat.variable} font-sans antialiased bg-background text-foreground flex min-h-screen flex-col relative`}
         suppressHydrationWarning
       >
-        {/* Navbar nằm ở vị trí cao nhất */}
         <AppProviders>
-          <SiteHeader />
+          {/* Bọc AuthProvider ở đây để đảm bảo mọi component bên trong (bao gồm SiteHeader)
+            đều có thể truy cập và lắng nghe trạng thái đăng nhập toàn cục từ Zustand Store.
+          */}
+          <AuthProvider>
+            {/* Navbar nằm ở vị trí cao nhất */}
+            <SiteHeader />
 
-        {/* Vùng chứa nội dung chính sẽ tự động đẩy giãn nhờ flex-1 */}
-          <main className="flex-1 flex flex-col">{children}</main>
+            {/* Vùng chứa nội dung chính sẽ tự động đẩy giãn nhờ flex-1 */}
+            <main className="flex-1 flex flex-col">{children}</main>
 
-        {/* Footer luôn nằm ở dưới cùng của mọi trang */}
-          <SiteFooter />
+            {/* Footer luôn nằm ở dưới cùng của mọi trang */}
+            <SiteFooter />
 
-          <BackToTop />
+            <BackToTop />
+          </AuthProvider>
         </AppProviders>
       </body>
     </html>

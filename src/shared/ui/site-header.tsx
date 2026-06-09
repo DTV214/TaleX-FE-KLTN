@@ -1,14 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Menu, Search, UserCircle } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { Menu, Search, LogOut, User as UserIcon } from "lucide-react";
 import { siteConfig } from "@/core/config/site";
-
-const currentUser: {
-  name: string;
-  avatar?: string;
-} | null = null;
+import { useAuthStore } from "@/features/auth/store/auth.store";
+import { logoutAction } from "@/features/auth/api/auth.actions";
 
 function isActiveRoute(pathname: string, href: string) {
   if (href === "/") return pathname === "/";
@@ -17,8 +14,11 @@ function isActiveRoute(pathname: string, href: string) {
 
 export function SiteHeader() {
   const pathname = usePathname();
+  const router = useRouter();
 
-  // ĐÃ THÊM: Kiểm tra xem có đang ở trang xác thực (Auth) không
+  // Lấy thông tin user và hàm xóa Auth
+  const { user, isAuthenticated, clearAuth } = useAuthStore();
+
   const isAuthOrAdminPage =
     pathname === "/login" ||
     pathname === "/register" ||
@@ -27,15 +27,22 @@ export function SiteHeader() {
     pathname.startsWith("/admin") ||
     pathname.startsWith("/staff");
 
-  // Nếu đang ở trang Auth, trả về null để ẩn hoàn toàn Header này đi
   if (isAuthOrAdminPage) {
     return null;
   }
+
+  // Hàm xử lý Đăng xuất ngay trên Header
+  const handleLogout = async () => {
+    await logoutAction(); // Xóa cookie và gọi API BE
+    clearAuth(); // Xóa state
+    router.push("/login"); // Đẩy về login
+    router.refresh();
+  };
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-background/75 backdrop-blur-2xl">
       <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_20%_0%,rgba(212,175,55,0.10),transparent_36%),radial-gradient(circle_at_70%_0%,rgba(255,255,255,0.06),transparent_30%)]" />
 
-      {/* Đã thêm justify-between để Logo và Nhóm nút 2 bên tự động đẩy ra xa nhau trên Mobile */}
       <div className="container mx-auto flex h-16 md:h-20 items-center justify-between gap-4 md:gap-5 px-4 md:px-8 lg:justify-start">
         {/* Logo */}
         <Link
@@ -62,7 +69,6 @@ export function SiteHeader() {
         >
           {siteConfig.mainNav.map((item) => {
             const isActive = isActiveRoute(pathname, item.href);
-
             return (
               <Link
                 key={item.href}
@@ -100,12 +106,9 @@ export function SiteHeader() {
         </div>
 
         {/* Nhóm Nút Tiện Ích */}
-        {/* Đã thêm ml-auto cho LG để tự động đẩy sang phải khi có thanh Search */}
         <div className="flex items-center gap-2 md:gap-3 lg:ml-0">
-          {/* MỚI: Nút icon tìm kiếm chỉ dành cho Mobile */}
           <button
             type="button"
-            aria-label="Open search"
             className="flex h-10 w-10 items-center justify-center rounded-full text-foreground/80 transition hover:text-primary lg:hidden"
           >
             <Search className="h-5 w-5" />
@@ -118,37 +121,64 @@ export function SiteHeader() {
             Become a Creator
           </Link>
 
-          {currentUser ? (
-            <Link
-              href="/account"
-              aria-label="Open account"
-              className="flex h-10 w-10 md:h-12 md:w-12 items-center justify-center overflow-hidden rounded-full border border-primary/35 bg-primary/10 text-primary transition hover:border-primary hover:shadow-[0_0_26px_rgba(212,175,55,0.24)]"
-            >
-              {currentUser.avatar ? (
-                <span
-                  className="h-full w-full bg-cover bg-center"
-                  style={{ backgroundImage: `url(${currentUser.avatar})` }}
-                />
-              ) : (
-                <span className="font-heading text-xs md:text-sm font-extrabold">
-                  {currentUser.name.slice(0, 2).toUpperCase()}
-                </span>
-              )}
-            </Link>
+          {/* KHU VỰC AVATAR & DROPDOWN MỚI */}
+          {isAuthenticated && user ? (
+            <div className="relative group">
+              {/* Vùng Avatar để hover */}
+              <button className="flex h-10 w-10 md:h-12 md:w-12 items-center justify-center overflow-hidden rounded-full border border-primary/35 bg-primary/10 text-primary transition hover:border-primary hover:shadow-[0_0_26px_rgba(212,175,55,0.24)]">
+                {user.avatarUrl ? (
+                  <span
+                    className="h-full w-full bg-cover bg-center"
+                    style={{ backgroundImage: `url(${user.avatarUrl})` }}
+                  />
+                ) : (
+                  <span className="font-heading text-xs md:text-sm font-extrabold uppercase">
+                    {user.username.slice(0, 2)}
+                  </span>
+                )}
+              </button>
+
+              {/* Menu Dropdown - Tự động hiện khi hover */}
+              <div className="absolute right-0 top-full pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                <div className="w-48 rounded-xl bg-[#121214] border border-white/10 shadow-2xl p-2 flex flex-col gap-1">
+                  <div className="px-3 py-2 border-b border-white/10 mb-1">
+                    <p className="text-sm font-bold text-white truncate">
+                      {user.fullName}
+                    </p>
+                    <p className="text-xs text-gray-500 truncate">
+                      @{user.username}
+                    </p>
+                  </div>
+
+                  <Link
+                    href="/profile"
+                    className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-300 rounded-lg hover:bg-white/5 hover:text-primary transition-colors"
+                  >
+                    <UserIcon className="h-4 w-4" />
+                    Hồ sơ cá nhân
+                  </Link>
+
+                  <button
+                    onClick={handleLogout}
+                    className="flex w-full items-center gap-3 px-3 py-2 text-sm font-medium text-[#E50914] rounded-lg hover:bg-[#E50914]/10 transition-colors"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Đăng xuất
+                  </button>
+                </div>
+              </div>
+            </div>
           ) : (
             <Link
               href="/login"
-              aria-label="Login"
-              className="flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-full text-foreground/80 transition hover:text-primary hover:drop-shadow-[0_0_16px_rgba(212,175,55,0.35)]"
+              className="flex h-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.05] px-4 text-xs font-bold text-gray-300 transition-all hover:border-[#D4AF37]/40 hover:bg-white/10 hover:text-[#D4AF37] md:h-11 md:px-6 md:text-sm"
             >
-              <UserCircle className="h-8 w-8 md:h-10 md:w-10 stroke-[1.7]" />
+              Đăng Nhập
             </Link>
           )}
 
-          {/* ĐÃ SỬA: Bỏ text "Become a Creator" gây vỡ layout ra khỏi nút Hamburger */}
           <button
             type="button"
-            aria-label="Open navigation menu"
             className="flex h-10 w-10 md:h-11 md:w-11 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-foreground transition hover:border-primary/40 hover:text-primary lg:hidden"
           >
             <Menu className="h-5 w-5" />
