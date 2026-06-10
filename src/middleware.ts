@@ -9,14 +9,14 @@ const authRoutes = ["/login", "/register", "/forgot-password"];
 // Tách riêng các route để kiểm tra quyền dễ dàng hơn
 const adminRoutes = ["/admin"];
 const staffRoutes = ["/staff"];
-const creatorRoutes = ["/creator-dashboard"];
+// const creatorRoutes = ["/creator-dashboard"];
 const generalProtectedRoutes = ["/settings", "/profile"]; // Ai đăng nhập cũng vào được
 
 // Gộp chung tất cả các route cần bảo vệ
 const allProtectedRoutes = [
   ...adminRoutes,
   ...staffRoutes,
-  ...creatorRoutes,
+  // ...creatorRoutes,
   ...generalProtectedRoutes,
 ];
 
@@ -98,12 +98,12 @@ export function middleware(request: NextRequest) {
     }
 
     // 3.3 Cố vào Creator Dashboard nhưng chỉ là VIEWER
-    if (creatorRoutes.some((route) => pathname.startsWith(route))) {
-      if (role === "VIEWER") {
-        // Đẩy về trang đăng ký làm creator (hoặc trang chủ)
-        return NextResponse.redirect(new URL("/", request.url));
-      }
-    }
+    // if (creatorRoutes.some((route) => pathname.startsWith(route))) {
+    //   if (role === "VIEWER") {
+    //     // Đẩy về trang đăng ký làm creator (hoặc trang chủ)
+    //     return NextResponse.redirect(new URL("/", request.url));
+    //   }
+    // }
   }
 
   // Hợp lệ hết, cho phép đi tiếp
