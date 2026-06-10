@@ -13,6 +13,7 @@ import {
   Plus,
   PlaySquare,
   BookOpen,
+  FileText,
 } from "lucide-react";
 
 export function AdminSidebar() {
@@ -26,6 +27,7 @@ export function AdminSidebar() {
     { name: "Analytics", href: "/admin/analytics", icon: Analytics },
     { name: "Financials", href: "/admin/financials", icon: CircleDollarSign },
     { name: "Campaigns", href: "/admin/campaigns", icon: ImageIcon },
+    { name: "Terms", href: "/admin/terms", icon: FileText },
     { name: "Settings", href: "/admin/settings", icon: Settings },
   ];
 
