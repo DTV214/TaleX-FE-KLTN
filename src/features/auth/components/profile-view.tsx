@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "../store/auth.store";
+import { isFullProfile, useAuthStore } from "../store/auth.store";
 import { logoutAction } from "../api/auth.actions";
 import {
   User,
@@ -21,7 +21,7 @@ export function ProfileView() {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   // Nếu chưa có thông tin user, không render gì cả (tránh lỗi UI lúc đang load)
-  if (!user) return null;
+  if (!isFullProfile(user)) return null;
 
   async function handleLogout() {
     setIsLoggingOut(true);
@@ -38,7 +38,7 @@ export function ProfileView() {
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-6">
+    <div className="w-full space-y-6">
       {/* Header Profile */}
       <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-8 shadow-2xl backdrop-blur-xl flex flex-col md:flex-row items-center gap-6 relative overflow-hidden">
         {/* Decorative background glow */}
@@ -67,9 +67,7 @@ export function ProfileView() {
             </h1>
             {user.status === "ACTIVE" && (
               <div title="Tài khoản đã xác thực">
-                <CheckCircle2
-                  className="h-5 w-5 text-[#D4AF37]"
-                />
+                <CheckCircle2 className="h-5 w-5 text-[#D4AF37]" />
               </div>
             )}
           </div>
@@ -78,13 +76,14 @@ export function ProfileView() {
           <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#121214] px-4 py-1.5 shadow-inner">
             <Shield className="h-4 w-4 text-[#D4AF37]" />
             <span className="text-xs font-bold text-[#D4AF37] tracking-widest uppercase">
-              {user.role}
+              {/* ĐÃ SỬA: role -> roleName */}
+              {user.roleName}
             </span>
           </div>
         </div>
 
         {/* Logout Button (Desktop) */}
-        <div className="hidden md:block z-10">
+        <div className="hidden xl:block z-10">
           <button
             onClick={handleLogout}
             disabled={isLoggingOut}
@@ -101,7 +100,7 @@ export function ProfileView() {
       </div>
 
       {/* Detailed Info Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-6">
         <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-8 shadow-2xl backdrop-blur-xl">
           <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-6 border-b border-white/10 pb-4">
             Thông tin liên hệ
@@ -159,8 +158,8 @@ export function ProfileView() {
         </div>
       </div>
 
-      {/* Logout Button (Mobile) */}
-      <div className="md:hidden pt-4">
+      {/* Logout Button (Mobile & Tablet) */}
+      <div className="xl:hidden pt-2">
         <button
           onClick={handleLogout}
           disabled={isLoggingOut}

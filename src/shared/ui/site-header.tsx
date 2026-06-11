@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Menu, Search, LogOut, User as UserIcon } from "lucide-react";
 import { siteConfig } from "@/core/config/site";
-import { useAuthStore } from "@/features/auth/store/auth.store";
+import { isFullProfile, useAuthStore } from "@/features/auth/store/auth.store";
 import { logoutAction } from "@/features/auth/api/auth.actions";
 
 function isActiveRoute(pathname: string, href: string) {
@@ -18,6 +18,7 @@ export function SiteHeader() {
 
   // Lấy thông tin user và hàm xóa Auth
   const { user, isAuthenticated, clearAuth } = useAuthStore();
+  const profileUser = isFullProfile(user) ? user : null;
 
   const isAuthOrAdminPage =
     pathname === "/login" ||
@@ -122,18 +123,18 @@ export function SiteHeader() {
           </Link>
 
           {/* KHU VỰC AVATAR & DROPDOWN MỚI */}
-          {isAuthenticated && user ? (
+          {isAuthenticated && profileUser ? (
             <div className="relative group">
               {/* Vùng Avatar để hover */}
               <button className="flex h-10 w-10 md:h-12 md:w-12 items-center justify-center overflow-hidden rounded-full border border-primary/35 bg-primary/10 text-primary transition hover:border-primary hover:shadow-[0_0_26px_rgba(212,175,55,0.24)]">
-                {user.avatarUrl ? (
+                {profileUser.avatarUrl ? (
                   <span
                     className="h-full w-full bg-cover bg-center"
-                    style={{ backgroundImage: `url(${user.avatarUrl})` }}
+                    style={{ backgroundImage: `url(${profileUser.avatarUrl})` }}
                   />
                 ) : (
                   <span className="font-heading text-xs md:text-sm font-extrabold uppercase">
-                    {user.username.slice(0, 2)}
+                    {profileUser.username.slice(0, 2)}
                   </span>
                 )}
               </button>
@@ -143,10 +144,10 @@ export function SiteHeader() {
                 <div className="w-48 rounded-xl bg-[#121214] border border-white/10 shadow-2xl p-2 flex flex-col gap-1">
                   <div className="px-3 py-2 border-b border-white/10 mb-1">
                     <p className="text-sm font-bold text-white truncate">
-                      {user.fullName}
+                      {profileUser.fullName}
                     </p>
                     <p className="text-xs text-gray-500 truncate">
-                      @{user.username}
+                      @{profileUser.username}
                     </p>
                   </div>
 

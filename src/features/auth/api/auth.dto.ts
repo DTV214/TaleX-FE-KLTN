@@ -35,7 +35,7 @@ export type RefreshTokenRequest = {
   refreshToken: string;
 };
 
-// --- BỔ SUNG CÁC DTO CÒN THIẾU TỪ BACKEND ---
+// --- CÁC DTO MỚI ---
 
 export type GoogleLoginRequest = {
   idToken: string;
@@ -71,25 +71,23 @@ export type ResetPasswordRequest = {
 // USER PROFILE DTO
 // ==========================================
 
-// ==========================================
-// USER PROFILE DTO
-// ==========================================
-
 export type UserRole = "VIEWER" | "CREATOR" | "ADMIN" | "STAFF";
 
 export type UserProfile = {
-  accountId: string;  // Đổi từ 'id' thành 'accountId'
+  accountId: string;
   email: string;
   username: string;
   fullName: string;
   avatarUrl?: string;
-  roleName: UserRole; // Đổi từ 'role' thành 'roleName'
-  status: string; 
+  roleName: UserRole;
+  status: string;
   dateOfBirth?: string;
   phone?: string;
-  hasPassword?: boolean; 
+  hasPassword?: boolean;
   googleLinked?: boolean;
+  createdAt: string; // Đã bổ sung theo Swagger
 };
+
 // ==========================================
 // RESPONSE DTOs (Dữ liệu nhận từ BE)
 // ==========================================
@@ -99,42 +97,52 @@ export type AuthTokens = {
   refreshToken: string;
 };
 
-// Backend đôi khi trả về String (verificationToken) thay vì object Tokens
-export type GoogleLoginResponseData = AuthTokens | string;
+// Cấu trúc response chuẩn của Backend
+export type BaseResponse<T = unknown> = {
+  success: boolean;
+  message: string;
+  data: T;
+  timestamp: string;
+};
+
+export type GoogleLoginResponseData = {
+  status: "ONBOARDING" | "LOGGED_IN"; // Phân biệt người mới và người cũ
+  data: AuthTokens | string; // Có thể trả về tokens hoặc verificationToken
+};
 
 // ==========================================
 // ERROR CODES (Mã lỗi nghiệp vụ từ BE TaleX)
-// Đã đồng bộ chính xác 100% với Backend
 // ==========================================
 
 export enum AuthErrorCode {
-  INVALID_CREDENTIALS = 4010, // Sai email hoặc mật khẩu
-  ACCOUNT_NOT_VERIFIED = 4011, // Đã đổi từ EMAIL_NOT_VERIFIED
-  ACCOUNT_BANNED = 4012, // Tài khoản bị cấm
-  ACCOUNT_DELETED = 4013, // Tài khoản đã xóa
-  INVALID_VERIFICATION_TOKEN = 4014, // Verification token không hợp lệ/hết hạn
-  INVALID_GOOGLE_TOKEN = 4015, // Google token không hợp lệ
-  SESSION_EXPIRED = 4016, // Phiên hết hạn (Refresh token hết hạn)
-  TOKEN_REUSE_DETECTED = 4017, // Phát hiện reuse refresh token (Bị hack)
-  INVALID_OTP = 4018, // OTP sai
-  OTP_RATE_LIMITED = 4019, // Đã đổi từ OTP_COOLDOWN
-  PROFILE_INCOMPLETE = 4020, // Profile chưa hoàn tất (Google ONBOARDING)
-
-  // --- BỔ SUNG CÁC MÃ LỖI CÒN THIẾU ---
-  ACCOUNT_NOT_ACTIVE = 4021, // Tài khoản không ở trạng thái hoạt động
-  CURRENT_PASSWORD_REQUIRED = 4022, // Vui lòng nhập mật khẩu hiện tại
-  CURRENT_PASSWORD_INCORRECT = 4023, // Mật khẩu hiện tại không đúng
-  PASSWORD_SAME_AS_OLD = 4024, // Mật khẩu mới không được trùng cũ
-  PASSWORD_CONFIRMATION_MISMATCH = 4025, // Mật khẩu xác nhận không khớp
-  MULTIPLE_ACCOUNTS_FOUND = 4026, // Nhiều tài khoản cùng email, cần username
-
-  EMAIL_ALREADY_EXISTS = 4090, // Email đã tồn tại
-  USERNAME_ALREADY_EXISTS = 4091, // Username đã tồn tại
-  ROLE_NOT_FOUND = 5001, // Không tìm thấy role
-  EMAIL_SERVICE_UNAVAILABLE = 5030, // Dịch vụ email không khả dụng
+  INVALID_CREDENTIALS = 4010,
+  ACCOUNT_NOT_VERIFIED = 4011,
+  ACCOUNT_BANNED = 4012,
+  ACCOUNT_DELETED = 4013,
+  INVALID_VERIFICATION_TOKEN = 4014,
+  INVALID_GOOGLE_TOKEN = 4015,
+  SESSION_EXPIRED = 4016,
+  TOKEN_REUSE_DETECTED = 4017,
+  INVALID_OTP = 4018,
+  OTP_RATE_LIMITED = 4019,
+  PROFILE_INCOMPLETE = 4020,
+  ACCOUNT_NOT_ACTIVE = 4021,
+  CURRENT_PASSWORD_REQUIRED = 4022,
+  CURRENT_PASSWORD_INCORRECT = 4023,
+  PASSWORD_SAME_AS_OLD = 4024,
+  PASSWORD_CONFIRMATION_MISMATCH = 4025,
+  MULTIPLE_ACCOUNTS_FOUND = 4026,
+  EMAIL_ALREADY_EXISTS = 4090,
+  USERNAME_ALREADY_EXISTS = 4091,
+  ROLE_NOT_FOUND = 5001,
+  EMAIL_SERVICE_UNAVAILABLE = 5030,
 }
 
 export type AuthErrorDetails = {
-  errorCode: AuthErrorCode;
-  details?: string;
+  success: false;
+  message: string;
+  data: {
+    errorCode: AuthErrorCode;
+    details?: string;
+  };
 };

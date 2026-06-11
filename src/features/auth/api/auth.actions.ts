@@ -2,33 +2,137 @@
 
 import { cookies } from "next/headers";
 import {
+  AuthErrorCode,
+  AuthTokens,
+  ForgotPasswordRequest,
   LoginRequest,
   RegisterRequest,
-  VerifyOtpRequest,
   ResendOtpRequest,
-  AuthTokens,
+  ResetPasswordRequest,
   UserRole,
+  VerifyOtpRequest,
 } from "./auth.dto";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
 
-// ==========================================
-// UTILS: QUẢN LÝ COOKIES & JWT
-// ==========================================
+type AuthErrorPayload = {
+  errorCode?: AuthErrorCode;
+  details?: string;
+};
 
-// Hàm giải mã JWT an toàn không cần cài thêm thư viện (chạy được trên Server/Edge)
-function decodeJwtPayload(token: string) {
+type ActionError = {
+  success?: false;
+  message?: string;
+  data?: AuthErrorPayload;
+};
+
+type ActionResult<T> = Promise<
+  { success: true; data: T } | { success: false; error: ActionError }
+>;
+
+type EmptyActionResult = Promise<
+  { success: true } | { success: false; error: ActionError }
+>;
+
+type BackendResponse<T = unknown> = {
+  success?: boolean;
+  message?: string;
+  data?: T;
+};
+
+type PartialAuthUser = {
+  accountId: string;
+  roleName: UserRole;
+};
+
+type AuthSuccessData = {
+  tokens: AuthTokens;
+  user: PartialAuthUser;
+};
+
+type VerificationTokenPayload = {
+  verificationToken: string;
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function toBackendResponse<T = unknown>(value: unknown): BackendResponse<T> {
+  return isRecord(value) ? (value as BackendResponse<T>) : {};
+}
+
+function toActionError(value: unknown, fallbackMessage: string): ActionError {
+  const response = toBackendResponse(value);
+  const errorData = isRecord(response.data)
+    ? {
+        errorCode:
+          typeof response.data.errorCode === "number"
+            ? (response.data.errorCode as AuthErrorCode)
+            : undefined,
+        details:
+          typeof response.data.details === "string"
+            ? response.data.details
+            : undefined,
+      }
+    : undefined;
+
+  return {
+    success: false,
+    message: response.message || fallbackMessage,
+    data: errorData,
+  };
+}
+
+function internalError(message = "Internal Server Error"): ActionError {
+  return { success: false, message };
+}
+
+function isAuthTokens(value: unknown): value is AuthTokens {
+  return (
+    isRecord(value) &&
+    typeof value.accessToken === "string" &&
+    typeof value.refreshToken === "string"
+  );
+}
+
+function extractVerificationToken(data: unknown) {
+  if (typeof data === "string" && data.trim()) {
+    return data.trim();
+  }
+
+  if (
+    isRecord(data) &&
+    typeof data.verificationToken === "string" &&
+    data.verificationToken.trim()
+  ) {
+    return data.verificationToken.trim();
+  }
+
+  return "";
+}
+
+function decodeJwtPayload(token: string): Record<string, unknown> {
   try {
     const base64Url = token.split(".")[1];
     const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-    // Sử dụng Buffer thay cho atob để tương thích tốt nhất với môi trường Server của Next.js
     const jsonPayload = Buffer.from(base64, "base64").toString("utf-8");
-    return JSON.parse(jsonPayload);
-  } catch (error) {
-    console.error("Failed to decode JWT:", error);
-    return null;
+    const parsedPayload = JSON.parse(jsonPayload);
+    return isRecord(parsedPayload) ? parsedPayload : {};
+  } catch {
+    return {};
   }
+}
+
+function getPartialUser(tokens: AuthTokens): PartialAuthUser {
+  const payload = decodeJwtPayload(tokens.accessToken);
+  return {
+    accountId: typeof payload.sub === "string" ? payload.sub : "",
+    roleName: (typeof payload.role === "string"
+      ? payload.role
+      : "VIEWER") as UserRole,
+  };
 }
 
 async function setAuthCookies(tokens: AuthTokens) {
@@ -40,7 +144,7 @@ async function setAuthCookies(tokens: AuthTokens) {
     secure: isProduction,
     sameSite: "lax",
     path: "/",
-    maxAge: 60 * 60, // 1 giờ
+    maxAge: 60 * 60,
   });
 
   cookieStore.set("refreshToken", tokens.refreshToken, {
@@ -48,7 +152,7 @@ async function setAuthCookies(tokens: AuthTokens) {
     secure: isProduction,
     sameSite: "lax",
     path: "/",
-    maxAge: 60 * 60 * 24 * 7, // 7 ngày
+    maxAge: 60 * 60 * 24 * 7,
   });
 }
 
@@ -63,11 +167,9 @@ export async function getRefreshToken() {
   return cookieStore.get("refreshToken")?.value;
 }
 
-// ==========================================
-// SERVER ACTIONS: GỌI API BACKEND TALEX
-// ==========================================
-
-export async function loginAction(data: LoginRequest) {
+export async function loginAction(
+  data: LoginRequest,
+): ActionResult<AuthSuccessData> {
   try {
     const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
       method: "POST",
@@ -75,36 +177,44 @@ export async function loginAction(data: LoginRequest) {
       body: JSON.stringify(data),
     });
 
-    const responseData = await res.json();
+    const responseData = toBackendResponse(await res.json());
 
     if (!res.ok || !responseData.success) {
-      return { success: false, error: responseData };
+      return {
+        success: false,
+        error: toActionError(responseData, "Login failed."),
+      };
     }
 
-    const tokens: AuthTokens = responseData.data;
+    if (!isAuthTokens(responseData.data)) {
+      return {
+        success: false,
+        error: {
+          success: false,
+          message: "Backend did not return auth tokens.",
+        },
+      };
+    }
+
+    const tokens = responseData.data;
     await setAuthCookies(tokens);
 
-    // Giải mã token và map vào chuẩn DTO mới
-    const payload = decodeJwtPayload(tokens.accessToken);
-    const partialUser = {
-      accountId: payload?.sub || "", // Đổi từ id -> accountId
-      roleName: (payload?.role as UserRole) || "VIEWER", // Đổi từ role -> roleName
-    };
-
-    // Trả cả tokens (nếu UI cần) và partialUser về cho Client Store
     return {
       success: true,
       data: {
         tokens,
-        user: partialUser,
-      },
+        user: getPartialUser(tokens),
+      } satisfies AuthSuccessData,
     };
-  } catch (error) {
-    return { success: false, error: { message: "Internal Server Error" } };
+  } catch {
+    return {
+      success: false,
+      error: internalError(),
+    };
   }
 }
 
-export async function registerAction(data: RegisterRequest) {
+export async function registerAction(data: RegisterRequest): ActionResult<string> {
   try {
     const res = await fetch(`${API_BASE_URL}/api/auth/register`, {
       method: "POST",
@@ -112,19 +222,39 @@ export async function registerAction(data: RegisterRequest) {
       body: JSON.stringify(data),
     });
 
-    const responseData = await res.json();
+    const responseData = toBackendResponse(await res.json());
 
     if (!res.ok || !responseData.success) {
-      return { success: false, error: responseData };
+      return {
+        success: false,
+        error: toActionError(responseData, "Register failed."),
+      };
     }
 
-    return { success: true, data: responseData.data };
-  } catch (error) {
-    return { success: false, error: { message: "Internal Server Error" } };
+    const verificationToken = extractVerificationToken(responseData.data);
+
+    if (!verificationToken) {
+      return {
+        success: false,
+        error: {
+          success: false,
+          message: "Backend did not return a verification token.",
+        },
+      };
+    }
+
+    return { success: true, data: verificationToken };
+  } catch {
+    return {
+      success: false,
+      error: internalError(),
+    };
   }
 }
 
-export async function verifyEmailAction(data: VerifyOtpRequest) {
+export async function verifyEmailAction(
+  data: VerifyOtpRequest,
+): ActionResult<AuthSuccessData> {
   try {
     const res = await fetch(`${API_BASE_URL}/api/auth/verify-email`, {
       method: "POST",
@@ -132,35 +262,46 @@ export async function verifyEmailAction(data: VerifyOtpRequest) {
       body: JSON.stringify(data),
     });
 
-    const responseData = await res.json();
+    const responseData = toBackendResponse(await res.json());
 
     if (!res.ok || !responseData.success) {
-      return { success: false, error: responseData };
+      return {
+        success: false,
+        error: toActionError(responseData, "Verify email failed."),
+      };
     }
 
-    const tokens: AuthTokens = responseData.data;
-    await setAuthCookies(tokens);
+    if (!isAuthTokens(responseData.data)) {
+      return {
+        success: false,
+        error: {
+          success: false,
+          message: "Backend did not return auth tokens.",
+        },
+      };
+    }
 
-    // Tương tự hàm Login, giải mã và map vào chuẩn DTO mới
-    const payload = decodeJwtPayload(tokens.accessToken);
-    const partialUser = {
-      accountId: payload?.sub || "", // Đổi từ id -> accountId
-      roleName: (payload?.role as UserRole) || "VIEWER", // Đổi từ role -> roleName
-    };
+    const tokens = responseData.data;
+    await setAuthCookies(tokens);
 
     return {
       success: true,
       data: {
         tokens,
-        user: partialUser,
-      },
+        user: getPartialUser(tokens),
+      } satisfies AuthSuccessData,
     };
-  } catch (error) {
-    return { success: false, error: { message: "Internal Server Error" } };
+  } catch {
+    return {
+      success: false,
+      error: internalError(),
+    };
   }
 }
 
-export async function resendOtpAction(data: ResendOtpRequest) {
+export async function resendOtpAction(
+  data: ResendOtpRequest,
+): EmptyActionResult {
   try {
     const res = await fetch(`${API_BASE_URL}/api/auth/resend-otp`, {
       method: "POST",
@@ -168,19 +309,96 @@ export async function resendOtpAction(data: ResendOtpRequest) {
       body: JSON.stringify(data),
     });
 
-    const responseData = await res.json();
+    const responseData = toBackendResponse(await res.json());
 
     if (!res.ok || !responseData.success) {
-      return { success: false, error: responseData };
+      return {
+        success: false,
+        error: toActionError(responseData, "Resend OTP failed."),
+      };
     }
 
     return { success: true };
-  } catch (error) {
-    return { success: false, error: { message: "Internal Server Error" } };
+  } catch {
+    return {
+      success: false,
+      error: internalError(),
+    };
   }
 }
 
-export async function logoutAction() {
+export async function forgotPasswordAction(
+  data: ForgotPasswordRequest,
+): ActionResult<VerificationTokenPayload> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/auth/forgot-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+
+    const responseData = toBackendResponse(await res.json());
+
+    if (!res.ok || !responseData.success) {
+      return {
+        success: false,
+        error: toActionError(responseData, "Forgot password failed."),
+      };
+    }
+
+    const verificationToken = extractVerificationToken(responseData.data);
+
+    if (!verificationToken) {
+      return {
+        success: false,
+        error: {
+          success: false,
+          message: "Backend did not return a verification token.",
+        },
+      };
+    }
+
+    return {
+      success: true,
+      data: { verificationToken } satisfies VerificationTokenPayload,
+    };
+  } catch {
+    return {
+      success: false,
+      error: internalError(),
+    };
+  }
+}
+
+export async function resetPasswordAction(
+  data: ResetPasswordRequest,
+): ActionResult<unknown> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/auth/reset-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+
+    const responseData = toBackendResponse(await res.json());
+
+    if (!res.ok || !responseData.success) {
+      return {
+        success: false,
+        error: toActionError(responseData, "Reset password failed."),
+      };
+    }
+
+    return { success: true, data: responseData.data };
+  } catch {
+    return {
+      success: false,
+      error: internalError(),
+    };
+  }
+}
+
+export async function logoutAction(): EmptyActionResult {
   try {
     const refreshToken = await getRefreshToken();
 
@@ -194,8 +412,8 @@ export async function logoutAction() {
 
     await clearAuthCookies();
     return { success: true };
-  } catch (error) {
+  } catch {
     await clearAuthCookies();
-    return { success: false };
+    return { success: false, error: internalError("Logout failed.") };
   }
 }

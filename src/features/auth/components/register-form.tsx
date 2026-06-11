@@ -147,7 +147,7 @@ export function RegisterForm() {
     const res = await resendOtpAction({ verificationToken });
 
     if (!res.success) {
-      if (res.error?.data?.errorCode === AuthErrorCode.OTP_COOLDOWN) {
+      if (res.error?.data?.errorCode === AuthErrorCode.OTP_RATE_LIMITED) {
         setErrorMsg("Vui lòng đợi trước khi gửi yêu cầu mới.");
       } else {
         setErrorMsg("Không thể gửi lại mã. Vui lòng thử lại sau.");
