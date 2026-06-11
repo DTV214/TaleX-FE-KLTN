@@ -5,11 +5,12 @@ import { useRouter, usePathname } from "next/navigation";
 import { getMyProfile } from "../api/auth.api";
 import { useAuthStore, isFullProfile } from "../store/auth.store";
 import { clearAuthCookies } from "@/features/auth/api/auth.actions";
-// Thêm dòng import Server Action vào đây:
+// Đảm bảo import đúng đường dẫn Server Action của bạn
 
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { user, updateUser, clearAuth, setInitialized, isInitialized } =
+  // Thay updateUser thành setUser để có thể ghi đè toàn bộ state khi F5
+  const { user, setUser, clearAuth, setInitialized, isInitialized } =
     useAuthStore();
   const router = useRouter();
   const pathname = usePathname();
@@ -20,11 +21,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Gọi API lấy thông tin đầy đủ
         const fullProfile = await getMyProfile();
 
-        // Cập nhật đắp thêm thông tin vào Store
-        updateUser(fullProfile);
+        // Sử dụng setUser thay vì updateUser.
+        // Vì khi F5, store đang rỗng (user = null), setUser sẽ khởi tạo lại toàn bộ data.
+        setUser(fullProfile);
       } catch (error) {
         console.error(
-          "Phiên đăng nhập không hợp lệ hoặc tài khoản bị khóa:",
+          "Phiên đăng nhập không hợp lệ, chưa đăng nhập, hoặc tài khoản bị khóa:",
           error,
         );
 
@@ -49,25 +51,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    // Kịch bản 1: App vừa khởi chạy (F5 Reload)
+    // Kịch bản 1: App vừa khởi chạy hoặc user vừa F5 Reload
+    // Lúc này Zustand store đang rỗng, ta BẮT BUỘC phải gọi API để check xem có Cookie hợp lệ không.
     if (!isInitialized) {
-      if (user && !isFullProfile(user)) {
-        // Có token/payload từ Server truyền xuống nhưng chưa có Full Profile
-        fetchFullProfile();
-      } else {
-        // Không có user -> Không cần gọi API
-        setInitialized(true);
-      }
+      fetchFullProfile();
     }
-    // Kịch bản 2: User vừa điền form Login xong (isInitialized đã là true từ trước)
-    // Store vừa được set một PartialUser, ta bắt được sự thay đổi này và đi lấy Profile
+    // Kịch bản 2: User vừa điền form Login xong
+    // Store vừa được set một PartialUser (chỉ có id và role), ta đi gọi API để lấy Full Profile
     else if (user && !isFullProfile(user)) {
       fetchFullProfile();
     }
   }, [
     user,
     isInitialized,
-    updateUser,
+    setUser, // Đưa setUser vào dependency array
     clearAuth,
     setInitialized,
     pathname,

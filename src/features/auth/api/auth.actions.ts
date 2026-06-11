@@ -84,11 +84,11 @@ export async function loginAction(data: LoginRequest) {
     const tokens: AuthTokens = responseData.data;
     await setAuthCookies(tokens);
 
-    // BƯỚC MỚI: Giải mã token để lấy thông tin cơ bản ngay lập tức
+    // Giải mã token và map vào chuẩn DTO mới
     const payload = decodeJwtPayload(tokens.accessToken);
     const partialUser = {
-      id: payload?.sub || "",
-      role: (payload?.role as UserRole) || "VIEWER",
+      accountId: payload?.sub || "", // Đổi từ id -> accountId
+      roleName: (payload?.role as UserRole) || "VIEWER", // Đổi từ role -> roleName
     };
 
     // Trả cả tokens (nếu UI cần) và partialUser về cho Client Store
@@ -141,11 +141,11 @@ export async function verifyEmailAction(data: VerifyOtpRequest) {
     const tokens: AuthTokens = responseData.data;
     await setAuthCookies(tokens);
 
-    // Tương tự hàm Login, giải mã khi verify xong (vì verify xong BE cũng trả về Token)
+    // Tương tự hàm Login, giải mã và map vào chuẩn DTO mới
     const payload = decodeJwtPayload(tokens.accessToken);
     const partialUser = {
-      id: payload?.sub || "",
-      role: (payload?.role as UserRole) || "VIEWER",
+      accountId: payload?.sub || "", // Đổi từ id -> accountId
+      roleName: (payload?.role as UserRole) || "VIEWER", // Đổi từ role -> roleName
     };
 
     return {

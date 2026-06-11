@@ -8,7 +8,7 @@ import { Eye, EyeOff, Loader2, AlertCircle } from "lucide-react";
 // Cập nhật đường dẫn import chuẩn theo Feature-Based
 import { loginAction } from "@/features/auth/api/auth.actions";
 import { AuthErrorCode } from "@/features/auth/api/auth.dto";
-import { getMyProfile } from "@/features/auth/api/auth.api";
+// ĐÃ XÓA import getMyProfile ở đây vì không còn cần thiết
 import { useAuthStore } from "@/features/auth/store/auth.store";
 
 export function LoginForm() {
@@ -30,7 +30,7 @@ export function LoginForm() {
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
 
-    // Gọi Server Action để lấy Cookie Token
+    // Gọi Server Action để lấy Cookie Token và bóc tách Partial User
     const res = await loginAction({ email, password });
 
     if (!res.success) {
@@ -40,9 +40,9 @@ export function LoginForm() {
         case AuthErrorCode.INVALID_CREDENTIALS:
           setErrorMsg("Email hoặc mật khẩu không chính xác.");
           break;
-        case AuthErrorCode.EMAIL_NOT_VERIFIED:
+        case AuthErrorCode.ACCOUNT_NOT_VERIFIED: // Đã update lại theo chuẩn mới
           setErrorMsg(
-            "Tài khoản chưa xác thực. Vui lòng đăng nhập để nhận lại mã OTP.",
+            "Tài khoản chưa xác thực. Vui lòng kiểm tra email để xác minh.",
           );
           break;
         case AuthErrorCode.ACCOUNT_BANNED:
@@ -58,15 +58,14 @@ export function LoginForm() {
       return;
     }
 
-    // ĐĂNG NHẬP THÀNH CÔNG: Lấy Profile và cập nhật Zustand ngay lập tức
-    try {
-      const profile = await getMyProfile();
-      setUser(profile);
-    } catch (err) {
-      console.warn("Không thể lấy profile ngay lúc này", err);
+    // ĐĂNG NHẬP THÀNH CÔNG:
+    // Chỉ cần set "User Bán Phần" (accountId, roleName) vào store.
+    // AuthProvider sẽ tự động lo việc gọi API Profile chi tiết sau.
+    if (res.data?.user) {
+      setUser(res.data.user);
     }
 
-    // Sau khi cập nhật state xong mới điều hướng về trang chủ
+    // Điều hướng ngay lập tức về trang chủ để có trải nghiệm mượt mà nhất
     router.push("/");
   }
 

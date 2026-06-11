@@ -2,9 +2,10 @@ import { create } from "zustand";
 import { UserProfile, UserRole } from "../api/auth.dto";
 
 // 1. Định nghĩa kiểu "User Bán Phần" (Chỉ chứa ID và Role lấy từ JWT)
+// ĐÃ SỬA: id -> accountId, role -> roleName để khớp với Backend
 export interface PartialUser {
-  id: string;
-  role: UserRole;
+  accountId: string;
+  roleName: UserRole;
 }
 
 // Hàm Type Guard để kiểm tra xem user hiện tại đã là Full Profile hay chưa
@@ -46,7 +47,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       // Nếu chưa có user thì không làm gì cả
       if (!state.user) return state;
 
-      // Merge (trộn) dữ liệu cũ (id, role) với dữ liệu mới từ API Profile
+      // Merge (trộn) dữ liệu cũ (accountId, roleName) với dữ liệu mới từ API Profile
       return {
         user: {
           ...state.user,
