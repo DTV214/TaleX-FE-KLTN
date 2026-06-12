@@ -252,7 +252,7 @@ export function LoginForm() {
         ) : (
           <>
             <img
-              src="https://www.svgrepo.com/show/475656/google-color.svg"
+              src="/icons/google.svg"
               alt="Google"
               className="h-5 w-5"
             />
