@@ -34,19 +34,19 @@ export async function POST() {
     }
 
     // Lấy thành công Token mới -> Cập nhật lại HttpOnly Cookies
-    const isProduction = process.env.NODE_ENV === "production";
+    const useSecure = process.env.COOKIE_SECURE === "true";
     const newTokens = responseData.data;
 
     cookieStore.set("accessToken", newTokens.accessToken, {
       httpOnly: true,
-      secure: isProduction,
+      secure: useSecure,
       sameSite: "lax",
       path: "/",
       maxAge: 15 * 60,
     });
     cookieStore.set("refreshToken", newTokens.refreshToken, {
       httpOnly: true,
-      secure: isProduction,
+      secure: useSecure,
       sameSite: "lax",
       path: "/",
       maxAge: 60 * 60 * 24 * 7,

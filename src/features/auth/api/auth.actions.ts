@@ -139,11 +139,11 @@ function getPartialUser(tokens: AuthTokens): PartialAuthUser {
 
 async function setAuthCookies(tokens: AuthTokens) {
   const cookieStore = await cookies();
-  const isProduction = process.env.NODE_ENV === "production";
+  const useSecure = process.env.COOKIE_SECURE === "true";
 
   cookieStore.set("accessToken", tokens.accessToken, {
     httpOnly: true,
-    secure: isProduction,
+    secure: useSecure,
     sameSite: "lax",
     path: "/",
     maxAge: 15 * 60,
@@ -151,7 +151,7 @@ async function setAuthCookies(tokens: AuthTokens) {
 
   cookieStore.set("refreshToken", tokens.refreshToken, {
     httpOnly: true,
-    secure: isProduction,
+    secure: useSecure,
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 24 * 7,
