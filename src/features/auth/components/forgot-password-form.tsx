@@ -6,10 +6,8 @@ import {
   AlertCircle,
   ArrowLeft,
   ArrowRight,
-  Info,
   Loader2,
   Mail,
-  UserRound,
 } from "lucide-react";
 import { forgotPasswordAction } from "../api/auth.actions";
 import { AuthErrorCode } from "../api/auth.dto";
@@ -19,19 +17,10 @@ type ForgotPasswordFormProps = {
   onSuccess: ({ token, email }: { token: string; email: string }) => void;
 };
 
-function readFormValue(formData: FormData, key: string) {
-  const value = formData.get(key);
-  return typeof value === "string" ? value.trim() : "";
-}
-
 function getForgotPasswordErrorMessage(errorCode?: AuthErrorCode, message?: string) {
   switch (errorCode) {
-    case AuthErrorCode.MULTIPLE_ACCOUNTS_FOUND:
-      return "Email này đang gắn với nhiều tài khoản. Vui lòng nhập thêm username.";
     case AuthErrorCode.ACCOUNT_BANNED:
       return "Tài khoản của bạn đã bị khóa.";
-    case AuthErrorCode.ACCOUNT_DELETED:
-      return "Tài khoản này không còn khả dụng.";
     case AuthErrorCode.ACCOUNT_NOT_ACTIVE:
       return "Tài khoản chưa ở trạng thái hoạt động.";
     case AuthErrorCode.EMAIL_SERVICE_UNAVAILABLE:
@@ -47,7 +36,6 @@ export function ForgotPasswordForm({
 }: ForgotPasswordFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [showUsernameHint, setShowUsernameHint] = useState(false);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -55,8 +43,7 @@ export function ForgotPasswordForm({
     setErrorMsg(null);
 
     const formData = new FormData(e.currentTarget);
-    const email = readFormValue(formData, "email").toLowerCase();
-    const username = readFormValue(formData, "username");
+    const email = (formData.get("email") as string)?.trim().toLowerCase() || "";
 
     if (!email) {
       setErrorMsg("Vui lòng nhập email tài khoản.");
@@ -64,16 +51,9 @@ export function ForgotPasswordForm({
       return;
     }
 
-    const res = await forgotPasswordAction({
-      email,
-      username: username || undefined,
-    });
+    const res = await forgotPasswordAction({ email });
 
     if (!res.success) {
-      if (res.error?.data?.errorCode === AuthErrorCode.MULTIPLE_ACCOUNTS_FOUND) {
-        setShowUsernameHint(true);
-      }
-
       setErrorMsg(
         getForgotPasswordErrorMessage(
           res.error?.data?.errorCode,
@@ -114,15 +94,6 @@ export function ForgotPasswordForm({
         </div>
       )}
 
-      {showUsernameHint && (
-        <div className="mb-6 flex items-start gap-3 rounded-xl border border-[#D4AF37]/20 bg-[#D4AF37]/10 p-4">
-          <Info className="mt-0.5 h-5 w-5 shrink-0 text-[#D4AF37]" />
-          <p className="text-sm font-medium text-[#D4AF37]">
-            Hãy nhập username để xác định đúng tài khoản cần khôi phục.
-          </p>
-        </div>
-      )}
-
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="space-y-2">
           <label className="text-xs font-medium text-gray-400">Email</label>
@@ -135,22 +106,6 @@ export function ForgotPasswordForm({
               defaultValue={initialEmail}
               autoComplete="email"
               placeholder="email@example.com"
-              className="w-full rounded-xl border border-white/10 bg-[#121214] p-3.5 pl-11 text-sm text-white shadow-inner transition-all placeholder:text-gray-700 focus:border-[#D4AF37]/50 focus:bg-black/50 focus:outline-none focus:ring-1 focus:ring-[#D4AF37]/50"
-            />
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-xs font-medium text-gray-400">
-            Username <span className="text-gray-600">(nếu cần)</span>
-          </label>
-          <div className="relative">
-            <UserRound className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
-            <input
-              type="text"
-              name="username"
-              autoComplete="username"
-              placeholder="username của bạn"
               className="w-full rounded-xl border border-white/10 bg-[#121214] p-3.5 pl-11 text-sm text-white shadow-inner transition-all placeholder:text-gray-700 focus:border-[#D4AF37]/50 focus:bg-black/50 focus:outline-none focus:ring-1 focus:ring-[#D4AF37]/50"
             />
           </div>

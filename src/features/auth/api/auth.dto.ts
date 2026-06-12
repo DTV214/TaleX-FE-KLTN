@@ -57,7 +57,6 @@ export type ChangePasswordRequest = {
 
 export type ForgotPasswordRequest = {
   email: string;
-  username?: string;
 };
 
 export type ResetPasswordRequest = {
@@ -106,8 +105,10 @@ export type BaseResponse<T = unknown> = {
 };
 
 export type GoogleLoginResponseData = {
-  status: "ONBOARDING" | "LOGGED_IN"; // Phân biệt người mới và người cũ
-  data: AuthTokens | string; // Có thể trả về tokens hoặc verificationToken
+  status: "ACTIVE" | "ONBOARDING" | "VERIFYING";
+  accessToken?: string;
+  refreshToken?: string;
+  verificationToken?: string;
 };
 
 // ==========================================
@@ -131,7 +132,7 @@ export enum AuthErrorCode {
   CURRENT_PASSWORD_INCORRECT = 4023,
   PASSWORD_SAME_AS_OLD = 4024,
   PASSWORD_CONFIRMATION_MISMATCH = 4025,
-  MULTIPLE_ACCOUNTS_FOUND = 4026,
+  LOGIN_RATE_LIMITED = 4027,
   EMAIL_ALREADY_EXISTS = 4090,
   USERNAME_ALREADY_EXISTS = 4091,
   ROLE_NOT_FOUND = 5001,

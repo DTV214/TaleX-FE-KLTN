@@ -4,7 +4,7 @@ import type { NextRequest } from "next/server";
 // ==========================================
 // 1. ĐỊNH NGHĨA CÁC NHÓM ROUTE QUYỀN HẠN
 // ==========================================
-const authRoutes = ["/login", "/register", "/forgot-password"];
+const authRoutes = ["/login", "/register", "/forgot-password", "/complete-profile"];
 
 // Tách riêng các route để kiểm tra quyền dễ dàng hơn
 const adminRoutes = ["/admin"];

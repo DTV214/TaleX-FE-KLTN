@@ -4,7 +4,9 @@ import { cookies } from "next/headers";
 import {
   AuthErrorCode,
   AuthTokens,
+  CompleteProfileRequest,
   ForgotPasswordRequest,
+  GoogleLoginRequest,
   LoginRequest,
   RegisterRequest,
   ResendOtpRequest,
@@ -144,7 +146,7 @@ async function setAuthCookies(tokens: AuthTokens) {
     secure: isProduction,
     sameSite: "lax",
     path: "/",
-    maxAge: 60 * 60,
+    maxAge: 15 * 60,
   });
 
   cookieStore.set("refreshToken", tokens.refreshToken, {
@@ -390,6 +392,123 @@ export async function resetPasswordAction(
     }
 
     return { success: true, data: responseData.data };
+  } catch {
+    return {
+      success: false,
+      error: internalError(),
+    };
+  }
+}
+
+export async function completeProfileAction(
+  data: CompleteProfileRequest,
+): ActionResult<AuthSuccessData> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/auth/complete-profile`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+
+    const responseData = toBackendResponse(await res.json());
+
+    if (!res.ok || !responseData.success) {
+      return {
+        success: false,
+        error: toActionError(responseData, "Complete profile failed."),
+      };
+    }
+
+    if (!isAuthTokens(responseData.data)) {
+      return {
+        success: false,
+        error: { success: false, message: "Backend did not return auth tokens." },
+      };
+    }
+
+    const tokens = responseData.data;
+    await setAuthCookies(tokens);
+
+    return {
+      success: true,
+      data: { tokens, user: getPartialUser(tokens) },
+    };
+  } catch {
+    return { success: false, error: internalError() };
+  }
+}
+
+type GoogleLoginStatus = "ACTIVE" | "ONBOARDING" | "VERIFYING";
+
+type GoogleLoginSuccessData =
+  | { status: "ACTIVE"; user: PartialAuthUser }
+  | { status: "ONBOARDING" | "VERIFYING"; verificationToken: string };
+
+export async function googleLoginAction(
+  data: GoogleLoginRequest,
+): ActionResult<GoogleLoginSuccessData> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/auth/google`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+
+    const responseData = toBackendResponse(await res.json());
+
+    if (!res.ok || !responseData.success) {
+      return {
+        success: false,
+        error: toActionError(responseData, "Google login failed."),
+      };
+    }
+
+    const googleData = responseData.data as Record<string, unknown> | undefined;
+    if (!googleData || typeof googleData.status !== "string") {
+      return {
+        success: false,
+        error: { success: false, message: "Invalid Google login response." },
+      };
+    }
+
+    const status = googleData.status as GoogleLoginStatus;
+
+    if (status === "ACTIVE") {
+      const tokens: AuthTokens = {
+        accessToken: googleData.accessToken as string,
+        refreshToken: googleData.refreshToken as string,
+      };
+
+      if (!tokens.accessToken || !tokens.refreshToken) {
+        return {
+          success: false,
+          error: { success: false, message: "Missing tokens in Google login response." },
+        };
+      }
+
+      await setAuthCookies(tokens);
+      return {
+        success: true,
+        data: { status: "ACTIVE", user: getPartialUser(tokens) },
+      };
+    }
+
+    // ONBOARDING or VERIFYING — return verification token
+    const verificationToken = typeof googleData.verificationToken === "string"
+      ? googleData.verificationToken
+      : "";
+
+    if (!verificationToken) {
+      return {
+        success: false,
+        error: { success: false, message: "Missing verification token." },
+      };
+    }
+
+    return {
+      success: true,
+      data: { status, verificationToken },
+    };
   } catch {
     return {
       success: false,

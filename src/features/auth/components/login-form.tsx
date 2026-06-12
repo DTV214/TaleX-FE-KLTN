@@ -1,25 +1,105 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Loader2, AlertCircle } from "lucide-react";
 
-// Cập nhật đường dẫn import chuẩn theo Feature-Based
-import { loginAction } from "@/features/auth/api/auth.actions";
+import { loginAction, googleLoginAction } from "@/features/auth/api/auth.actions";
 import { AuthErrorCode } from "@/features/auth/api/auth.dto";
-// ĐÃ XÓA import getMyProfile ở đây vì không còn cần thiết
 import { useAuthStore } from "@/features/auth/store/auth.store";
+
+const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
+
+declare global {
+  interface Window {
+    google?: {
+      accounts: {
+        id: {
+          initialize: (config: Record<string, unknown>) => void;
+          renderButton: (element: HTMLElement, config: Record<string, unknown>) => void;
+        };
+      };
+    };
+  }
+}
 
 export function LoginForm() {
   const router = useRouter();
-
-  // Lấy hàm cập nhật State từ kho Zustand
   const { setUser } = useAuthStore();
 
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const googleRendered = useRef(false);
+
+  const handleGoogleCallback = useCallback(
+    async (response: { credential: string }) => {
+      setIsGoogleLoading(true);
+      setErrorMsg(null);
+
+      const res = await googleLoginAction({ idToken: response.credential });
+
+      if (!res.success) {
+        const errorCode = res.error?.data?.errorCode;
+        switch (errorCode) {
+          case AuthErrorCode.ACCOUNT_BANNED:
+            setErrorMsg("Tài khoản của bạn đã bị khóa.");
+            break;
+          case AuthErrorCode.ACCOUNT_DELETED:
+            setErrorMsg("Tài khoản đã bị xóa.");
+            break;
+          default:
+            setErrorMsg(
+              res.error?.message || "Đăng nhập Google thất bại. Vui lòng thử lại.",
+            );
+        }
+        setIsGoogleLoading(false);
+        return;
+      }
+
+      const data = res.data;
+
+      if (data.status === "ACTIVE") {
+        setUser(data.user);
+        router.push("/");
+      } else {
+        router.push(
+          `/complete-profile?token=${encodeURIComponent(data.verificationToken)}`,
+        );
+      }
+    },
+    [router, setUser],
+  );
+
+  useEffect(() => {
+    if (!GOOGLE_CLIENT_ID || googleRendered.current) return;
+
+    const script = document.createElement("script");
+    script.src = "https://accounts.google.com/gsi/client";
+    script.async = true;
+    script.defer = true;
+    script.onload = () => {
+      window.google?.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleGoogleCallback,
+      });
+
+      const container = document.getElementById("google-btn-container");
+      if (container) {
+        window.google?.accounts.id.renderButton(container, {
+          theme: "outline",
+          size: "large",
+          text: "signin_with",
+          shape: "rectangular",
+          width: container.offsetWidth,
+        });
+        googleRendered.current = true;
+      }
+    };
+    document.head.appendChild(script);
+  }, [handleGoogleCallback]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -30,7 +110,6 @@ export function LoginForm() {
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
 
-    // Gọi Server Action để lấy Cookie Token và bóc tách Partial User
     const res = await loginAction({ email, password });
 
     if (!res.success) {
@@ -40,13 +119,16 @@ export function LoginForm() {
         case AuthErrorCode.INVALID_CREDENTIALS:
           setErrorMsg("Email hoặc mật khẩu không chính xác.");
           break;
-        case AuthErrorCode.ACCOUNT_NOT_VERIFIED: // Đã update lại theo chuẩn mới
+        case AuthErrorCode.ACCOUNT_NOT_VERIFIED:
           setErrorMsg(
             "Tài khoản chưa xác thực. Vui lòng kiểm tra email để xác minh.",
           );
           break;
         case AuthErrorCode.ACCOUNT_BANNED:
           setErrorMsg("Tài khoản của bạn đã bị khóa.");
+          break;
+        case AuthErrorCode.LOGIN_RATE_LIMITED:
+          setErrorMsg("Đăng nhập sai quá nhiều lần. Vui lòng thử lại sau 15 phút.");
           break;
         default:
           setErrorMsg(
@@ -58,14 +140,10 @@ export function LoginForm() {
       return;
     }
 
-    // ĐĂNG NHẬP THÀNH CÔNG:
-    // Chỉ cần set "User Bán Phần" (accountId, roleName) vào store.
-    // AuthProvider sẽ tự động lo việc gọi API Profile chi tiết sau.
     if (res.data?.user) {
       setUser(res.data.user);
     }
 
-    // Điều hướng ngay lập tức về trang chủ để có trải nghiệm mượt mà nhất
     router.push("/");
   }
 
@@ -132,7 +210,7 @@ export function LoginForm() {
 
         <button
           type="submit"
-          disabled={isLoading}
+          disabled={isLoading || isGoogleLoading}
           className="mt-8 flex w-full justify-center items-center gap-2 rounded-lg bg-[#E50914] py-3.5 text-sm font-bold text-white shadow-[0_4px_20px_rgba(229,9,20,0.3)] transition-all hover:bg-[#ff0a16] hover:shadow-[0_4px_25px_rgba(229,9,20,0.5)] active:scale-[0.98] tracking-widest uppercase disabled:opacity-70 disabled:cursor-not-allowed"
         >
           {isLoading ? (
@@ -152,16 +230,35 @@ export function LoginForm() {
         <div className="flex-grow border-t border-white/5"></div>
       </div>
 
+      {/* Nút Google SDK ẩn — chỉ dùng để trigger popup */}
+      <div className="overflow-hidden" style={{ height: 0, width: 0, position: "absolute" }}>
+        <div id="google-btn-container" />
+      </div>
+
       <button
         type="button"
-        className="flex w-full items-center justify-center gap-3 rounded-lg border border-white/10 bg-[#121214] p-3.5 text-sm font-medium text-gray-300 transition-all hover:bg-white/5 hover:text-white hover:border-white/20"
+        disabled={isGoogleLoading || isLoading}
+        onClick={() => {
+          const btn = document.querySelector("#google-btn-container div[role=button]") as HTMLElement;
+          btn?.click();
+        }}
+        className="flex w-full items-center justify-center gap-3 rounded-lg border border-white/10 bg-[#121214] p-3.5 text-sm font-medium text-gray-300 transition-all hover:bg-white/5 hover:text-white hover:border-white/20 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
       >
-        <img
-          src="https://www.svgrepo.com/show/475656/google-color.svg"
-          alt="Google"
-          className="h-5 w-5"
-        />
-        Đăng nhập với Google
+        {isGoogleLoading ? (
+          <>
+            <Loader2 className="w-5 h-5 animate-spin" />
+            Đang xử lý Google...
+          </>
+        ) : (
+          <>
+            <img
+              src="https://www.svgrepo.com/show/475656/google-color.svg"
+              alt="Google"
+              className="h-5 w-5"
+            />
+            Đăng nhập với Google
+          </>
+        )}
       </button>
 
       <p className="mt-8 text-center text-xs sm:text-sm text-gray-400">

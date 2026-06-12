@@ -42,7 +42,7 @@ export async function POST() {
       secure: isProduction,
       sameSite: "lax",
       path: "/",
-      maxAge: 60 * 60,
+      maxAge: 15 * 60,
     });
     cookieStore.set("refreshToken", newTokens.refreshToken, {
       httpOnly: true,

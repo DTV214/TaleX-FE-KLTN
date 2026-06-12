@@ -85,9 +85,13 @@ export function ChangePasswordForm() {
           <KeyRound className="w-5 h-5 text-[#D4AF37]" />
         </div>
         <div>
-          <h2 className="text-xl font-semibold text-gray-200">Đổi Mật Khẩu</h2>
+          <h2 className="text-xl font-semibold text-gray-200">
+            {requiresCurrentPassword ? "Đổi Mật Khẩu" : "Thiết lập Mật Khẩu"}
+          </h2>
           <p className="text-sm text-gray-400 mt-1">
-            Bảo mật tài khoản của bạn
+            {requiresCurrentPassword
+              ? "Bảo mật tài khoản của bạn"
+              : "Thêm mật khẩu để đăng nhập bằng email"}
           </p>
         </div>
       </div>
