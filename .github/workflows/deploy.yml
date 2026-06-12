@@ -1,0 +1,42 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          script: |
+            cd ~/TaleX-FE-KLTN
+
+            # Pull latest code
+            git pull origin main
+
+            # Create .env.local from GitHub Secrets
+            cat > .env.local << 'ENVEOF'
+            NEXT_PUBLIC_API_BASE_URL=${{ secrets.NEXT_PUBLIC_API_BASE_URL }}
+            NEXT_PUBLIC_GOOGLE_CLIENT_ID=${{ secrets.NEXT_PUBLIC_GOOGLE_CLIENT_ID }}
+            ENVEOF
+
+            # Remove leading whitespace
+            sed -i 's/^[[:space:]]*//' .env.local
+
+            # Install dependencies
+            npm install
+
+            # Build Next.js
+            npm run build
+
+            # Restart with PM2
+            pm2 delete talex-fe 2>/dev/null || true
+            pm2 start npm --name "talex-fe" -- start -- -p 3000
+            pm2 save
