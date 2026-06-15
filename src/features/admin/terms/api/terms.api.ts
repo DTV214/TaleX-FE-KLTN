@@ -1,4 +1,3 @@
-
 import { httpClient } from "@/shared/api/http-client";
 import {
   ApiResponse,
@@ -13,17 +12,29 @@ const BASE_URL = "/api/v1/terms-versions";
 
 export const termsApi = {
   /**
-   * Lấy danh sách Điều khoản (hỗ trợ phân trang và filter linh động)
+   * Lấy danh sách Điều khoản từ Backend
+   * Chỉ gửi đi các tham số phân trang và sắp xếp mà Swagger BE hỗ trợ.
    */
   getTermsVersions: async (
-    params?: TermsFilterParams,
+    params: TermsFilterParams,
   ): Promise<ApiResponse<PaginatedData<TermsVersion>>> => {
+    // Tách các biến lọc Frontend ra, chỉ giữ lại API params cho Backend
+    const apiParams = {
+      page: params.page,
+      pageSize: params.pageSize,
+      sortBy: params.sortBy,
+      sortDirection: params.sortDirection,
+      types: params.types,
+    };
+
     const response = await httpClient.get<
       ApiResponse<PaginatedData<TermsVersion>>
     >(BASE_URL, {
-      params,
-      // Cấu hình paramsSerializer nếu BE cần mảng 'types' format dạng types=CREATOR&types=GENERAL_TOS
-      // paramsSerializer: { indexes: null } // (Bật lên nếu bạn dùng axios ^1.x và API BE không nhận mảng)
+      params: apiParams,
+      // BẮT BUỘC BẬT: Spring Boot yêu cầu mảng phải được truyền dưới dạng lặp key.
+      paramsSerializer: {
+        indexes: null,
+      },
     });
     return response.data;
   },
@@ -54,7 +65,8 @@ export const termsApi = {
   },
 
   /**
-   * Cập nhật Điều khoản (Chỉ gửi những trường cần update)
+   * Cập nhật Điều khoản
+   * (Chúng ta sẽ gửi FULL payload bao gồm cả 'type' để tránh lỗi 500 NullPointerException từ BE)
    */
   updateTermsVersion: async (
     id: string,

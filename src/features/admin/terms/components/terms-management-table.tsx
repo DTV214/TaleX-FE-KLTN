@@ -11,6 +11,7 @@ import {
   FileText,
   Loader2,
   AlertCircle,
+  Eye,
 } from "lucide-react";
 import { TermsFormModal } from "./terms-form-modal";
 import {
@@ -24,16 +25,22 @@ import {
 } from "../types/terms.types";
 
 export function TermsManagementTable() {
+  // 1. Khởi tạo state CHUẨN PHẲNG (Đã xóa bỏ object `criteria`)
   const [filters, setFilters] = useState<TermsFilterParams>({
     page: 1,
     pageSize: 10,
     sortBy: "createdAt",
     sortDirection: "DESC",
   });
+
   const [searchInput, setSearchInput] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editId, setEditId] = useState<string | null>(null);
+  const [targetId, setTargetId] = useState<string | null>(null);
+  const [modalMode, setModalMode] = useState<"create" | "edit" | "view">(
+    "create",
+  );
 
+  // Fetch API với các params chuẩn (Backend chỉ nhận page, pageSize, types, sortBy...)
   const {
     data: response,
     isLoading,
@@ -42,26 +49,49 @@ export function TermsManagementTable() {
   } = useTermsVersions(filters);
   const deleteMutation = useDeleteTermsVersion();
 
-  const termsList = response?.data?.content || [];
+  // Dữ liệu thô từ Backend
+  const serverTermsList = response?.data?.content || [];
   const totalPages = response?.data?.totalPages || 1;
   const totalElements = response?.data?.totalElements || 0;
 
-  const handleOpenModal = (id?: string) => {
-    setEditId(id || null);
+  // 2. LỌC DỮ LIỆU PHÍA FRONTEND (Client-side Filtering)
+  // Lọc trực tiếp trên mảng dữ liệu lấy về từ Backend
+  const termsList = serverTermsList.filter((term: TermsVersion) => {
+    // Lọc theo Search Version (Text Includes)
+    const matchVersion = filters.version
+      ? term.version.toLowerCase().includes(filters.version.toLowerCase())
+      : true;
+
+    // Lọc theo Status (Boolean)
+    const matchStatus =
+      filters.isActive !== undefined
+        ? term.isActive === filters.isActive
+        : true;
+
+    return matchVersion && matchStatus;
+  });
+
+  const handleOpenModal = (mode: "create" | "edit" | "view", id?: string) => {
+    setTargetId(id || null);
+    setModalMode(mode);
     setIsModalOpen(true);
   };
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
-    setTimeout(() => setEditId(null), 200);
+    setTimeout(() => {
+      setTargetId(null);
+      setModalMode("create");
+    }, 200);
   };
 
+  // 3. Cập nhật State Tìm kiếm (Đưa ra ngoài cùng, không dùng criteria)
   useEffect(() => {
     const timer = setTimeout(() => {
       setFilters((prev) => ({
         ...prev,
-        version: searchInput || undefined,
         page: 1,
+        version: searchInput || undefined, // Lưu thẳng vào biến version
       }));
     }, 500);
 
@@ -73,7 +103,7 @@ export function TermsManagementTable() {
     setFilters((prev) => ({
       ...prev,
       types: val ? [val as TermsType] : undefined,
-      page: 1,
+      page: 1, // Reset về trang 1 khi đổi bộ lọc gọi API
     }));
   };
 
@@ -81,13 +111,13 @@ export function TermsManagementTable() {
     const val = e.target.value;
     setFilters((prev) => ({
       ...prev,
-      isActive: val === "all" ? undefined : val === "true",
       page: 1,
+      isActive: val === "all" ? undefined : val === "true", // Lưu thẳng vào biến isActive
     }));
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this term version?")) {
+    if (window.confirm("Bạn có chắc chắn muốn xóa phiên bản điều khoản này?")) {
       await deleteMutation.mutateAsync(id);
     }
   };
@@ -100,16 +130,16 @@ export function TermsManagementTable() {
             Terms & Conditions
           </h2>
           <p className="text-sm text-gray-500">
-            Manage creator and general terms of service.
+            Quản lý các điều khoản dịch vụ và nhà sáng tạo.
           </p>
         </div>
         <button
           type="button"
           className="flex items-center gap-2 bg-[#7B42FF] hover:bg-[#6834E0] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm"
-          onClick={() => handleOpenModal()}
+          onClick={() => handleOpenModal("create")}
         >
           <Plus className="w-4 h-4" />
-          Add New Version
+          Tạo Phiên Bản Mới
         </button>
       </div>
 
@@ -118,7 +148,7 @@ export function TermsManagementTable() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
           <input
             type="text"
-            placeholder="Search by version (e.g., 1.0)..."
+            placeholder="Tìm kiếm theo mã phiên bản (VD: 1.0)..."
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             className="w-full pl-9 pr-4 py-2 bg-[#F8F9FA] border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7B42FF]/20 focus:border-[#7B42FF] transition-all text-gray-900"
@@ -132,7 +162,7 @@ export function TermsManagementTable() {
               onChange={handleTypeChange}
               className="bg-transparent border-none outline-none cursor-pointer"
             >
-              <option value="">All Types</option>
+              <option value="">Tất cả phân loại</option>
               <option value="CREATOR">Creator Terms</option>
               <option value="GENERAL_TOS">General TOS</option>
             </select>
@@ -142,9 +172,9 @@ export function TermsManagementTable() {
               onChange={handleStatusChange}
               className="bg-transparent border-none outline-none cursor-pointer"
             >
-              <option value="all">All Status</option>
-              <option value="true">Active</option>
-              <option value="false">Inactive</option>
+              <option value="all">Tất cả trạng thái</option>
+              <option value="true">Đang Hoạt Động (Active)</option>
+              <option value="false">Đã Vô Hiệu (Inactive)</option>
             </select>
           </div>
         </div>
@@ -162,19 +192,19 @@ export function TermsManagementTable() {
             <thead>
               <tr className="bg-[#F8F9FA] border-b border-gray-100">
                 <th className="py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Version
+                  Mã Phiên Bản
                 </th>
                 <th className="py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Type
+                  Phân Loại
                 </th>
                 <th className="py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Status
+                  Trạng Thái
                 </th>
                 <th className="py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Created At
+                  Ngày Tạo
                 </th>
                 <th className="py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">
-                  Actions
+                  Thao Tác
                 </th>
               </tr>
             </thead>
@@ -183,21 +213,21 @@ export function TermsManagementTable() {
                 <tr>
                   <td colSpan={5} className="py-12 text-center text-gray-400">
                     <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
-                    Loading terms...
+                    Đang tải dữ liệu...
                   </td>
                 </tr>
               ) : isError ? (
                 <tr>
                   <td colSpan={5} className="py-12 text-center text-red-500">
                     <AlertCircle className="w-6 h-6 mx-auto mb-2" />
-                    Failed to load data. Please try again.
+                    Không thể tải dữ liệu. Vui lòng thử lại.
                   </td>
                 </tr>
               ) : termsList.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="py-12 text-center text-gray-500">
                     <FileText className="w-8 h-8 mx-auto mb-3 text-gray-300" />
-                    No terms found matching your criteria.
+                    Không tìm thấy điều khoản nào khớp với bộ lọc.
                   </td>
                 </tr>
               ) : (
@@ -246,9 +276,17 @@ export function TermsManagementTable() {
                       <div className="flex items-center justify-end gap-2">
                         <button
                           type="button"
+                          className="p-1.5 text-gray-400 hover:text-[#00D1FF] hover:bg-cyan-50 rounded-md transition-colors"
+                          title="View Details"
+                          onClick={() => handleOpenModal("view", term.id)}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
                           className="p-1.5 text-gray-400 hover:text-[#7B42FF] hover:bg-[#F3F0FF] rounded-md transition-colors"
                           title="Edit"
-                          onClick={() => handleOpenModal(term.id)}
+                          onClick={() => handleOpenModal("edit", term.id)}
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
@@ -276,18 +314,14 @@ export function TermsManagementTable() {
           </table>
         </div>
 
-        {!isLoading && !isError && termsList.length > 0 && (
+        {!isLoading && !isError && serverTermsList.length > 0 && (
           <div className="flex items-center justify-between border-t border-gray-100 px-6 py-4 bg-[#F8F9FA]/50">
             <span className="text-sm text-gray-500">
-              Showing{" "}
+              Đang hiển thị{" "}
               <span className="font-medium text-gray-900">
                 {termsList.length}
               </span>{" "}
-              of{" "}
-              <span className="font-medium text-gray-900">
-                {totalElements}
-              </span>{" "}
-              entries
+              kết quả trên trang này
             </span>
             <div className="flex items-center gap-2">
               <button
@@ -296,15 +330,15 @@ export function TermsManagementTable() {
                 onClick={() =>
                   setFilters((prev) => ({
                     ...prev,
-                    page: Math.max(1, (prev.page || 1) - 1),
+                    page: Math.max(1, prev.page - 1),
                   }))
                 }
-                disabled={(filters.page || 1) <= 1}
+                disabled={filters.page <= 1}
               >
-                Previous
+                Trước
               </button>
               <div className="px-3 py-1 text-sm font-medium text-[#7B42FF] bg-[#F3F0FF] rounded-md">
-                Page {filters.page || 1} of {totalPages}
+                Trang {filters.page} / {totalPages}
               </div>
               <button
                 type="button"
@@ -312,12 +346,12 @@ export function TermsManagementTable() {
                 onClick={() =>
                   setFilters((prev) => ({
                     ...prev,
-                    page: Math.min(totalPages, (prev.page || 1) + 1),
+                    page: Math.min(totalPages, prev.page + 1),
                   }))
                 }
-                disabled={(filters.page || 1) >= totalPages}
+                disabled={filters.page >= totalPages}
               >
-                Next
+                Sau
               </button>
             </div>
           </div>
@@ -327,7 +361,8 @@ export function TermsManagementTable() {
       <TermsFormModal
         isOpen={isModalOpen}
         onClose={handleCloseModal}
-        editId={editId}
+        targetId={targetId}
+        mode={modalMode}
       />
     </div>
   );

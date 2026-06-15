@@ -11,7 +11,9 @@ import {
   UpdateTermsPayload,
 } from "../types/terms.types";
 
-// 1. Quản lý Query Keys tập trung để tránh gõ sai string và dễ dàng Invalidate
+// ==========================================
+// 1. QUERY KEYS FACTORY (Quản lý Key tập trung)
+// ==========================================
 export const termsKeys = {
   all: ["terms"] as const,
   lists: () => [...termsKeys.all, "list"] as const,
@@ -21,40 +23,54 @@ export const termsKeys = {
   detail: (id: string) => [...termsKeys.details(), id] as const,
 };
 
-// 2. Hook lấy danh sách Điều khoản (hỗ trợ phân trang & bộ lọc)
+// ==========================================
+// 2. QUERIES (Lấy dữ liệu)
+// ==========================================
+
+// Hook lấy danh sách Điều khoản (hỗ trợ phân trang & bộ lọc)
 export const useTermsVersions = (filters: TermsFilterParams) => {
   return useQuery({
     queryKey: termsKeys.list(filters),
     queryFn: () => termsApi.getTermsVersions(filters),
     // Giữ lại dữ liệu cũ trong lúc fetch trang mới để UI không bị giật (nháy loading)
     placeholderData: keepPreviousData,
+    // BẮT BUỘC CÓ Ở TRANG ADMIN: Giữ cache "tươi" trong 1 phút để tránh spam API khi user đổi tab
+    staleTime: 60 * 1000,
   });
 };
 
-// 3. Hook lấy chi tiết 1 Điều khoản
+// Hook lấy chi tiết 1 Điều khoản
 export const useTermsVersion = (id: string) => {
   return useQuery({
     queryKey: termsKeys.detail(id),
     queryFn: () => termsApi.getTermsVersionById(id),
     enabled: !!id, // Chỉ gọi API khi có id hợp lệ
+    // Chi tiết ít bị thay đổi, ta có thể giữ cache lâu hơn (ví dụ 5 phút)
+    staleTime: 5 * 60 * 1000,
   });
 };
 
-// 4. Hook Tạo mới Điều khoản
+// ==========================================
+// 3. MUTATIONS (Thay đổi dữ liệu)
+// ==========================================
+
+// Hook Tạo mới Điều khoản
 export const useCreateTermsVersion = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (payload: CreateTermsPayload) =>
       termsApi.createTermsVersion(payload),
-    onSuccess: () => {
-      // Khi tạo thành công, xóa cache của danh sách để nó tự động fetch lại
-      queryClient.invalidateQueries({ queryKey: termsKeys.lists() });
+    onSuccess: (res) => {
+      // Chỉ Invalidate (làm mới bảng) NẾU Backend trả về code thành công
+      if (res.code === 200 || res.code === 201) {
+        queryClient.invalidateQueries({ queryKey: termsKeys.lists() });
+      }
     },
   });
 };
 
-// 5. Hook Cập nhật Điều khoản
+// Hook Cập nhật Điều khoản
 export const useUpdateTermsVersion = () => {
   const queryClient = useQueryClient();
 
@@ -66,25 +82,31 @@ export const useUpdateTermsVersion = () => {
       id: string;
       payload: UpdateTermsPayload;
     }) => termsApi.updateTermsVersion(id, payload),
-    onSuccess: (_, variables) => {
-      // Làm mới danh sách và làm mới luôn cả chi tiết của chính item đó
-      queryClient.invalidateQueries({ queryKey: termsKeys.lists() });
-      queryClient.invalidateQueries({
-        queryKey: termsKeys.detail(variables.id),
-      });
+    onSuccess: (res, variables) => {
+      // Chỉ Invalidate NẾU Backend trả về code thành công
+      if (res.code === 200) {
+        // Làm mới danh sách và làm mới luôn cả chi tiết của chính item đó
+        queryClient.invalidateQueries({ queryKey: termsKeys.lists() });
+        queryClient.invalidateQueries({
+          queryKey: termsKeys.detail(variables.id),
+        });
+      }
     },
   });
 };
 
-// 6. Hook Xóa (mềm) Điều khoản
+// Hook Xóa (mềm) Điều khoản
 export const useDeleteTermsVersion = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (id: string) => termsApi.deleteTermsVersion(id),
-    onSuccess: () => {
-      // Xóa xong thì fetch lại danh sách
-      queryClient.invalidateQueries({ queryKey: termsKeys.lists() });
+    onSuccess: (res) => {
+      // Chỉ Invalidate NẾU Backend trả về code thành công
+      if (res.code === 200) {
+        // Xóa xong thì fetch lại danh sách
+        queryClient.invalidateQueries({ queryKey: termsKeys.lists() });
+      }
     },
   });
 };
