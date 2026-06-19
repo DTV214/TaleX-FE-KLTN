@@ -11,9 +11,11 @@ import {
   pauseVideoUpload as pauseVideoUploadSession,
   updateVideoUploadProgress,
   type MediaProtectionType,
+  type MediaProvider,
   type MediaUploadSessionStatus,
   type VideoUploadSessionResponse,
 } from "@/features/creator-dashboard/api/video-upload-api";
+import { uploadToS3 } from "@/features/creator-dashboard/api/s3-upload-api";
 
 const DEFAULT_CHUNK_SIZE = 8 * 1024 * 1024;
 const STORAGE_PREFIX = "talex.video-upload";
@@ -32,15 +34,16 @@ export type ResumableVideoUploadStatus =
 
 export type PersistedVideoUpload = {
   uploadSessionId: string;
+  provider: MediaProvider;
   mediaId: string;
   episodeId: string;
   uploadUrl: string;
-  uploadUniqueId: string;
-  apiKey: string;
-  timestamp: number;
-  signature: string;
+  uploadUniqueId?: string;
+  apiKey?: string;
+  timestamp?: number;
+  signature?: string;
   publicId: string;
-  resourceType: string;
+  resourceType?: string;
   providerDeliveryType?: string;
   uploadParams?: Record<string, string>;
   fileName: string;
@@ -141,6 +144,7 @@ function toPersistedUpload(
 ): PersistedVideoUpload {
   return {
     uploadSessionId: session.uploadSessionId,
+    provider: session.provider,
     mediaId: session.mediaId,
     episodeId: session.episodeId,
     uploadUrl: session.uploadUrl,
@@ -449,6 +453,61 @@ export function useResumableVideoUpload({
     [persistUpload],
   );
 
+  const uploadViaS3 = useCallback(
+    async (file: File, upload: PersistedVideoUpload) => {
+      setStatus("uploading");
+      setSpeedBytesPerSecond(0);
+
+      try {
+        const startTime = Date.now();
+        await uploadToS3(file, upload.uploadUrl, (progress) => {
+          markProgress(upload, progress.loaded, undefined);
+          const elapsedMs = Date.now() - startTime;
+          if (elapsedMs > 0) {
+            setSpeedBytesPerSecond(
+              Math.round((progress.loaded / elapsedMs) * 1000),
+            );
+          }
+        });
+
+        const result = await completeVideoUpload(upload.uploadSessionId, {
+          uploadSessionId: upload.uploadSessionId,
+          publicId: upload.publicId,
+          secureUrl: upload.uploadUrl,
+          bytes: file.size,
+          actorId,
+        });
+
+        clearPersistedUpload();
+        setStatus("completed");
+        setSpeedBytesPerSecond(0);
+        onCompleted?.(result);
+      } catch (err) {
+        if (cancelRequestedRef.current) {
+          setStatus("cancelled");
+          return;
+        }
+        const message = getErrorMessage(err);
+        setStatus("failed");
+        setError(message);
+        setSpeedBytesPerSecond(0);
+        if (shouldFailRemoteSession(err)) {
+          await failVideoUpload(upload.uploadSessionId, {
+            errorMessage: message,
+            actorId,
+          }).catch(() => undefined);
+        }
+        throw err;
+      }
+    },
+    [
+      actorId,
+      markProgress,
+      clearPersistedUpload,
+      onCompleted,
+    ],
+  );
+
   const uploadChunks = useCallback(
     async (file: File, upload: PersistedVideoUpload) => {
       let currentUpload = upload;
@@ -672,7 +731,11 @@ export function useResumableVideoUpload({
 
       setActiveUpload(upload);
       persistUpload(upload);
-      await uploadChunks(selectedFile, upload);
+      if (upload.provider === "AWS") {
+        await uploadViaS3(selectedFile, upload);
+      } else {
+        await uploadChunks(selectedFile, upload);
+      }
     } catch (uploadError) {
       abortControllerRef.current = null;
 
@@ -733,6 +796,7 @@ export function useResumableVideoUpload({
     protectionType,
     selectedFile,
     uploadChunks,
+    uploadViaS3,
   ]);
 
   const pauseUpload = useCallback(async () => {
