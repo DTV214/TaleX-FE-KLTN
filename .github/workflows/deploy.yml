@@ -23,9 +23,11 @@ jobs:
             git pull origin main
 
             # Create .env.local from GitHub Secrets
-            cat > .env.local << 'ENVEOF'
+            cat > .env.local << ENVEOF
             NEXT_PUBLIC_API_BASE_URL=${{ secrets.NEXT_PUBLIC_API_BASE_URL }}
             NEXT_PUBLIC_GOOGLE_CLIENT_ID=${{ secrets.NEXT_PUBLIC_GOOGLE_CLIENT_ID }}
+            NEXT_PUBLIC_CREATOR_ID=${{ secrets.NEXT_PUBLIC_CREATOR_ID }}
+            NEXT_PUBLIC_ACTOR_ID=${{ secrets.NEXT_PUBLIC_ACTOR_ID }}
             ENVEOF
 
             # Remove leading whitespace
