@@ -6,6 +6,7 @@ import { Menu, Search, LogOut, User as UserIcon } from "lucide-react";
 import { siteConfig } from "@/core/config/site";
 import { isFullProfile, useAuthStore } from "@/features/auth/store/auth.store";
 import { logoutAction } from "@/features/auth/api/auth.actions";
+import { CoinWalletWidget } from "@/features/coin";
 
 function isActiveRoute(pathname: string, href: string) {
   if (href === "/") return pathname === "/";
@@ -124,7 +125,10 @@ export function SiteHeader() {
 
           {/* KHU VỰC AVATAR & DROPDOWN MỚI */}
           {isAuthenticated && profileUser ? (
-            <div className="relative group">
+            <>
+              <CoinWalletWidget />
+
+              <div className="relative group">
               {/* Vùng Avatar để hover */}
               <button className="flex h-10 w-10 md:h-12 md:w-12 items-center justify-center overflow-hidden rounded-full border border-primary/35 bg-primary/10 text-primary transition hover:border-primary hover:shadow-[0_0_26px_rgba(212,175,55,0.24)]">
                 {profileUser.avatarUrl ? (
@@ -168,7 +172,8 @@ export function SiteHeader() {
                   </button>
                 </div>
               </div>
-            </div>
+              </div>
+            </>
           ) : (
             <Link
               href="/login"

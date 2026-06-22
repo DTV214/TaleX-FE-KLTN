@@ -26,6 +26,11 @@ export function AdminSidebar() {
     { name: "User Management", href: "/admin/users", icon: Users },
     { name: "Analytics", href: "/admin/analytics", icon: Analytics },
     { name: "Financials", href: "/admin/financials", icon: CircleDollarSign },
+    {
+      name: "Coin Economy",
+      href: "/admin/coin-management",
+      icon: CircleDollarSign,
+    },
     { name: "Campaigns", href: "/admin/campaigns", icon: ImageIcon },
     { name: "Terms", href: "/admin/terms", icon: FileText },
     { name: "Settings", href: "/admin/settings", icon: Settings },

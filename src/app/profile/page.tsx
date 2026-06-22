@@ -2,6 +2,7 @@ import { ProfileView } from "@/features/auth/components/profile-view";
 import { UpdateProfileForm } from "@/features/auth/components/update-profile-form";
 // 1. Thêm dòng import này:
 import { ChangePasswordForm } from "@/features/auth/components/change-password-form";
+import { CoinTransactionHistory } from "@/features/coin";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -30,6 +31,7 @@ export default function ProfilePage() {
           <UpdateProfileForm />
           {/* 2. Gọi Component ChangePasswordForm ở đây */}
           <ChangePasswordForm />
+          <CoinTransactionHistory />
         </div>
       </div>
     </div>
