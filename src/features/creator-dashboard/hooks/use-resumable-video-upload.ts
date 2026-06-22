@@ -213,9 +213,9 @@ function appendSignedUploadParams(
     }
   });
 
-  formData.set("api_key", upload.apiKey);
-  formData.set("signature", upload.signature);
-  formData.set("timestamp", String(upload.timestamp));
+  formData.set("api_key", upload.apiKey ?? "");
+  formData.set("signature", upload.signature ?? "");
+  formData.set("timestamp", String(upload.timestamp ?? ""));
   formData.set("public_id", upload.publicId);
 
   if (upload.providerDeliveryType && !formData.has("type")) {
