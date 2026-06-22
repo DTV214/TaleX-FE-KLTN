@@ -17,9 +17,13 @@ export type BasePageResponse<T> = {
   isLast: boolean;
 };
 
-// Instance chính gọi sang Backend (Spring Boot)
+const HTTP_CLIENT_BASE_URL =
+  typeof window === "undefined" ? API_BASE_URL : "";
+
+// Browser requests stay on the Next.js origin and are rewritten to the
+// selected backend. Server-side requests can call the backend directly.
 export const httpClient = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: HTTP_CLIENT_BASE_URL,
   withCredentials: true,
 });
 
