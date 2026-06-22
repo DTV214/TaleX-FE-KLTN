@@ -45,6 +45,49 @@ type HlsVideoPlayerProps = {
   onFatalError?: (message: string) => void;
 };
 
+/**
+ * Extract CloudFront signature query params from a signed URL.
+ * These params need to be forwarded to all HLS sub-requests (playlists + segments).
+ */
+function extractSignatureParams(url: string): string {
+  try {
+    const urlObj = new URL(url);
+    const sigParams = ["Policy", "Signature", "Key-Pair-Id", "Expires"];
+    const parts: string[] = [];
+    for (const key of sigParams) {
+      const val = urlObj.searchParams.get(key);
+      if (val) parts.push(`${key}=${encodeURIComponent(val)}`);
+    }
+    return parts.length > 0 ? parts.join("&") : "";
+  } catch {
+    return "";
+  }
+}
+
+function buildHlsConfig(manifestUrl: string): Partial<HlsConfig> {
+  const sigQuery = extractSignatureParams(manifestUrl);
+  return {
+    enableWorker: true,
+    lowLatencyMode: false,
+    backBufferLength: 10,
+    maxBufferLength: 30,
+    maxMaxBufferLength: 60,
+    startLevel: -1,
+    testBandwidth: true,
+    capLevelToPlayerSize: true,
+    abrEwmaDefaultEstimate: 4_500_000,
+    // Forward CloudFront signature to all HLS sub-requests
+    ...(sigQuery
+      ? {
+          xhrSetup: (xhr: XMLHttpRequest, url: string) => {
+            const separator = url.includes("?") ? "&" : "?";
+            xhr.open("GET", url + separator + sigQuery, true);
+          },
+        }
+      : {}),
+  };
+}
+
 const HLS_CONFIG: Partial<HlsConfig> = {
   enableWorker: true,
   lowLatencyMode: false,
@@ -435,7 +478,7 @@ export function HlsVideoPlayer({
         }
 
         if (HlsConstructor.isSupported()) {
-          const hls = new HlsConstructor(HLS_CONFIG);
+          const hls = new HlsConstructor(buildHlsConfig(manifestUrl));
           hlsRef.current = hls;
           hls.attachMedia(media);
           hls.on(HlsConstructor.Events.MANIFEST_PARSED, () => {
