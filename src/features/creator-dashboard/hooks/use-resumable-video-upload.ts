@@ -246,7 +246,7 @@ async function uploadCloudinaryChunk({
     method: "POST",
     headers: {
       "Content-Range": `bytes ${start}-${end - 1}/${file.size}`,
-      "X-Unique-Upload-Id": upload.uploadUniqueId,
+      "X-Unique-Upload-Id": upload.uploadUniqueId ?? "",
     },
     body: formData,
     signal,
@@ -599,7 +599,7 @@ export function useResumableVideoUpload({
           publicId: finalCloudinaryResponse.public_id || currentUpload.publicId,
           secureUrl: finalCloudinaryResponse.secure_url,
           resourceType:
-            finalCloudinaryResponse.resource_type || currentUpload.resourceType,
+            finalCloudinaryResponse.resource_type || currentUpload.resourceType || "",
           format: finalCloudinaryResponse.format,
           bytes: finalCloudinaryResponse.bytes ?? file.size,
           duration: finalCloudinaryResponse.duration,
