@@ -69,7 +69,7 @@ import {
   type SeasonResponse,
   type SeriesResponse,
 } from "@/features/creator-dashboard/api/creator-content-api";
-import { uploadToCloudinary } from "@/features/creator-dashboard/api/cloudinary-api";
+import { uploadImageToS3 } from "@/features/creator-dashboard/api/s3-upload-api";
 import { ResumableVideoUploader } from "@/features/creator-dashboard/components/resumable-video-uploader";
 import { SignedHlsPlayer } from "@/features/playback/components/signed-hls-player";
 
@@ -443,14 +443,18 @@ function getMediaTargetId(media: ComicPage | MediaResponse) {
   return isBackendMediaTarget(media) ? media.mediaId : media.id;
 }
 
-async function uploadSeriesArtwork(file: File | undefined, label: string) {
+async function uploadSeriesArtwork(
+  file: File | undefined,
+  label: string,
+  imageContext: "cover" | "banner" = "cover",
+) {
   if (!file) {
     return undefined;
   }
 
   try {
-    const upload = await uploadToCloudinary(file, "image");
-    return upload.secureUrl;
+    const result = await uploadImageToS3(file, imageContext);
+    return result.publicUrl;
   } catch (error) {
     const message = error instanceof Error ? error.message : "Upload failed.";
     throw new Error(`${label} upload failed: ${message}`);
@@ -671,8 +675,8 @@ function CreatorDashboardContent() {
 
   const createSeriesMutation = useMutation({
     mutationFn: async (input: CreateSeriesInput) => {
-      const coverUrl = await uploadSeriesArtwork(input.coverFile, "Cover");
-      const bannerUrl = await uploadSeriesArtwork(input.bannerFile, "Banner");
+      const coverUrl = await uploadSeriesArtwork(input.coverFile, "Cover", "cover");
+      const bannerUrl = await uploadSeriesArtwork(input.bannerFile, "Banner", "banner");
 
       return createSeries({
         creatorId: CREATOR_DASHBOARD_CREATOR_ID,
@@ -787,8 +791,8 @@ function CreatorDashboardContent() {
       coverFile?: File;
       bannerFile?: File;
     }) => {
-      const uploadedCoverUrl = await uploadSeriesArtwork(coverFile, "Cover");
-      const uploadedBannerUrl = await uploadSeriesArtwork(bannerFile, "Banner");
+      const uploadedCoverUrl = await uploadSeriesArtwork(coverFile, "Cover", "cover");
+      const uploadedBannerUrl = await uploadSeriesArtwork(bannerFile, "Banner", "banner");
 
       return updateSeries(series.id, {
         creatorId: series.creatorId,
@@ -975,20 +979,41 @@ function CreatorDashboardContent() {
 
       const uploadedPages = await Promise.all(
         localPages.map(async (page) => {
-          const upload = await uploadToCloudinary(page.file!, "image");
+          const result = await uploadImageToS3(
+            page.file!,
+            "comic-page",
+            selectedEpisode.id,
+          );
+
+          // Extract image dimensions from file
+          const dimensions = await new Promise<{
+            width?: number;
+            height?: number;
+          }>((resolve) => {
+            const img = new Image();
+            img.onload = () => {
+              resolve({ width: img.naturalWidth, height: img.naturalHeight });
+              URL.revokeObjectURL(img.src);
+            };
+            img.onerror = () => {
+              resolve({});
+              URL.revokeObjectURL(img.src);
+            };
+            img.src = URL.createObjectURL(page.file!);
+          });
 
           return {
-            fileUrl: upload.secureUrl,
+            fileUrl: result.publicUrl,
             displayOrder: page.displayOrder,
             mimeType: page.file?.type || page.mimeType || "image/jpeg",
-            fileSize: page.file?.size || upload.bytes || page.fileSizeBytes || 0,
-            externalPublicId: upload.publicId,
-            storageProvider: "CLOUDINARY",
-            width: upload.width,
-            height: upload.height,
+            fileSize: page.file?.size || page.fileSizeBytes || 0,
+            externalPublicId: result.key,
+            storageProvider: "AWS",
+            width: dimensions.width,
+            height: dimensions.height,
             resolution:
-              upload.width && upload.height
-                ? `${upload.width}x${upload.height}`
+              dimensions.width && dimensions.height
+                ? `${dimensions.width}x${dimensions.height}`
                 : undefined,
           };
         }),

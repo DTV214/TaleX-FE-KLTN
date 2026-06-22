@@ -1,3 +1,56 @@
+import {
+  httpClient,
+  unwrapBaseResponse,
+} from "@/shared/api/http-client";
+
+export type ImagePresignedUploadRequest = {
+  fileName: string;
+  mimeType: string;
+  fileSize: number;
+  imageContext: "cover" | "banner" | "comic-page" | "avatar";
+  entityId?: string;
+  actorId?: string;
+};
+
+export type ImagePresignedUploadResponse = {
+  uploadUrl: string;
+  key: string;
+  publicUrl: string;
+  bucket: string;
+  region: string;
+};
+
+export async function getImagePresignedUpload(
+  request: ImagePresignedUploadRequest,
+) {
+  return unwrapBaseResponse<ImagePresignedUploadResponse>(
+    httpClient.post("/api/v1/media/image/presigned-upload", request),
+  );
+}
+
+/**
+ * Upload image to S3: get presigned URL → PUT file → return public CloudFront URL.
+ */
+export async function uploadImageToS3(
+  file: File,
+  imageContext: ImagePresignedUploadRequest["imageContext"],
+  entityId?: string,
+  actorId?: string,
+): Promise<{ publicUrl: string; key: string }> {
+  const presigned = await getImagePresignedUpload({
+    fileName: file.name,
+    mimeType: file.type || "image/jpeg",
+    fileSize: file.size,
+    imageContext,
+    entityId,
+    actorId,
+  });
+
+  await uploadToS3(file, presigned.uploadUrl);
+
+  return { publicUrl: presigned.publicUrl, key: presigned.key };
+}
+
 export type S3UploadResult = {
   etag: string;
   fileSize: number;
