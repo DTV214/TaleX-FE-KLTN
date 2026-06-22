@@ -3,13 +3,18 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { getEpisodePlayback } from "@/features/playback/api/playback-api";
+import {
+  getEpisodePlayback,
+  getCreatorEpisodePlayback,
+} from "@/features/playback/api/playback-api";
 import { HlsVideoPlayer } from "@/features/playback/components/hls-video-player";
 
 type SignedHlsPlayerProps = {
   episodeId: string;
   viewerId?: string;
   compact?: boolean;
+  /** Use creator-authenticated endpoint (works for DRAFT episodes) */
+  creatorMode?: boolean;
 };
 
 const PROCESSING_RETRY_INTERVAL_MS = 7000;
@@ -40,12 +45,13 @@ export function SignedHlsPlayer({
   episodeId,
   viewerId,
   compact = false,
+  creatorMode = false,
 }: SignedHlsPlayerProps) {
   const retryCountRef = useRef(0);
   const queryClient = useQueryClient();
   const queryKey = useMemo(
-    () => ["episode-playback", episodeId, viewerId ?? "anonymous"] as const,
-    [episodeId, viewerId],
+    () => ["episode-playback", episodeId, viewerId ?? "anonymous", creatorMode ? "creator" : "public"] as const,
+    [episodeId, viewerId, creatorMode],
   );
   const storageKey = useMemo(
     () => `talex.watch-position.${episodeId}`,
@@ -54,9 +60,11 @@ export function SignedHlsPlayer({
   const [playerError, setPlayerError] = useState<PlayerErrorState | null>(null);
   const [processingRetryCount, setProcessingRetryCount] = useState(0);
 
+  const fetchPlayback = creatorMode ? getCreatorEpisodePlayback : getEpisodePlayback;
+
   const playbackQuery = useQuery({
     queryKey,
-    queryFn: () => getEpisodePlayback(episodeId, viewerId),
+    queryFn: () => fetchPlayback(episodeId, viewerId),
     staleTime: 15_000,
     refetchOnWindowFocus: false,
     retry: false,

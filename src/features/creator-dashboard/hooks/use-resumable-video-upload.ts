@@ -100,6 +100,28 @@ class UploadPipelineError extends Error {
   }
 }
 
+function extractVideoMetadata(
+  file: File,
+): Promise<{ duration?: number; width?: number; height?: number }> {
+  return new Promise((resolve) => {
+    const video = document.createElement("video");
+    video.preload = "metadata";
+    video.onloadedmetadata = () => {
+      resolve({
+        duration: video.duration || undefined,
+        width: video.videoWidth || undefined,
+        height: video.videoHeight || undefined,
+      });
+      URL.revokeObjectURL(video.src);
+    };
+    video.onerror = () => {
+      resolve({});
+      URL.revokeObjectURL(video.src);
+    };
+    video.src = URL.createObjectURL(file);
+  });
+}
+
 function toStorageKey(episodeId: string) {
   return `${STORAGE_PREFIX}.${episodeId}`;
 }
@@ -470,10 +492,16 @@ export function useResumableVideoUpload({
           }
         });
 
+        // Extract video metadata (duration, width, height) from file
+        const videoMeta = await extractVideoMetadata(file);
+
         const result = await completeVideoUpload(upload.uploadSessionId, {
           publicId: upload.publicId,
-          secureUrl: upload.uploadUrl,
+          secureUrl: upload.publicId, // S3 key, not the presigned URL
           bytes: file.size,
+          duration: videoMeta.duration,
+          width: videoMeta.width,
+          height: videoMeta.height,
           actorId,
         });
 

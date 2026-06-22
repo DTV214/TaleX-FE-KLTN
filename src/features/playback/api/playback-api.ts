@@ -45,3 +45,18 @@ export async function getEpisodePlayback(
     }),
   );
 }
+
+/**
+ * Creator-authenticated playback endpoint — works for DRAFT episodes.
+ * Falls back to public endpoint on 401/403.
+ */
+export async function getCreatorEpisodePlayback(
+  episodeId: string,
+  viewerId?: string,
+) {
+  return unwrapBaseResponse<EpisodePlaybackResponse>(
+    httpClient.get(`/api/v1/episodes/${episodeId}/playback`, {
+      params: { viewerId },
+    }),
+  );
+}

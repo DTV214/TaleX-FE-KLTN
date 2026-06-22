@@ -3434,7 +3434,7 @@ function VideoUploadView({
                       className="rounded-2xl border border-[#E5EAF3] bg-[#F8FAFF] p-3"
                     >
                       {isPlayableVideoStatus(video.status) ? (
-                        <SignedHlsPlayer episodeId={video.episodeId} compact />
+                        <SignedHlsPlayer episodeId={video.episodeId} compact creatorMode />
                       ) : (
                         <VideoProcessingState video={video} />
                       )}

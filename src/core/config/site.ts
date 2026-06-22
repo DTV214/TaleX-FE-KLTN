@@ -27,7 +27,7 @@ export const siteConfig = {
     },
     {
       title: "Creator",
-      href: "/creator",
+      href: "/creator-dashboard",
     },
   ],
 
