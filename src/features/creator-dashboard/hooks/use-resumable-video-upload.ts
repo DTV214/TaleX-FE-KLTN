@@ -461,7 +461,7 @@ export function useResumableVideoUpload({
       try {
         const startTime = Date.now();
         await uploadToS3(file, upload.uploadUrl, (progress) => {
-          markProgress(upload, progress.loaded, undefined);
+          markProgress(upload, progress.loaded, -1);
           const elapsedMs = Date.now() - startTime;
           if (elapsedMs > 0) {
             setSpeedBytesPerSecond(
@@ -471,14 +471,13 @@ export function useResumableVideoUpload({
         });
 
         const result = await completeVideoUpload(upload.uploadSessionId, {
-          uploadSessionId: upload.uploadSessionId,
           publicId: upload.publicId,
           secureUrl: upload.uploadUrl,
           bytes: file.size,
           actorId,
         });
 
-        clearPersistedUpload();
+        persistUpload(null);
         setStatus("completed");
         setSpeedBytesPerSecond(0);
         onCompleted?.(result);
@@ -503,7 +502,7 @@ export function useResumableVideoUpload({
     [
       actorId,
       markProgress,
-      clearPersistedUpload,
+      persistUpload,
       onCompleted,
     ],
   );
