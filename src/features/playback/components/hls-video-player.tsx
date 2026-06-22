@@ -76,10 +76,14 @@ function buildHlsConfig(manifestUrl: string): Partial<HlsConfig> {
     testBandwidth: true,
     capLevelToPlayerSize: true,
     abrEwmaDefaultEstimate: 4_500_000,
-    // Forward CloudFront signature to all HLS sub-requests
+    // Forward CloudFront signature to HLS sub-requests that lack signature
     ...(sigQuery
       ? {
           xhrSetup: (xhr: XMLHttpRequest, url: string) => {
+            // Skip if URL already contains signature params (e.g. master playlist)
+            if (url.includes("Key-Pair-Id=") || url.includes("Policy=")) {
+              return;
+            }
             const separator = url.includes("?") ? "&" : "?";
             xhr.open("GET", url + separator + sigQuery, true);
           },
