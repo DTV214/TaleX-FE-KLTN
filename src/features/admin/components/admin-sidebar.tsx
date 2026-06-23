@@ -14,6 +14,7 @@ import {
   PlaySquare,
   BookOpen,
   FileText,
+  Target,
 } from "lucide-react";
 
 export function AdminSidebar() {
@@ -31,13 +32,18 @@ export function AdminSidebar() {
       href: "/admin/coin-management",
       icon: CircleDollarSign,
     },
+    {
+      name: "Mission System",
+      href: "/admin/mission-management",
+      icon: Target,
+    },
     { name: "Campaigns", href: "/admin/campaigns", icon: ImageIcon },
     { name: "Terms", href: "/admin/terms", icon: FileText },
     { name: "Settings", href: "/admin/settings", icon: Settings },
   ];
 
   return (
-    <aside className="sticky top-0 flex h-screen w-[260px] flex-col border-r border-gray-100 bg-white py-6">
+    <aside className="sticky top-0 hidden h-screen w-[260px] shrink-0 flex-col overflow-y-auto border-r border-gray-100 bg-white py-6 lg:flex">
       {/* Logo Area */}
       <div className="px-8 mb-8">
         <Link href="/admin/dashboard" className="flex items-center gap-3">

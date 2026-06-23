@@ -7,6 +7,7 @@ import { siteConfig } from "@/core/config/site";
 import { isFullProfile, useAuthStore } from "@/features/auth/store/auth.store";
 import { logoutAction } from "@/features/auth/api/auth.actions";
 import { CoinWalletWidget } from "@/features/coin";
+import { useMissionHeartbeat } from "@/features/mission/hooks/useMissionHeartbeat";
 
 function isActiveRoute(pathname: string, href: string) {
   if (href === "/") return pathname === "/";
@@ -14,6 +15,8 @@ function isActiveRoute(pathname: string, href: string) {
 }
 
 export function SiteHeader() {
+  useMissionHeartbeat();
+
   const pathname = usePathname();
   const router = useRouter();
 
