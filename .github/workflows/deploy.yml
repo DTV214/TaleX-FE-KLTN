@@ -18,8 +18,6 @@ jobs:
           command_timeout: 30m
           script: |
             cd ~/TaleX-FE-KLTN
-
-            # Pull latest code
             git pull origin main
 
             # Create .env.local from GitHub Secrets
@@ -30,16 +28,33 @@ jobs:
             NEXT_PUBLIC_ACTOR_ID=${{ secrets.NEXT_PUBLIC_ACTOR_ID }}
             ENVEOF
 
-            # Remove leading whitespace
             sed -i 's/^[[:space:]]*//' .env.local
 
-            # Install dependencies
-            npm install
+            # Only install deps when package.json changed
+            if ! diff -q package.json /tmp/talex-fe-pkg.json 2>/dev/null; then
+              npm ci --prefer-offline
+              cp package.json /tmp/talex-fe-pkg.json
+            fi
+
+            # Clean old build cache to prevent disk bloat
+            rm -rf .next
 
             # Build Next.js
             npm run build
 
-            # Restart with PM2
-            pm2 delete talex-fe 2>/dev/null || true
-            pm2 start npm --name "talex-fe" -- start -- -p 3000
+            # Graceful restart (no downtime if already running)
+            pm2 restart talex-fe --update-env 2>/dev/null || \
+              pm2 start npm --name "talex-fe" -- start -- -p 3000
             pm2 save
+
+            # Health check — wait up to 60s
+            echo "Waiting for frontend health check..."
+            for i in $(seq 1 12); do
+              if curl -sf http://localhost:3000 > /dev/null 2>&1; then
+                echo "Frontend is healthy!"
+                exit 0
+              fi
+              echo "  attempt $i/12..."
+              sleep 5
+            done
+            echo "WARNING: Frontend health check failed after 60s"
