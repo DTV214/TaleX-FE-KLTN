@@ -8,6 +8,7 @@ import { Eye, EyeOff, Loader2, AlertCircle } from "lucide-react";
 import { loginAction, googleLoginAction } from "@/features/auth/api/auth.actions";
 import { AuthErrorCode } from "@/features/auth/api/auth.dto";
 import { useAuthStore } from "@/features/auth/store/auth.store";
+import { getPostLoginPath } from "@/features/auth/lib/auth-routing";
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
 
@@ -33,6 +34,17 @@ export function LoginForm() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const googleRendered = useRef(false);
+
+  const getLoginDestination = useCallback(
+    (roleName: Parameters<typeof getPostLoginPath>[0]) => {
+      const callbackUrl = new URLSearchParams(window.location.search).get(
+        "callbackUrl",
+      );
+
+      return getPostLoginPath(roleName, callbackUrl);
+    },
+    [],
+  );
 
   const handleGoogleCallback = useCallback(
     async (response: { credential: string }) => {
@@ -63,14 +75,14 @@ export function LoginForm() {
 
       if (data.status === "ACTIVE") {
         setUser(data.user);
-        router.push("/");
+        router.replace(getLoginDestination(data.user.roleName));
       } else {
         router.push(
           `/complete-profile?token=${encodeURIComponent(data.verificationToken)}`,
         );
       }
     },
-    [router, setUser],
+    [getLoginDestination, router, setUser],
   );
 
   useEffect(() => {
@@ -144,7 +156,7 @@ export function LoginForm() {
       setUser(res.data.user);
     }
 
-    router.push("/");
+    router.replace(getLoginDestination(res.data.user.roleName));
   }
 
   return (
