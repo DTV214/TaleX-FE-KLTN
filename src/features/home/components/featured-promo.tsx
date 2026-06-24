@@ -23,19 +23,19 @@ export function FeaturedPromo() {
             {/* Badge */}
             <div className="flex items-center gap-2 text-[#D4AF37] text-xs font-bold uppercase tracking-[0.2em] mb-5">
               <Sparkles className="w-4 h-4" />
-              Featured Visual Novels
+              Tiểu thuyết trực quan nổi bật
             </div>
 
             {/* Tiêu đề - Hiệu ứng đẩy nhẹ khi hover */}
             <h3 className="text-4xl md:text-5xl lg:text-6xl font-heading font-extrabold text-white mb-6 leading-tight transition-transform duration-500 group-hover:translate-x-2">
-              Wings of the <br /> Fallen
+              Đôi Cánh Của <br /> Kẻ Sa Ngã
             </h3>
 
             {/* Mô tả */}
             <p className="text-gray-400 text-sm md:text-base leading-relaxed mb-10 max-w-md transition-transform duration-500 delay-75 group-hover:translate-x-2">
-              Experience a tale of betrayal, redemption, and cosmic wars. Dive
-              into the interactive visual novel that is taking the TaleX
-              community by storm. Uncover the secrets of the celestial realm.
+              Trải nghiệm câu chuyện về sự phản bội, chuộc lỗi và những cuộc
+              chiến ngoài vũ trụ. Đắm mình trong tiểu thuyết trực quan tương tác
+              đang chinh phục cộng đồng TaleX và khám phá bí mật của thiên giới.
             </p>
 
             {/* Khu vực nút bấm */}
@@ -43,13 +43,13 @@ export function FeaturedPromo() {
               {/* Nút màu đỏ đặc trưng */}
               <button className="flex items-center justify-center gap-2 px-8 py-4 bg-[#E50914] hover:bg-[#ff0a16] text-white rounded-md font-bold text-sm sm:text-base transition-all hover:scale-105 shadow-[0_0_20px_rgba(229,9,20,0.4)] active:scale-95">
                 <Play className="w-5 h-5 fill-current" />
-                Watch Season 1
+                Xem mùa 1
               </button>
 
               {/* Nút lưu/thêm vào danh sách (Kính mờ) */}
               <button className="flex items-center justify-center gap-2 px-6 py-4 bg-white/5 hover:bg-white/10 text-white rounded-md font-bold text-sm sm:text-base transition-all border border-white/10 backdrop-blur-md hover:border-white/30 active:scale-95">
                 <Plus className="w-5 h-5" />
-                Add to List
+                Thêm vào danh sách
               </button>
             </div>
           </div>

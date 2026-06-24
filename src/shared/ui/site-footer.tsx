@@ -8,6 +8,19 @@ import { AtSign, Code, Video, ChevronRight, Sparkles } from "lucide-react";
 export function SiteFooter() {
   const pathname = usePathname();
 
+  const platformLinks = [
+    { label: "Phim bộ", href: "/series" },
+    { label: "Truyện tranh", href: "/comics" },
+    { label: "Chương trình Creator", href: "/creator" },
+    { label: "Bảng giá", href: "/pricing" },
+  ];
+  const supportLinks = [
+    { label: "Câu hỏi thường gặp", href: "/faq" },
+    { label: "Liên hệ", href: "/contact" },
+    { label: "Điều khoản dịch vụ", href: "/terms" },
+    { label: "Chính sách quyền riêng tư", href: "/privacy" },
+  ];
+
   // Kiểm tra xem có đang ở trang xác thực (Auth) không
 
   const isAuthOrAdminPage =
@@ -73,30 +86,22 @@ export function SiteFooter() {
           <div>
             <h4 className="text-white font-bold mb-6 uppercase text-sm tracking-[0.2em] flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37] shadow-[0_0_8px_rgba(212,175,55,0.8)]" />
-              Platform
+              Nền tảng
             </h4>
             <ul className="space-y-4 text-sm text-gray-400">
-              {["Series", "Comics", "Creator Program", "Pricing"].map(
-                (item) => {
-                  const linkHref =
-                    item === "Creator Program"
-                      ? "/creator"
-                      : `/${item.toLowerCase()}`;
-                  return (
-                    <li key={item}>
-                      <Link
-                        href={linkHref}
-                        className="group flex items-center transition-colors hover:text-[#D4AF37]"
-                      >
-                        <ChevronRight className="w-4 h-4 mr-1 opacity-0 -translate-x-3 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 text-[#D4AF37]" />
-                        <span className="transition-transform duration-300 group-hover:translate-x-1">
-                          {item}
-                        </span>
-                      </Link>
-                    </li>
-                  );
-                },
-              )}
+              {platformLinks.map((item) => (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    className="group flex items-center transition-colors hover:text-[#D4AF37]"
+                  >
+                    <ChevronRight className="w-4 h-4 mr-1 opacity-0 -translate-x-3 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 text-[#D4AF37]" />
+                    <span className="transition-transform duration-300 group-hover:translate-x-1">
+                      {item.label}
+                    </span>
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
@@ -104,30 +109,22 @@ export function SiteFooter() {
           <div>
             <h4 className="text-white font-bold mb-6 uppercase text-sm tracking-[0.2em] flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37] shadow-[0_0_8px_rgba(212,175,55,0.8)]" />
-              Support
+              Hỗ trợ
             </h4>
             <ul className="space-y-4 text-sm text-gray-400">
-              {["FAQ", "Contact Us", "Terms of Service", "Privacy Policy"].map(
-                (item) => {
-                  const href =
-                    item === "Contact Us"
-                      ? "/contact"
-                      : `/${item.split(" ")[0].toLowerCase()}`;
-                  return (
-                    <li key={item}>
-                      <Link
-                        href={href}
-                        className="group flex items-center transition-colors hover:text-[#D4AF37]"
-                      >
-                        <ChevronRight className="w-4 h-4 mr-1 opacity-0 -translate-x-3 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 text-[#D4AF37]" />
-                        <span className="transition-transform duration-300 group-hover:translate-x-1">
-                          {item}
-                        </span>
-                      </Link>
-                    </li>
-                  );
-                },
-              )}
+              {supportLinks.map((item) => (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    className="group flex items-center transition-colors hover:text-[#D4AF37]"
+                  >
+                    <ChevronRight className="w-4 h-4 mr-1 opacity-0 -translate-x-3 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 text-[#D4AF37]" />
+                    <span className="transition-transform duration-300 group-hover:translate-x-1">
+                      {item.label}
+                    </span>
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
         </div>
@@ -135,12 +132,12 @@ export function SiteFooter() {
         {/* Thanh bản quyền dưới cùng */}
         <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-gray-500">
           <p>
-            © {new Date().getFullYear()} {siteConfig.name}. All rights reserved.
+            © {new Date().getFullYear()} {siteConfig.name}. Đã đăng ký bản quyền.
           </p>
           <p className="flex items-center gap-1.5 font-medium tracking-wide">
-            Made with{" "}
-            <span className="text-[#E50914] animate-pulse text-sm">♥</span> for
-            storytellers.
+            Được tạo nên với{" "}
+            <span className="text-[#E50914] animate-pulse text-sm">♥</span> dành
+            cho những người kể chuyện.
           </p>
         </div>
       </div>

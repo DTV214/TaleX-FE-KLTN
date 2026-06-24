@@ -6,21 +6,41 @@ import { motion, Variants } from "framer-motion";
 
 export function DestinyCategories() {
   const destinies = [
-    { id: 1, name: "CYBERPUNK", icon: Zap, bg: "from-[#2A1B43] to-[#10081E]" },
+    {
+      id: 1,
+      name: "TƯƠNG LAI PHẢN ĐỊA ĐÀNG",
+      slug: "cyberpunk",
+      icon: Zap,
+      bg: "from-[#2A1B43] to-[#10081E]",
+    },
     {
       id: 2,
-      name: "DARK FANTASY",
+      name: "KỲ ẢO ĐEN TỐI",
+      slug: "dark-fantasy",
       icon: Skull,
       bg: "from-[#3D1818] to-[#170505]",
     },
-    { id: 3, name: "ROMANCE", icon: Heart, bg: "from-[#1E2B5C] to-[#0A122E]" },
+    {
+      id: 3,
+      name: "LÃNG MẠN",
+      slug: "romance",
+      icon: Heart,
+      bg: "from-[#1E2B5C] to-[#0A122E]",
+    },
     {
       id: 4,
-      name: "SPACE OPERA",
+      name: "SỬ THI KHÔNG GIAN",
+      slug: "space-opera",
       icon: Rocket,
       bg: "from-[#133324] to-[#07170E]",
     },
-    { id: 5, name: "MYSTERY", icon: Eye, bg: "from-[#452D1A] to-[#1A0E06]" },
+    {
+      id: 5,
+      name: "BÍ ẨN",
+      slug: "mystery",
+      icon: Eye,
+      bg: "from-[#452D1A] to-[#1A0E06]",
+    },
   ];
 
   const containerVariants: Variants = {
@@ -38,10 +58,10 @@ export function DestinyCategories() {
       <div className="container mx-auto px-4 md:px-8">
         <div className="mb-8">
           <h3 className="text-xl md:text-2xl font-bold text-white tracking-wider mb-1 uppercase">
-            Pick Your Destiny
+            Chọn Định Mệnh Của Bạn
           </h3>
           <p className="text-sm text-gray-400">
-            Filter your experience by the vibes of the universe
+            Chọn trải nghiệm theo sắc thái của từng thế giới
           </p>
         </div>
 
@@ -62,7 +82,7 @@ export function DestinyCategories() {
                 className="flex-none snap-start"
               >
                 <Link
-                  href={`/destiny/${item.name.toLowerCase()}`}
+                  href={`/destiny/${item.slug}`}
                   className={`relative flex flex-col items-center justify-center w-[150px] sm:w-[180px] aspect-square rounded-2xl bg-gradient-to-br ${item.bg} group shadow-lg hover:shadow-[0_10px_30px_rgba(0,0,0,0.5)] transition-all duration-300 hover:-translate-y-2 border border-white/5 hover:border-white/20`}
                 >
                   <Icon className="w-8 h-8 text-[#D4AF37] mb-4 transition-transform duration-500 group-hover:scale-125 group-hover:drop-shadow-[0_0_10px_rgba(212,175,55,0.8)]" />

@@ -70,7 +70,7 @@ export function MediaRow({
             href={href}
             className="group flex items-center text-sm font-semibold text-[#D4AF37] hover:text-[#E5C158] transition-colors whitespace-nowrap"
           >
-            VIEW ALL{" "}
+            XEM TẤT CẢ{" "}
             <ChevronRight className="w-4 h-4 ml-1 transition-transform group-hover:translate-x-1" />
           </Link>
         </motion.div>

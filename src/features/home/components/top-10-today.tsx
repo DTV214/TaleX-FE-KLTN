@@ -40,36 +40,36 @@ export function Top10Today() {
   const top10Data = [
     {
       id: 1,
-      title: "Celestial Vanguard",
-      genre: "Action Fantasy",
+      title: "Đội Tiên Phong Thiên Giới",
+      genre: "Hành động kỳ ảo",
       image:
         "https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=800&auto=format&fit=crop",
     },
     {
       id: 2,
-      title: "Shadow of Aether",
-      genre: "Dark Fantasy",
+      title: "Bóng Tối Cõi Linh Khí",
+      genre: "Kỳ ảo đen tối",
       image:
         "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=800&auto=format&fit=crop",
     },
     {
       id: 3,
-      title: "Neon Promise",
-      genre: "Cyberpunk",
+      title: "Lời Hứa Ánh Đèn Màu",
+      genre: "Tương lai phản địa đàng",
       image:
         "https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=800&auto=format&fit=crop",
     },
     {
       id: 4,
-      title: "Seoul Protocol",
-      genre: "Sci-Fi Thriller",
+      title: "Mật Lệnh Seoul",
+      genre: "Khoa học viễn tưởng giật gân",
       image:
         "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=800&auto=format&fit=crop",
     },
     {
       id: 5,
-      title: "Crimson Relay",
-      genre: "Mystery",
+      title: "Tín Hiệu Đỏ Thẫm",
+      genre: "Bí ẩn",
       image:
         "https://images.unsplash.com/photo-1455390582262-044cdead277a?q=80&w=800&auto=format&fit=crop",
     },
@@ -81,17 +81,17 @@ export function Top10Today() {
         <div className="flex items-end justify-between mb-8">
           <div>
             <h3 className="text-xl md:text-2xl font-bold text-white tracking-wide mb-1">
-              TaleX Top 10 Today
+              10 Nội Dung Hàng Đầu TaleX Hôm Nay
             </h3>
             <p className="text-sm text-gray-400">
-              The most-watched series across the globe right now.
+              Những bộ phim được xem nhiều nhất trên toàn cầu hiện nay.
             </p>
           </div>
           <Link
             href="/top-10"
             className="flex items-center text-sm font-semibold text-[#D4AF37] hover:text-[#E5C158] transition-colors whitespace-nowrap"
           >
-            View All <ChevronRight className="w-4 h-4 ml-1" />
+            Xem tất cả <ChevronRight className="w-4 h-4 ml-1" />
           </Link>
         </div>
 
@@ -142,7 +142,7 @@ export function Top10Today() {
                       >
                         {rank === 1 && isActive && (
                           <div className="absolute top-0 right-0 bg-[#D4AF37] text-black text-[10px] font-bold px-3 py-1.5 rounded-bl-lg uppercase tracking-widest z-20 shadow-lg">
-                            Top 1
+                            Hạng 1
                           </div>
                         )}
 
@@ -172,12 +172,16 @@ export function Top10Today() {
           </div>
 
           <button
+            type="button"
+            aria-label="Xem nội dung nổi bật trước"
             onClick={scrollPrev}
             className="absolute -left-4 md:left-0 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-black/60 border border-white/10 backdrop-blur-md flex items-center justify-center text-white opacity-0 group-hover:opacity-100 hover:bg-[#D4AF37] hover:border-[#D4AF37] hover:text-black transition-all z-30 shadow-xl"
           >
             <ChevronLeft className="w-6 h-6" />
           </button>
           <button
+            type="button"
+            aria-label="Xem nội dung nổi bật tiếp theo"
             onClick={scrollNext}
             className="absolute -right-4 md:right-0 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-black/60 border border-white/10 backdrop-blur-md flex items-center justify-center text-white opacity-0 group-hover:opacity-100 hover:bg-[#D4AF37] hover:border-[#D4AF37] hover:text-black transition-all z-30 shadow-xl"
           >

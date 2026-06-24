@@ -16,23 +16,23 @@ export function EditorialSpotlight() {
           {/* Nửa trái: Nội dung */}
           <div className="relative z-10 w-full md:w-1/2 p-8 md:p-12 lg:p-16 flex flex-col justify-center">
             <h4 className="text-[#D4AF37] text-xs font-bold uppercase tracking-[0.2em] mb-6">
-              TaleX Editorial Spotlight
+              Góc Biên Tập TaleX
             </h4>
 
             <h3 className="text-3xl md:text-4xl lg:text-5xl font-heading font-bold text-white mb-6 leading-[1.2]">
-              Stories that <br /> linger long <br /> after the final <br />{" "}
-              page is turned.
+              Những câu chuyện <br /> còn đọng lại <br /> thật lâu sau khi <br />{" "}
+              trang cuối khép lại.
             </h3>
 
             <p className="text-gray-400 text-sm md:text-base leading-relaxed mb-8 max-w-sm">
-              Discover the Most Emotional Fantasy Stories curated by our lead
-              editors. These are journeys of sacrifice, love, and the human
-              spirit.
+              Khám phá những câu chuyện kỳ ảo giàu cảm xúc nhất do đội ngũ biên
+              tập tuyển chọn. Đây là những hành trình về sự hy sinh, tình yêu và
+              nghị lực con người.
             </p>
 
             <div className="flex items-center gap-4">
               <button className="px-8 py-3.5 bg-[#D4AF37] hover:bg-[#E5C158] text-black rounded-md font-bold text-sm transition-all hover:scale-105 hover:shadow-[0_0_20px_rgba(212,175,55,0.4)]">
-                Read the Feature
+                Đọc bài tuyển chọn
               </button>
 
               {/* Giả lập Users Avatar */}

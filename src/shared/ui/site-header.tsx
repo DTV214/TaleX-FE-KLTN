@@ -52,7 +52,7 @@ export function SiteHeader() {
         {/* Logo */}
         <Link
           href="/"
-          aria-label={`${siteConfig.name} home`}
+          aria-label={`Trang chủ ${siteConfig.name}`}
           className="group flex min-w-fit items-center gap-3"
         >
           {siteConfig.logo ? (
@@ -69,7 +69,7 @@ export function SiteHeader() {
 
         {/* Navigation - Desktop */}
         <nav
-          aria-label="Main navigation"
+          aria-label="Điều hướng chính"
           className="hidden items-center gap-8 lg:flex"
         >
           {siteConfig.mainNav.map((item) => {
@@ -100,11 +100,11 @@ export function SiteHeader() {
         {/* Thanh Tìm Kiếm - Desktop */}
         <div className="ml-auto hidden min-w-[260px] max-w-xl flex-1 items-center lg:flex">
           <label className="group relative w-full">
-            <span className="sr-only">Search titles</span>
+            <span className="sr-only">Tìm kiếm truyện, phim</span>
             <Search className="absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" />
             <input
               type="search"
-              placeholder="Search titles..."
+              placeholder="Tìm kiếm truyện, phim..."
               className="h-14 w-full rounded-2xl border border-white/10 bg-[#14151b]/85 px-14 text-base text-foreground outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-all placeholder:text-muted-foreground/75 focus:border-primary/50 focus:bg-black/50 focus:shadow-[0_0_28px_rgba(212,175,55,0.12)]"
             />
           </label>
@@ -123,7 +123,7 @@ export function SiteHeader() {
             href="/creator"
             className="hidden h-10 md:h-11 items-center justify-center rounded-xl md:rounded-2xl bg-primary px-4 md:px-6 text-xs md:text-sm font-extrabold text-black shadow-[0_0_30px_rgba(212,175,55,0.28)] transition-all hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-[0_0_42px_rgba(212,175,55,0.38)] sm:flex"
           >
-            Become a Creator
+            Trở thành Creator
           </Link>
 
           {/* KHU VỰC AVATAR & DROPDOWN MỚI */}

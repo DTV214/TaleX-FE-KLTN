@@ -3,26 +3,26 @@ export type SiteConfig = typeof siteConfig;
 export const siteConfig = {
   name: "TaleX",
   description:
-    "Where Stories Come Alive - Nền tảng kể chuyện qua video ngắn, manga và animation.",
+    "Nơi câu chuyện trở nên sống động - Nền tảng kể chuyện qua video ngắn, truyện tranh và hoạt hình.",
   // Đường dẫn Logo (hiện tại ta để rỗng hoặc text, sau này có file ảnh logo chỉ cần đổi ở đây)
   logo: "",
 
   // Cấu hình thanh điều hướng chính (Main Navigation)
   mainNav: [
     {
-      title: "Home",
+      title: "Trang chủ",
       href: "/",
     },
     {
-      title: "Introduction",
+      title: "Giới thiệu",
       href: "/intro",
     },
     {
-      title: "Series",
+      title: "Phim bộ",
       href: "/series",
     },
     {
-      title: "Comics",
+      title: "Truyện tranh",
       href: "/comics",
     },
     {

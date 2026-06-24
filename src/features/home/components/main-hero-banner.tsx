@@ -35,28 +35,28 @@ export function MainHeroBanner() {
   const banners = [
     {
       id: 1,
-      badge1: "New Episode Tonight",
-      badge2: "Top Romance",
-      studio: "TaleX Studios",
-      title: "The Heavy Rain of a \n New Dream World",
+      badge1: "Tập mới tối nay",
+      badge2: "Lãng mạn nổi bật",
+      studio: "Xưởng phim TaleX",
+      title: "Cơn Mưa Nặng Hạt Của \n Thế Giới Giấc Mơ Mới",
       image:
         "https://images.unsplash.com/photo-1707340733209-d8adf5ad25e6?q=80&w=2532&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", // Ảnh Totoro vibe
     },
     {
       id: 2,
-      badge1: "Season Finale",
-      badge2: "Action & Sci-Fi",
-      studio: "CyberWorks",
-      title: "Echoes of the \n Cybernetic City",
+      badge1: "Mùa cuối",
+      badge2: "Hành động & Khoa học viễn tưởng",
+      studio: "Hãng CyberWorks",
+      title: "Tiếng Vọng Từ \n Thành Phố Cơ Giới",
       image:
         "https://plus.unsplash.com/premium_photo-1661964177687-57387c2cbd14?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
     },
     {
       id: 3,
-      badge1: "Trending #1",
-      badge2: "Dark Fantasy",
-      studio: "Mythos Animation",
-      title: "Wings of the \n Fallen Angel",
+      badge1: "Thịnh hành số 1",
+      badge2: "Kỳ ảo đen tối",
+      studio: "Hãng hoạt hình Mythos",
+      title: "Đôi Cánh Của \n Thiên Thần Sa Ngã",
       image:
         "https://plus.unsplash.com/premium_photo-1709311450621-6ce6545e2564?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
     },
@@ -119,15 +119,19 @@ export function MainHeroBanner() {
           <div className="flex flex-wrap items-center gap-4">
             <button className="group flex items-center gap-3 px-8 py-4 bg-[#E50914] text-white rounded font-bold text-lg transition-all hover:bg-[#ff0a16] hover:scale-105 hover:shadow-[0_0_30px_rgba(229,9,20,0.5)] active:scale-95">
               <Play className="w-6 h-6 fill-current" />
-              Watch Now
+              Xem ngay
             </button>
 
             <button className="flex items-center gap-3 px-8 py-4 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white rounded font-bold text-lg transition-all border border-white/20 hover:border-white/50 hover:scale-105 active:scale-95">
               <Info className="w-6 h-6" />
-              Play Trailer
+              Xem đoạn giới thiệu
             </button>
 
-            <button className="flex items-center justify-center w-14 h-14 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white rounded transition-all border border-white/20 hover:border-white/50 hover:scale-105 active:scale-95">
+            <button
+              type="button"
+              aria-label="Thêm vào danh sách"
+              className="flex items-center justify-center w-14 h-14 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white rounded transition-all border border-white/20 hover:border-white/50 hover:scale-105 active:scale-95"
+            >
               <Plus className="w-7 h-7" />
             </button>
           </div>
@@ -139,6 +143,8 @@ export function MainHeroBanner() {
         {banners.map((_, index) => (
           <button
             key={index}
+            type="button"
+            aria-label={`Chuyển đến banner ${index + 1}`}
             onClick={() => emblaApi?.scrollTo(index)}
             className="relative h-1.5 overflow-hidden rounded-full transition-all duration-300 bg-white/20"
             style={{ width: selectedIndex === index ? "48px" : "24px" }}

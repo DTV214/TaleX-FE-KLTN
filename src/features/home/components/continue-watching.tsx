@@ -9,56 +9,56 @@ export function ContinueWatching() {
   const watchHistory = [
     {
       id: 1,
-      title: "The Velocity Enigma",
-      progressText: "S1 : E4 • 15m remaining",
+      title: "Bí Ẩn Tốc Độ",
+      progressText: "Mùa 1 • Tập 4 • Còn 15 phút",
       progressPercent: 75,
       image:
         "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?q=80&w=800&auto=format&fit=crop",
     },
     {
       id: 2,
-      title: "Awaken Anthems",
-      progressText: "S1 : E2 • 24m remaining",
+      title: "Khúc Ca Thức Tỉnh",
+      progressText: "Mùa 1 • Tập 2 • Còn 24 phút",
       progressPercent: 40,
       image:
         "https://images.unsplash.com/photo-1640903581708-8d491706515b?q=80&w=2575&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
     },
     {
       id: 3,
-      title: "Princess of Pixel",
-      progressText: "S1 : E10 • 5m remaining",
+      title: "Công Chúa Điểm Ảnh",
+      progressText: "Mùa 1 • Tập 10 • Còn 5 phút",
       progressPercent: 90,
       image:
         "https://images.unsplash.com/photo-1540317580384-e5d43616b9aa?q=80&w=800&auto=format&fit=crop",
     },
     {
       id: 4,
-      title: "Princess of Pixel",
-      progressText: "S1 : E10 • 5m remaining",
+      title: "Công Chúa Điểm Ảnh",
+      progressText: "Mùa 1 • Tập 10 • Còn 5 phút",
       progressPercent: 90,
       image:
         "https://plus.unsplash.com/premium_photo-1666700698946-fbf7baa0134a?q=80&w=1036&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
     },
     {
       id: 5,
-      title: "Princess of Pixel",
-      progressText: "S1 : E10 • 5m remaining",
+      title: "Công Chúa Điểm Ảnh",
+      progressText: "Mùa 1 • Tập 10 • Còn 5 phút",
       progressPercent: 90,
       image:
         "https://images.unsplash.com/photo-1668293750324-bd77c1f08ca9?q=80&w=927&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
     },
     {
       id: 6,
-      title: "Princess of Pixel",
-      progressText: "S1 : E10 • 5m remaining",
+      title: "Công Chúa Điểm Ảnh",
+      progressText: "Mùa 1 • Tập 10 • Còn 5 phút",
       progressPercent: 90,
       image:
         "https://images.unsplash.com/photo-1540317580384-e5d43616b9aa?q=80&w=800&auto=format&fit=crop",
     },
     {
       id: 7,
-      title: "Princess of Pixel",
-      progressText: "S1 : E10 • 5m remaining",
+      title: "Công Chúa Điểm Ảnh",
+      progressText: "Mùa 1 • Tập 10 • Còn 5 phút",
       progressPercent: 90,
       image:
         "https://images.unsplash.com/photo-1540317580384-e5d43616b9aa?q=80&w=800&auto=format&fit=crop",
@@ -94,13 +94,13 @@ export function ContinueWatching() {
           className="flex items-center justify-between mb-6"
         >
           <h3 className="text-xl md:text-2xl font-bold text-white tracking-wide">
-            Continue Watching
+            Tiếp tục xem
           </h3>
           <Link
             href="/history"
             className="group flex items-center text-sm font-semibold text-[#D4AF37] hover:text-[#E5C158] transition-colors"
           >
-            View All
+            Xem tất cả
             <ChevronRight className="w-4 h-4 ml-1 transition-transform group-hover:translate-x-1" />
           </Link>
         </motion.div>

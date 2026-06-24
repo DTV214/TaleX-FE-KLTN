@@ -17,42 +17,48 @@ export function InterestCategories() {
   const categories = [
     {
       id: 1,
-      name: "Romance",
+      name: "Lãng mạn",
+      slug: "romance",
       icon: Heart,
       image:
         "https://images.unsplash.com/photo-1518621736915-f3b1c41bfd00?q=80&w=500&auto=format&fit=crop",
     },
     {
       id: 2,
-      name: "Fantasy",
+      name: "Kỳ ảo",
+      slug: "fantasy",
       icon: Swords,
       image:
         "https://images.unsplash.com/photo-1605806616949-1e87b487cb2a?q=80&w=500&auto=format&fit=crop",
     },
     {
       id: 3,
-      name: "Action",
+      name: "Hành động",
+      slug: "action",
       icon: Zap,
       image:
         "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?q=80&w=500&auto=format&fit=crop",
     },
     {
       id: 4,
-      name: "Horror",
+      name: "Kinh dị",
+      slug: "horror",
       icon: Ghost,
       image:
         "https://images.unsplash.com/photo-1505635552518-3448ff116af3?q=80&w=500&auto=format&fit=crop",
     },
     {
       id: 5,
-      name: "Thriller",
+      name: "Giật gân",
+      slug: "thriller",
       icon: Eye,
       image:
         "https://images.unsplash.com/photo-1455390582262-044cdead277a?q=80&w=500&auto=format&fit=crop",
     },
     {
       id: 6,
-      name: "Sci-Fi",
+      name: "Khoa học viễn tưởng",
+      slug: "sci-fi",
       icon: Rocket,
       image:
         "https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=500&auto=format&fit=crop",
@@ -86,17 +92,17 @@ export function InterestCategories() {
         >
           <div>
             <h3 className="text-xl md:text-2xl font-bold text-white tracking-wide mb-1">
-              What Are You Interested In?
+              Bạn Quan Tâm Điều Gì?
             </h3>
             <p className="text-sm text-gray-400">
-              Curated collections based on your cinematic soul.
+              Những tuyển tập được chọn lọc theo cảm hứng điện ảnh của bạn.
             </p>
           </div>
           <Link
             href="/explore"
             className="group flex items-center text-sm font-semibold text-[#D4AF37] hover:text-[#E5C158] transition-colors whitespace-nowrap"
           >
-            Explore All
+            Khám phá tất cả
             <ChevronRight className="w-4 h-4 ml-1 transition-transform group-hover:translate-x-1" />
           </Link>
         </motion.div>
@@ -118,7 +124,7 @@ export function InterestCategories() {
                 className="flex-none snap-start"
               >
                 <Link
-                  href={`/genre/${cat.name.toLowerCase()}`}
+                  href={`/genre/${cat.slug}`}
                   className="relative block w-[140px] sm:w-[160px] md:w-[180px] aspect-square rounded-2xl overflow-hidden group bg-white/5 border border-white/5 hover:border-[#D4AF37]/50 transition-all shadow-lg hover:shadow-[0_10px_30px_rgba(212,175,55,0.15)] hover:-translate-y-2"
                 >
                   {/* Background Image trực tiếp */}

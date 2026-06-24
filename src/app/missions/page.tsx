@@ -12,7 +12,7 @@ export default function MissionsPage() {
     <div className="container mx-auto max-w-7xl px-4 py-12">
       <header className="mb-10 max-w-3xl">
         <p className="text-xs font-black uppercase tracking-[0.3em] text-[#D4AF37]">
-          Thử thách hằng ngày
+          Thử Thách Hằng Ngày
         </p>
         <h1 className="mt-3 font-heading text-3xl font-extrabold tracking-tight text-white md:text-5xl">
           Trung Tâm Nhiệm Vụ

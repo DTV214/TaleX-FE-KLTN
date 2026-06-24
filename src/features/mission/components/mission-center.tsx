@@ -237,19 +237,18 @@ export function MissionCenter() {
                     {mission.isCompleted ? (
                       <div
                         role="status"
-                        className="flex h-9 min-w-28 items-center justify-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 text-xs font-bold text-emerald-400"
+                        className="flex h-9 items-center justify-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 text-xs font-bold text-emerald-400"
                       >
                         <CheckCircle2 className="h-4 w-4" />
-                        Đã hoàn thành
+                        Đã nhận thưởng
                       </div>
                     ) : (
-                      <button
-                        type="button"
-                        disabled
-                        className="flex h-9 min-w-28 cursor-not-allowed items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] px-4 text-xs font-bold text-white/40"
+                      <div
+                        aria-disabled="true"
+                        className="flex h-9 items-center justify-center rounded-lg bg-white/[0.04] px-4 text-xs font-bold text-white/40 border border-white/10 cursor-not-allowed"
                       >
                         Đang tiến hành...
-                      </button>
+                      </div>
                     )}
                   </div>
                 </div>

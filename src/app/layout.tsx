@@ -23,8 +23,8 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "TaleX - Where Stories Come Alive",
-  description: "Nền tảng kể chuyện qua video ngắn, manga và animation.",
+  title: "TaleX - Nơi Câu Chuyện Trở Nên Sống Động",
+  description: "Nền tảng kể chuyện qua video ngắn, truyện tranh và hoạt hình.",
 };
 
 export default function RootLayout({

@@ -17,23 +17,23 @@ const rankedComics = [
   {
     id: 2,
     rank: "02",
-    title: "Midnight Melodies",
-    genre: "Noir",
+    title: "Giai Điệu Nửa Đêm",
+    genre: "Hình sự đen tối",
     chapters: 35,
     rating: 4.8,
-    badge: "Top Trend",
+    badge: "Thịnh hành nổi bật",
     image:
       "https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=900&auto=format&fit=crop",
   },
   {
     id: 1,
     rank: "01",
-    title: "Celestial Vanguard",
-    genre: "Action",
+    title: "Đội Tiên Phong Thiên Giới",
+    genre: "Hành động",
     chapters: 48,
     rating: 4.9,
-    badge: "Top Ranked",
-    highlight: "Chapter 48",
+    badge: "Xếp hạng cao nhất",
+    highlight: "Chương 48",
     isSpotlight: true,
     image:
       "https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=1000&auto=format&fit=crop",
@@ -41,34 +41,34 @@ const rankedComics = [
   {
     id: 3,
     rank: "03",
-    title: "Whispers of Grove",
-    genre: "Fantasy",
+    title: "Lời Thì Thầm Của Rừng",
+    genre: "Kỳ ảo",
     chapters: 22,
     rating: 4.7,
-    badge: "Recommended",
-    highlight: "New Chapters",
+    badge: "Đề xuất",
+    highlight: "Chương mới",
     image:
       "https://images.unsplash.com/photo-1448375240586-882707db888b?q=80&w=900&auto=format&fit=crop",
   },
   {
     id: 4,
     rank: "04",
-    title: "Abyssal Echo",
-    genre: "Dark Fantasy",
+    title: "Tiếng Vọng Vực Thẳm",
+    genre: "Kỳ ảo đen tối",
     chapters: 67,
     rating: 4.6,
-    badge: "Editor's Pick",
+    badge: "Biên tập viên đề cử",
     image:
       "https://images.unsplash.com/photo-1507842217343-583bb7270b66?q=80&w=900&auto=format&fit=crop",
   },
   {
     id: 5,
     rank: "05",
-    title: "Glassbound Oracle",
-    genre: "Mystery",
+    title: "Nhà Tiên Tri Trong Kính",
+    genre: "Bí ẩn",
     chapters: 19,
     rating: 4.5,
-    badge: "Rising",
+    badge: "Đang lên",
     image:
       "https://images.unsplash.com/photo-1541961017774-22a55fa24283?q=80&w=900&auto=format&fit=crop",
   },
@@ -105,10 +105,10 @@ export function TrendingComics() {
       <div className="container mx-auto px-4 md:px-8">
         <div className="mb-12 flex flex-col items-center text-center md:mb-16">
           <span className="mb-3 block text-xs font-bold uppercase tracking-[0.45em] text-primary">
-            Visual Legends
+            Huyền Thoại Thị Giác
           </span>
           <h2 className="font-heading text-4xl font-extrabold leading-none text-foreground md:text-6xl lg:text-7xl">
-            Trending Comics
+            Truyện Tranh Thịnh Hành
           </h2>
           <div className="mt-7 h-1 w-20 rounded-full bg-primary shadow-[0_0_18px_rgba(212,175,55,0.45)]" />
         </div>
@@ -189,7 +189,7 @@ export function TrendingComics() {
                         <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] font-bold uppercase tracking-[0.28em] text-primary">
                           <span>{comic.genre}</span>
                           <span className="h-1 w-1 rounded-full bg-primary/70" />
-                          <span>{comic.highlight ?? `${comic.chapters} Chapters`}</span>
+                          <span>{comic.highlight ?? `${comic.chapters} chương`}</span>
                         </div>
 
                         <div
@@ -200,7 +200,7 @@ export function TrendingComics() {
                           }`}
                         >
                           <BookOpen className="h-4 w-4 text-primary" />
-                          Start Reading
+                          Bắt đầu đọc
                         </div>
                       </div>
                     </Link>
@@ -212,7 +212,7 @@ export function TrendingComics() {
 
           <button
             type="button"
-            aria-label="Previous trending comic"
+            aria-label="Xem truyện thịnh hành trước"
             onClick={() => emblaApi?.scrollPrev()}
             className="absolute left-0 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-black/60 text-foreground backdrop-blur-md transition hover:border-primary/50 hover:text-primary md:flex"
           >
@@ -220,7 +220,7 @@ export function TrendingComics() {
           </button>
           <button
             type="button"
-            aria-label="Next trending comic"
+            aria-label="Xem truyện thịnh hành tiếp theo"
             onClick={() => emblaApi?.scrollNext()}
             className="absolute right-0 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-black/60 text-foreground backdrop-blur-md transition hover:border-primary/50 hover:text-primary md:flex"
           >
@@ -231,7 +231,7 @@ export function TrendingComics() {
         <div className="mt-12 flex flex-col items-center justify-between gap-5 md:flex-row">
           <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
             <Flame className="h-4 w-4 text-primary" />
-            Top reads, high ratings, and curated comic picks.
+            Truyện được đọc nhiều, đánh giá cao và tuyển chọn kỹ lưỡng.
           </div>
 
           <div className="flex items-center gap-3">
@@ -239,7 +239,7 @@ export function TrendingComics() {
               <button
                 key={comic.id}
                 type="button"
-                aria-label={`Go to ranked comic ${comic.rank}`}
+                aria-label={`Chuyển đến truyện xếp hạng ${comic.rank}`}
                 onClick={() => emblaApi?.scrollTo(index)}
                 className={`h-2.5 rounded-full transition-all ${
                   selectedIndex === index
@@ -254,7 +254,7 @@ export function TrendingComics() {
             href="/comics"
             className="group inline-flex items-center justify-center gap-2 rounded-lg border border-primary/30 bg-white/[0.04] px-8 py-3 text-sm font-semibold text-foreground transition hover:border-primary/60 hover:bg-primary/10 hover:text-primary"
           >
-            Explore All Comics
+            Khám phá tất cả truyện tranh
             <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
           </Link>
         </div>
