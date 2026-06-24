@@ -14,7 +14,6 @@ import {
 } from "lucide-react";
 import { useDailyCheckInMutation } from "@/features/coin/hooks/useCoinMutations";
 import { useDailyCheckInStatus } from "@/features/coin/hooks/useCoinQueries";
-import type { MissionProgressResponseDto } from "../api/mission.dto";
 import { useMyMissions } from "../hooks/useMissionQueries";
 
 function formatCoin(value: number) {
@@ -75,15 +74,6 @@ export function MissionCenter() {
     checkInStatusQuery.data?.currentStreak ??
     0;
 
-  function handleMissionAction(mission: MissionProgressResponseDto) {
-    if (mission.code === "WATCH_AD_DAILY") {
-      window.alert("Tính năng xem quảng cáo đang được phát triển.");
-      return;
-    }
-
-    window.alert("Hãy hoàn thành hoạt động tương ứng để cập nhật tiến độ.");
-  }
-
   return (
     <div className="flex flex-col lg:flex-row gap-8 items-start">
       <aside className="w-full lg:w-1/3">
@@ -93,7 +83,7 @@ export function MissionCenter() {
 
           <div className="relative text-center">
             <p className="text-xs font-black uppercase tracking-[0.28em] text-[#D4AF37]">
-              Daily Quest
+              NHIỆM VỤ HẰNG NGÀY
             </p>
             <h2 className="mt-3 font-heading text-2xl font-extrabold text-white">
               Nhiệm Vụ Hằng Ngày
@@ -151,7 +141,7 @@ export function MissionCenter() {
         <div className="mb-5 flex items-end justify-between gap-4">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.24em] text-[#D4AF37]">
-              Quest List
+              DANH SÁCH NHIỆM VỤ
             </p>
             <h2 className="mt-2 font-heading text-2xl font-extrabold text-white">
               Danh Sách Nhiệm Vụ
@@ -194,10 +184,6 @@ export function MissionCenter() {
               mission.currentValue,
               mission.targetValue,
             );
-            const isOnlineMission = mission.code
-              .toUpperCase()
-              .startsWith("ONLINE_");
-
             return (
               <article
                 key={mission.missionId}
@@ -249,29 +235,20 @@ export function MissionCenter() {
                     </div>
 
                     {mission.isCompleted ? (
-                      <button
-                        type="button"
-                        disabled
-                        className="inline-flex h-10 min-w-28 items-center justify-center gap-2 rounded-lg border border-emerald-400/30 bg-white/[0.05] px-4 text-xs font-black uppercase tracking-wide text-emerald-300 disabled:cursor-default"
+                      <div
+                        role="status"
+                        className="flex h-9 min-w-28 items-center justify-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 text-xs font-bold text-emerald-400"
                       >
                         <CheckCircle2 className="h-4 w-4" />
-                        Đã Nhận
-                      </button>
-                    ) : isOnlineMission ? (
-                      <button
-                        type="button"
-                        disabled
-                        className="flex h-9 min-w-28 cursor-not-allowed items-center justify-center rounded-lg border border-white/10 bg-white/5 px-4 text-xs font-bold text-white/40"
-                      >
-                        Đang tự động...
-                      </button>
+                        Đã hoàn thành
+                      </div>
                     ) : (
                       <button
                         type="button"
-                        onClick={() => handleMissionAction(mission)}
-                        className="inline-flex h-10 min-w-28 items-center justify-center rounded-lg bg-[#D4AF37] px-4 text-xs font-black uppercase tracking-wide text-black transition hover:bg-[#E5C158]"
+                        disabled
+                        className="flex h-9 min-w-28 cursor-not-allowed items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] px-4 text-xs font-bold text-white/40"
                       >
-                        THỰC HIỆN
+                        Đang tiến hành...
                       </button>
                     )}
                   </div>

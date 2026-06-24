@@ -121,7 +121,7 @@ export function CoinWalletWidget() {
                       }
                     >
                       {mission.isCompleted
-                        ? "Hoàn thành"
+                        ? "Đã hoàn thành"
                         : `${mission.currentValue}/${mission.targetValue}`}
                     </span>
                   </div>
