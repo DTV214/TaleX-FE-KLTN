@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { logoutAction } from "@/features/auth/api/auth.actions";
+import { useAuthStore } from "@/features/auth/store/auth.store";
 import {
   LayoutDashboard,
   FileCheck2, // Cho Creator Applications
@@ -14,6 +16,15 @@ import {
 
 export function StaffSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { clearAuth } = useAuthStore();
+
+  const handleLogout = async () => {
+    await logoutAction();
+    clearAuth();
+    router.push("/login");
+    router.refresh();
+  };
 
   const navItems = [
     { name: "Dashboard", href: "/staff/dashboard", icon: LayoutDashboard },
@@ -81,7 +92,10 @@ export function StaffSidebar() {
           <HelpCircle className="w-5 h-5 text-gray-400" />
           Staff Guidelines
         </button>
-        <button className="flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-medium text-gray-500 hover:bg-red-50 hover:text-red-600 w-full transition-colors mt-2">
+        <button
+            onClick={handleLogout}
+            className="flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-medium text-gray-500 hover:bg-red-50 hover:text-red-600 w-full transition-colors mt-2"
+          >
           <LogOut className="w-5 h-5 text-gray-400" />
           Logout
         </button>
