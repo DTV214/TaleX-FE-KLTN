@@ -60,9 +60,11 @@ import {
   listSeasonsBySeries,
   listSeriesByCreator,
   reorderEpisodeMedia,
+  scheduleEpisodePublish,
   updateEpisode,
   updateSeason,
   updateSeries,
+  type ContentApprovalStatus as ApiContentApprovalStatus,
   type EpisodeResponse,
   type MediaStatus,
   type MediaResponse,
@@ -157,6 +159,7 @@ type ApiLifecycleStatus = "DRAFT" | "PUBLISHED" | "HIDDEN" | "DELETED";
 type SeriesStatus = ApiLifecycleStatus | "ACTION_REQUIRED";
 type SeasonStatus = ApiLifecycleStatus;
 type EpisodeStatus = ApiLifecycleStatus | "REVIEW";
+type ContentApprovalStatus = ApiContentApprovalStatus;
 type Visibility = "PUBLIC" | "PRIVATE";
 
 type EditModalState =
@@ -195,6 +198,12 @@ type DeleteModalState =
   | { kind: "media"; value: ComicPage | MediaResponse }
   | null;
 
+type ScheduleModalState =
+  | { kind: "episode"; value: EpisodeRow }
+  | null;
+
+type ActiveScheduleModal = Exclude<ScheduleModalState, null>;
+
 type SeriesRow = {
   id: string;
   creatorId?: string;
@@ -205,6 +214,10 @@ type SeriesRow = {
   bannerUrl: string;
   contentType: ContentType;
   status: SeriesStatus;
+  approvalStatus: ContentApprovalStatus;
+  approvalReviewedAt?: string;
+  approvalReviewedBy?: string;
+  scheduledPublishAt?: string;
   visibility: Visibility;
   ageRating: string;
   language: string;
@@ -222,6 +235,10 @@ type SeasonRow = {
   title: string;
   description: string;
   status: SeasonStatus;
+  approvalStatus: ContentApprovalStatus;
+  approvalReviewedAt?: string;
+  approvalReviewedBy?: string;
+  scheduledPublishAt?: string;
   episodes: number;
   publishedEpisodes: number;
   updatedAt: string;
@@ -235,6 +252,10 @@ type EpisodeRow = {
   description: string;
   contentType: ContentType;
   status: EpisodeStatus;
+  approvalStatus: ContentApprovalStatus;
+  approvalReviewedAt?: string;
+  approvalReviewedBy?: string;
+  scheduledPublishAt?: string;
   mediaCount: number;
   totalPage?: number;
   views: string;
@@ -339,19 +360,6 @@ function getServerSnapshot() {
   return false;
 }
 
-function toApiLifecycleStatus(status: SeriesStatus | SeasonStatus | EpisodeStatus) {
-  if (
-    status === "DRAFT" ||
-    status === "PUBLISHED" ||
-    status === "HIDDEN" ||
-    status === "DELETED"
-  ) {
-    return status;
-  }
-
-  return "DRAFT";
-}
-
 function readFormString(form: FormData, key: string) {
   return String(form.get(key) ?? "").trim();
 }
@@ -383,6 +391,55 @@ function formatStatusLabel(status: SeriesStatus | SeasonStatus | EpisodeStatus) 
   }
 
   return status;
+}
+
+function formatApprovalStatusLabel(status: ContentApprovalStatus) {
+  switch (status) {
+    case "APPROVED":
+      return "Approved";
+    case "REJECTED":
+      return "Rejected";
+    default:
+      return "Pending Review";
+  }
+}
+
+function getApprovalChipClass(status: ContentApprovalStatus) {
+  switch (status) {
+    case "APPROVED":
+      return "border-[#25B67A] bg-[#E9FBF2] text-[#067647]";
+    case "REJECTED":
+      return "border-[#FFD8D4] bg-[#FFF7F6] text-[#B42318]";
+    default:
+      return "border-[#F4B9CC] bg-[#FFF4F8] text-[#B83268]";
+  }
+}
+
+function formatDateTime(value?: string) {
+  if (!value) {
+    return "-";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat("en", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+}
+
+function toDateTimeLocalValue(value?: string) {
+  const source = value ? new Date(value) : new Date(Date.now() + 60 * 60 * 1000);
+  const date = Number.isNaN(source.getTime())
+    ? new Date(Date.now() + 60 * 60 * 1000)
+    : source;
+  const pad = (part: number) => String(part).padStart(2, "0");
+
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
 function formatMediaStatusLabel(status: MediaStatus) {
@@ -476,6 +533,10 @@ function mapSeriesResponse(series: SeriesResponse): SeriesRow {
     bannerUrl: normalizeAssetUrl(series.bannerUrl),
     contentType: series.contentType,
     status: series.status,
+    approvalStatus: series.approvalStatus ?? "PENDING_REVIEW",
+    approvalReviewedAt: series.approvalReviewedAt,
+    approvalReviewedBy: series.approvalReviewedBy,
+    scheduledPublishAt: series.scheduledPublishAt,
     visibility: series.visibility || "PUBLIC",
     ageRating: series.ageRating || "",
     language: series.language || "",
@@ -494,6 +555,10 @@ function mapSeasonResponse(season: SeasonResponse): SeasonRow {
     title: season.title,
     description: season.description || "No description yet.",
     status: season.status,
+    approvalStatus: season.approvalStatus ?? "PENDING_REVIEW",
+    approvalReviewedAt: season.approvalReviewedAt,
+    approvalReviewedBy: season.approvalReviewedBy,
+    scheduledPublishAt: season.scheduledPublishAt,
     episodes: 0,
     publishedEpisodes: 0,
     updatedAt: season.updatedAt || season.createdAt || "-",
@@ -509,6 +574,10 @@ function mapEpisodeResponse(episode: EpisodeResponse): EpisodeRow {
     description: episode.description || "No description yet.",
     contentType: episode.contentType,
     status: episode.status,
+    approvalStatus: episode.approvalStatus ?? "PENDING_REVIEW",
+    approvalReviewedAt: episode.approvalReviewedAt,
+    approvalReviewedBy: episode.approvalReviewedBy,
+    scheduledPublishAt: episode.scheduledPublishAt,
     mediaCount: episode.totalPage ?? 0,
     totalPage: episode.totalPage,
     views: formatNumber(episode.views),
@@ -566,6 +635,7 @@ function CreatorDashboardContent() {
   const [uploadMessage, setUploadMessage] = useState<string | null>(null);
   const [editModal, setEditModal] = useState<EditModalState>(null);
   const [deleteModal, setDeleteModal] = useState<DeleteModalState>(null);
+  const [scheduleModal, setScheduleModal] = useState<ScheduleModalState>(null);
 
   function setDashboardRouteState(nextState: DashboardRouteState) {
     setActiveView(nextState.view);
@@ -685,7 +755,6 @@ function CreatorDashboardContent() {
         coverUrl,
         bannerUrl,
         contentType: input.contentType,
-        status: "DRAFT",
         visibility: input.visibility,
         ageRating: input.ageRating,
         language: input.language,
@@ -727,7 +796,6 @@ function CreatorDashboardContent() {
             : "New Video Episode",
         description: "Draft episode created from creator dashboard.",
         contentType: selectedSeries.contentType,
-        status: "DRAFT",
         actorId: CREATOR_DASHBOARD_ACTOR_ID,
       });
 
@@ -758,7 +826,6 @@ function CreatorDashboardContent() {
         seasonNumber: nextSeasonNumber,
         title: `Season ${nextSeasonNumber}`,
         description: "Draft season created from creator dashboard.",
-        status: "DRAFT",
         actorId: CREATOR_DASHBOARD_ACTOR_ID,
       });
     },
@@ -801,7 +868,6 @@ function CreatorDashboardContent() {
         coverUrl: uploadedCoverUrl || series.coverUrl,
         bannerUrl: uploadedBannerUrl || series.bannerUrl,
         contentType: series.contentType,
-        status: toApiLifecycleStatus(series.status),
         visibility: series.visibility,
         ageRating: series.ageRating,
         language: series.language,
@@ -850,7 +916,6 @@ function CreatorDashboardContent() {
         title: season.title,
         seasonNumber: season.seasonNumber,
         description: season.description,
-        status: toApiLifecycleStatus(season.status),
         actorId: CREATOR_DASHBOARD_ACTOR_ID,
       });
     },
@@ -900,7 +965,6 @@ function CreatorDashboardContent() {
         episodeNumber: episode.episodeNumber,
         description: episode.description,
         contentType: episode.contentType,
-        status: toApiLifecycleStatus(episode.status),
         totalPage: episode.totalPage,
         actorId: CREATOR_DASHBOARD_ACTOR_ID,
       });
@@ -940,6 +1004,37 @@ function CreatorDashboardContent() {
     onError: (error) => {
       setUploadMessage(
         error instanceof Error ? error.message : "Cannot delete episode.",
+      );
+    },
+  });
+
+  const schedulePublishMutation = useMutation({
+    mutationFn: async ({
+      target,
+      scheduledPublishAt,
+    }: {
+      target: ActiveScheduleModal;
+      scheduledPublishAt: string;
+    }) => {
+      if (target.value.approvalStatus !== "APPROVED") {
+        throw new Error("Content must be approved before scheduling.");
+      }
+
+      return scheduleEpisodePublish(target.value.id, { scheduledPublishAt });
+    },
+    onSuccess: () => {
+      setUploadMessage("Publish schedule saved.");
+      setScheduleModal(null);
+      queryClient.invalidateQueries({
+        queryKey: ["creator-dashboard", "episodes", selectedSeason?.id],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["creator-dashboard", "media", selectedEpisode?.id],
+      });
+    },
+    onError: (error) => {
+      setUploadMessage(
+        error instanceof Error ? error.message : "Cannot schedule publish.",
       );
     },
   });
@@ -1232,12 +1327,26 @@ function CreatorDashboardContent() {
 
   function handleUpdateEpisode(episode: EpisodeRow) {
     setUploadMessage(null);
+    if (episode.contentType === "VIDEO") {
+      openEpisodeUpload(episode);
+      return;
+    }
     setEditModal({ kind: "episode", value: episode });
   }
 
   function handleDeleteEpisode(episode: EpisodeRow) {
     setUploadMessage(null);
     setDeleteModal({ kind: "episode", value: episode });
+  }
+
+  function handleSchedulePublish(target: ActiveScheduleModal) {
+    if (target.value.approvalStatus !== "APPROVED") {
+      setUploadMessage("Content must be approved before scheduling.");
+      return;
+    }
+
+    setUploadMessage(null);
+    setScheduleModal(target);
   }
 
   function handleDeleteComicPage(page: ComicPage) {
@@ -1553,6 +1662,11 @@ function CreatorDashboardContent() {
               uploadMessage={uploadMessage}
               onUploadCompleted={handleVideoUploadCompleted}
               onDeleteVideo={handleDeleteVideo}
+              onSaveEpisode={(episode) => updateEpisodeMutation.mutate(episode)}
+              isSavingEpisode={updateEpisodeMutation.isPending}
+              onSchedulePublish={(episode) =>
+                handleSchedulePublish({ kind: "episode", value: episode })
+              }
               onBack={() =>
                 setDashboardRouteState({
                   view: "episodes",
@@ -1594,6 +1708,21 @@ function CreatorDashboardContent() {
         uploadMessage={uploadMessage}
         onClose={() => setEditModal(null)}
         onSubmit={handleSubmitEdit}
+      />
+      <SchedulePublishModal
+        modal={scheduleModal}
+        isSaving={schedulePublishMutation.isPending}
+        onClose={() => setScheduleModal(null)}
+        onSubmit={(scheduledPublishAt) => {
+          if (!scheduleModal) {
+            return;
+          }
+
+          schedulePublishMutation.mutate({
+            target: scheduleModal,
+            scheduledPublishAt,
+          });
+        }}
       />
       <DeleteEntityModal
         modal={deleteModal}
@@ -1656,7 +1785,6 @@ function EditEntityModal({
         coverUrl: readFormString(form, "coverUrl"),
         bannerUrl: readFormString(form, "bannerUrl"),
         contentType: readFormString(form, "contentType") as ContentType,
-        status: readFormString(form, "status") as ApiLifecycleStatus,
         visibility: readFormString(form, "visibility") as Visibility,
         ageRating: readFormString(form, "ageRating"),
         language: readFormString(form, "language"),
@@ -1688,7 +1816,6 @@ function EditEntityModal({
         )!,
         title,
         description: readFormString(form, "description"),
-        status: readFormString(form, "status") as ApiLifecycleStatus,
       },
     });
   }
@@ -1717,7 +1844,6 @@ function EditEntityModal({
         title,
         description: readFormString(form, "description"),
         contentType: readFormString(form, "contentType") as ContentType,
-        status: readFormString(form, "status") as ApiLifecycleStatus,
         totalPage,
       },
     });
@@ -1810,17 +1936,12 @@ function EditEntityModal({
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
-            <Field label="Status">
-              <select
-                name="status"
-                defaultValue={toApiLifecycleStatus(modal.value.status)}
+            <Field label="Lifecycle">
+              <input
+                value={formatStatusLabel(modal.value.status)}
+                readOnly
                 className={controlClass}
-              >
-                <option value="DRAFT">DRAFT</option>
-                <option value="PUBLISHED">PUBLISHED</option>
-                <option value="HIDDEN">HIDDEN</option>
-                <option value="DELETED">DELETED</option>
-              </select>
+              />
             </Field>
             <Field label="Visibility">
               <select
@@ -1900,17 +2021,12 @@ function EditEntityModal({
               className={textareaClass}
             />
           </Field>
-          <Field label="Status">
-            <select
-              name="status"
-              defaultValue={toApiLifecycleStatus(modal.value.status)}
+          <Field label="Lifecycle">
+            <input
+              value={formatStatusLabel(modal.value.status)}
+              readOnly
               className={controlClass}
-            >
-              <option value="DRAFT">DRAFT</option>
-              <option value="PUBLISHED">PUBLISHED</option>
-              <option value="HIDDEN">HIDDEN</option>
-              <option value="DELETED">DELETED</option>
-            </select>
+            />
           </Field>
           <ModalActions isSaving={isSaving} onClose={onClose} />
         </form>
@@ -1955,17 +2071,12 @@ function EditEntityModal({
             />
           </Field>
           <div className="grid gap-4 md:grid-cols-2">
-            <Field label="Status">
-              <select
-                name="status"
-                defaultValue={toApiLifecycleStatus(modal.value.status)}
+            <Field label="Lifecycle">
+              <input
+                value={formatStatusLabel(modal.value.status)}
+                readOnly
                 className={controlClass}
-              >
-                <option value="DRAFT">DRAFT</option>
-                <option value="PUBLISHED">PUBLISHED</option>
-                <option value="HIDDEN">HIDDEN</option>
-                <option value="DELETED">DELETED</option>
-              </select>
+              />
             </Field>
             <Field label="Total Page">
               <input
@@ -1980,6 +2091,85 @@ function EditEntityModal({
           <ModalActions isSaving={isSaving} onClose={onClose} />
         </form>
       )}
+    </ModalShell>
+  );
+}
+
+function SchedulePublishModal({
+  modal,
+  isSaving,
+  onClose,
+  onSubmit,
+}: {
+  modal: ScheduleModalState;
+  isSaving: boolean;
+  onClose: () => void;
+  onSubmit: (scheduledPublishAt: string) => void;
+}) {
+  if (!modal) {
+    return null;
+  }
+
+  const title = modal.value.title;
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const scheduledPublishAt = readFormString(form, "scheduledPublishAt");
+
+    if (!scheduledPublishAt) {
+      return;
+    }
+
+    onSubmit(scheduledPublishAt);
+  }
+
+  return (
+    <ModalShell
+      title="Schedule Publish"
+      subtitle="Only approved content can be scheduled for publication."
+      onClose={onClose}
+      compact
+    >
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="rounded-2xl border border-[#D9E2F0] bg-[#F8FAFF] p-4">
+          <p className="text-xs font-black uppercase tracking-[0.12em] text-slate-400">
+            {modal.kind}
+          </p>
+          <p className="mt-1 text-lg font-black text-[#151A23]">{title}</p>
+          <p className="mt-2 text-xs font-bold text-[#5D5160]">
+            Current schedule: {formatDateTime(modal.value.scheduledPublishAt)}
+          </p>
+        </div>
+
+        <Field label="Publish At" required>
+          <input
+            name="scheduledPublishAt"
+            type="datetime-local"
+            required
+            min={toDateTimeLocalValue()}
+            defaultValue={toDateTimeLocalValue(modal.value.scheduledPublishAt)}
+            className="h-12 w-full rounded-xl border border-[#E8BBCB] bg-[#F8FAFF] px-4 text-sm font-semibold outline-none focus:border-[#B83268] focus:bg-white"
+          />
+        </Field>
+
+        <div className="flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-full border border-[#E8BBCB] bg-white px-5 py-3 text-sm font-black text-[#5D5160]"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={isSaving}
+            className="rounded-full bg-[#007A8A] px-5 py-3 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isSaving ? "Saving..." : "Save Schedule"}
+          </button>
+        </div>
+      </form>
     </ModalShell>
   );
 }
@@ -2241,7 +2431,7 @@ function SeriesManagementView({
       </div>
 
       <div className="overflow-hidden rounded-[24px] border border-[#E1E7F0] bg-white shadow-[0_20px_60px_rgba(30,42,68,0.07)]">
-        <div className="grid grid-cols-[1.8fr_0.8fr_0.9fr_1fr_1.15fr] bg-[#EEF3FB] px-8 py-5 text-xs font-black uppercase tracking-[0.12em] text-[#5D5160] max-lg:hidden">
+        <div className="grid grid-cols-[1.8fr_0.8fr_1fr_1fr_1.15fr] bg-[#EEF3FB] px-8 py-5 text-xs font-black uppercase tracking-[0.12em] text-[#5D5160] max-lg:hidden">
           <span>Series Details</span>
           <span>Type</span>
           <span>Status</span>
@@ -2373,7 +2563,7 @@ function SeriesTableRow({
   const isDraft = series.status === "DRAFT";
 
   return (
-    <div className="grid min-h-[116px] grid-cols-1 gap-4 px-5 py-5 lg:grid-cols-[1.8fr_0.8fr_0.9fr_1fr_1.15fr] lg:items-center lg:px-8">
+    <div className="grid min-h-[116px] grid-cols-1 gap-4 px-5 py-5 lg:grid-cols-[1.8fr_0.8fr_1fr_1fr_1.15fr] lg:items-center lg:px-8">
       <div className="flex items-center gap-4">
         <SeriesCoverImage
           src={series.coverUrl}
@@ -2407,7 +2597,7 @@ function SeriesTableRow({
         </span>
       </div>
 
-      <div>
+      <div className="space-y-2">
         <span
           className={cx(
             "inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-black",
@@ -2426,6 +2616,14 @@ function SeriesTableRow({
             <CircleAlert className="h-4 w-4" />
           )}
           {formatStatusLabel(series.status)}
+        </span>
+        <span
+          className={cx(
+            "inline-flex rounded-full border px-3 py-1 text-xs font-black",
+            getApprovalChipClass(series.approvalStatus),
+          )}
+        >
+          {formatApprovalStatusLabel(series.approvalStatus)}
         </span>
       </div>
 
@@ -2594,6 +2792,14 @@ function SeasonCard({
               )}
             >
               {formatStatusLabel(season.status)}
+            </span>
+            <span
+              className={cx(
+                "rounded-full border px-3 py-1 text-xs font-black",
+                getApprovalChipClass(season.approvalStatus),
+              )}
+            >
+              {formatApprovalStatusLabel(season.approvalStatus)}
             </span>
           </div>
           <h3 className="text-xl font-black text-[#151A23]">{season.title}</h3>
@@ -2770,7 +2976,7 @@ function EpisodeTableRow({
           {isComic ? "Comic" : "Video"}
         </span>
       </div>
-      <div>
+      <div className="space-y-2">
         <span
           className={cx(
             "rounded-full border px-3 py-1.5 text-xs font-black",
@@ -2778,6 +2984,14 @@ function EpisodeTableRow({
           )}
         >
           {formatStatusLabel(episode.status)}
+        </span>
+        <span
+          className={cx(
+            "inline-flex rounded-full border px-3 py-1 text-xs font-black",
+            getApprovalChipClass(episode.approvalStatus),
+          )}
+        >
+          {formatApprovalStatusLabel(episode.approvalStatus)}
         </span>
       </div>
       <div className="text-sm font-bold text-[#5D5160]">
@@ -3346,6 +3560,9 @@ function VideoUploadView({
   uploadMessage,
   onUploadCompleted,
   onDeleteVideo,
+  onSaveEpisode,
+  isSavingEpisode,
+  onSchedulePublish,
   onBack,
 }: {
   selectedSeries: SeriesRow | null;
@@ -3356,8 +3573,35 @@ function VideoUploadView({
   uploadMessage: string | null;
   onUploadCompleted: (media: MediaResponse) => void;
   onDeleteVideo: (media: MediaResponse) => void;
+  onSaveEpisode: (episode: EpisodeRow) => void;
+  isSavingEpisode: boolean;
+  onSchedulePublish: (episode: EpisodeRow) => void;
   onBack: () => void;
 }) {
+  const canSchedule = selectedEpisode.approvalStatus === "APPROVED";
+
+  function handleEpisodeSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const title = readFormString(form, "title");
+
+    if (!title) {
+      return;
+    }
+
+    onSaveEpisode({
+      ...selectedEpisode,
+      episodeNumber: readFormNumber(
+        form,
+        "episodeNumber",
+        selectedEpisode.episodeNumber,
+      )!,
+      title,
+      description: readFormString(form, "description"),
+      contentType: "VIDEO",
+    });
+  }
+
   return (
     <div className="space-y-4">
       <button
@@ -3375,59 +3619,90 @@ function VideoUploadView({
           <PanelHeader
             icon={Clapperboard}
             title="Episode Details"
-            subtitle="Selected episode from the creator catalog."
+            subtitle="Edit episode metadata and save before publishing."
           />
-          <div className="grid gap-5 md:grid-cols-2">
-            <Field label="Series">
+          <form
+            key={selectedEpisode.id}
+            onSubmit={handleEpisodeSubmit}
+            className="space-y-5"
+          >
+            <div className="grid gap-5 md:grid-cols-2">
+              <Field label="Series">
+                <input
+                  value={selectedSeries?.title ?? "Unknown series"}
+                  readOnly
+                  className="h-12 w-full rounded-xl border border-[#E8BBCB] bg-[#F8FAFF] px-4 text-sm font-semibold"
+                />
+              </Field>
+              <Field label="Season">
+                <input
+                  value={
+                    selectedSeason
+                      ? `Season ${selectedSeason.seasonNumber}: ${selectedSeason.title}`
+                      : selectedEpisode.seasonId
+                  }
+                  readOnly
+                  className="h-12 w-full rounded-xl border border-[#E8BBCB] bg-[#F8FAFF] px-4 text-sm font-semibold"
+                />
+              </Field>
+              <Field label="Episode Number">
+                <input
+                  type="number"
+                  min={1}
+                  name="episodeNumber"
+                  defaultValue={selectedEpisode.episodeNumber}
+                  className="h-12 w-full rounded-xl border border-[#E8BBCB] bg-[#F8FAFF] px-4 text-sm font-semibold outline-none focus:border-[#B83268] focus:bg-white"
+                />
+              </Field>
+              <Field label="Lifecycle">
+                <input
+                  value={formatStatusLabel(selectedEpisode.status)}
+                  readOnly
+                  className="h-12 w-full rounded-xl border border-[#E8BBCB] bg-[#F8FAFF] px-4 text-sm font-semibold"
+                />
+              </Field>
+              <Field label="Approval">
+                <input
+                  value={formatApprovalStatusLabel(selectedEpisode.approvalStatus)}
+                  readOnly
+                  className="h-12 w-full rounded-xl border border-[#E8BBCB] bg-[#F8FAFF] px-4 text-sm font-semibold"
+                />
+              </Field>
+              <Field label="Content Type">
+                <input
+                  value="VIDEO"
+                  readOnly
+                  className="h-12 w-full rounded-xl border border-[#E8BBCB] bg-[#F8FAFF] px-4 text-sm font-semibold"
+                />
+              </Field>
+            </div>
+            <Field label="Episode Title" required>
               <input
-                value={selectedSeries?.title ?? "Unknown series"}
-                readOnly
-                className="h-12 w-full rounded-xl border border-[#E8BBCB] bg-[#F8FAFF] px-4 text-sm font-semibold"
-              />
-            </Field>
-            <Field label="Season">
-              <input
-                value={
-                  selectedSeason
-                    ? `Season ${selectedSeason.seasonNumber}: ${selectedSeason.title}`
-                    : selectedEpisode.seasonId
-                }
-                readOnly
-                className="h-12 w-full rounded-xl border border-[#E8BBCB] bg-[#F8FAFF] px-4 text-sm font-semibold"
-              />
-            </Field>
-            <Field label="Episode Number">
-              <input
-                value={selectedEpisode.episodeNumber}
-                readOnly
-                className="h-12 w-full rounded-xl border border-[#E8BBCB] bg-[#F8FAFF] px-4 text-sm font-semibold"
-              />
-            </Field>
-            <Field label="Status">
-              <input
-                value={formatStatusLabel(selectedEpisode.status)}
-                readOnly
-                className="h-12 w-full rounded-xl border border-[#E8BBCB] bg-[#F8FAFF] px-4 text-sm font-semibold"
-              />
-            </Field>
-          </div>
-          <div className="mt-5 space-y-5">
-            <Field label="Episode Title">
-              <input
-                value={selectedEpisode.title}
-                readOnly
-                className="h-12 w-full rounded-xl border border-[#E8BBCB] bg-[#F8FAFF] px-4 text-sm font-semibold"
+                name="title"
+                required
+                defaultValue={selectedEpisode.title}
+                className="h-12 w-full rounded-xl border border-[#E8BBCB] bg-[#F8FAFF] px-4 text-sm font-semibold outline-none focus:border-[#B83268] focus:bg-white"
               />
             </Field>
             <Field label="Description">
               <textarea
+                name="description"
                 rows={5}
-                value={selectedEpisode.description}
-                readOnly
-                className="w-full resize-none rounded-xl border border-[#E8BBCB] bg-[#F8FAFF] p-4 text-sm font-semibold"
+                defaultValue={selectedEpisode.description}
+                className="w-full resize-none rounded-xl border border-[#E8BBCB] bg-[#F8FAFF] p-4 text-sm font-semibold outline-none focus:border-[#B83268] focus:bg-white"
               />
             </Field>
-          </div>
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                disabled={isSavingEpisode}
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[#B83268] px-5 text-sm font-black text-white shadow-lg shadow-pink-900/20 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <CheckCircle2 className="h-4 w-4" />
+                {isSavingEpisode ? "Saving..." : "Save Episode"}
+              </button>
+            </div>
+          </form>
         </Panel>
 
         <Panel>
@@ -3527,23 +3802,29 @@ function VideoUploadView({
         <Panel>
           <PanelHeader icon={Calendar} title="Publishing" />
           <div className="space-y-4">
-            <select className="h-12 w-full rounded-xl border border-[#E8BBCB] bg-[#F8FAFF] px-4 text-sm font-semibold">
-              <option>Publish Immediately on Approval</option>
-              <option>Schedule Publish</option>
-            </select>
-            <div className="grid grid-cols-2 gap-3">
-              <input
-                placeholder="mm/dd/yyyy"
-                className="h-12 rounded-xl border border-[#E8BBCB] bg-[#F8FAFF] px-4 text-sm font-semibold"
-              />
-              <input
-                placeholder="--:--"
-                className="h-12 rounded-xl border border-[#E8BBCB] bg-[#F8FAFF] px-4 text-sm font-semibold"
-              />
+            <div
+              className={cx(
+                "rounded-xl border p-4 text-xs font-bold leading-relaxed",
+                getApprovalChipClass(selectedEpisode.approvalStatus),
+              )}
+            >
+              Approval: {formatApprovalStatusLabel(selectedEpisode.approvalStatus)}
+            </div>
+            <div className="rounded-xl bg-[#F8FAFF] p-4 text-xs font-bold leading-relaxed text-[#5D5160]">
+              Scheduled publish: {formatDateTime(selectedEpisode.scheduledPublishAt)}
             </div>
             <div className="rounded-xl bg-[#E8F8FF] p-4 text-xs font-bold leading-relaxed text-[#075985]">
               All new episodes require moderation approval before going live.
             </div>
+            <button
+              type="button"
+              onClick={() => onSchedulePublish(selectedEpisode)}
+              disabled={!canSchedule}
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#007A8A] text-sm font-black text-white disabled:cursor-not-allowed disabled:bg-[#D9E2F0] disabled:text-slate-500"
+            >
+              <Calendar className="h-4 w-4" />
+              Schedule Publish
+            </button>
           </div>
         </Panel>
 

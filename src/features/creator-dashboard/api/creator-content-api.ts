@@ -9,6 +9,7 @@ export type SeriesStatus = "DRAFT" | "PUBLISHED" | "HIDDEN" | "DELETED";
 export type Visibility = "PUBLIC" | "PRIVATE";
 export type SeasonStatus = "DRAFT" | "PUBLISHED" | "HIDDEN" | "DELETED";
 export type EpisodeStatus = "DRAFT" | "PUBLISHED" | "HIDDEN" | "DELETED";
+export type ContentApprovalStatus = "PENDING_REVIEW" | "APPROVED" | "REJECTED";
 export type MediaType = "VIDEO" | "IMAGE";
 export type MediaStatus =
   | "PROCESSING"
@@ -44,6 +45,10 @@ export type SeriesResponse = {
   bannerUrl?: string;
   contentType: ContentType;
   status: SeriesStatus;
+  approvalStatus?: ContentApprovalStatus;
+  approvalReviewedAt?: string;
+  approvalReviewedBy?: string;
+  scheduledPublishAt?: string;
   visibility?: Visibility;
   ageRating?: string;
   language?: string;
@@ -62,6 +67,10 @@ export type SeasonResponse = {
   title: string;
   description?: string;
   status: SeasonStatus;
+  approvalStatus?: ContentApprovalStatus;
+  approvalReviewedAt?: string;
+  approvalReviewedBy?: string;
+  scheduledPublishAt?: string;
   createdAt?: string;
   updatedAt?: string;
 };
@@ -74,6 +83,10 @@ export type EpisodeResponse = {
   description?: string;
   contentType: ContentType;
   status: EpisodeStatus;
+  approvalStatus?: ContentApprovalStatus;
+  approvalReviewedAt?: string;
+  approvalReviewedBy?: string;
+  scheduledPublishAt?: string;
   publishedAt?: string;
   likes?: number;
   views?: number;
@@ -219,6 +232,10 @@ export type MediaUrlUpdateRequest = {
   actorId?: string;
 };
 
+export type ScheduledPublishRequest = {
+  scheduledPublishAt: string;
+};
+
 export async function listSeriesByCreator(
   creatorId: string,
   page = 1,
@@ -240,6 +257,18 @@ export async function createSeries(request: SeriesRequest) {
 export async function updateSeries(id: string, request: SeriesRequest) {
   return unwrapBaseResponse<SeriesResponse>(
     httpClient.put(`/api/v1/series/${id}`, request),
+  );
+}
+
+export async function approveSeries(id: string) {
+  return unwrapBaseResponse<SeriesResponse>(
+    httpClient.patch(`/api/v1/series/${id}/approve`),
+  );
+}
+
+export async function rejectSeries(id: string) {
+  return unwrapBaseResponse<SeriesResponse>(
+    httpClient.patch(`/api/v1/series/${id}/reject`),
   );
 }
 
@@ -269,6 +298,18 @@ export async function updateSeason(id: string, request: SeasonRequest) {
   );
 }
 
+export async function approveSeason(id: string) {
+  return unwrapBaseResponse<SeasonResponse>(
+    httpClient.patch(`/api/v1/seasons/${id}/approve`),
+  );
+}
+
+export async function rejectSeason(id: string) {
+  return unwrapBaseResponse<SeasonResponse>(
+    httpClient.patch(`/api/v1/seasons/${id}/reject`),
+  );
+}
+
 export async function deleteSeason(id: string, actorId?: string) {
   return unwrapBaseResponse<void>(
     httpClient.delete(`/api/v1/seasons/${id}`, {
@@ -295,6 +336,27 @@ export async function createEpisode(
 export async function updateEpisode(id: string, request: EpisodeRequest) {
   return unwrapBaseResponse<EpisodeResponse>(
     httpClient.put(`/api/v1/episodes/${id}`, request),
+  );
+}
+
+export async function approveEpisode(id: string) {
+  return unwrapBaseResponse<EpisodeResponse>(
+    httpClient.patch(`/api/v1/episodes/${id}/approve`),
+  );
+}
+
+export async function rejectEpisode(id: string) {
+  return unwrapBaseResponse<EpisodeResponse>(
+    httpClient.patch(`/api/v1/episodes/${id}/reject`),
+  );
+}
+
+export async function scheduleEpisodePublish(
+  id: string,
+  request: ScheduledPublishRequest,
+) {
+  return unwrapBaseResponse<EpisodeResponse>(
+    httpClient.patch(`/api/v1/episodes/${id}/schedule-publish`, request),
   );
 }
 
