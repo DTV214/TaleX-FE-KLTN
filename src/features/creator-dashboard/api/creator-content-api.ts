@@ -10,6 +10,7 @@ export type Visibility = "PUBLIC" | "PRIVATE";
 export type SeasonStatus = "DRAFT" | "PUBLISHED" | "HIDDEN" | "DELETED";
 export type EpisodeStatus = "DRAFT" | "PUBLISHED" | "HIDDEN" | "DELETED";
 export type ContentApprovalStatus = "PENDING_REVIEW" | "APPROVED" | "REJECTED";
+export type EpisodeUnlockType = "FREE" | "PAID";
 export type MediaType = "VIDEO" | "IMAGE";
 export type MediaStatus =
   | "PROCESSING"
@@ -45,10 +46,6 @@ export type SeriesResponse = {
   bannerUrl?: string;
   contentType: ContentType;
   status: SeriesStatus;
-  approvalStatus?: ContentApprovalStatus;
-  approvalReviewedAt?: string;
-  approvalReviewedBy?: string;
-  scheduledPublishAt?: string;
   visibility?: Visibility;
   ageRating?: string;
   language?: string;
@@ -67,10 +64,6 @@ export type SeasonResponse = {
   title: string;
   description?: string;
   status: SeasonStatus;
-  approvalStatus?: ContentApprovalStatus;
-  approvalReviewedAt?: string;
-  approvalReviewedBy?: string;
-  scheduledPublishAt?: string;
   createdAt?: string;
   updatedAt?: string;
 };
@@ -83,11 +76,10 @@ export type EpisodeResponse = {
   description?: string;
   contentType: ContentType;
   status: EpisodeStatus;
-  approvalStatus?: ContentApprovalStatus;
-  approvalReviewedAt?: string;
-  approvalReviewedBy?: string;
   scheduledPublishAt?: string;
   publishedAt?: string;
+  unlockType?: EpisodeUnlockType;
+  priceVnd?: number;
   likes?: number;
   views?: number;
   totalPage?: number;
@@ -122,6 +114,9 @@ export type MediaResponse = {
   duration?: number;
   displayOrder?: number;
   status: MediaStatus;
+  approvalStatus?: ContentApprovalStatus;
+  approvalReviewedAt?: string;
+  approvalReviewedBy?: string;
   playbackPolicy?: string;
   protectionType?: string;
   tokenPolicy?: string;
@@ -165,6 +160,8 @@ export type EpisodeRequest = {
   description?: string;
   contentType?: ContentType;
   status?: EpisodeStatus;
+  unlockType?: EpisodeUnlockType;
+  priceVnd?: number;
   totalPage?: number;
   actorId?: string;
 };
@@ -260,18 +257,6 @@ export async function updateSeries(id: string, request: SeriesRequest) {
   );
 }
 
-export async function approveSeries(id: string) {
-  return unwrapBaseResponse<SeriesResponse>(
-    httpClient.patch(`/api/v1/series/${id}/approve`),
-  );
-}
-
-export async function rejectSeries(id: string) {
-  return unwrapBaseResponse<SeriesResponse>(
-    httpClient.patch(`/api/v1/series/${id}/reject`),
-  );
-}
-
 export async function deleteSeries(id: string, actorId?: string) {
   return unwrapBaseResponse<void>(
     httpClient.delete(`/api/v1/series/${id}`, {
@@ -295,18 +280,6 @@ export async function createSeason(seriesId: string, request: SeasonRequest) {
 export async function updateSeason(id: string, request: SeasonRequest) {
   return unwrapBaseResponse<SeasonResponse>(
     httpClient.put(`/api/v1/seasons/${id}`, request),
-  );
-}
-
-export async function approveSeason(id: string) {
-  return unwrapBaseResponse<SeasonResponse>(
-    httpClient.patch(`/api/v1/seasons/${id}/approve`),
-  );
-}
-
-export async function rejectSeason(id: string) {
-  return unwrapBaseResponse<SeasonResponse>(
-    httpClient.patch(`/api/v1/seasons/${id}/reject`),
   );
 }
 
@@ -336,18 +309,6 @@ export async function createEpisode(
 export async function updateEpisode(id: string, request: EpisodeRequest) {
   return unwrapBaseResponse<EpisodeResponse>(
     httpClient.put(`/api/v1/episodes/${id}`, request),
-  );
-}
-
-export async function approveEpisode(id: string) {
-  return unwrapBaseResponse<EpisodeResponse>(
-    httpClient.patch(`/api/v1/episodes/${id}/approve`),
-  );
-}
-
-export async function rejectEpisode(id: string) {
-  return unwrapBaseResponse<EpisodeResponse>(
-    httpClient.patch(`/api/v1/episodes/${id}/reject`),
   );
 }
 
@@ -417,6 +378,18 @@ export async function replaceMediaUrl(
 ) {
   return unwrapBaseResponse<MediaResponse>(
     httpClient.put(`/api/v1/media/${id}/url`, request),
+  );
+}
+
+export async function approveMedia(id: string) {
+  return unwrapBaseResponse<MediaResponse>(
+    httpClient.patch(`/api/v1/media/${id}/approve`),
+  );
+}
+
+export async function rejectMedia(id: string) {
+  return unwrapBaseResponse<MediaResponse>(
+    httpClient.patch(`/api/v1/media/${id}/reject`),
   );
 }
 
