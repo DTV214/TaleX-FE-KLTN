@@ -60,9 +60,12 @@ import {
   listSeasonsBySeries,
   listSeriesByCreator,
   reorderEpisodeMedia,
+  scheduleEpisodePublish,
   updateEpisode,
   updateSeason,
   updateSeries,
+  type ContentApprovalStatus as ApiContentApprovalStatus,
+  type EpisodeUnlockType,
   type EpisodeResponse,
   type MediaStatus,
   type MediaResponse,
@@ -157,6 +160,7 @@ type ApiLifecycleStatus = "DRAFT" | "PUBLISHED" | "HIDDEN" | "DELETED";
 type SeriesStatus = ApiLifecycleStatus | "ACTION_REQUIRED";
 type SeasonStatus = ApiLifecycleStatus;
 type EpisodeStatus = ApiLifecycleStatus | "REVIEW";
+type ContentApprovalStatus = ApiContentApprovalStatus;
 type Visibility = "PUBLIC" | "PRIVATE";
 
 type EditModalState =
@@ -194,6 +198,12 @@ type DeleteModalState =
   | { kind: "episode"; value: EpisodeRow }
   | { kind: "media"; value: ComicPage | MediaResponse }
   | null;
+
+type ScheduleModalState =
+  | { kind: "episode"; value: EpisodeRow }
+  | null;
+
+type ActiveScheduleModal = Exclude<ScheduleModalState, null>;
 
 type SeriesRow = {
   id: string;
@@ -235,6 +245,9 @@ type EpisodeRow = {
   description: string;
   contentType: ContentType;
   status: EpisodeStatus;
+  scheduledPublishAt?: string;
+  unlockType: EpisodeUnlockType;
+  priceVnd: number;
   mediaCount: number;
   totalPage?: number;
   views: string;
@@ -339,19 +352,6 @@ function getServerSnapshot() {
   return false;
 }
 
-function toApiLifecycleStatus(status: SeriesStatus | SeasonStatus | EpisodeStatus) {
-  if (
-    status === "DRAFT" ||
-    status === "PUBLISHED" ||
-    status === "HIDDEN" ||
-    status === "DELETED"
-  ) {
-    return status;
-  }
-
-  return "DRAFT";
-}
-
 function readFormString(form: FormData, key: string) {
   return String(form.get(key) ?? "").trim();
 }
@@ -383,6 +383,55 @@ function formatStatusLabel(status: SeriesStatus | SeasonStatus | EpisodeStatus) 
   }
 
   return status;
+}
+
+function formatApprovalStatusLabel(status: ContentApprovalStatus) {
+  switch (status) {
+    case "APPROVED":
+      return "Approved";
+    case "REJECTED":
+      return "Rejected";
+    default:
+      return "Pending Review";
+  }
+}
+
+function getApprovalChipClass(status: ContentApprovalStatus) {
+  switch (status) {
+    case "APPROVED":
+      return "border-[#25B67A] bg-[#E9FBF2] text-[#067647]";
+    case "REJECTED":
+      return "border-[#FFD8D4] bg-[#FFF7F6] text-[#B42318]";
+    default:
+      return "border-[#F4B9CC] bg-[#FFF4F8] text-[#B83268]";
+  }
+}
+
+function formatDateTime(value?: string) {
+  if (!value) {
+    return "-";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat("en", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+}
+
+function toDateTimeLocalValue(value?: string) {
+  const source = value ? new Date(value) : new Date(Date.now() + 60 * 60 * 1000);
+  const date = Number.isNaN(source.getTime())
+    ? new Date(Date.now() + 60 * 60 * 1000)
+    : source;
+  const pad = (part: number) => String(part).padStart(2, "0");
+
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
 function formatMediaStatusLabel(status: MediaStatus) {
@@ -509,6 +558,9 @@ function mapEpisodeResponse(episode: EpisodeResponse): EpisodeRow {
     description: episode.description || "No description yet.",
     contentType: episode.contentType,
     status: episode.status,
+    scheduledPublishAt: episode.scheduledPublishAt,
+    unlockType: episode.unlockType ?? "FREE",
+    priceVnd: episode.priceVnd ?? 0,
     mediaCount: episode.totalPage ?? 0,
     totalPage: episode.totalPage,
     views: formatNumber(episode.views),
@@ -566,6 +618,7 @@ function CreatorDashboardContent() {
   const [uploadMessage, setUploadMessage] = useState<string | null>(null);
   const [editModal, setEditModal] = useState<EditModalState>(null);
   const [deleteModal, setDeleteModal] = useState<DeleteModalState>(null);
+  const [scheduleModal, setScheduleModal] = useState<ScheduleModalState>(null);
 
   function setDashboardRouteState(nextState: DashboardRouteState) {
     setActiveView(nextState.view);
@@ -640,6 +693,18 @@ function CreatorDashboardContent() {
   const displayComicPages =
     comicPages.length > 0 ? comicPages : existingMediaPages;
 
+  const hasApprovedComicMedia = useMemo(
+    () =>
+      (mediaQuery.data ?? []).some(
+        (media) =>
+          media.mediaType === "IMAGE" &&
+          !media.isDeleted &&
+          media.status === "ACTIVE" &&
+          media.approvalStatus === "APPROVED",
+      ),
+    [mediaQuery.data],
+  );
+
   const existingVideoMedia = useMemo(
     () =>
       (mediaQuery.data ?? [])
@@ -685,7 +750,6 @@ function CreatorDashboardContent() {
         coverUrl,
         bannerUrl,
         contentType: input.contentType,
-        status: "DRAFT",
         visibility: input.visibility,
         ageRating: input.ageRating,
         language: input.language,
@@ -727,7 +791,8 @@ function CreatorDashboardContent() {
             : "New Video Episode",
         description: "Draft episode created from creator dashboard.",
         contentType: selectedSeries.contentType,
-        status: "DRAFT",
+        unlockType: "FREE",
+        priceVnd: 0,
         actorId: CREATOR_DASHBOARD_ACTOR_ID,
       });
 
@@ -758,7 +823,6 @@ function CreatorDashboardContent() {
         seasonNumber: nextSeasonNumber,
         title: `Season ${nextSeasonNumber}`,
         description: "Draft season created from creator dashboard.",
-        status: "DRAFT",
         actorId: CREATOR_DASHBOARD_ACTOR_ID,
       });
     },
@@ -801,7 +865,6 @@ function CreatorDashboardContent() {
         coverUrl: uploadedCoverUrl || series.coverUrl,
         bannerUrl: uploadedBannerUrl || series.bannerUrl,
         contentType: series.contentType,
-        status: toApiLifecycleStatus(series.status),
         visibility: series.visibility,
         ageRating: series.ageRating,
         language: series.language,
@@ -850,7 +913,6 @@ function CreatorDashboardContent() {
         title: season.title,
         seasonNumber: season.seasonNumber,
         description: season.description,
-        status: toApiLifecycleStatus(season.status),
         actorId: CREATOR_DASHBOARD_ACTOR_ID,
       });
     },
@@ -895,12 +957,16 @@ function CreatorDashboardContent() {
 
   const updateEpisodeMutation = useMutation({
     mutationFn: async (episode: EpisodeRow) => {
+      const normalizedPriceVnd =
+        episode.unlockType === "PAID" ? episode.priceVnd : 0;
+
       return updateEpisode(episode.id, {
         title: episode.title,
         episodeNumber: episode.episodeNumber,
         description: episode.description,
         contentType: episode.contentType,
-        status: toApiLifecycleStatus(episode.status),
+        unlockType: episode.unlockType,
+        priceVnd: normalizedPriceVnd,
         totalPage: episode.totalPage,
         actorId: CREATOR_DASHBOARD_ACTOR_ID,
       });
@@ -940,6 +1006,33 @@ function CreatorDashboardContent() {
     onError: (error) => {
       setUploadMessage(
         error instanceof Error ? error.message : "Cannot delete episode.",
+      );
+    },
+  });
+
+  const schedulePublishMutation = useMutation({
+    mutationFn: async ({
+      target,
+      scheduledPublishAt,
+    }: {
+      target: ActiveScheduleModal;
+      scheduledPublishAt: string;
+    }) => {
+      return scheduleEpisodePublish(target.value.id, { scheduledPublishAt });
+    },
+    onSuccess: () => {
+      setUploadMessage("Publish schedule saved.");
+      setScheduleModal(null);
+      queryClient.invalidateQueries({
+        queryKey: ["creator-dashboard", "episodes", selectedSeason?.id],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["creator-dashboard", "media", selectedEpisode?.id],
+      });
+    },
+    onError: (error) => {
+      setUploadMessage(
+        error instanceof Error ? error.message : "Cannot schedule publish.",
       );
     },
   });
@@ -1232,12 +1325,21 @@ function CreatorDashboardContent() {
 
   function handleUpdateEpisode(episode: EpisodeRow) {
     setUploadMessage(null);
+    if (episode.contentType === "VIDEO") {
+      openEpisodeUpload(episode);
+      return;
+    }
     setEditModal({ kind: "episode", value: episode });
   }
 
   function handleDeleteEpisode(episode: EpisodeRow) {
     setUploadMessage(null);
     setDeleteModal({ kind: "episode", value: episode });
+  }
+
+  function handleSchedulePublish(target: ActiveScheduleModal) {
+    setUploadMessage(null);
+    setScheduleModal(target);
   }
 
   function handleDeleteComicPage(page: ComicPage) {
@@ -1501,6 +1603,9 @@ function CreatorDashboardContent() {
 
           {activeView === "comic" && selectedEpisode && (
             <ComicUploadView
+              selectedSeries={selectedSeries}
+              selectedSeason={selectedSeason}
+              selectedEpisode={selectedEpisode}
               pages={displayComicPages}
               draggingPageId={draggingPageId}
               onDragStart={setDraggingPageId}
@@ -1514,6 +1619,12 @@ function CreatorDashboardContent() {
               onDeletePage={handleDeleteComicPage}
               isLoadingMedia={mediaQuery.isLoading}
               uploadMessage={uploadMessage}
+              onSaveEpisode={(episode) => updateEpisodeMutation.mutate(episode)}
+              isSavingEpisode={updateEpisodeMutation.isPending}
+              canSchedulePublish={hasApprovedComicMedia}
+              onSchedulePublish={(episode) =>
+                handleSchedulePublish({ kind: "episode", value: episode })
+              }
               onBack={() =>
                 setDashboardRouteState({
                   view: "episodes",
@@ -1553,6 +1664,11 @@ function CreatorDashboardContent() {
               uploadMessage={uploadMessage}
               onUploadCompleted={handleVideoUploadCompleted}
               onDeleteVideo={handleDeleteVideo}
+              onSaveEpisode={(episode) => updateEpisodeMutation.mutate(episode)}
+              isSavingEpisode={updateEpisodeMutation.isPending}
+              onSchedulePublish={(episode) =>
+                handleSchedulePublish({ kind: "episode", value: episode })
+              }
               onBack={() =>
                 setDashboardRouteState({
                   view: "episodes",
@@ -1594,6 +1710,21 @@ function CreatorDashboardContent() {
         uploadMessage={uploadMessage}
         onClose={() => setEditModal(null)}
         onSubmit={handleSubmitEdit}
+      />
+      <SchedulePublishModal
+        modal={scheduleModal}
+        isSaving={schedulePublishMutation.isPending}
+        onClose={() => setScheduleModal(null)}
+        onSubmit={(scheduledPublishAt) => {
+          if (!scheduleModal) {
+            return;
+          }
+
+          schedulePublishMutation.mutate({
+            target: scheduleModal,
+            scheduledPublishAt,
+          });
+        }}
       />
       <DeleteEntityModal
         modal={deleteModal}
@@ -1656,7 +1787,6 @@ function EditEntityModal({
         coverUrl: readFormString(form, "coverUrl"),
         bannerUrl: readFormString(form, "bannerUrl"),
         contentType: readFormString(form, "contentType") as ContentType,
-        status: readFormString(form, "status") as ApiLifecycleStatus,
         visibility: readFormString(form, "visibility") as Visibility,
         ageRating: readFormString(form, "ageRating"),
         language: readFormString(form, "language"),
@@ -1688,7 +1818,6 @@ function EditEntityModal({
         )!,
         title,
         description: readFormString(form, "description"),
-        status: readFormString(form, "status") as ApiLifecycleStatus,
       },
     });
   }
@@ -1704,6 +1833,15 @@ function EditEntityModal({
 
     const episode = modal!.value as EpisodeRow;
     const totalPage = readFormNumber(form, "totalPage", episode.totalPage);
+    const unlockType = readFormString(form, "unlockType") as EpisodeUnlockType;
+    const priceVnd =
+      unlockType === "PAID"
+        ? readFormNumber(form, "priceVnd", episode.priceVnd) ?? 0
+        : 0;
+
+    if (unlockType === "PAID" && priceVnd <= 0) {
+      return;
+    }
 
     onSubmit({
       kind: "episode",
@@ -1717,7 +1855,8 @@ function EditEntityModal({
         title,
         description: readFormString(form, "description"),
         contentType: readFormString(form, "contentType") as ContentType,
-        status: readFormString(form, "status") as ApiLifecycleStatus,
+        unlockType,
+        priceVnd,
         totalPage,
       },
     });
@@ -1810,17 +1949,12 @@ function EditEntityModal({
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
-            <Field label="Status">
-              <select
-                name="status"
-                defaultValue={toApiLifecycleStatus(modal.value.status)}
+            <Field label="Lifecycle">
+              <input
+                value={formatStatusLabel(modal.value.status)}
+                readOnly
                 className={controlClass}
-              >
-                <option value="DRAFT">DRAFT</option>
-                <option value="PUBLISHED">PUBLISHED</option>
-                <option value="HIDDEN">HIDDEN</option>
-                <option value="DELETED">DELETED</option>
-              </select>
+              />
             </Field>
             <Field label="Visibility">
               <select
@@ -1900,17 +2034,12 @@ function EditEntityModal({
               className={textareaClass}
             />
           </Field>
-          <Field label="Status">
-            <select
-              name="status"
-              defaultValue={toApiLifecycleStatus(modal.value.status)}
+          <Field label="Lifecycle">
+            <input
+              value={formatStatusLabel(modal.value.status)}
+              readOnly
               className={controlClass}
-            >
-              <option value="DRAFT">DRAFT</option>
-              <option value="PUBLISHED">PUBLISHED</option>
-              <option value="HIDDEN">HIDDEN</option>
-              <option value="DELETED">DELETED</option>
-            </select>
+            />
           </Field>
           <ModalActions isSaving={isSaving} onClose={onClose} />
         </form>
@@ -1955,17 +2084,12 @@ function EditEntityModal({
             />
           </Field>
           <div className="grid gap-4 md:grid-cols-2">
-            <Field label="Status">
-              <select
-                name="status"
-                defaultValue={toApiLifecycleStatus(modal.value.status)}
+            <Field label="Lifecycle">
+              <input
+                value={formatStatusLabel(modal.value.status)}
+                readOnly
                 className={controlClass}
-              >
-                <option value="DRAFT">DRAFT</option>
-                <option value="PUBLISHED">PUBLISHED</option>
-                <option value="HIDDEN">HIDDEN</option>
-                <option value="DELETED">DELETED</option>
-              </select>
+              />
             </Field>
             <Field label="Total Page">
               <input
@@ -1977,9 +2101,93 @@ function EditEntityModal({
               />
             </Field>
           </div>
+          <EpisodeUnlockFields
+            defaultUnlockType={modal.value.unlockType}
+            defaultPriceVnd={modal.value.priceVnd}
+            controlClass={controlClass}
+          />
           <ModalActions isSaving={isSaving} onClose={onClose} />
         </form>
       )}
+    </ModalShell>
+  );
+}
+
+function SchedulePublishModal({
+  modal,
+  isSaving,
+  onClose,
+  onSubmit,
+}: {
+  modal: ScheduleModalState;
+  isSaving: boolean;
+  onClose: () => void;
+  onSubmit: (scheduledPublishAt: string) => void;
+}) {
+  if (!modal) {
+    return null;
+  }
+
+  const title = modal.value.title;
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const scheduledPublishAt = readFormString(form, "scheduledPublishAt");
+
+    if (!scheduledPublishAt) {
+      return;
+    }
+
+    onSubmit(scheduledPublishAt);
+  }
+
+  return (
+    <ModalShell
+      title="Schedule Publish"
+      subtitle="Only episodes with approved ready media can be scheduled."
+      onClose={onClose}
+      compact
+    >
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="rounded-2xl border border-[#D9E2F0] bg-[#F8FAFF] p-4">
+          <p className="text-xs font-black uppercase tracking-[0.12em] text-slate-400">
+            {modal.kind}
+          </p>
+          <p className="mt-1 text-lg font-black text-[#151A23]">{title}</p>
+          <p className="mt-2 text-xs font-bold text-[#5D5160]">
+            Current schedule: {formatDateTime(modal.value.scheduledPublishAt)}
+          </p>
+        </div>
+
+        <Field label="Publish At" required>
+          <input
+            name="scheduledPublishAt"
+            type="datetime-local"
+            required
+            min={toDateTimeLocalValue()}
+            defaultValue={toDateTimeLocalValue(modal.value.scheduledPublishAt)}
+            className="h-12 w-full rounded-xl border border-[#E8BBCB] bg-[#F8FAFF] px-4 text-sm font-semibold outline-none focus:border-[#B83268] focus:bg-white"
+          />
+        </Field>
+
+        <div className="flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-full border border-[#E8BBCB] bg-white px-5 py-3 text-sm font-black text-[#5D5160]"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={isSaving}
+            className="rounded-full bg-[#007A8A] px-5 py-3 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isSaving ? "Saving..." : "Save Schedule"}
+          </button>
+        </div>
+      </form>
     </ModalShell>
   );
 }
@@ -2241,7 +2449,7 @@ function SeriesManagementView({
       </div>
 
       <div className="overflow-hidden rounded-[24px] border border-[#E1E7F0] bg-white shadow-[0_20px_60px_rgba(30,42,68,0.07)]">
-        <div className="grid grid-cols-[1.8fr_0.8fr_0.9fr_1fr_1.15fr] bg-[#EEF3FB] px-8 py-5 text-xs font-black uppercase tracking-[0.12em] text-[#5D5160] max-lg:hidden">
+        <div className="grid grid-cols-[1.8fr_0.8fr_1fr_1fr_1.15fr] bg-[#EEF3FB] px-8 py-5 text-xs font-black uppercase tracking-[0.12em] text-[#5D5160] max-lg:hidden">
           <span>Series Details</span>
           <span>Type</span>
           <span>Status</span>
@@ -2373,7 +2581,7 @@ function SeriesTableRow({
   const isDraft = series.status === "DRAFT";
 
   return (
-    <div className="grid min-h-[116px] grid-cols-1 gap-4 px-5 py-5 lg:grid-cols-[1.8fr_0.8fr_0.9fr_1fr_1.15fr] lg:items-center lg:px-8">
+    <div className="grid min-h-[116px] grid-cols-1 gap-4 px-5 py-5 lg:grid-cols-[1.8fr_0.8fr_1fr_1fr_1.15fr] lg:items-center lg:px-8">
       <div className="flex items-center gap-4">
         <SeriesCoverImage
           src={series.coverUrl}
@@ -2407,7 +2615,7 @@ function SeriesTableRow({
         </span>
       </div>
 
-      <div>
+      <div className="space-y-2">
         <span
           className={cx(
             "inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-black",
@@ -2770,7 +2978,7 @@ function EpisodeTableRow({
           {isComic ? "Comic" : "Video"}
         </span>
       </div>
-      <div>
+      <div className="space-y-2">
         <span
           className={cx(
             "rounded-full border px-3 py-1.5 text-xs font-black",
@@ -3019,6 +3227,9 @@ function CreateSeriesView({
 }
 
 function ComicUploadView({
+  selectedSeries,
+  selectedSeason,
+  selectedEpisode,
   pages,
   draggingPageId,
   onDragStart,
@@ -3032,8 +3243,15 @@ function ComicUploadView({
   onDeletePage,
   isLoadingMedia,
   uploadMessage,
+  onSaveEpisode,
+  isSavingEpisode,
+  canSchedulePublish,
+  onSchedulePublish,
   onBack,
 }: {
+  selectedSeries: SeriesRow | null;
+  selectedSeason: SeasonRow | null;
+  selectedEpisode: EpisodeRow;
   pages: ComicPage[];
   draggingPageId: string | null;
   onDragStart: (id: string) => void;
@@ -3047,11 +3265,61 @@ function ComicUploadView({
   onDeletePage: (page: ComicPage) => void;
   isLoadingMedia: boolean;
   uploadMessage: string | null;
+  onSaveEpisode: (episode: EpisodeRow) => void;
+  isSavingEpisode: boolean;
+  canSchedulePublish: boolean;
+  onSchedulePublish: (episode: EpisodeRow) => void;
   onBack: () => void;
 }) {
+  const episodeControlClass =
+    "h-12 w-full rounded-xl border border-[#E8BBCB] bg-[#F8FAFF] px-4 text-sm font-semibold outline-none focus:border-[#B83268] focus:bg-white";
+
   function handlePageDrop(event: DragEvent<HTMLDivElement>) {
     event.preventDefault();
     onFilesSelected(Array.from(event.dataTransfer.files));
+  }
+
+  function handleEpisodeSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const title = readFormString(form, "title");
+
+    if (!title) {
+      return;
+    }
+
+    onSaveEpisode({
+      ...selectedEpisode,
+      episodeNumber: readFormNumber(
+        form,
+        "episodeNumber",
+        selectedEpisode.episodeNumber,
+      )!,
+      title,
+      description: readFormString(form, "description"),
+      contentType: "COMIC",
+      totalPage: readFormNumber(form, "totalPage", selectedEpisode.totalPage),
+    });
+  }
+
+  function handleUnlockSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const unlockType = readFormString(form, "unlockType") as EpisodeUnlockType;
+    const priceVnd =
+      unlockType === "PAID"
+        ? readFormNumber(form, "priceVnd", selectedEpisode.priceVnd) ?? 0
+        : 0;
+
+    if (unlockType === "PAID" && priceVnd <= 0) {
+      return;
+    }
+
+    onSaveEpisode({
+      ...selectedEpisode,
+      unlockType,
+      priceVnd,
+    });
   }
 
   return (
@@ -3068,52 +3336,161 @@ function ComicUploadView({
       <div className="grid gap-6 xl:grid-cols-[330px_minmax(0,1fr)]">
         <aside className="space-y-5">
           <Panel>
-          <PanelHeader icon={BookOpen} title="Chapter Details" />
-          <div className="space-y-4">
-            <Field label="Select Series">
-              <select className="h-12 w-full rounded-xl border border-[#E8BBCB] bg-[#F8FAFF] px-4 text-sm font-semibold">
-                <option>Neon Knights of Neo-Tokyo</option>
-              </select>
-            </Field>
+          <PanelHeader
+            icon={BookOpen}
+            title="Chapter Details"
+            subtitle="Edit comic episode metadata and save it separately from pages."
+          />
+          <div className="mb-5 grid gap-3 text-sm font-bold text-[#5D5160]">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.12em] text-slate-400">
+                Series
+              </p>
+              <p className="mt-1 text-base font-black text-[#151A23]">
+                {selectedSeries?.title ?? "Unknown series"}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.12em] text-slate-400">
+                Season
+              </p>
+              <p className="mt-1 text-base font-black text-[#151A23]">
+                {selectedSeason
+                  ? `Season ${selectedSeason.seasonNumber}: ${selectedSeason.title}`
+                  : selectedEpisode.seasonId}
+              </p>
+            </div>
+          </div>
+          <form
+            key={`comic-details-${selectedEpisode.id}`}
+            onSubmit={handleEpisodeSubmit}
+            className="space-y-4"
+          >
             <div className="grid grid-cols-2 gap-3">
               <Field label="Chapter No.">
                 <input
-                  defaultValue="25"
+                  type="number"
+                  min={1}
+                  name="episodeNumber"
+                  defaultValue={selectedEpisode.episodeNumber}
+                  className={episodeControlClass}
+                />
+              </Field>
+              <Field label="Total Page">
+                <input
+                  type="number"
+                  min={0}
+                  name="totalPage"
+                  defaultValue={selectedEpisode.totalPage ?? 0}
+                  className={episodeControlClass}
+                />
+              </Field>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Lifecycle">
+                <input
+                  value={formatStatusLabel(selectedEpisode.status)}
+                  readOnly
                   className="h-12 w-full rounded-xl border border-[#E8BBCB] bg-[#F8FAFF] px-4 text-sm font-semibold"
                 />
               </Field>
-              <Field label="Season">
+              <Field label="Type">
                 <input
-                  defaultValue="1"
+                  value="COMIC"
+                  readOnly
                   className="h-12 w-full rounded-xl border border-[#E8BBCB] bg-[#F8FAFF] px-4 text-sm font-semibold"
                 />
               </Field>
             </div>
-            <Field label="Chapter Title">
+            <Field label="Chapter Title" required>
               <input
+                name="title"
+                required
+                defaultValue={selectedEpisode.title}
                 placeholder="What happens in this chapter?"
-                className="h-12 w-full rounded-xl border border-[#E8BBCB] bg-[#F8FAFF] px-4 text-sm font-semibold"
+                className={episodeControlClass}
               />
             </Field>
-          </div>
+            <Field label="Description">
+              <textarea
+                name="description"
+                rows={4}
+                defaultValue={selectedEpisode.description}
+                placeholder="Author notes or chapter description..."
+                className="w-full resize-none rounded-xl border border-[#E8BBCB] bg-[#F8FAFF] p-4 text-sm font-semibold outline-none focus:border-[#B83268] focus:bg-white"
+              />
+            </Field>
+            <button
+              type="submit"
+              disabled={isSavingEpisode}
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#B83268] text-sm font-black text-white shadow-lg shadow-pink-900/20 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <CheckCircle2 className="h-4 w-4" />
+              {isSavingEpisode ? "Saving..." : "Save Chapter Details"}
+            </button>
+          </form>
           </Panel>
 
           <Panel>
-          <PanelHeader icon={Lock} title="Publishing Settings" />
-          <div className="grid grid-cols-3 gap-2">
-            <SettingCard active title="Free" />
-            <SettingCard title="Points" />
-            <SettingCard title="Fast Pass" icon={Zap} />
-          </div>
-          <p className="mt-3 text-xs font-semibold leading-relaxed text-slate-500">
-            This chapter is available after approval. Media pages are saved as
-            image URLs and sorted by displayOrder.
-          </p>
-          <textarea
-            rows={4}
-            placeholder="Author notes..."
-            className="mt-4 w-full resize-none rounded-xl border border-[#E8BBCB] bg-[#F8FAFF] p-4 text-sm font-semibold outline-none"
+          <PanelHeader
+            icon={Lock}
+            title="Unlock Settings"
+            subtitle="Set how this chapter is unlocked. Save this separately from chapter details."
           />
+          <form
+            key={`comic-unlock-${selectedEpisode.id}-${selectedEpisode.unlockType}-${selectedEpisode.priceVnd}`}
+            onSubmit={handleUnlockSubmit}
+            className="space-y-4"
+          >
+            <EpisodeUnlockFields
+              defaultUnlockType={selectedEpisode.unlockType}
+              defaultPriceVnd={selectedEpisode.priceVnd}
+              controlClass={episodeControlClass}
+            />
+            <p className="text-xs font-semibold leading-relaxed text-slate-500">
+              This chapter is available after approval. Media pages are saved as
+              image URLs and sorted by displayOrder.
+            </p>
+            <button
+              type="submit"
+              disabled={isSavingEpisode}
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#B83268] text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <CheckCircle2 className="h-4 w-4" />
+              {isSavingEpisode ? "Saving..." : "Save Unlock Settings"}
+            </button>
+          </form>
+          </Panel>
+
+          <Panel>
+          <PanelHeader icon={Calendar} title="Publishing" />
+          <div className="space-y-4">
+            <div
+              className={cx(
+                "rounded-xl border p-4 text-xs font-bold leading-relaxed",
+                getApprovalChipClass(
+                  canSchedulePublish ? "APPROVED" : "PENDING_REVIEW",
+                ),
+              )}
+            >
+              Media approval: {canSchedulePublish ? "Approved pages available" : "Needs approved pages"}
+            </div>
+            <div className="rounded-xl bg-[#F8FAFF] p-4 text-xs font-bold leading-relaxed text-[#5D5160]">
+              Scheduled publish: {formatDateTime(selectedEpisode.scheduledPublishAt)}
+            </div>
+            <div className="rounded-xl bg-[#E8F8FF] p-4 text-xs font-bold leading-relaxed text-[#075985]">
+              Only episodes with approved ready pages can be scheduled.
+            </div>
+            <button
+              type="button"
+              onClick={() => onSchedulePublish(selectedEpisode)}
+              disabled={!canSchedulePublish}
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#007A8A] text-sm font-black text-white disabled:cursor-not-allowed disabled:bg-[#D9E2F0] disabled:text-slate-500"
+            >
+              <Calendar className="h-4 w-4" />
+              Schedule Publish
+            </button>
+          </div>
           </Panel>
         </aside>
 
@@ -3346,6 +3723,9 @@ function VideoUploadView({
   uploadMessage,
   onUploadCompleted,
   onDeleteVideo,
+  onSaveEpisode,
+  isSavingEpisode,
+  onSchedulePublish,
   onBack,
 }: {
   selectedSeries: SeriesRow | null;
@@ -3356,8 +3736,61 @@ function VideoUploadView({
   uploadMessage: string | null;
   onUploadCompleted: (media: MediaResponse) => void;
   onDeleteVideo: (media: MediaResponse) => void;
+  onSaveEpisode: (episode: EpisodeRow) => void;
+  isSavingEpisode: boolean;
+  onSchedulePublish: (episode: EpisodeRow) => void;
   onBack: () => void;
 }) {
+  const currentVideo = videos[0];
+  const canSchedule = videos.some(
+    (video) =>
+      video.approvalStatus === "APPROVED" && isPlayableVideoStatus(video.status),
+  );
+  const episodeControlClass =
+    "h-12 w-full rounded-xl border border-[#E8BBCB] bg-[#F8FAFF] px-4 text-sm font-semibold outline-none focus:border-[#B83268] focus:bg-white";
+
+  function handleEpisodeSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const title = readFormString(form, "title");
+
+    if (!title) {
+      return;
+    }
+
+    onSaveEpisode({
+      ...selectedEpisode,
+      episodeNumber: readFormNumber(
+        form,
+        "episodeNumber",
+        selectedEpisode.episodeNumber,
+      )!,
+      title,
+      description: readFormString(form, "description"),
+      contentType: "VIDEO",
+    });
+  }
+
+  function handleUnlockSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const unlockType = readFormString(form, "unlockType") as EpisodeUnlockType;
+    const priceVnd =
+      unlockType === "PAID"
+        ? readFormNumber(form, "priceVnd", selectedEpisode.priceVnd) ?? 0
+        : 0;
+
+    if (unlockType === "PAID" && priceVnd <= 0) {
+      return;
+    }
+
+    onSaveEpisode({
+      ...selectedEpisode,
+      unlockType,
+      priceVnd,
+    });
+  }
+
   return (
     <div className="space-y-4">
       <button
@@ -3375,59 +3808,85 @@ function VideoUploadView({
           <PanelHeader
             icon={Clapperboard}
             title="Episode Details"
-            subtitle="Selected episode from the creator catalog."
+            subtitle="Edit episode metadata and save before publishing."
           />
-          <div className="grid gap-5 md:grid-cols-2">
-            <Field label="Series">
-              <input
-                value={selectedSeries?.title ?? "Unknown series"}
-                readOnly
-                className="h-12 w-full rounded-xl border border-[#E8BBCB] bg-[#F8FAFF] px-4 text-sm font-semibold"
-              />
-            </Field>
-            <Field label="Season">
-              <input
-                value={
-                  selectedSeason
-                    ? `Season ${selectedSeason.seasonNumber}: ${selectedSeason.title}`
-                    : selectedEpisode.seasonId
-                }
-                readOnly
-                className="h-12 w-full rounded-xl border border-[#E8BBCB] bg-[#F8FAFF] px-4 text-sm font-semibold"
-              />
-            </Field>
-            <Field label="Episode Number">
-              <input
-                value={selectedEpisode.episodeNumber}
-                readOnly
-                className="h-12 w-full rounded-xl border border-[#E8BBCB] bg-[#F8FAFF] px-4 text-sm font-semibold"
-              />
-            </Field>
-            <Field label="Status">
-              <input
-                value={formatStatusLabel(selectedEpisode.status)}
-                readOnly
-                className="h-12 w-full rounded-xl border border-[#E8BBCB] bg-[#F8FAFF] px-4 text-sm font-semibold"
-              />
-            </Field>
+          <div className="mb-5 grid gap-3 text-sm font-bold text-[#5D5160] md:grid-cols-2">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.12em] text-slate-400">
+                Series
+              </p>
+              <p className="mt-1 text-base font-black text-[#151A23]">
+                {selectedSeries?.title ?? "Unknown series"}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.12em] text-slate-400">
+                Season
+              </p>
+              <p className="mt-1 text-base font-black text-[#151A23]">
+                {selectedSeason
+                  ? `Season ${selectedSeason.seasonNumber}: ${selectedSeason.title}`
+                  : selectedEpisode.seasonId}
+              </p>
+            </div>
           </div>
-          <div className="mt-5 space-y-5">
-            <Field label="Episode Title">
+          <form
+            key={selectedEpisode.id}
+            onSubmit={handleEpisodeSubmit}
+            className="space-y-5"
+          >
+            <div className="grid gap-5 md:grid-cols-3">
+              <Field label="Episode Number">
+                <input
+                  type="number"
+                  min={1}
+                  name="episodeNumber"
+                  defaultValue={selectedEpisode.episodeNumber}
+                  className="h-12 w-full rounded-xl border border-[#E8BBCB] bg-[#F8FAFF] px-4 text-sm font-semibold outline-none focus:border-[#B83268] focus:bg-white"
+                />
+              </Field>
+              <Field label="Lifecycle">
+                <input
+                  value={formatStatusLabel(selectedEpisode.status)}
+                  readOnly
+                  className="h-12 w-full rounded-xl border border-[#E8BBCB] bg-[#F8FAFF] px-4 text-sm font-semibold"
+                />
+              </Field>
+              <Field label="Content Type">
+                <input
+                  value="VIDEO"
+                  readOnly
+                  className="h-12 w-full rounded-xl border border-[#E8BBCB] bg-[#F8FAFF] px-4 text-sm font-semibold"
+                />
+              </Field>
+            </div>
+            <Field label="Episode Title" required>
               <input
-                value={selectedEpisode.title}
-                readOnly
-                className="h-12 w-full rounded-xl border border-[#E8BBCB] bg-[#F8FAFF] px-4 text-sm font-semibold"
+                name="title"
+                required
+                defaultValue={selectedEpisode.title}
+                className="h-12 w-full rounded-xl border border-[#E8BBCB] bg-[#F8FAFF] px-4 text-sm font-semibold outline-none focus:border-[#B83268] focus:bg-white"
               />
             </Field>
             <Field label="Description">
               <textarea
+                name="description"
                 rows={5}
-                value={selectedEpisode.description}
-                readOnly
-                className="w-full resize-none rounded-xl border border-[#E8BBCB] bg-[#F8FAFF] p-4 text-sm font-semibold"
+                defaultValue={selectedEpisode.description}
+                className="w-full resize-none rounded-xl border border-[#E8BBCB] bg-[#F8FAFF] p-4 text-sm font-semibold outline-none focus:border-[#B83268] focus:bg-white"
               />
             </Field>
-          </div>
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                disabled={isSavingEpisode}
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[#B83268] px-5 text-sm font-black text-white shadow-lg shadow-pink-900/20 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <CheckCircle2 className="h-4 w-4" />
+                {isSavingEpisode ? "Saving..." : "Save Episode Details"}
+              </button>
+            </div>
+          </form>
         </Panel>
 
         <Panel>
@@ -3467,6 +3926,14 @@ function VideoUploadView({
                           <span>
                             {video.mimeType} . {formatBytes(video.fileSize)} .{" "}
                             {formatMediaStatusLabel(video.status)}
+                          </span>
+                          <span
+                            className={cx(
+                              "rounded-full border px-3 py-1 font-black",
+                              getApprovalChipClass(video.approvalStatus ?? "PENDING_REVIEW"),
+                            )}
+                          >
+                            {formatApprovalStatusLabel(video.approvalStatus ?? "PENDING_REVIEW")}
                           </span>
                           <div className="flex flex-wrap gap-2">
                             <a
@@ -3516,34 +3983,59 @@ function VideoUploadView({
 
         <aside className="space-y-5">
         <Panel>
-          <PanelHeader icon={Lock} title="Unlock Settings" />
-          <div className="space-y-3">
-            <RadioCard active title="Free to Watch" badge="Default" />
-            <RadioCard title="Points Required" badge="Premium" />
-            <RadioCard title="Fast Pass" badge="Early" />
-          </div>
+          <PanelHeader
+            icon={Lock}
+            title="Unlock Settings"
+            subtitle="Set how this episode is unlocked. Save this separately from episode details."
+          />
+          <form
+            key={`${selectedEpisode.id}-${selectedEpisode.unlockType}-${selectedEpisode.priceVnd}`}
+            onSubmit={handleUnlockSubmit}
+            className="space-y-4"
+          >
+            <EpisodeUnlockFields
+              defaultUnlockType={selectedEpisode.unlockType}
+              defaultPriceVnd={selectedEpisode.priceVnd}
+              controlClass={episodeControlClass}
+            />
+            <button
+              type="submit"
+              disabled={isSavingEpisode}
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#B83268] text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <CheckCircle2 className="h-4 w-4" />
+              {isSavingEpisode ? "Saving..." : "Save Unlock Settings"}
+            </button>
+          </form>
         </Panel>
 
         <Panel>
           <PanelHeader icon={Calendar} title="Publishing" />
           <div className="space-y-4">
-            <select className="h-12 w-full rounded-xl border border-[#E8BBCB] bg-[#F8FAFF] px-4 text-sm font-semibold">
-              <option>Publish Immediately on Approval</option>
-              <option>Schedule Publish</option>
-            </select>
-            <div className="grid grid-cols-2 gap-3">
-              <input
-                placeholder="mm/dd/yyyy"
-                className="h-12 rounded-xl border border-[#E8BBCB] bg-[#F8FAFF] px-4 text-sm font-semibold"
-              />
-              <input
-                placeholder="--:--"
-                className="h-12 rounded-xl border border-[#E8BBCB] bg-[#F8FAFF] px-4 text-sm font-semibold"
-              />
+            <div
+              className={cx(
+                "rounded-xl border p-4 text-xs font-bold leading-relaxed",
+                getApprovalChipClass(currentVideo?.approvalStatus ?? "PENDING_REVIEW"),
+              )}
+            >
+              Media approval:{" "}
+              {formatApprovalStatusLabel(currentVideo?.approvalStatus ?? "PENDING_REVIEW")}
+            </div>
+            <div className="rounded-xl bg-[#F8FAFF] p-4 text-xs font-bold leading-relaxed text-[#5D5160]">
+              Scheduled publish: {formatDateTime(selectedEpisode.scheduledPublishAt)}
             </div>
             <div className="rounded-xl bg-[#E8F8FF] p-4 text-xs font-bold leading-relaxed text-[#075985]">
               All new episodes require moderation approval before going live.
             </div>
+            <button
+              type="button"
+              onClick={() => onSchedulePublish(selectedEpisode)}
+              disabled={!canSchedule}
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#007A8A] text-sm font-black text-white disabled:cursor-not-allowed disabled:bg-[#D9E2F0] disabled:text-slate-500"
+            >
+              <Calendar className="h-4 w-4" />
+              Schedule Publish
+            </button>
           </div>
         </Panel>
 
@@ -3640,6 +4132,57 @@ function PanelHeader({
           </p>
         )}
       </div>
+    </div>
+  );
+}
+
+function EpisodeUnlockFields({
+  defaultUnlockType,
+  defaultPriceVnd,
+  controlClass,
+}: {
+  defaultUnlockType: EpisodeUnlockType;
+  defaultPriceVnd: number;
+  controlClass: string;
+}) {
+  const [unlockType, setUnlockType] = useState<EpisodeUnlockType>(
+    defaultUnlockType ?? "FREE",
+  );
+
+  return (
+    <div
+      className={cx(
+        "grid gap-4",
+        unlockType === "PAID" ? "md:grid-cols-2" : "md:grid-cols-1",
+      )}
+    >
+      <Field label="Unlock Type">
+        <select
+          name="unlockType"
+          value={unlockType}
+          onChange={(event) =>
+            setUnlockType(event.target.value as EpisodeUnlockType)
+          }
+          className={controlClass}
+        >
+          <option value="FREE">FREE</option>
+          <option value="PAID">PAID</option>
+        </select>
+      </Field>
+
+      {unlockType === "PAID" && (
+        <Field label="Price VND" required>
+          <input
+            type="number"
+            min={1}
+            max={99999}
+            name="priceVnd"
+            required
+            defaultValue={defaultPriceVnd > 0 ? defaultPriceVnd : 1000}
+            className={controlClass}
+          />
+        </Field>
+      )}
     </div>
   );
 }
