@@ -60,6 +60,7 @@ export type SeriesResponse = {
 export type SeasonResponse = {
   seasonId: string;
   seriesId: string;
+  creatorId?: string;
   seasonNumber?: number;
   title: string;
   description?: string;
@@ -71,6 +72,7 @@ export type SeasonResponse = {
 export type EpisodeResponse = {
   episodeId: string;
   seasonId: string;
+  creatorId?: string;
   episodeNumber?: number;
   title: string;
   description?: string;
@@ -143,7 +145,6 @@ export type SeriesRequest = {
   language?: string;
   categoryIds?: string[];
   tagIds?: string[];
-  actorId?: string;
 };
 
 export type SeasonRequest = {
@@ -151,7 +152,6 @@ export type SeasonRequest = {
   title: string;
   description?: string;
   status?: SeasonStatus;
-  actorId?: string;
 };
 
 export type EpisodeRequest = {
@@ -163,7 +163,6 @@ export type EpisodeRequest = {
   unlockType?: EpisodeUnlockType;
   priceVnd?: number;
   totalPage?: number;
-  actorId?: string;
 };
 
 export type MediaMetadataRequest = {
@@ -233,13 +232,9 @@ export type ScheduledPublishRequest = {
   scheduledPublishAt: string;
 };
 
-export async function listSeriesByCreator(
-  creatorId: string,
-  page = 1,
-  pageSize = 20,
-) {
+export async function listSeriesByCreator(page = 1, pageSize = 20) {
   return unwrapBaseResponse<BasePageResponse<SeriesResponse>>(
-    httpClient.get(`/api/v1/series/by-creator/${creatorId}`, {
+    httpClient.get("/api/v1/series/by-creator", {
       params: { page, pageSize },
     }),
   );
@@ -257,11 +252,9 @@ export async function updateSeries(id: string, request: SeriesRequest) {
   );
 }
 
-export async function deleteSeries(id: string, actorId?: string) {
+export async function deleteSeries(id: string) {
   return unwrapBaseResponse<void>(
-    httpClient.delete(`/api/v1/series/${id}`, {
-      params: { actorId },
-    }),
+    httpClient.delete(`/api/v1/series/${id}`),
   );
 }
 
@@ -283,11 +276,9 @@ export async function updateSeason(id: string, request: SeasonRequest) {
   );
 }
 
-export async function deleteSeason(id: string, actorId?: string) {
+export async function deleteSeason(id: string) {
   return unwrapBaseResponse<void>(
-    httpClient.delete(`/api/v1/seasons/${id}`, {
-      params: { actorId },
-    }),
+    httpClient.delete(`/api/v1/seasons/${id}`),
   );
 }
 
@@ -321,11 +312,9 @@ export async function scheduleEpisodePublish(
   );
 }
 
-export async function deleteEpisode(id: string, actorId?: string) {
+export async function deleteEpisode(id: string) {
   return unwrapBaseResponse<void>(
-    httpClient.delete(`/api/v1/episodes/${id}`, {
-      params: { actorId },
-    }),
+    httpClient.delete(`/api/v1/episodes/${id}`),
   );
 }
 
