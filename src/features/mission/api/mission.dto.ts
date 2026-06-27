@@ -9,6 +9,11 @@ export type MissionProgressResponseDto = {
   isCompleted: boolean;
 };
 
+export interface AdSessionResponseDto {
+  sessionId: string;
+  expiresInSeconds: number;
+}
+
 export type MissionRequestDto = {
   code: string;
   title: string;

@@ -38,10 +38,12 @@ export function AdminMissionForm({
 }: AdminMissionFormProps) {
   const [questType, setQuestType] = useState<string>("ONLINE");
   const [duration, setDuration] = useState<string>("1");
+  const [adSuffix, setAdSuffix] = useState("");
   const createMutation = useCreateMissionMutation();
   const updateMutation = useUpdateMissionMutation();
   const isEditing = Boolean(initialData);
   const isPending = createMutation.isPending || updateMutation.isPending;
+  const normalizedAdSuffix = adSuffix.trim().toUpperCase();
 
   const {
     register,
@@ -74,6 +76,7 @@ export function AdminMissionForm({
     if (!initialData) {
       setQuestType("ONLINE");
       setDuration("1");
+      setAdSuffix("");
       return;
     }
 
@@ -81,16 +84,33 @@ export function AdminMissionForm({
       const durationMatch = initialData.code.match(/^ONLINE_(\d+)M$/);
       setQuestType("ONLINE");
       setDuration(durationMatch?.[1] ?? "1");
+      setAdSuffix("");
+      return;
+    }
+
+    if (initialData.code.startsWith("WATCH_AD_")) {
+      setQuestType("WATCH_AD");
+      setAdSuffix(initialData.code.replace(/^WATCH_AD_/, ""));
       return;
     }
 
     setQuestType(initialData.code);
+    setAdSuffix("");
   }, [initialData]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   function onSubmit(data: MissionFormValues) {
+    if (questType === "WATCH_AD" && !normalizedAdSuffix) {
+      window.alert("Vui lòng nhập hậu tố mã cho nhiệm vụ quảng cáo.");
+      return;
+    }
+
     const finalCode =
-      questType === "ONLINE" ? `ONLINE_${duration}M` : questType;
+      questType === "ONLINE"
+        ? `ONLINE_${duration}M`
+        : questType === "WATCH_AD"
+          ? `WATCH_AD_${normalizedAdSuffix}`
+          : questType;
     const payload = { ...data, code: finalCode };
 
     if (initialData) {
@@ -125,7 +145,9 @@ export function AdminMissionForm({
       >
         <div
           className={`grid gap-6 ${
-            questType === "ONLINE" ? "md:grid-cols-2" : ""
+            questType === "ONLINE" || questType === "WATCH_AD"
+              ? "md:grid-cols-2"
+              : ""
           }`}
         >
           <div className="space-y-2">
@@ -142,7 +164,7 @@ export function AdminMissionForm({
               className={fieldClassName}
             >
               <option value="ONLINE">Nhiệm vụ Online</option>
-              <option value="WATCH_AD_DAILY">Xem Quảng Cáo</option>
+              <option value="WATCH_AD">Xem Quảng Cáo</option>
               <option value="COMPLETE_PROFILE">Hoàn thiện hồ sơ</option>
             </select>
             <p className="mt-1 text-xs text-gray-500">
@@ -172,6 +194,31 @@ export function AdminMissionForm({
               </select>
               <p className="mt-1 text-xs text-gray-500">
                 Code được tạo khi lưu: ONLINE_{duration}M
+              </p>
+            </div>
+          )}
+
+          {questType === "WATCH_AD" && (
+            <div className="space-y-2">
+              <label
+                htmlFor="adSuffix"
+                className="text-sm font-semibold text-gray-800"
+              >
+                Hậu tố mã
+              </label>
+              <input
+                id="adSuffix"
+                type="text"
+                value={adSuffix}
+                onChange={(event) => setAdSuffix(event.target.value)}
+                placeholder="VD: 1, DAILY, VIP"
+                className={fieldClassName}
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Mã cuối cùng sẽ là:{" "}
+                <span className="font-mono font-bold text-[#007A8A]">
+                  WATCH_AD_{normalizedAdSuffix || "{hậu_tố}"}
+                </span>
               </p>
             </div>
           )}

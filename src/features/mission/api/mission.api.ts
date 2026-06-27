@@ -3,6 +3,7 @@ import {
   unwrapBaseResponse,
 } from "@/shared/api/http-client";
 import type {
+  AdSessionResponseDto,
   Mission,
   MissionProgressResponseDto,
   MissionRequestDto,
@@ -21,6 +22,22 @@ export const missionApi = {
   processOnlineHeartbeat(): Promise<null> {
     return unwrapBaseResponse<null>(
       httpClient.post(`${USER_MISSIONS_ENDPOINT}/heartbeat`),
+    );
+  },
+
+  startAdSession(missionCode: string): Promise<AdSessionResponseDto> {
+    return unwrapBaseResponse<AdSessionResponseDto>(
+      httpClient.post(`${USER_MISSIONS_ENDPOINT}/ads/start`, {
+        missionCode,
+      }),
+    );
+  },
+
+  completeAdSession(sessionId: string): Promise<null> {
+    return unwrapBaseResponse<null>(
+      httpClient.post(`${USER_MISSIONS_ENDPOINT}/ads/complete`, {
+        sessionId,
+      }),
     );
   },
 

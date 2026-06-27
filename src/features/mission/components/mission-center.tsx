@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   BookOpen,
   CalendarDays,
@@ -9,6 +10,7 @@ import {
   Film,
   Gift,
   Loader2,
+  PlayCircle,
   PlaySquare,
   ShieldCheck,
   Sparkles,
@@ -18,6 +20,7 @@ import {
 import { useDailyCheckInMutation } from "@/features/coin/hooks/useCoinMutations";
 import { useDailyCheckInStatus } from "@/features/coin/hooks/useCoinQueries";
 import { useMyMissions } from "../hooks/useMissionQueries";
+import { AdRewardModal } from "./ad-reward-modal";
 
 function formatCoin(value: number) {
   return new Intl.NumberFormat("vi-VN").format(value);
@@ -32,6 +35,10 @@ function getProgressPercentage(currentValue: number, targetValue: number) {
 }
 
 function getMissionIcon(code: string) {
+  if (code.startsWith("WATCH_AD_")) {
+    return PlaySquare;
+  }
+
   switch (code) {
     case "ONLINE_DAILY":
       return Clock3;
@@ -68,6 +75,7 @@ function MissionCardSkeleton() {
 }
 
 export function MissionCenter() {
+  const [activeAdMission, setActiveAdMission] = useState<string | null>(null);
   const missionsQuery = useMyMissions();
   const checkInStatusQuery = useDailyCheckInStatus();
   const checkInMutation = useDailyCheckInMutation();
@@ -189,6 +197,7 @@ export function MissionCenter() {
 
           {missionsQuery.data?.map((mission) => {
             const MissionIcon = getMissionIcon(mission.code);
+            const isAdMission = mission.code.startsWith("WATCH_AD_");
             const progressPercentage = getProgressPercentage(
               mission.currentValue,
               mission.targetValue,
@@ -263,6 +272,15 @@ export function MissionCenter() {
                       <CheckCircle2 className="h-4 w-4" />
                       Đã Nhận Thưởng
                     </div>
+                  ) : isAdMission ? (
+                    <button
+                      type="button"
+                      onClick={() => setActiveAdMission(mission.code)}
+                      className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#d4af37] py-3 text-xs font-black uppercase tracking-widest text-black shadow-[0_0_24px_rgba(212,175,55,0.18)] transition hover:bg-[#f2ca50] hover:shadow-[0_0_34px_rgba(212,175,55,0.28)] active:scale-[0.98]"
+                    >
+                      <PlayCircle className="h-4 w-4" />
+                      LÀM NHIỆM VỤ
+                    </button>
                   ) : (
                     <div
                       aria-disabled="true"
@@ -278,6 +296,12 @@ export function MissionCenter() {
           })}
         </div>
       </section>
+
+      <AdRewardModal
+        isOpen={Boolean(activeAdMission)}
+        onClose={() => setActiveAdMission(null)}
+        missionCode={activeAdMission || ""}
+      />
     </>
   );
 }
