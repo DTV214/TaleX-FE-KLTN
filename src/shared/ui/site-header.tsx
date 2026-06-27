@@ -2,7 +2,14 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Menu, Search, LogOut, User as UserIcon } from "lucide-react";
+import {
+  Clapperboard,
+  LogOut,
+  Menu,
+  Search,
+  User as UserIcon,
+} from "lucide-react";
+import { DropdownMenu } from "radix-ui";
 import { siteConfig } from "@/core/config/site";
 import { isFullProfile, useAuthStore } from "@/features/auth/store/auth.store";
 import { logoutAction } from "@/features/auth/api/auth.actions";
@@ -119,63 +126,77 @@ export function SiteHeader() {
             <Search className="h-5 w-5" />
           </button>
 
-          <Link
-            href="/creator"
-            className="hidden h-10 md:h-11 items-center justify-center rounded-xl md:rounded-2xl bg-primary px-4 md:px-6 text-xs md:text-sm font-extrabold text-black shadow-[0_0_30px_rgba(212,175,55,0.28)] transition-all hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-[0_0_42px_rgba(212,175,55,0.38)] sm:flex"
-          >
-            Trở thành Creator
-          </Link>
-
           {/* KHU VỰC AVATAR & DROPDOWN MỚI */}
           {isAuthenticated && profileUser ? (
             <>
               <CoinWalletWidget />
 
-              <div className="relative group">
-              {/* Vùng Avatar để hover */}
-              <button className="flex h-10 w-10 md:h-12 md:w-12 items-center justify-center overflow-hidden rounded-full border border-primary/35 bg-primary/10 text-primary transition hover:border-primary hover:shadow-[0_0_26px_rgba(212,175,55,0.24)]">
-                {profileUser.avatarUrl ? (
-                  <span
-                    className="h-full w-full bg-cover bg-center"
-                    style={{ backgroundImage: `url(${profileUser.avatarUrl})` }}
-                  />
-                ) : (
-                  <span className="font-heading text-xs md:text-sm font-extrabold uppercase">
-                    {profileUser.username.slice(0, 2)}
-                  </span>
-                )}
-              </button>
-
-              {/* Menu Dropdown - Tự động hiện khi hover */}
-              <div className="absolute right-0 top-full pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                <div className="w-48 rounded-xl bg-[#121214] border border-white/10 shadow-2xl p-2 flex flex-col gap-1">
-                  <div className="px-3 py-2 border-b border-white/10 mb-1">
-                    <p className="text-sm font-bold text-white truncate">
-                      {profileUser.fullName}
-                    </p>
-                    <p className="text-xs text-gray-500 truncate">
-                      @{profileUser.username}
-                    </p>
-                  </div>
-
-                  <Link
-                    href="/profile"
-                    className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-300 rounded-lg hover:bg-white/5 hover:text-primary transition-colors"
-                  >
-                    <UserIcon className="h-4 w-4" />
-                    Hồ sơ cá nhân
-                  </Link>
-
-                  <button
-                    onClick={handleLogout}
-                    className="flex w-full items-center gap-3 px-3 py-2 text-sm font-medium text-[#E50914] rounded-lg hover:bg-[#E50914]/10 transition-colors"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    Đăng xuất
+              <DropdownMenu.Root>
+                <DropdownMenu.Trigger asChild>
+                  <button className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-primary/35 bg-primary/10 text-primary transition hover:border-primary hover:shadow-[0_0_26px_rgba(212,175,55,0.24)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70 md:h-12 md:w-12">
+                    {profileUser.avatarUrl ? (
+                      <span
+                        className="h-full w-full bg-cover bg-center"
+                        style={{
+                          backgroundImage: `url(${profileUser.avatarUrl})`,
+                        }}
+                      />
+                    ) : (
+                      <span className="font-heading text-xs font-extrabold uppercase md:text-sm">
+                        {profileUser.username.slice(0, 2)}
+                      </span>
+                    )}
                   </button>
-                </div>
-              </div>
-              </div>
+                </DropdownMenu.Trigger>
+
+                <DropdownMenu.Portal>
+                  <DropdownMenu.Content
+                    align="end"
+                    sideOffset={10}
+                    className="z-50 w-56 rounded-xl border border-white/10 bg-[#121214] p-2 text-gray-300 shadow-2xl shadow-black/40 outline-none data-[side=bottom]:animate-in data-[side=bottom]:fade-in data-[side=bottom]:slide-in-from-top-2"
+                  >
+                    <div className="mb-1 border-b border-white/10 px-3 py-2">
+                      <p className="truncate text-sm font-bold text-white">
+                        {profileUser.fullName}
+                      </p>
+                      <p className="mt-0.5 truncate text-xs text-gray-500">
+                        @{profileUser.username}
+                      </p>
+                    </div>
+
+                    <DropdownMenu.Item
+                      onSelect={() => router.push("/creator-dashboard")}
+                      className="flex cursor-pointer select-none items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium outline-none transition-colors hover:bg-white/5 hover:text-primary focus:bg-white/5 focus:text-primary"
+                    >
+                      <Clapperboard className="h-4 w-4" />
+                      Creator Studio
+                    </DropdownMenu.Item>
+
+                    <DropdownMenu.Item asChild>
+                      <Link
+                        href="/profile"
+                        className="flex cursor-pointer select-none items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium outline-none transition-colors hover:bg-white/5 hover:text-primary focus:bg-white/5 focus:text-primary"
+                      >
+                        <UserIcon className="h-4 w-4" />
+                        Hồ sơ cá nhân
+                      </Link>
+                    </DropdownMenu.Item>
+
+                    <DropdownMenu.Separator className="my-1 h-px bg-white/10" />
+
+                    <DropdownMenu.Item
+                      onSelect={(event) => {
+                        event.preventDefault();
+                        void handleLogout();
+                      }}
+                      className="flex cursor-pointer select-none items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-[#E50914] outline-none transition-colors hover:bg-[#E50914]/10 focus:bg-[#E50914]/10"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Đăng xuất
+                    </DropdownMenu.Item>
+                  </DropdownMenu.Content>
+                </DropdownMenu.Portal>
+              </DropdownMenu.Root>
             </>
           ) : (
             <Link

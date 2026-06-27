@@ -115,7 +115,13 @@ export function proxy(request: NextRequest) {
       );
     }
 
-    if (matchesAnyRoute(pathname, creatorRoutes) && role !== "CREATOR") {
+    // Allow both CREATOR and VIEWER to enter Creator Studio. VIEWER users are
+    // handled by CreatorGuard for onboarding and terms acceptance.
+    if (
+      matchesAnyRoute(pathname, creatorRoutes) &&
+      role !== "CREATOR" &&
+      role !== "VIEWER"
+    ) {
       return NextResponse.redirect(
         new URL(getRoleLandingPath(role), request.url),
       );

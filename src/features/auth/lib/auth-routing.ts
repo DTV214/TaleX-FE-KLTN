@@ -45,7 +45,7 @@ function canAccessCallbackPath(role: UserRole, pathname: string) {
   }
 
   if (matchesPathPrefix(pathname, "/creator-dashboard")) {
-    return role === "CREATOR";
+    return role === "CREATOR" || role === "VIEWER";
   }
 
   return true;
