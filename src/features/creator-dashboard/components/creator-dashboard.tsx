@@ -1,9 +1,11 @@
+
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
   useSyncExternalStore,
   type DragEvent,
@@ -70,7 +72,10 @@ import {
   type SeriesResponse,
 } from "@/features/creator-dashboard/api/creator-content-api";
 import { uploadImageToS3 } from "@/features/creator-dashboard/api/s3-upload-api";
+import { toast } from "sonner";
 import { ResumableVideoUploader } from "@/features/creator-dashboard/components/resumable-video-uploader";
+import { ViolationDetailDialog } from "@/features/creator-dashboard/components/violation-detail-dialog";
+import { usePipelineSSE } from "@/features/creator-dashboard/hooks/use-pipeline-sse";
 import { SignedHlsPlayer } from "@/features/playback/components/signed-hls-player";
 
 type DashboardView =
@@ -432,14 +437,10 @@ function toDateTimeLocalValue(value?: string) {
 }
 
 function formatMediaStatusLabel(status: MediaStatus) {
-  if (status === "HLS_PROCESSING") {
-    return "Processing";
-  }
-
-  if (status === "HLS_READY") {
-    return "Ready";
-  }
-
+  if (status === "PENDING") return "Đang kiểm duyệt";
+  if (status === "INACTIVE") return "Vi phạm chính sách";
+  if (status === "HLS_PROCESSING") return "Processing";
+  if (status === "HLS_READY") return "Ready";
   return formatStatusLabel(status as EpisodeStatus);
 }
 
@@ -595,6 +596,8 @@ export function CreatorDashboard() {
 }
 
 function CreatorDashboardContent() {
+  usePipelineSSE({ enabled: true });
+
   const queryClient = useQueryClient();
   const accountId = useAuthStore((state) => state.user?.accountId ?? "");
   const initialRouteState = useMemo(() => readDashboardRouteState(), []);
@@ -677,7 +680,49 @@ function CreatorDashboardContent() {
     enabled:
       Boolean(selectedEpisode?.id) &&
       (activeView === "comic" || activeView === "video"),
+    refetchInterval: (query) => {
+      const data = query.state.data as MediaResponse[] | undefined;
+      const hasPending = data?.some((m) => m.status === "PENDING" || m.status === "HLS_PROCESSING" || m.status === "PROCESSING");
+      return hasPending ? 5000 : false;
+    },
   });
+
+  // Track media status changes → show toast notification
+  const prevMediaStatusRef = useRef<Record<string, string>>({});
+  useEffect(() => {
+    const mediaList = mediaQuery.data ?? [];
+    const prev = prevMediaStatusRef.current;
+    for (const media of mediaList) {
+      const oldStatus = prev[media.mediaId];
+      if (oldStatus && oldStatus !== media.status) {
+        if (media.status === "ACTIVE" && (oldStatus === "PENDING" || oldStatus === "HLS_READY")) {
+          const type = media.mediaType === "IMAGE" ? "Ảnh" : "Video";
+          toast.success(`${type} đã được xuất bản`, {
+            description: `Nội dung đã qua kiểm duyệt thành công và hiện đang hiển thị trên nền tảng TaleX.`,
+            duration: 10000,
+          });
+        } else if (media.status === "INACTIVE" && oldStatus === "PENDING") {
+          toast.error("Nội dung không đạt kiểm duyệt", {
+            description: "Nội dung vi phạm chính sách nền tảng và đã bị tạm ẩn. Vui lòng xem chi tiết vi phạm để chỉnh sửa.",
+            duration: 15000,
+          });
+        } else if (media.status === "FAILED") {
+          toast.error("Xử lý nội dung thất bại", {
+            description: media.errorMessage || "Đã xảy ra lỗi trong quá trình xử lý. Vui lòng thử đăng tải lại hoặc liên hệ hỗ trợ.",
+            duration: 10000,
+          });
+        } else if (media.status === "PENDING" && oldStatus === "HLS_PROCESSING") {
+          toast.info("Đang kiểm duyệt nội dung", {
+            description: "Hệ thống đang kiểm tra bản quyền và nội dung. Quá trình này có thể mất vài phút.",
+            duration: 5000,
+          });
+        }
+      }
+    }
+    const next: Record<string, string> = {};
+    for (const media of mediaList) next[media.mediaId] = media.status;
+    prevMediaStatusRef.current = next;
+  }, [mediaQuery.data]);
 
   const existingMediaPages = useMemo(
     () =>
@@ -3776,6 +3821,8 @@ function VideoUploadView({
     });
   }
 
+  const [violationMediaId, setViolationMediaId] = useState<string | null>(null);
+
   return (
     <div className="space-y-4">
       <button
@@ -3905,7 +3952,7 @@ function VideoUploadView({
                       {isPlayableVideoStatus(video.status) ? (
                         <SignedHlsPlayer episodeId={video.episodeId} compact creatorMode />
                       ) : (
-                        <VideoProcessingState video={video} />
+                        <VideoProcessingState video={video} onViewViolation={setViolationMediaId} />
                       )}
                         <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs font-bold text-[#5D5160]">
                           <span>
@@ -4036,39 +4083,48 @@ function VideoUploadView({
         </button>
         </aside>
       </div>
+      <ViolationDetailDialog
+        mediaId={violationMediaId ?? ""}
+        open={violationMediaId !== null}
+        onOpenChange={(open) => { if (!open) setViolationMediaId(null); }}
+      />
     </div>
   );
 }
 
-function VideoProcessingState({ video }: { video: MediaResponse }) {
+function VideoProcessingState({ video, onViewViolation }: { video: MediaResponse; onViewViolation?: (mediaId: string) => void }) {
   const failed = video.status === "FAILED";
+  const pending = video.status === "PENDING";
+  const inactive = video.status === "INACTIVE";
+
+  const bgClass = failed || inactive
+    ? "border-[#FFD8D4] bg-[#FFF7F6] text-[#B42318]"
+    : pending
+      ? "border-amber-300/30 bg-amber-50 text-amber-800"
+      : "border-[#D9E2F0] bg-white text-[#5D5160]";
 
   return (
-    <div
-      className={cx(
-        "flex aspect-video w-full flex-col items-center justify-center rounded-xl border px-4 text-center",
-        failed
-          ? "border-[#FFD8D4] bg-[#FFF7F6] text-[#B42318]"
-          : "border-[#D9E2F0] bg-white text-[#5D5160]",
-      )}
-    >
-      {failed ? (
+    <div className={cx("flex aspect-video w-full flex-col items-center justify-center rounded-xl border px-4 text-center", bgClass)}>
+      {failed || inactive ? (
         <CircleAlert className="mb-3 h-8 w-8" />
+      ) : pending ? (
+        <Loader2 className="mb-3 h-8 w-8 animate-spin text-amber-600" />
       ) : (
         <Loader2 className="mb-3 h-8 w-8 animate-spin text-[#007A8A]" />
       )}
       <p className="text-sm font-black text-[#151A23]">
-        {failed ? "Video processing failed" : "Video is still processing"}
+        {inactive ? "Nội dung vi phạm chính sách" : pending ? "Đang kiểm duyệt nội dung" : failed ? "Video processing failed" : "Video is still processing"}
       </p>
       <p className="mt-2 max-w-md text-xs font-bold leading-relaxed">
-        {failed
-          ? video.errorMessage || "Cloudinary could not finish this video."
-          : "Please try again shortly."}
+        {inactive ? "Nội dung đã bị ẩn do vi phạm bản quyền hoặc kiểm duyệt." : pending ? "Đang kiểm tra bản quyền và nội dung..." : failed ? (video.errorMessage || "Không thể xử lý video.") : "Vui lòng chờ trong giây lát."}
       </p>
-      {isProcessingVideoStatus(video.status) && (
-        <span className="mt-3 rounded-full bg-[#E8F8FF] px-3 py-1 text-[11px] font-black text-[#075985]">
-          {formatMediaStatusLabel(video.status)}
-        </span>
+      <span className={cx("mt-3 rounded-full px-3 py-1 text-[11px] font-black", inactive ? "bg-red-100 text-red-700" : pending ? "bg-amber-100 text-amber-700" : "bg-[#E8F8FF] text-[#075985]")}>
+        {formatMediaStatusLabel(video.status)}
+      </span>
+      {inactive && onViewViolation && (
+        <button onClick={() => onViewViolation(video.mediaId)} className="mt-2 text-xs font-semibold text-red-600 underline hover:text-red-800">
+          Xem chi tiết vi phạm
+        </button>
       )}
     </div>
   );

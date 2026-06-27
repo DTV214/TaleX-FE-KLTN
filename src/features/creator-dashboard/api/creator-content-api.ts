@@ -13,11 +13,13 @@ export type ContentApprovalStatus = "PENDING_REVIEW" | "APPROVED" | "REJECTED";
 export type EpisodeUnlockType = "FREE" | "PAID";
 export type MediaType = "VIDEO" | "IMAGE";
 export type MediaStatus =
+  | "PENDING"
   | "PROCESSING"
   | "HLS_PROCESSING"
   | "HLS_READY"
   | "ACTIVE"
   | "HIDDEN"
+  | "INACTIVE"
   | "DELETED"
   | "FAILED";
 

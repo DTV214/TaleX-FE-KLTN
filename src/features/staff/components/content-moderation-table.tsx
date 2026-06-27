@@ -3,169 +3,124 @@
 import { useState } from "react";
 import {
   Search,
-  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Eye,
   CheckCircle2,
   XCircle,
-  History,
   Film,
   BookOpen,
+  Loader2,
 } from "lucide-react";
-
-// Mock Data bám sát Use Case "Review Creator Content"
-const mockContents = [
-  {
-    id: "MOD-1045",
-    title: "Cyber Edge: Neon City - Episode 1",
-    creator: "Alex Rivera",
-    type: "Video",
-    submittedDate: "Oct 26, 2023, 10:30 AM",
-    durationOrPages: "24 mins",
-    status: "Pending Review",
-  },
-  {
-    id: "MOD-1046",
-    title: "Tower of Sky - Chapter 155",
-    creator: "Studio Mirai",
-    type: "Comic",
-    submittedDate: "Oct 26, 2023, 11:15 AM",
-    durationOrPages: "32 pages",
-    status: "In Progress",
-  },
-  {
-    id: "MOD-1047",
-    title: "The Silent Watcher - Trailer",
-    creator: "Elena Chen",
-    type: "Video",
-    submittedDate: "Oct 25, 2023, 04:20 PM",
-    durationOrPages: "2 mins",
-    status: "Flagged by AI", // Cảnh báo tự động từ hệ thống AI (nếu có)
-  },
-];
+import { usePendingMedia } from "../hooks/use-moderation-queries";
+import { useApproveMedia, useRejectMedia } from "../hooks/use-moderation-mutations";
+import { RejectReasonModal } from "./reject-reason-modal";
 
 export function ContentModerationTable() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [page, setPage] = useState(0);
+  const [rejectTarget, setRejectTarget] = useState<string | null>(null);
+
+  const { data, isLoading } = usePendingMedia(page, 20);
+  const approveMutation = useApproveMedia();
+  const rejectMutation = useRejectMedia();
+
+  const items = data?.content ?? [];
 
   return (
     <div className="w-full flex flex-col gap-6 mt-6">
-      {/* Filters & Search */}
-      <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-        <div className="relative w-full md:max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search by title, creator, or ID..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="h-11 w-full rounded-lg border border-gray-200 bg-white pl-10 pr-4 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#10B981]/20 focus:border-[#10B981] transition-all shadow-sm"
-          />
-        </div>
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          <button className="flex h-11 items-center justify-between gap-2 w-full md:w-36 rounded-lg border border-gray-200 bg-white px-4 text-sm font-medium text-gray-600 shadow-sm hover:bg-gray-50 transition-colors">
-            Format
-            <ChevronDown className="h-4 w-4 text-gray-400" />
-          </button>
-          <button className="flex h-11 items-center justify-between gap-2 w-full md:w-40 rounded-lg border border-gray-200 bg-white px-4 text-sm font-medium text-gray-600 shadow-sm hover:bg-gray-50 transition-colors">
-            Sort by: Oldest
-            <ChevronDown className="h-4 w-4 text-gray-400" />
-          </button>
-        </div>
+      {/* Search */}
+      <div className="relative w-full md:max-w-md">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+        <input
+          type="text"
+          placeholder="Tìm theo ID hoặc loại media..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="h-11 w-full rounded-lg border border-gray-200 bg-white pl-10 pr-4 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#10B981]/20 focus:border-[#10B981] transition-all shadow-sm"
+        />
       </div>
 
-      {/* Bảng Dữ Liệu */}
+      {/* Table */}
       <div className="rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm text-gray-600">
             <thead className="bg-gray-50/80 text-gray-500 text-xs font-bold uppercase tracking-wider border-b border-gray-100">
               <tr>
-                <th className="px-6 py-4">Content Details</th>
-                <th className="px-6 py-4">Creator</th>
-                <th className="px-6 py-4">Format / Size</th>
-                <th className="px-6 py-4">Status</th>
-                <th className="px-6 py-4 text-right">Actions</th>
+                <th className="px-6 py-4">Media ID</th>
+                <th className="px-6 py-4">Loại</th>
+                <th className="px-6 py-4">Trạng thái</th>
+                <th className="px-6 py-4">Ngày tạo</th>
+                <th className="px-6 py-4 text-right">Hành động</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {mockContents.map((content) => (
-                <tr
-                  key={content.id}
-                  className="hover:bg-gray-50/80 transition-colors group"
-                >
-                  {/* Cột 1: Thông tin nội dung */}
+              {isLoading && (
+                <tr>
+                  <td colSpan={5} className="px-6 py-12 text-center">
+                    <Loader2 className="h-6 w-6 animate-spin mx-auto text-gray-400" />
+                    <p className="mt-2 text-sm text-gray-500">Đang tải...</p>
+                  </td>
+                </tr>
+              )}
+              {!isLoading && items.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="px-6 py-12 text-center text-sm text-gray-500">
+                    Không có nội dung nào chờ duyệt.
+                  </td>
+                </tr>
+              )}
+              {items.map((item) => (
+                <tr key={item.mediaId} className="hover:bg-gray-50/80 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <p className="text-sm font-bold text-gray-900 mb-1 truncate max-wxs">
-                      {content.title}
+                    <p className="text-sm font-bold text-gray-900 truncate max-w-[200px]">
+                      {item.mediaId.slice(0, 8)}...
                     </p>
-                    <p className="text-[11px] text-gray-500">
-                      ID: {content.id} • Submitted: {content.submittedDate}
-                    </p>
+                    <p className="text-[11px] text-gray-500">Episode: {item.episodeId.slice(0, 8)}...</p>
                   </td>
-
-                  {/* Cột 2: Tên Creator */}
-                  <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-700">
-                    {content.creator}
-                  </td>
-
-                  {/* Cột 3: Định dạng (Video/Comic) và Kích thước */}
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-2">
-                      {content.type === "Video" ? (
+                      {item.mediaType === "VIDEO" ? (
                         <Film className="w-4 h-4 text-blue-500" />
                       ) : (
                         <BookOpen className="w-4 h-4 text-purple-500" />
                       )}
-                      <span className="text-xs font-bold text-gray-700">
-                        {content.type}
-                      </span>
-                      <span className="text-xs text-gray-400">
-                        ({content.durationOrPages})
-                      </span>
+                      <span className="text-xs font-bold text-gray-700">{item.mediaType}</span>
                     </div>
                   </td>
-
-                  {/* Cột 4: Trạng thái (Pending / Flagged) */}
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`px-2.5 py-1 text-[10px] font-bold tracking-wider rounded-md uppercase ${
-                        content.status === "Flagged by AI"
-                          ? "bg-red-100 text-red-600"
-                          : content.status === "In Progress"
-                            ? "bg-blue-50 text-blue-600"
-                            : "bg-amber-50 text-amber-600"
-                      }`}
-                    >
-                      {content.status}
+                    <span className="px-2.5 py-1 text-[10px] font-bold tracking-wider rounded-md uppercase bg-amber-50 text-amber-600">
+                      {item.approvalStatus}
                     </span>
                   </td>
-
-                  {/* Cột 5: Actions (Review / Approve / Reject / History) */}
+                  <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-500">
+                    {new Date(item.createdAt).toLocaleDateString("vi-VN")}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right">
                     <div className="flex items-center justify-end gap-1">
-                      {/* Lịch sử kiểm duyệt (Track Moderation History) */}
+                      {item.originalUrl && (
+                        <a
+                          href={item.originalUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="p-2 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-blue-50 transition-colors"
+                          title="Xem nội dung"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </a>
+                      )}
                       <button
-                        className="p-2 text-gray-400 hover:text-gray-900 rounded-lg hover:bg-gray-100 transition-colors"
-                        title="Moderation History"
-                      >
-                        <History className="w-4 h-4" />
-                      </button>
-                      <div className="w-px h-4 bg-gray-200 mx-1" />
-                      {/* Xem trước nội dung */}
-                      <button
-                        className="p-2 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-blue-50 transition-colors"
-                        title="Preview Content"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      {/* Duyệt & Từ chối */}
-                      <button
-                        className="p-2 text-gray-400 hover:text-[#10B981] rounded-lg hover:bg-[#ECFDF5] transition-colors"
-                        title="Approve for Publication"
+                        onClick={() => approveMutation.mutate(item.mediaId)}
+                        disabled={approveMutation.isPending}
+                        className="p-2 text-gray-400 hover:text-[#10B981] rounded-lg hover:bg-[#ECFDF5] transition-colors disabled:opacity-50"
+                        title="Phê duyệt"
                       >
                         <CheckCircle2 className="w-4 h-4" />
                       </button>
                       <button
+                        onClick={() => setRejectTarget(item.mediaId)}
                         className="p-2 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors"
-                        title="Reject Content"
+                        title="Từ chối"
                       >
                         <XCircle className="w-4 h-4" />
                       </button>
@@ -176,7 +131,47 @@ export function ContentModerationTable() {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        {data && data.totalPages > 1 && (
+          <div className="flex items-center justify-between border-t border-gray-100 px-6 py-3">
+            <p className="text-xs text-gray-500">
+              Trang {data.pageNumber + 1} / {data.totalPages} ({data.totalElements} items)
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                disabled={data.isFirst}
+                className="p-1.5 rounded border border-gray-200 disabled:opacity-30"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setPage((p) => p + 1)}
+                disabled={data.isLast}
+                className="p-1.5 rounded border border-gray-200 disabled:opacity-30"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Reject Modal */}
+      <RejectReasonModal
+        open={rejectTarget !== null}
+        onOpenChange={(open) => { if (!open) setRejectTarget(null); }}
+        onConfirm={(reason) => {
+          if (rejectTarget) {
+            rejectMutation.mutate(
+              { mediaId: rejectTarget, reason },
+              { onSuccess: () => setRejectTarget(null) },
+            );
+          }
+        }}
+        isLoading={rejectMutation.isPending}
+      />
     </div>
   );
 }
