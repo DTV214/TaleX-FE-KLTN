@@ -243,7 +243,7 @@ export function LoginForm() {
       </div>
 
       {/* Nút Google SDK ẩn — chỉ dùng để trigger popup */}
-      <div className="overflow-hidden" style={{ height: 0, width: 0, position: "absolute" }}>
+      <div className="overflow-hidden" style={{ height: 1, width: 300, position: "absolute", opacity: 0, pointerEvents: "none" }}>
         <div id="google-btn-container" />
       </div>
 
