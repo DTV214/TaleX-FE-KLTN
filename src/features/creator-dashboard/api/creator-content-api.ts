@@ -9,6 +9,8 @@ export type SeriesStatus = "DRAFT" | "PUBLISHED" | "HIDDEN" | "DELETED";
 export type Visibility = "PUBLIC" | "PRIVATE";
 export type SeasonStatus = "DRAFT" | "PUBLISHED" | "HIDDEN" | "DELETED";
 export type EpisodeStatus = "DRAFT" | "PUBLISHED" | "HIDDEN" | "DELETED";
+export type ContentApprovalStatus = "PENDING_REVIEW" | "APPROVED" | "REJECTED";
+export type EpisodeUnlockType = "FREE" | "PAID";
 export type MediaType = "VIDEO" | "IMAGE";
 export type MediaStatus =
   | "PROCESSING"
@@ -74,7 +76,10 @@ export type EpisodeResponse = {
   description?: string;
   contentType: ContentType;
   status: EpisodeStatus;
+  scheduledPublishAt?: string;
   publishedAt?: string;
+  unlockType?: EpisodeUnlockType;
+  priceVnd?: number;
   likes?: number;
   views?: number;
   totalPage?: number;
@@ -109,6 +114,9 @@ export type MediaResponse = {
   duration?: number;
   displayOrder?: number;
   status: MediaStatus;
+  approvalStatus?: ContentApprovalStatus;
+  approvalReviewedAt?: string;
+  approvalReviewedBy?: string;
   playbackPolicy?: string;
   protectionType?: string;
   tokenPolicy?: string;
@@ -152,6 +160,8 @@ export type EpisodeRequest = {
   description?: string;
   contentType?: ContentType;
   status?: EpisodeStatus;
+  unlockType?: EpisodeUnlockType;
+  priceVnd?: number;
   totalPage?: number;
   actorId?: string;
 };
@@ -217,6 +227,10 @@ export type MediaUrlUpdateRequest = {
   duration?: number;
   displayOrder?: number;
   actorId?: string;
+};
+
+export type ScheduledPublishRequest = {
+  scheduledPublishAt: string;
 };
 
 export async function listSeriesByCreator(
@@ -298,6 +312,15 @@ export async function updateEpisode(id: string, request: EpisodeRequest) {
   );
 }
 
+export async function scheduleEpisodePublish(
+  id: string,
+  request: ScheduledPublishRequest,
+) {
+  return unwrapBaseResponse<EpisodeResponse>(
+    httpClient.patch(`/api/v1/episodes/${id}/schedule-publish`, request),
+  );
+}
+
 export async function deleteEpisode(id: string, actorId?: string) {
   return unwrapBaseResponse<void>(
     httpClient.delete(`/api/v1/episodes/${id}`, {
@@ -355,6 +378,18 @@ export async function replaceMediaUrl(
 ) {
   return unwrapBaseResponse<MediaResponse>(
     httpClient.put(`/api/v1/media/${id}/url`, request),
+  );
+}
+
+export async function approveMedia(id: string) {
+  return unwrapBaseResponse<MediaResponse>(
+    httpClient.patch(`/api/v1/media/${id}/approve`),
+  );
+}
+
+export async function rejectMedia(id: string) {
+  return unwrapBaseResponse<MediaResponse>(
+    httpClient.patch(`/api/v1/media/${id}/reject`),
   );
 }
 
