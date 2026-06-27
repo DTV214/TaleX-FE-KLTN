@@ -42,10 +42,7 @@ import {
   Zap,
   type LucideIcon,
 } from "lucide-react";
-import {
-  CREATOR_DASHBOARD_ACTOR_ID,
-  CREATOR_DASHBOARD_CREATOR_ID,
-} from "@/core/config/api";
+import { useAuthStore } from "@/features/auth/store/auth.store";
 import {
   createEpisode,
   createComicPageMedia,
@@ -599,6 +596,7 @@ export function CreatorDashboard() {
 
 function CreatorDashboardContent() {
   const queryClient = useQueryClient();
+  const accountId = useAuthStore((state) => state.user?.accountId ?? "");
   const initialRouteState = useMemo(() => readDashboardRouteState(), []);
   const [activeView, setActiveView] = useState<DashboardView>(
     initialRouteState.view,
@@ -630,8 +628,8 @@ function CreatorDashboardContent() {
   }
 
   const seriesQuery = useQuery({
-    queryKey: ["creator-dashboard", "series", CREATOR_DASHBOARD_CREATOR_ID],
-    queryFn: () => listSeriesByCreator(CREATOR_DASHBOARD_CREATOR_ID),
+    queryKey: ["creator-dashboard", "series"],
+    queryFn: () => listSeriesByCreator(),
   });
 
   const realSeriesRows =
@@ -744,7 +742,6 @@ function CreatorDashboardContent() {
       const bannerUrl = await uploadSeriesArtwork(input.bannerFile, "Banner", "banner");
 
       return createSeries({
-        creatorId: CREATOR_DASHBOARD_CREATOR_ID,
         title: input.title,
         description: input.description,
         coverUrl,
@@ -755,7 +752,6 @@ function CreatorDashboardContent() {
         language: input.language,
         categoryIds: input.categoryIds,
         tagIds: input.tagIds,
-        actorId: CREATOR_DASHBOARD_ACTOR_ID,
       });
     },
     onSuccess: (series) => {
@@ -767,7 +763,7 @@ function CreatorDashboardContent() {
         episodeId: "",
       });
       queryClient.invalidateQueries({
-        queryKey: ["creator-dashboard", "series", CREATOR_DASHBOARD_CREATOR_ID],
+        queryKey: ["creator-dashboard", "series"],
       });
     },
     onError: (error) => {
@@ -793,7 +789,6 @@ function CreatorDashboardContent() {
         contentType: selectedSeries.contentType,
         unlockType: "FREE",
         priceVnd: 0,
-        actorId: CREATOR_DASHBOARD_ACTOR_ID,
       });
 
       return mapEpisodeResponse(created);
@@ -823,7 +818,6 @@ function CreatorDashboardContent() {
         seasonNumber: nextSeasonNumber,
         title: `Season ${nextSeasonNumber}`,
         description: "Draft season created from creator dashboard.",
-        actorId: CREATOR_DASHBOARD_ACTOR_ID,
       });
     },
     onSuccess: (season) => {
@@ -859,7 +853,6 @@ function CreatorDashboardContent() {
       const uploadedBannerUrl = await uploadSeriesArtwork(bannerFile, "Banner", "banner");
 
       return updateSeries(series.id, {
-        creatorId: series.creatorId,
         title: series.title,
         description: series.description,
         coverUrl: uploadedCoverUrl || series.coverUrl,
@@ -870,14 +863,13 @@ function CreatorDashboardContent() {
         language: series.language,
         categoryIds: series.categoryIds,
         tagIds: series.tagIds,
-        actorId: CREATOR_DASHBOARD_ACTOR_ID,
       });
     },
     onSuccess: () => {
       setUploadMessage("Series updated.");
       setEditModal(null);
       queryClient.invalidateQueries({
-        queryKey: ["creator-dashboard", "series", CREATOR_DASHBOARD_CREATOR_ID],
+        queryKey: ["creator-dashboard", "series"],
       });
     },
     onError: (error) => {
@@ -889,7 +881,7 @@ function CreatorDashboardContent() {
 
   const deleteSeriesMutation = useMutation({
     mutationFn: async (series: SeriesRow) => {
-      await deleteSeries(series.id, CREATOR_DASHBOARD_ACTOR_ID);
+      await deleteSeries(series.id);
       return series;
     },
     onSuccess: () => {
@@ -897,7 +889,7 @@ function CreatorDashboardContent() {
       setDeleteModal(null);
       openSeriesManagement();
       queryClient.invalidateQueries({
-        queryKey: ["creator-dashboard", "series", CREATOR_DASHBOARD_CREATOR_ID],
+        queryKey: ["creator-dashboard", "series"],
       });
     },
     onError: (error) => {
@@ -913,7 +905,6 @@ function CreatorDashboardContent() {
         title: season.title,
         seasonNumber: season.seasonNumber,
         description: season.description,
-        actorId: CREATOR_DASHBOARD_ACTOR_ID,
       });
     },
     onSuccess: () => {
@@ -932,7 +923,7 @@ function CreatorDashboardContent() {
 
   const deleteSeasonMutation = useMutation({
     mutationFn: async (season: SeasonRow) => {
-      await deleteSeason(season.id, CREATOR_DASHBOARD_ACTOR_ID);
+      await deleteSeason(season.id);
       return season;
     },
     onSuccess: () => {
@@ -968,7 +959,6 @@ function CreatorDashboardContent() {
         unlockType: episode.unlockType,
         priceVnd: normalizedPriceVnd,
         totalPage: episode.totalPage,
-        actorId: CREATOR_DASHBOARD_ACTOR_ID,
       });
     },
     onSuccess: () => {
@@ -987,7 +977,7 @@ function CreatorDashboardContent() {
 
   const deleteEpisodeMutation = useMutation({
     mutationFn: async (episode: EpisodeRow) => {
-      await deleteEpisode(episode.id, CREATOR_DASHBOARD_ACTOR_ID);
+      await deleteEpisode(episode.id);
       return episode;
     },
     onSuccess: () => {
@@ -1062,7 +1052,7 @@ function CreatorDashboardContent() {
             mediaId: page.id,
             displayOrder: page.displayOrder,
           })),
-          actorId: CREATOR_DASHBOARD_ACTOR_ID,
+          actorId: accountId,
         });
       }
 
@@ -1115,7 +1105,7 @@ function CreatorDashboardContent() {
       return createComicPageMedia(
         selectedEpisode.id,
         uploadedPages,
-        CREATOR_DASHBOARD_ACTOR_ID,
+        accountId,
       );
     },
     onSuccess: (createdPages) => {
@@ -1145,7 +1135,7 @@ function CreatorDashboardContent() {
         return { media, deletedFromBackend: false };
       }
 
-      await deleteMedia(getMediaTargetId(media), CREATOR_DASHBOARD_ACTOR_ID);
+      await deleteMedia(getMediaTargetId(media), accountId);
       return { media, deletedFromBackend: true };
     },
     onSuccess: ({ media, deletedFromBackend }) => {
@@ -1666,6 +1656,7 @@ function CreatorDashboardContent() {
               onDeleteVideo={handleDeleteVideo}
               onSaveEpisode={(episode) => updateEpisodeMutation.mutate(episode)}
               isSavingEpisode={updateEpisodeMutation.isPending}
+              accountId={accountId}
               onSchedulePublish={(episode) =>
                 handleSchedulePublish({ kind: "episode", value: episode })
               }
@@ -1781,7 +1772,6 @@ function EditEntityModal({
       bannerFile,
       value: {
         ...(modal!.value as SeriesRow),
-        creatorId: readFormString(form, "creatorId") || undefined,
         title,
         description: readFormString(form, "description"),
         coverUrl: readFormString(form, "coverUrl"),
@@ -1880,13 +1870,6 @@ function EditEntityModal({
           )}
 
           <div className="grid gap-4 md:grid-cols-2">
-            <Field label="Creator ID">
-              <input
-                name="creatorId"
-                defaultValue={modal.value.creatorId || CREATOR_DASHBOARD_CREATOR_ID}
-                className={controlClass}
-              />
-            </Field>
             <Field label="Content Type" required>
               <select
                 name="contentType"
@@ -3725,6 +3708,7 @@ function VideoUploadView({
   onDeleteVideo,
   onSaveEpisode,
   isSavingEpisode,
+  accountId,
   onSchedulePublish,
   onBack,
 }: {
@@ -3738,6 +3722,7 @@ function VideoUploadView({
   onDeleteVideo: (media: MediaResponse) => void;
   onSaveEpisode: (episode: EpisodeRow) => void;
   isSavingEpisode: boolean;
+  accountId: string;
   onSchedulePublish: (episode: EpisodeRow) => void;
   onBack: () => void;
 }) {
@@ -3966,8 +3951,8 @@ function VideoUploadView({
               <ResumableVideoUploader
                 key={selectedEpisode.id}
                 episodeId={selectedEpisode.id}
-                creatorId={CREATOR_DASHBOARD_CREATOR_ID}
-                actorId={CREATOR_DASHBOARD_ACTOR_ID}
+                creatorId={selectedSeries?.creatorId}
+                actorId={accountId}
                 disabledReason={
                   videos.length > 0
                     ? "Delete the current video before uploading a replacement."

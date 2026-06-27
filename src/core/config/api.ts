@@ -4,12 +4,6 @@ export const API_BASE_URL =
 
 export const SWAGGER_URL = `${API_BASE_URL}/swagger-ui/index.html#/`;
 
-export const CREATOR_DASHBOARD_CREATOR_ID =
-  process.env.NEXT_PUBLIC_CREATOR_ID || "1";
-
-export const CREATOR_DASHBOARD_ACTOR_ID =
-  process.env.NEXT_PUBLIC_ACTOR_ID || CREATOR_DASHBOARD_CREATOR_ID;
-
 export const CLOUDINARY_CLOUD_NAME =
   process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "";
 
