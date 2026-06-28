@@ -88,11 +88,7 @@ export function LoginForm() {
   useEffect(() => {
     if (!GOOGLE_CLIENT_ID || googleRendered.current) return;
 
-    const script = document.createElement("script");
-    script.src = "https://accounts.google.com/gsi/client";
-    script.async = true;
-    script.defer = true;
-    script.onload = () => {
+    const initGoogle = () => {
       window.google?.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID,
         callback: handleGoogleCallback,
@@ -110,6 +106,23 @@ export function LoginForm() {
         googleRendered.current = true;
       }
     };
+
+    if (window.google?.accounts) {
+      initGoogle();
+      return;
+    }
+
+    const existing = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
+    if (existing) {
+      existing.addEventListener("load", initGoogle);
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://accounts.google.com/gsi/client";
+    script.async = true;
+    script.defer = true;
+    script.onload = initGoogle;
     document.head.appendChild(script);
   }, [handleGoogleCallback]);
 
