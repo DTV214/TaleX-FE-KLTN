@@ -88,11 +88,7 @@ export function LoginForm() {
   useEffect(() => {
     if (!GOOGLE_CLIENT_ID || googleRendered.current) return;
 
-    const script = document.createElement("script");
-    script.src = "https://accounts.google.com/gsi/client";
-    script.async = true;
-    script.defer = true;
-    script.onload = () => {
+    const initGoogle = () => {
       window.google?.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID,
         callback: handleGoogleCallback,
@@ -110,6 +106,23 @@ export function LoginForm() {
         googleRendered.current = true;
       }
     };
+
+    if (window.google?.accounts) {
+      initGoogle();
+      return;
+    }
+
+    const existing = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
+    if (existing) {
+      existing.addEventListener("load", initGoogle);
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://accounts.google.com/gsi/client";
+    script.async = true;
+    script.defer = true;
+    script.onload = initGoogle;
     document.head.appendChild(script);
   }, [handleGoogleCallback]);
 
@@ -242,36 +255,26 @@ export function LoginForm() {
         <div className="flex-grow border-t border-white/5"></div>
       </div>
 
-      {/* Nút Google SDK ẩn — chỉ dùng để trigger popup */}
-      <div className="overflow-hidden" style={{ height: 1, width: 300, position: "absolute", opacity: 0, pointerEvents: "none" }}>
-        <div id="google-btn-container" />
+      <div className="relative w-full">
+        <div className="flex w-full items-center justify-center gap-3 rounded-lg border border-white/10 bg-[#121214] p-3.5 text-sm font-medium text-gray-300 pointer-events-none">
+          {isGoogleLoading ? (
+            <>
+              <Loader2 className="w-5 h-5 animate-spin" />
+              Đang xử lý Google...
+            </>
+          ) : (
+            <>
+              <img src="/icons/google.svg" alt="Google" className="h-5 w-5" />
+              Đăng nhập với Google
+            </>
+          )}
+        </div>
+        <div
+          id="google-btn-container"
+          className="absolute inset-0 overflow-hidden"
+          style={{ opacity: 0.01, cursor: "pointer" }}
+        />
       </div>
-
-      <button
-        type="button"
-        disabled={isGoogleLoading || isLoading}
-        onClick={() => {
-          const btn = document.querySelector("#google-btn-container div[role=button]") as HTMLElement;
-          btn?.click();
-        }}
-        className="flex w-full items-center justify-center gap-3 rounded-lg border border-white/10 bg-[#121214] p-3.5 text-sm font-medium text-gray-300 transition-all hover:bg-white/5 hover:text-white hover:border-white/20 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
-      >
-        {isGoogleLoading ? (
-          <>
-            <Loader2 className="w-5 h-5 animate-spin" />
-            Đang xử lý Google...
-          </>
-        ) : (
-          <>
-            <img
-              src="/icons/google.svg"
-              alt="Google"
-              className="h-5 w-5"
-            />
-            Đăng nhập với Google
-          </>
-        )}
-      </button>
 
       <p className="mt-8 text-center text-xs sm:text-sm text-gray-400">
         Chưa có tài khoản?{" "}
