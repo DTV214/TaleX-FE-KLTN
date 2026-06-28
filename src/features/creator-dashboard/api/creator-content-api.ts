@@ -5,10 +5,10 @@ import {
 } from "@/shared/api/http-client";
 
 export type ContentType = "VIDEO" | "COMIC";
-export type SeriesStatus = "DRAFT" | "PUBLISHED" | "HIDDEN" | "DELETED";
+export type SeriesStatus = "DRAFT" | "PUBLISHED" | "HIDDEN" | "DELETED" | "SCHEDULED";
 export type Visibility = "PUBLIC" | "PRIVATE";
-export type SeasonStatus = "DRAFT" | "PUBLISHED" | "HIDDEN" | "DELETED";
-export type EpisodeStatus = "DRAFT" | "PUBLISHED" | "HIDDEN" | "DELETED";
+export type SeasonStatus = "DRAFT" | "PUBLISHED" | "HIDDEN" | "DELETED" | "SCHEDULED";
+export type EpisodeStatus = "DRAFT" | "PUBLISHED" | "HIDDEN" | "DELETED" | "SCHEDULED";
 export type ContentApprovalStatus = "PENDING_REVIEW" | "APPROVED" | "REJECTED";
 export type EpisodeUnlockType = "FREE" | "PAID";
 export type MediaType = "VIDEO" | "IMAGE";
@@ -260,6 +260,18 @@ export async function deleteSeries(id: string) {
   );
 }
 
+export async function hideSeries(id: string) {
+  return unwrapBaseResponse<SeriesResponse>(
+    httpClient.patch(`/api/v1/series/${id}/hide`),
+  );
+}
+
+export async function unhideSeries(id: string) {
+  return unwrapBaseResponse<SeriesResponse>(
+    httpClient.patch(`/api/v1/series/${id}/unhide`),
+  );
+}
+
 export async function listSeasonsBySeries(seriesId: string) {
   return unwrapBaseResponse<SeasonResponse[]>(
     httpClient.get(`/api/v1/series/${seriesId}/seasons`),
@@ -281,6 +293,18 @@ export async function updateSeason(id: string, request: SeasonRequest) {
 export async function deleteSeason(id: string) {
   return unwrapBaseResponse<void>(
     httpClient.delete(`/api/v1/seasons/${id}`),
+  );
+}
+
+export async function hideSeason(id: string) {
+  return unwrapBaseResponse<SeasonResponse>(
+    httpClient.patch(`/api/v1/seasons/${id}/hide`),
+  );
+}
+
+export async function unhideSeason(id: string) {
+  return unwrapBaseResponse<SeasonResponse>(
+    httpClient.patch(`/api/v1/seasons/${id}/unhide`),
   );
 }
 
@@ -314,9 +338,33 @@ export async function scheduleEpisodePublish(
   );
 }
 
+export async function cancelEpisodeSchedulePublish(id: string) {
+  return unwrapBaseResponse<EpisodeResponse>(
+    httpClient.patch(`/api/v1/episodes/${id}/cancel-schedule`),
+  );
+}
+
+export async function publishEpisode(id: string) {
+  return unwrapBaseResponse<EpisodeResponse>(
+    httpClient.patch(`/api/v1/episodes/${id}/publish`),
+  );
+}
+
 export async function deleteEpisode(id: string) {
   return unwrapBaseResponse<void>(
     httpClient.delete(`/api/v1/episodes/${id}`),
+  );
+}
+
+export async function hideEpisode(id: string) {
+  return unwrapBaseResponse<EpisodeResponse>(
+    httpClient.patch(`/api/v1/episodes/${id}/hide`),
+  );
+}
+
+export async function unhideEpisode(id: string) {
+  return unwrapBaseResponse<EpisodeResponse>(
+    httpClient.patch(`/api/v1/episodes/${id}/unhide`),
   );
 }
 

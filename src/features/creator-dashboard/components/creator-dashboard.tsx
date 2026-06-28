@@ -54,12 +54,20 @@ import {
   deleteMedia,
   deleteSeason,
   deleteSeries,
+  hideSeries,
+  unhideSeries,
+  hideSeason,
+  unhideSeason,
+  hideEpisode,
+  unhideEpisode,
   listEpisodesBySeason,
   listMediaByEpisode,
   listSeasonsBySeries,
   listSeriesByCreator,
   reorderEpisodeMedia,
   scheduleEpisodePublish,
+  cancelEpisodeSchedulePublish,
+  publishEpisode,
   updateEpisode,
   updateSeason,
   updateSeries,
@@ -158,7 +166,7 @@ function writeDashboardRouteState(nextState: DashboardRouteState) {
 }
 
 type ContentType = "COMIC" | "VIDEO";
-type ApiLifecycleStatus = "DRAFT" | "PUBLISHED" | "HIDDEN" | "DELETED";
+type ApiLifecycleStatus = "DRAFT" | "PUBLISHED" | "HIDDEN" | "DELETED" | "SCHEDULED";
 type SeriesStatus = ApiLifecycleStatus | "ACTION_REQUIRED";
 type SeasonStatus = ApiLifecycleStatus;
 type EpisodeStatus = ApiLifecycleStatus | "REVIEW";
@@ -944,6 +952,28 @@ function CreatorDashboardContent() {
     },
   });
 
+  const hideSeriesMutation = useMutation({
+    mutationFn: (series: SeriesRow) => hideSeries(series.id),
+    onSuccess: () => {
+      setUploadMessage("Series hidden.");
+      queryClient.invalidateQueries({ queryKey: ["creator-dashboard", "series"] });
+    },
+    onError: (error) => {
+      setUploadMessage(error instanceof Error ? error.message : "Cannot hide series.");
+    },
+  });
+
+  const unhideSeriesMutation = useMutation({
+    mutationFn: (series: SeriesRow) => unhideSeries(series.id),
+    onSuccess: () => {
+      setUploadMessage("Series visible.");
+      queryClient.invalidateQueries({ queryKey: ["creator-dashboard", "series"] });
+    },
+    onError: (error) => {
+      setUploadMessage(error instanceof Error ? error.message : "Cannot unhide series.");
+    },
+  });
+
   const updateSeasonMutation = useMutation({
     mutationFn: async (season: SeasonRow) => {
       return updateSeason(season.id, {
@@ -988,6 +1018,28 @@ function CreatorDashboardContent() {
       setUploadMessage(
         error instanceof Error ? error.message : "Cannot delete season.",
       );
+    },
+  });
+
+  const hideSeasonMutation = useMutation({
+    mutationFn: (season: SeasonRow) => hideSeason(season.id),
+    onSuccess: () => {
+      setUploadMessage("Season hidden.");
+      queryClient.invalidateQueries({ queryKey: ["creator-dashboard", "seasons", selectedSeries?.id] });
+    },
+    onError: (error) => {
+      setUploadMessage(error instanceof Error ? error.message : "Cannot hide season.");
+    },
+  });
+
+  const unhideSeasonMutation = useMutation({
+    mutationFn: (season: SeasonRow) => unhideSeason(season.id),
+    onSuccess: () => {
+      setUploadMessage("Season visible.");
+      queryClient.invalidateQueries({ queryKey: ["creator-dashboard", "seasons", selectedSeries?.id] });
+    },
+    onError: (error) => {
+      setUploadMessage(error instanceof Error ? error.message : "Cannot unhide season.");
     },
   });
 
@@ -1045,6 +1097,28 @@ function CreatorDashboardContent() {
     },
   });
 
+  const hideEpisodeMutation = useMutation({
+    mutationFn: (episode: EpisodeRow) => hideEpisode(episode.id),
+    onSuccess: () => {
+      setUploadMessage("Episode hidden.");
+      queryClient.invalidateQueries({ queryKey: ["creator-dashboard", "episodes", selectedSeason?.id] });
+    },
+    onError: (error) => {
+      setUploadMessage(error instanceof Error ? error.message : "Cannot hide episode.");
+    },
+  });
+
+  const unhideEpisodeMutation = useMutation({
+    mutationFn: (episode: EpisodeRow) => unhideEpisode(episode.id),
+    onSuccess: () => {
+      setUploadMessage("Episode visible.");
+      queryClient.invalidateQueries({ queryKey: ["creator-dashboard", "episodes", selectedSeason?.id] });
+    },
+    onError: (error) => {
+      setUploadMessage(error instanceof Error ? error.message : "Cannot unhide episode.");
+    },
+  });
+
   const schedulePublishMutation = useMutation({
     mutationFn: async ({
       target,
@@ -1068,6 +1142,40 @@ function CreatorDashboardContent() {
     onError: (error) => {
       setUploadMessage(
         error instanceof Error ? error.message : "Cannot schedule publish.",
+      );
+    },
+  });
+
+  const cancelScheduleMutation = useMutation({
+    mutationFn: (episodeId: string) => cancelEpisodeSchedulePublish(episodeId),
+    onSuccess: () => {
+      setUploadMessage("Schedule canceled.");
+      queryClient.invalidateQueries({
+        queryKey: ["creator-dashboard", "episodes", selectedSeason?.id],
+      });
+      queryClient.invalidateQueries({ queryKey: ["creator-dashboard", "series"] });
+      queryClient.invalidateQueries({ queryKey: ["creator-dashboard", "seasons", selectedSeries?.id] });
+    },
+    onError: (error) => {
+      setUploadMessage(
+        error instanceof Error ? error.message : "Cannot cancel schedule.",
+      );
+    },
+  });
+
+  const publishEpisodeMutation = useMutation({
+    mutationFn: (episodeId: string) => publishEpisode(episodeId),
+    onSuccess: () => {
+      setUploadMessage("Episode published successfully.");
+      queryClient.invalidateQueries({
+        queryKey: ["creator-dashboard", "episodes", selectedSeason?.id],
+      });
+      queryClient.invalidateQueries({ queryKey: ["creator-dashboard", "series"] });
+      queryClient.invalidateQueries({ queryKey: ["creator-dashboard", "seasons", selectedSeries?.id] });
+    },
+    onError: (error) => {
+      setUploadMessage(
+        error instanceof Error ? error.message : "Cannot publish episode.",
       );
     },
   });
@@ -1551,6 +1659,8 @@ function CreatorDashboardContent() {
               onSelectSeries={openSeriesSeasons}
               onUpdateSeries={handleUpdateSeries}
               onDeleteSeries={handleDeleteSeries}
+              onHideSeries={(series) => hideSeriesMutation.mutate(series)}
+              onUnhideSeries={(series) => unhideSeriesMutation.mutate(series)}
             />
           )}
 
@@ -1565,6 +1675,8 @@ function CreatorDashboardContent() {
               isCreatingSeason={createSeasonMutation.isPending}
               onUpdateSeason={handleUpdateSeason}
               onDeleteSeason={handleDeleteSeason}
+              onHideSeason={(season) => hideSeasonMutation.mutate(season)}
+              onUnhideSeason={(season) => unhideSeasonMutation.mutate(season)}
             />
           )}
 
@@ -1660,6 +1772,13 @@ function CreatorDashboardContent() {
               onSchedulePublish={(episode) =>
                 handleSchedulePublish({ kind: "episode", value: episode })
               }
+              onHideEpisode={(episode) => hideEpisodeMutation.mutate(episode)}
+              onUnhideEpisode={(episode) => unhideEpisodeMutation.mutate(episode)}
+              isHidingEpisode={hideEpisodeMutation.isPending || unhideEpisodeMutation.isPending}
+              onCancelSchedule={(episode) => cancelScheduleMutation.mutate(episode.id)}
+              isCancelingSchedule={cancelScheduleMutation.isPending}
+              onPublishNow={(episode) => publishEpisodeMutation.mutate(episode.id)}
+              isPublishingNow={publishEpisodeMutation.isPending}
               onBack={() =>
                 setDashboardRouteState({
                   view: "episodes",
@@ -1705,6 +1824,13 @@ function CreatorDashboardContent() {
               onSchedulePublish={(episode) =>
                 handleSchedulePublish({ kind: "episode", value: episode })
               }
+              onHideEpisode={(episode) => hideEpisodeMutation.mutate(episode)}
+              onUnhideEpisode={(episode) => unhideEpisodeMutation.mutate(episode)}
+              isHidingEpisode={hideEpisodeMutation.isPending || unhideEpisodeMutation.isPending}
+              onCancelSchedule={(episode) => cancelScheduleMutation.mutate(episode.id)}
+              isCancelingSchedule={cancelScheduleMutation.isPending}
+              onPublishNow={(episode) => publishEpisodeMutation.mutate(episode.id)}
+              isPublishingNow={publishEpisodeMutation.isPending}
               onBack={() =>
                 setDashboardRouteState({
                   view: "episodes",
@@ -2421,12 +2547,16 @@ function SeriesManagementView({
   onSelectSeries,
   onUpdateSeries,
   onDeleteSeries,
+  onHideSeries,
+  onUnhideSeries,
 }: {
   rows: SeriesRow[];
   isLoading: boolean;
   onSelectSeries: (seriesId: string) => void;
   onUpdateSeries: (series: SeriesRow) => void;
   onDeleteSeries: (series: SeriesRow) => void;
+  onHideSeries: (series: SeriesRow) => void;
+  onUnhideSeries: (series: SeriesRow) => void;
 }) {
   const [filter, setFilter] = useState<"ALL" | ContentType>("ALL");
 
@@ -2498,6 +2628,8 @@ function SeriesManagementView({
               onSelectSeries={onSelectSeries}
               onUpdateSeries={onUpdateSeries}
               onDeleteSeries={onDeleteSeries}
+              onHideSeries={onHideSeries}
+              onUnhideSeries={onUnhideSeries}
             />
           ))}
         </div>
@@ -2598,15 +2730,20 @@ function SeriesTableRow({
   onSelectSeries,
   onUpdateSeries,
   onDeleteSeries,
+  onHideSeries,
+  onUnhideSeries,
 }: {
   series: SeriesRow;
   onSelectSeries: (seriesId: string) => void;
   onUpdateSeries: (series: SeriesRow) => void;
   onDeleteSeries: (series: SeriesRow) => void;
+  onHideSeries: (series: SeriesRow) => void;
+  onUnhideSeries: (series: SeriesRow) => void;
 }) {
   const isComic = series.contentType === "COMIC";
   const isPublished = series.status === "PUBLISHED";
   const isDraft = series.status === "DRAFT";
+  const isHidden = series.status === "HIDDEN";
 
   return (
     <div className="grid min-h-[116px] grid-cols-1 gap-4 px-5 py-5 lg:grid-cols-[1.8fr_0.8fr_1fr_1fr_1.15fr] lg:items-center lg:px-8">
@@ -2691,6 +2828,26 @@ function SeriesTableRow({
         >
           <Edit3 className="h-5 w-5" />
         </button>
+        {isPublished && (
+          <button
+            type="button"
+            onClick={() => onHideSeries(series)}
+            className="rounded-full p-2 text-[#5D5160] transition hover:bg-[#FFF3CD] hover:text-[#856404]"
+            title="Hide series"
+          >
+            <Eye className="h-5 w-5" />
+          </button>
+        )}
+        {isHidden && (
+          <button
+            type="button"
+            onClick={() => onUnhideSeries(series)}
+            className="rounded-full p-2 text-[#5D5160] transition hover:bg-[#E8F8FF] hover:text-[#007A8A]"
+            title="Unhide series"
+          >
+            <Zap className="h-5 w-5" />
+          </button>
+        )}
         <button
           type="button"
           onClick={() => onDeleteSeries(series)}
@@ -2726,6 +2883,8 @@ function SeasonManagementView({
   isCreatingSeason,
   onUpdateSeason,
   onDeleteSeason,
+  onHideSeason,
+  onUnhideSeason,
 }: {
   selectedSeries: SeriesRow;
   seasons: SeasonRow[];
@@ -2736,6 +2895,8 @@ function SeasonManagementView({
   isCreatingSeason: boolean;
   onUpdateSeason: (season: SeasonRow) => void;
   onDeleteSeason: (season: SeasonRow) => void;
+  onHideSeason: (season: SeasonRow) => void;
+  onUnhideSeason: (season: SeasonRow) => void;
 }) {
   return (
     <div className="space-y-6">
@@ -2790,6 +2951,8 @@ function SeasonManagementView({
             onSelect={() => onSelectSeason(season.id)}
             onUpdate={() => onUpdateSeason(season)}
             onDelete={() => onDeleteSeason(season)}
+            onHide={() => onHideSeason(season)}
+            onUnhide={() => onUnhideSeason(season)}
           />
         ))}
       </div>
@@ -2802,11 +2965,15 @@ function SeasonCard({
   onSelect,
   onUpdate,
   onDelete,
+  onHide,
+  onUnhide,
 }: {
   season: SeasonRow;
   onSelect: () => void;
   onUpdate: () => void;
   onDelete: () => void;
+  onHide: () => void;
+  onUnhide: () => void;
 }) {
   const statusStyle =
     season.status === "PUBLISHED"
@@ -2814,6 +2981,8 @@ function SeasonCard({
       : season.status === "DRAFT"
         ? "bg-white text-[#9B536D] border-[#E8BBCB]"
         : "bg-[#EEF3FB] text-slate-500 border-[#D9E2F0]";
+  const isHidden = season.status === "HIDDEN";
+  const isPublished = season.status === "PUBLISHED";
 
   return (
     <div className="rounded-[22px] border border-[#E5EAF3] bg-white p-5 shadow-[0_16px_44px_rgba(30,42,68,0.05)]">
@@ -2853,6 +3022,26 @@ function SeasonCard({
           >
             <Edit3 className="h-5 w-5" />
           </button>
+          {isPublished && (
+            <button
+              type="button"
+              onClick={onHide}
+              className="rounded-full p-2 text-[#5D5160] transition hover:bg-[#FFF3CD] hover:text-[#856404]"
+              title="Hide season"
+            >
+              <Eye className="h-5 w-5" />
+            </button>
+          )}
+          {isHidden && (
+            <button
+              type="button"
+              onClick={onUnhide}
+              className="rounded-full p-2 text-[#5D5160] transition hover:bg-[#E8F8FF] hover:text-[#007A8A]"
+              title="Unhide season"
+            >
+              <Zap className="h-5 w-5" />
+            </button>
+          )}
           <button
             type="button"
             onClick={onDelete}
@@ -3275,6 +3464,13 @@ function ComicUploadView({
   isSavingEpisode,
   canSchedulePublish,
   onSchedulePublish,
+  onHideEpisode,
+  onUnhideEpisode,
+  isHidingEpisode,
+  onCancelSchedule,
+  isCancelingSchedule,
+  onPublishNow,
+  isPublishingNow,
   onBack,
 }: {
   selectedSeries: SeriesRow | null;
@@ -3297,6 +3493,13 @@ function ComicUploadView({
   isSavingEpisode: boolean;
   canSchedulePublish: boolean;
   onSchedulePublish: (episode: EpisodeRow) => void;
+  onHideEpisode: (episode: EpisodeRow) => void;
+  onUnhideEpisode: (episode: EpisodeRow) => void;
+  isHidingEpisode: boolean;
+  onCancelSchedule: (episode: EpisodeRow) => void;
+  isCancelingSchedule: boolean;
+  onPublishNow: (episode: EpisodeRow) => void;
+  isPublishingNow: boolean;
   onBack: () => void;
 }) {
   const episodeControlClass =
@@ -3506,18 +3709,49 @@ function ComicUploadView({
             <div className="rounded-xl bg-[#F8FAFF] p-4 text-xs font-bold leading-relaxed text-[#5D5160]">
               Scheduled publish: {formatDateTime(selectedEpisode.scheduledPublishAt)}
             </div>
-            <div className="rounded-xl bg-[#E8F8FF] p-4 text-xs font-bold leading-relaxed text-[#075985]">
-              Only episodes with approved ready pages can be scheduled.
-            </div>
-            <button
-              type="button"
-              onClick={() => onSchedulePublish(selectedEpisode)}
-              disabled={!canSchedulePublish}
-              className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#007A8A] text-sm font-black text-white disabled:cursor-not-allowed disabled:bg-[#D9E2F0] disabled:text-slate-500"
-            >
-              <Calendar className="h-4 w-4" />
-              Schedule Publish
-            </button>
+            {selectedEpisode.status === "HIDDEN" && (
+              <button
+                type="button"
+                onClick={() => onUnhideEpisode(selectedEpisode)}
+                disabled={isHidingEpisode}
+                className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-[#24B5FF] bg-[#E8F8FF] text-sm font-black text-[#007A8A] transition hover:bg-[#D0F2FF] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <Zap className="h-4 w-4" />
+                {isHidingEpisode ? "Processing..." : "Unhide Episode"}
+              </button>
+            )}
+            {selectedEpisode.status === "SCHEDULED" ? (
+              <button
+                type="button"
+                onClick={() => onCancelSchedule(selectedEpisode)}
+                disabled={isCancelingSchedule}
+                className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#FFE8E8] text-sm font-black text-[#B42318] disabled:cursor-not-allowed disabled:opacity-60 transition hover:bg-[#FFDCDC]"
+              >
+                <X className="h-4 w-4" />
+                {isCancelingSchedule ? "Canceling..." : "Cancel Schedule"}
+              </button>
+            ) : (
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => onSchedulePublish(selectedEpisode)}
+                  disabled={!canSchedulePublish || selectedEpisode.status === "PUBLISHED"}
+                  className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#007A8A] text-sm font-black text-white disabled:cursor-not-allowed disabled:bg-[#D9E2F0] disabled:text-slate-500"
+                >
+                  <Calendar className="h-4 w-4" />
+                  Schedule
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onPublishNow(selectedEpisode)}
+                  disabled={!canSchedulePublish || selectedEpisode.status === "PUBLISHED" || isPublishingNow}
+                  className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#B83268] text-sm font-black text-white disabled:cursor-not-allowed disabled:bg-[#D9E2F0] disabled:text-slate-500"
+                >
+                  <CloudUpload className="h-4 w-4" />
+                  {isPublishingNow ? "Publishing..." : "Publish Now"}
+                </button>
+              </div>
+            )}
           </div>
           </Panel>
         </aside>
@@ -3755,6 +3989,13 @@ function VideoUploadView({
   isSavingEpisode,
   accountId,
   onSchedulePublish,
+  onHideEpisode,
+  onUnhideEpisode,
+  isHidingEpisode,
+  onCancelSchedule,
+  isCancelingSchedule,
+  onPublishNow,
+  isPublishingNow,
   onBack,
 }: {
   selectedSeries: SeriesRow | null;
@@ -3769,6 +4010,13 @@ function VideoUploadView({
   isSavingEpisode: boolean;
   accountId: string;
   onSchedulePublish: (episode: EpisodeRow) => void;
+  onHideEpisode: (episode: EpisodeRow) => void;
+  onUnhideEpisode: (episode: EpisodeRow) => void;
+  isHidingEpisode: boolean;
+  onCancelSchedule: (episode: EpisodeRow) => void;
+  isCancelingSchedule: boolean;
+  onPublishNow: (episode: EpisodeRow) => void;
+  isPublishingNow: boolean;
   onBack: () => void;
 }) {
   const currentVideo = videos[0];
@@ -4059,15 +4307,62 @@ function VideoUploadView({
             <div className="rounded-xl bg-[#E8F8FF] p-4 text-xs font-bold leading-relaxed text-[#075985]">
               All new episodes require moderation approval before going live.
             </div>
-            <button
-              type="button"
-              onClick={() => onSchedulePublish(selectedEpisode)}
-              disabled={!canSchedule}
-              className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#007A8A] text-sm font-black text-white disabled:cursor-not-allowed disabled:bg-[#D9E2F0] disabled:text-slate-500"
-            >
-              <Calendar className="h-4 w-4" />
-              Schedule Publish
-            </button>
+            {/* Hide / Unhide episode */}
+            {selectedEpisode.status === "PUBLISHED" && (
+              <button
+                type="button"
+                onClick={() => onHideEpisode(selectedEpisode)}
+                disabled={isHidingEpisode}
+                className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-[#FFC107] bg-[#FFF8E6] text-sm font-black text-[#856404] transition hover:bg-[#FFF3CD] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <Eye className="h-4 w-4" />
+                {isHidingEpisode ? "Processing..." : "Hide Episode"}
+              </button>
+            )}
+            {selectedEpisode.status === "HIDDEN" && (
+              <button
+                type="button"
+                onClick={() => onUnhideEpisode(selectedEpisode)}
+                disabled={isHidingEpisode}
+                className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-[#24B5FF] bg-[#E8F8FF] text-sm font-black text-[#007A8A] transition hover:bg-[#D0F2FF] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <Zap className="h-4 w-4" />
+                {isHidingEpisode ? "Processing..." : "Unhide Episode"}
+              </button>
+            )}
+
+            {selectedEpisode.status === "SCHEDULED" ? (
+              <button
+                type="button"
+                onClick={() => onCancelSchedule(selectedEpisode)}
+                disabled={isCancelingSchedule}
+                className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#FFE8E8] text-sm font-black text-[#B42318] disabled:cursor-not-allowed disabled:opacity-60 transition hover:bg-[#FFDCDC]"
+              >
+                <X className="h-4 w-4" />
+                {isCancelingSchedule ? "Canceling..." : "Cancel Schedule"}
+              </button>
+            ) : (
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => onSchedulePublish(selectedEpisode)}
+                  disabled={!canSchedule || selectedEpisode.status === "PUBLISHED"}
+                  className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#007A8A] text-sm font-black text-white disabled:cursor-not-allowed disabled:bg-[#D9E2F0] disabled:text-slate-500"
+                >
+                  <Calendar className="h-4 w-4" />
+                  Schedule
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onPublishNow(selectedEpisode)}
+                  disabled={!canSchedule || selectedEpisode.status === "PUBLISHED" || isPublishingNow}
+                  className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#B83268] text-sm font-black text-white disabled:cursor-not-allowed disabled:bg-[#D9E2F0] disabled:text-slate-500"
+                >
+                  <CloudUpload className="h-4 w-4" />
+                  {isPublishingNow ? "Publishing..." : "Publish Now"}
+                </button>
+              </div>
+            )}
           </div>
         </Panel>
 
