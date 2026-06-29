@@ -25,6 +25,14 @@ export function SeriesList() {
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
 
+  const spotlightBackground = useMotionTemplate`
+    radial-gradient(
+      550px circle at ${mouseX}px ${mouseY}px,
+      rgba(214, 175, 55, 0.04),
+      transparent 80%
+    )
+  `;
+
   function handleMouseMove({ currentTarget, clientX, clientY }: MouseEvent) {
     const { left, top } = currentTarget.getBoundingClientRect();
     mouseX.set(clientX - left);
@@ -128,13 +136,7 @@ export function SeriesList() {
                 <motion.div
                   className="pointer-events-none absolute -inset-px rounded-xl opacity-0 group-hover/grid:opacity-100 transition duration-500 hidden md:block z-0"
                   style={{
-                    background: useMotionTemplate`
-                      radial-gradient(
-                        550px circle at ${mouseX}px ${mouseY}px,
-                        rgba(214, 175, 55, 0.04),
-                        transparent 80%
-                      )
-                    `,
+                    background: spotlightBackground,
                   }}
                 />
 

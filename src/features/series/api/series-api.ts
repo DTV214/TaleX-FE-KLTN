@@ -88,12 +88,13 @@ export type PublicEpisodeItem = {
   isDeleted: boolean;
 };
 
-export async function getPublicSeriesList(page = 1, pageSize = 20) {
+export async function getPublicSeriesList(page = 1, pageSize = 20, contentType?: ContentType) {
   return unwrapBaseResponse<BasePageResponse<PublicSeriesItem>>(
     httpClient.get("/api/v1/public/series", {
       params: {
         page,
         pageSize,
+        contentType,
       },
     })
   );
