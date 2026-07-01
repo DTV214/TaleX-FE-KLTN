@@ -5,6 +5,16 @@ import { usePathname } from "next/navigation";
 import { siteConfig } from "@/core/config/site";
 import { AtSign, Code, Video, ChevronRight, Sparkles } from "lucide-react";
 
+const hiddenFooterRoutes = [
+  "/login",
+  "/register",
+  "/forgot-password",
+  "/complete-profile",
+  "/creator-dashboard",
+  "/admin",
+  "/staff",
+] as const;
+
 export function SiteFooter() {
   const pathname = usePathname();
 
@@ -23,13 +33,9 @@ export function SiteFooter() {
 
   // Kiểm tra xem có đang ở trang xác thực (Auth) không
 
-  const isAuthOrAdminPage =
-    pathname === "/login" ||
-    pathname === "/register" ||
-    pathname === "/forgot-password" ||
-    pathname.startsWith("/creator-dashboard") ||
-    pathname.startsWith("/admin") ||
-    pathname.startsWith("/staff"); // Chặn toàn bộ các trang nội bộ admin
+  const isAuthOrAdminPage = hiddenFooterRoutes.some((route) =>
+    pathname.startsWith(route),
+  );
 
   // Nếu đang ở trang Auth hoặc Admin, ẩn Footer này đi
   if (isAuthOrAdminPage) {

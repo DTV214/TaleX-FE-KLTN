@@ -63,7 +63,10 @@ export function CompleteProfileForm() {
     }
 
     setSuccessMsg("Hoàn tất hồ sơ thành công! Đang chuyển hướng...");
-    setTimeout(() => router.push("/"), 1200);
+    setTimeout(() => {
+      router.push("/");
+      router.refresh();
+    }, 1200);
   }
 
   if (!verificationToken) {
