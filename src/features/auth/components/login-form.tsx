@@ -76,6 +76,7 @@ export function LoginForm() {
       if (data.status === "ACTIVE") {
         setUser(data.user);
         router.replace(getLoginDestination(data.user.roleName));
+        router.refresh();
       } else {
         router.push(
           `/complete-profile?token=${encodeURIComponent(data.verificationToken)}`,
@@ -170,6 +171,7 @@ export function LoginForm() {
     }
 
     router.replace(getLoginDestination(res.data.user.roleName));
+    router.refresh();
   }
 
   return (
