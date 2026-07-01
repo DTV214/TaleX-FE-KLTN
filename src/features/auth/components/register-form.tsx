@@ -18,9 +18,11 @@ import {
   resendOtpAction,
 } from "@/features/auth/api/auth.actions";
 import { AuthErrorCode } from "@/features/auth/api/auth.dto";
+import { useAuthStore } from "@/features/auth/store/auth.store";
 
 export function RegisterForm() {
   const router = useRouter();
+  const { setUser } = useAuthStore();
 
   // States quản lý luồng 2 bước
   const [step, setStep] = useState<1 | 2>(1);
@@ -127,6 +129,10 @@ export function RegisterForm() {
     }
 
     // Đăng ký và xác thực thành công tuyệt đối!
+    if (res.data?.user) {
+      setUser(res.data.user);
+    }
+
     setSuccessMsg("Xác thực thành công! Đang chuyển hướng...");
     setTimeout(() => {
       router.push("/");

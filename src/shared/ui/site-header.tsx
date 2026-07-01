@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Clapperboard,
+  Crown,
   LogOut,
   Menu,
   Search,
@@ -30,11 +31,16 @@ export function SiteHeader() {
   // Lấy thông tin user và hàm xóa Auth
   const { user, isAuthenticated, clearAuth } = useAuthStore();
   const profileUser = isFullProfile(user) ? user : null;
+  const avatarLabel =
+    profileUser?.username.slice(0, 2) ||
+    user?.roleName.slice(0, 2) ||
+    "TX";
 
   const isAuthOrAdminPage =
     pathname === "/login" ||
     pathname === "/register" ||
     pathname === "/forgot-password" ||
+    pathname.startsWith("/complete-profile") ||
     pathname.startsWith("/creator-dashboard") ||
     pathname.startsWith("/admin") ||
     pathname.startsWith("/staff");
@@ -119,6 +125,14 @@ export function SiteHeader() {
 
         {/* Nhóm Nút Tiện Ích */}
         <div className="flex items-center gap-2 md:gap-3 lg:ml-0">
+          <Link
+            href="/premium"
+            className="hidden h-10 items-center justify-center gap-2 rounded-xl border border-[#D4AF37]/50 bg-[#D4AF37]/10 px-4 text-xs font-black text-[#D4AF37] transition-all hover:bg-[#D4AF37] hover:text-black hover:shadow-[0_0_15px_rgba(212,175,55,0.4)] md:flex md:h-11"
+          >
+            <Crown className="h-4 w-4" />
+            Premium
+          </Link>
+
           <button
             type="button"
             className="flex h-10 w-10 items-center justify-center rounded-full text-foreground/80 transition hover:text-primary lg:hidden"
@@ -127,14 +141,14 @@ export function SiteHeader() {
           </button>
 
           {/* KHU VỰC AVATAR & DROPDOWN MỚI */}
-          {isAuthenticated && profileUser ? (
+          {isAuthenticated && user ? (
             <>
               <CoinWalletWidget />
 
               <DropdownMenu.Root>
                 <DropdownMenu.Trigger asChild>
                   <button className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-primary/35 bg-primary/10 text-primary transition hover:border-primary hover:shadow-[0_0_26px_rgba(212,175,55,0.24)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70 md:h-12 md:w-12">
-                    {profileUser.avatarUrl ? (
+                    {profileUser?.avatarUrl ? (
                       <span
                         className="h-full w-full bg-cover bg-center"
                         style={{
@@ -143,7 +157,7 @@ export function SiteHeader() {
                       />
                     ) : (
                       <span className="font-heading text-xs font-extrabold uppercase md:text-sm">
-                        {profileUser.username.slice(0, 2)}
+                        {avatarLabel}
                       </span>
                     )}
                   </button>
@@ -157,10 +171,10 @@ export function SiteHeader() {
                   >
                     <div className="mb-1 border-b border-white/10 px-3 py-2">
                       <p className="truncate text-sm font-bold text-white">
-                        {profileUser.fullName}
+                        {profileUser?.fullName || "TaleX Viewer"}
                       </p>
                       <p className="mt-0.5 truncate text-xs text-gray-500">
-                        @{profileUser.username}
+                        {profileUser ? `@${profileUser.username}` : user.roleName}
                       </p>
                     </div>
 
