@@ -85,6 +85,7 @@ import { ResumableVideoUploader } from "@/features/creator-dashboard/components/
 import { ViolationDetailDialog } from "@/features/creator-dashboard/components/violation-detail-dialog";
 import { usePipelineSSE } from "@/features/creator-dashboard/hooks/use-pipeline-sse";
 import { SignedHlsPlayer } from "@/features/playback/components/signed-hls-player";
+import { ComboManagementView } from "@/features/creator-dashboard/components/combo-management";
 
 type DashboardView =
   | "series"
@@ -92,7 +93,8 @@ type DashboardView =
   | "episodes"
   | "create"
   | "comic"
-  | "video";
+  | "video"
+  | "combos";
 
 type DashboardRouteState = {
   view: DashboardView;
@@ -108,6 +110,7 @@ const dashboardViews: DashboardView[] = [
   "create",
   "comic",
   "video",
+  "combos",
 ];
 
 const defaultDashboardRouteState: DashboardRouteState = {
@@ -309,6 +312,10 @@ const viewMeta: Record<
   video: {
     title: "Upload Video Episode",
     description: "Create a video episode and attach one active video media URL.",
+  },
+  combos: {
+    title: "Combo Management",
+    description: "Group multiple episodes into a single combo with a custom price.",
   },
 };
 
@@ -1586,6 +1593,20 @@ function CreatorDashboardContent() {
                 label="Create Series"
                 onClick={openCreateSeries}
               />
+              <DashboardNavButton
+                active={activeView === "combos"}
+                icon={Tag}
+                label="Combo Management"
+                onClick={() => {
+                  clearUploadDrafts();
+                  setDashboardRouteState({
+                    view: "combos",
+                    seriesId: "",
+                    seasonId: "",
+                    episodeId: "",
+                  });
+                }}
+              />
             </nav>
 
             <div className="mt-8 rounded-2xl border border-[#D9E2F0] bg-[#F7FAFF] p-4">
@@ -1859,6 +1880,8 @@ function CreatorDashboardContent() {
                 description="Create or select an episode before uploading video."
               />
             )}
+
+          {activeView === "combos" && <ComboManagementView />}
         </section>
       </div>
       <EditEntityModal
