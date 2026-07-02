@@ -19,6 +19,7 @@ import {
   FileText,
   ShieldCheck,
   Target,
+  Megaphone,
 } from "lucide-react";
 
 const navItems = [
@@ -47,6 +48,11 @@ const navItems = [
     name: "Nhiệm Vụ",
     href: "/admin/mission-management",
     icon: Target,
+  },
+  {
+    name: "Dịch vụ Tương tác",
+    href: "/admin/engagement-services",
+    icon: Megaphone,
   },
   { name: "Chiến Dịch", href: "/admin/campaigns", icon: ImageIcon },
   { name: "Điều Khoản", href: "/admin/terms", icon: FileText },
