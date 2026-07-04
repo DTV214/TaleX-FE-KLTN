@@ -4,7 +4,6 @@ import "./globals.css";
 import { SiteHeader } from "@/shared/ui/site-header";
 import { SiteFooter } from "@/shared/ui/site-footer";
 import { BackToTop } from "@/shared/ui/back-to-top";
-import { FloatingPremiumButton } from "@/features/premium/components/floating-premium-button";
 import { AppProviders } from "@/core/providers/app-providers";
 // Thêm đường dẫn import cho AuthProvider vừa tạo ở bước trước
 import { AuthProvider } from "@/features/auth/providers/auth-provider";
@@ -54,7 +53,6 @@ export default function RootLayout({
             <SiteFooter />
 
             <BackToTop />
-            <FloatingPremiumButton />
           </AuthProvider>
         </AppProviders>
       </body>

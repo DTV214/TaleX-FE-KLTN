@@ -132,7 +132,7 @@ export function CompleteProfileForm() {
             type="date"
             name="dateOfBirth"
             required
-            className="w-full rounded-xl border border-white/10 bg-[#121214] p-3.5 text-sm text-white focus:border-[#D4AF37]/50 focus:bg-black/50 focus:outline-none focus:ring-1 focus:ring-[#D4AF37]/50 transition-all shadow-inner"
+            className="w-full rounded-xl border border-white/10 bg-[#121214] p-3.5 text-sm text-white [color-scheme:dark] focus:border-[#D4AF37]/50 focus:bg-black/50 focus:outline-none focus:ring-1 focus:ring-[#D4AF37]/50 transition-all shadow-inner"
           />
         </div>
 

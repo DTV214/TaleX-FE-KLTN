@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
+  Bell,
   Clapperboard,
   Crown,
   LogOut,
@@ -65,19 +66,15 @@ export function SiteHeader() {
         {/* Logo */}
         <Link
           href="/"
-          aria-label={`Trang chủ ${siteConfig.name}`}
-          className="group flex min-w-fit items-center gap-3"
+          aria-label="Trang chủ TaleX"
+          className="group flex min-w-fit items-center outline-none"
         >
-          {siteConfig.logo ? (
-            <span
-              className="block h-8 w-24 md:h-10 md:w-28 bg-contain bg-left bg-no-repeat"
-              style={{ backgroundImage: `url(${siteConfig.logo})` }}
-            />
-          ) : (
-            <span className="font-heading text-xl md:text-2xl font-extrabold tracking-tight text-primary transition group-hover:drop-shadow-[0_0_12px_rgba(212,175,55,0.55)]">
-              {siteConfig.name}
-            </span>
-          )}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="https://res.cloudinary.com/dratbz8bh/image/upload/v1783173753/1-removebg-preview_xv2wde.png"
+            alt="TaleX Logo"
+            className="h-10 w-auto object-contain transition-all duration-300 ease-out group-hover:scale-105 group-hover:drop-shadow-[0_0_18px_rgba(212,175,55,0.7)] md:h-12"
+          />
         </Link>
 
         {/* Navigation - Desktop */}
@@ -85,29 +82,35 @@ export function SiteHeader() {
           aria-label="Điều hướng chính"
           className="hidden items-center gap-8 lg:flex"
         >
-          {siteConfig.mainNav.map((item) => {
-            const isActive = isActiveRoute(pathname, item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`group relative py-2 font-heading text-lg font-semibold tracking-wide transition-colors ${
-                  isActive
-                    ? "text-primary"
-                    : "text-foreground/65 hover:text-foreground"
-                }`}
-              >
-                {item.title}
-                <span
-                  className={`absolute inset-x-0 -bottom-0.5 h-0.5 rounded-full bg-primary transition-all duration-300 ${
+          {siteConfig.mainNav
+            .filter(
+              (item) =>
+                !item.title.includes("Creator") &&
+                !item.title.includes("Giới thiệu"),
+            )
+            .map((item) => {
+              const isActive = isActiveRoute(pathname, item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`group relative py-2 font-heading text-lg font-semibold tracking-wide transition-colors ${
                     isActive
-                      ? "opacity-100"
-                      : "scale-x-0 opacity-0 group-hover:opacity-100"
+                      ? "text-primary"
+                      : "text-foreground/65 hover:text-foreground"
                   }`}
-                />
-              </Link>
-            );
-          })}
+                >
+                  {item.title}
+                  <span
+                    className={`absolute inset-x-0 -bottom-0.5 h-0.5 rounded-full bg-primary transition-all duration-300 ${
+                      isActive
+                        ? "opacity-100"
+                        : "scale-x-0 opacity-0 group-hover:opacity-100"
+                    }`}
+                  />
+                </Link>
+              );
+            })}
         </nav>
 
         {/* Thanh Tìm Kiếm - Desktop */}
@@ -130,8 +133,17 @@ export function SiteHeader() {
             className="hidden h-10 items-center justify-center gap-2 rounded-xl border border-[#D4AF37]/50 bg-[#D4AF37]/10 px-4 text-xs font-black text-[#D4AF37] transition-all hover:bg-[#D4AF37] hover:text-black hover:shadow-[0_0_15px_rgba(212,175,55,0.4)] md:flex md:h-11"
           >
             <Crown className="h-4 w-4" />
-            Premium
+            Nâng cấp
           </Link>
+
+          <button
+            type="button"
+            aria-label="Thông báo"
+            title="Thông báo"
+            className="hidden h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-foreground/75 transition hover:border-primary/40 hover:bg-white/[0.08] hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 md:flex md:h-11 md:w-11"
+          >
+            <Bell className="h-4 w-4" />
+          </button>
 
           <button
             type="button"
