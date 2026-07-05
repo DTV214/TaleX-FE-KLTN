@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { Ban, BookOpen, Check, Film, HelpCircle, Loader2, Smartphone } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useGetPremiumPackages } from "@/features/premium/api/premium.api";
@@ -86,15 +87,13 @@ function getBenefits(subscription: Subscription) {
 function PricingCard({
   subscription,
   isPopular,
+  onSelect,
 }: {
   subscription: Subscription;
   isPopular: boolean;
+  onSelect: (subscription: Subscription) => void;
 }) {
   const benefits = getBenefits(subscription);
-
-  const handleSelectPackage = () => {
-    console.log("Tiến hành thanh toán cho gói:", subscription.subscriptionId);
-  };
 
   return (
     <article
@@ -142,7 +141,7 @@ function PricingCard({
 
         <button
           type="button"
-          onClick={handleSelectPackage}
+          onClick={() => onSelect(subscription)}
           className="mt-8 flex h-12 w-full items-center justify-center rounded-xl bg-[#D4AF37] px-5 text-sm font-black text-black shadow-[0_0_20px_rgba(212,175,55,0.28)] transition hover:bg-[#E5C158] hover:shadow-[0_0_28px_rgba(212,175,55,0.42)] active:translate-y-px"
         >
           Chọn Gói Này
@@ -177,12 +176,17 @@ function PricingSkeleton() {
 }
 
 export default function PremiumPage() {
+  const router = useRouter();
   const packagesQuery = useGetPremiumPackages();
   const packages = packagesQuery.data?.data.content ?? [];
   const highestPrice = packages.reduce(
     (highest, subscription) => Math.max(highest, subscription.price),
     0,
   );
+
+  const handleSelectSubscription = (subscription: Subscription) => {
+    router.push(`/checkout?subscriptionId=${subscription.subscriptionId}`);
+  };
 
   return (
     <main className="min-h-screen bg-background text-foreground">
@@ -256,6 +260,7 @@ export default function PremiumPage() {
                   key={subscription.subscriptionId}
                   subscription={subscription}
                   isPopular={isPopular}
+                  onSelect={handleSelectSubscription}
                 />
               );
             })}

@@ -1,18 +1,13 @@
 "use client";
 
+import { Suspense } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { CheckCircle, Compass } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 
 const backgroundImageUrl =
   "https://plus.unsplash.com/premium_photo-1674718013659-6930c469e641?q=80&w=2532&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D";
-
-const summaryItems = [
-  { label: "Mã giao dịch", value: "TX-882-ULTRA" },
-  { label: "Số tiền", value: "199.000 VNĐ" },
-  { label: "Phương thức", value: "Chuyển khoản SePay" },
-  { label: "Gói truy cập", value: "TaleX Premium 1 Tháng" },
-];
 
 const motionProps = {
   initial: { opacity: 0, y: 24 },
@@ -20,7 +15,26 @@ const motionProps = {
   transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
 } as const;
 
-export default function CheckoutSuccessPage() {
+function formatCurrency(amount: string | null) {
+  const parsed = amount ? Number(amount) : NaN;
+  if (Number.isNaN(parsed)) {
+    return "—";
+  }
+  return `${new Intl.NumberFormat("vi-VN").format(parsed)} VNĐ`;
+}
+
+function CheckoutSuccessContent() {
+  const searchParams = useSearchParams();
+  const orderId = searchParams.get("orderId");
+  const amount = searchParams.get("amount");
+
+  const summaryItems = [
+    { label: "Mã đơn hàng", value: orderId ?? "—" },
+    { label: "Số tiền", value: formatCurrency(amount) },
+    { label: "Phương thức", value: "Chuyển khoản SePay" },
+    { label: "Gói truy cập", value: "TaleX Premium" },
+  ];
+
   return (
     <main className="relative min-h-screen w-full overflow-y-auto bg-[#0B0B0C] text-white">
       <div
@@ -60,7 +74,7 @@ export default function CheckoutSuccessPage() {
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/40">
                     {item.label}
                   </p>
-                  <p className="mt-2 text-sm font-semibold text-white">
+                  <p className="mt-2 truncate text-sm font-semibold text-white" title={item.value}>
                     {item.value}
                   </p>
                 </div>
@@ -78,5 +92,13 @@ export default function CheckoutSuccessPage() {
         </motion.div>
       </section>
     </main>
+  );
+}
+
+export default function CheckoutSuccessPage() {
+  return (
+    <Suspense fallback={null}>
+      <CheckoutSuccessContent />
+    </Suspense>
   );
 }

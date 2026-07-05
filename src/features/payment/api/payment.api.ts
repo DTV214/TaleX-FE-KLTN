@@ -1,0 +1,79 @@
+import { useMutation, useQuery } from "@tanstack/react-query";
+import {
+  httpClient,
+  type BasePageResponse,
+  type BaseResponse,
+} from "@/shared/api/http-client";
+import type {
+  AccountSubscription,
+  CreateOrderRequest,
+  CreateOrderResponse,
+  GetOrderResponse,
+  OrderResponse,
+  OrderStatus,
+} from "../types/payment.types";
+
+const ORDERS_ENDPOINT = "/api/v1/orders";
+const ACCOUNT_SUBSCRIPTIONS_OWN_ENDPOINT = "/api/v1/account-subscriptions/own";
+const POLL_INTERVAL_MS = 3000;
+const TERMINAL_STATUSES: OrderStatus[] = ["COMPLETED", "OUT_OF_TIME", "CANCELLED"];
+
+export const paymentKeys = {
+  all: ["payment"] as const,
+  order: (orderId: string) => [...paymentKeys.all, "order", orderId] as const,
+  activeSubscription: () => [...paymentKeys.all, "active-subscription"] as const,
+};
+
+export function useCreateOrder() {
+  return useMutation({
+    mutationFn: async (request: CreateOrderRequest): Promise<OrderResponse> => {
+      const response = await httpClient.post<CreateOrderResponse>(
+        ORDERS_ENDPOINT,
+        request,
+      );
+      return response.data.data;
+    },
+  });
+}
+
+export function useOrderStatus(orderId: string | undefined) {
+  return useQuery({
+    queryKey: paymentKeys.order(orderId ?? ""),
+    queryFn: async (): Promise<OrderResponse> => {
+      const response = await httpClient.get<GetOrderResponse>(
+        `${ORDERS_ENDPOINT}/${orderId}`,
+      );
+      return response.data.data;
+    },
+    enabled: Boolean(orderId),
+    refetchInterval: (query) => {
+      const status = query.state.data?.status;
+      return status && TERMINAL_STATUSES.includes(status) ? false : POLL_INTERVAL_MS;
+    },
+  });
+}
+
+export function useActiveSubscription() {
+  return useQuery({
+    queryKey: paymentKeys.activeSubscription(),
+    queryFn: async (): Promise<AccountSubscription | null> => {
+      const response = await httpClient.get<
+        BaseResponse<BasePageResponse<AccountSubscription>>
+      >(ACCOUNT_SUBSCRIPTIONS_OWN_ENDPOINT, {
+        params: {
+          page: 1,
+          pageSize: 1,
+          sortBy: "endTime",
+          sortDirection: "DESC",
+        },
+      });
+
+      const latest = response.data.data.content[0];
+      if (!latest || latest.isCancelled) {
+        return null;
+      }
+      return new Date(latest.endTime) > new Date() ? latest : null;
+    },
+    staleTime: 30 * 1000,
+  });
+}

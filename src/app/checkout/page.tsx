@@ -1,62 +1,27 @@
 "use client";
 
+import { Suspense, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Check, ShieldCheck, Ticket, X } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Check, Loader2, ShieldCheck, Ticket, X } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { CopyableField } from "@/features/checkout/components/CopyableField";
-import { PaymentMethodTabs } from "@/features/checkout/components/PaymentMethodTabs";
-import type { PaymentMethod } from "@/features/checkout/components/PaymentMethodTabs";
 import { PaymentWarningBanner } from "@/features/checkout/components/PaymentWarningBanner";
 import { QRCodeDisplay } from "@/features/checkout/components/QRCodeDisplay";
+import { useGetSubscription } from "@/features/admin/subscriptions/hooks/use-subscriptions";
+import {
+  useActiveSubscription,
+  useCreateOrder,
+  useOrderStatus,
+} from "@/features/payment/api/payment.api";
+import { SubscriptionStackingWarning } from "@/features/payment/components/subscription-stacking-warning";
+import { getApiErrorMessage } from "@/shared/api/http-client";
 
-type CheckoutStatus = "PENDING" | "SUCCESS" | "OUT_OF_TIME";
-
-const INITIAL_TIME_LEFT = 15 * 60;
+const SEPAY_BANK_NAME = "Ngân Hàng VietinBank";
+const SEPAY_ACCOUNT_NUMBER = "100881945065";
+const SEPAY_ACCOUNT_HOLDER = "NGUYEN GIA KHANH";
 
 const backgroundImageUrl =
   "https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=2025&auto=format&fit=crop";
-
-const mockQrSvg = encodeURIComponent(`
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240">
-  <rect width="240" height="240" fill="#fff"/>
-  <g fill="#111">
-    <rect x="18" y="18" width="58" height="58" rx="4"/>
-    <rect x="30" y="30" width="34" height="34" fill="#fff" rx="2"/>
-    <rect x="40" y="40" width="14" height="14"/>
-    <rect x="164" y="18" width="58" height="58" rx="4"/>
-    <rect x="176" y="30" width="34" height="34" fill="#fff" rx="2"/>
-    <rect x="186" y="40" width="14" height="14"/>
-    <rect x="18" y="164" width="58" height="58" rx="4"/>
-    <rect x="30" y="176" width="34" height="34" fill="#fff" rx="2"/>
-    <rect x="40" y="186" width="14" height="14"/>
-    <rect x="92" y="22" width="10" height="28"/>
-    <rect x="112" y="18" width="10" height="10"/>
-    <rect x="134" y="24" width="16" height="16"/>
-    <rect x="92" y="62" width="30" height="10"/>
-    <rect x="134" y="58" width="10" height="30"/>
-    <rect x="88" y="92" width="14" height="14"/>
-    <rect x="112" y="92" width="38" height="10"/>
-    <rect x="162" y="92" width="18" height="18"/>
-    <rect x="196" y="92" width="26" height="10"/>
-    <rect x="92" y="118" width="10" height="40"/>
-    <rect x="112" y="122" width="18" height="18"/>
-    <rect x="142" y="118" width="10" height="34"/>
-    <rect x="166" y="122" width="34" height="10"/>
-    <rect x="212" y="118" width="10" height="38"/>
-    <rect x="92" y="176" width="24" height="10"/>
-    <rect x="126" y="168" width="10" height="30"/>
-    <rect x="148" y="166" width="18" height="18"/>
-    <rect x="178" y="164" width="10" height="58"/>
-    <rect x="198" y="172" width="24" height="10"/>
-    <rect x="198" y="198" width="10" height="24"/>
-    <rect x="88" y="212" width="70" height="10"/>
-  </g>
-  <text x="120" y="138" fill="#D4AF37" font-family="Arial, sans-serif" font-size="14" font-weight="700" text-anchor="middle">TLX</text>
-</svg>
-`);
-
-const mockQrUrl = `data:image/svg+xml;charset=utf-8,${mockQrSvg}`;
 
 const motionProps = {
   initial: { opacity: 0, y: 20 },
@@ -64,62 +29,80 @@ const motionProps = {
   transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] },
 } as const;
 
-export default function CheckoutPage() {
+function formatCurrency(amount: number) {
+  return `${new Intl.NumberFormat("vi-VN").format(amount)} VNĐ`;
+}
+
+function CheckoutPageContent() {
   const router = useRouter();
-  const [activeMethod, setActiveMethod] = useState<PaymentMethod>("SEPAY");
-  const [timeLeft, setTimeLeft] = useState(INITIAL_TIME_LEFT);
-  const [status, setStatus] = useState<CheckoutStatus>("PENDING");
+  const searchParams = useSearchParams();
+  const subscriptionId = searchParams.get("subscriptionId") ?? "";
+
   const [isAgreed, setIsAgreed] = useState(false);
+  const [remainingSeconds, setRemainingSeconds] = useState(0);
+  const hasCreatedOrderRef = useRef(false);
+
+  const subscriptionQuery = useGetSubscription(subscriptionId);
+  const subscription = subscriptionQuery.data?.data;
+
+  const activeSubscriptionQuery = useActiveSubscription();
+  const createOrderMutation = useCreateOrder();
+  const orderId = createOrderMutation.data?.orderId;
+  const orderStatusQuery = useOrderStatus(orderId);
+  const order = orderStatusQuery.data ?? createOrderMutation.data;
 
   useEffect(() => {
-    if (status !== "PENDING") {
+    if (!subscriptionId) {
+      router.replace("/premium");
       return;
     }
-
-    const timerId = window.setInterval(() => {
-      setTimeLeft((currentTimeLeft) => {
-        if (currentTimeLeft <= 1) {
-          window.clearInterval(timerId);
-          setStatus("OUT_OF_TIME");
-          return 0;
-        }
-
-        return currentTimeLeft - 1;
-      });
-    }, 1000);
-
-    return () => window.clearInterval(timerId);
-  }, [status]);
-
-  useEffect(() => {
-    if (status !== "PENDING") {
+    if (hasCreatedOrderRef.current) {
       return;
     }
-
-    const successTimerId = window.setTimeout(() => {
-      setStatus("SUCCESS");
-    }, 10_000);
-
-    return () => window.clearTimeout(successTimerId);
-  }, [status]);
+    hasCreatedOrderRef.current = true;
+    createOrderMutation.mutate({ subscriptionId });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subscriptionId]);
 
   useEffect(() => {
-    if (status === "SUCCESS") {
+    if (!order?.expiresAt) {
+      return;
+    }
+    const tick = () => {
+      const diffMs = new Date(order.expiresAt).getTime() - Date.now();
+      setRemainingSeconds(Math.max(0, Math.floor(diffMs / 1000)));
+    };
+    tick();
+    const intervalId = window.setInterval(tick, 1000);
+    return () => window.clearInterval(intervalId);
+  }, [order?.expiresAt]);
+
+  useEffect(() => {
+    if (order?.status === "COMPLETED") {
       const redirectTimerId = window.setTimeout(() => {
-        router.push("/checkout/success");
-      }, 1500);
-
+        router.push(
+          `/checkout/success?orderId=${order.orderId}&amount=${order.totalAmount}`,
+        );
+      }, 1200);
       return () => window.clearTimeout(redirectTimerId);
     }
 
-    if (status === "OUT_OF_TIME") {
+    if (order?.status === "OUT_OF_TIME" || order?.status === "CANCELLED") {
       const redirectTimerId = window.setTimeout(() => {
         router.push("/checkout/failed");
-      }, 1500);
-
+      }, 1200);
       return () => window.clearTimeout(redirectTimerId);
     }
-  }, [router, status]);
+  }, [order?.status, order?.orderId, order?.totalAmount, router]);
+
+  const displayStatus: "PENDING" | "SUCCESS" | "OUT_OF_TIME" =
+    order?.status === "COMPLETED"
+      ? "SUCCESS"
+      : order?.status === "OUT_OF_TIME" || order?.status === "CANCELLED"
+        ? "OUT_OF_TIME"
+        : "PENDING";
+
+  const isPreparing = !order || subscriptionQuery.isLoading;
 
   return (
     <main className="relative min-h-screen w-full overflow-y-auto bg-[#0B0B0C] text-white">
@@ -161,11 +144,19 @@ export default function CheckoutPage() {
                       Tóm tắt đơn hàng
                     </p>
                     <p className="mt-1 truncate text-sm font-semibold text-white sm:text-base">
-                      Gói Dịch Vụ: TaleX Premium (1 Tháng)
+                      {subscription
+                        ? `Gói Dịch Vụ: TaleX Premium ${subscription.tier} (${subscription.duration} ${subscription.durationUnit})`
+                        : "Đang tải thông tin gói..."}
                     </p>
                   </div>
                 </div>
               </motion.div>
+
+              {activeSubscriptionQuery.data && (
+                <motion.div {...motionProps} transition={{ ...motionProps.transition, delay: 0.1 }}>
+                  <SubscriptionStackingWarning activeSubscription={activeSubscriptionQuery.data} />
+                </motion.div>
+              )}
 
               <motion.div
                 {...motionProps}
@@ -173,6 +164,13 @@ export default function CheckoutPage() {
               >
                 <PaymentWarningBanner message="Vui lòng chuyển khoản đúng nội dung để hệ thống tự động xử lý trong vài giây." />
               </motion.div>
+
+              {createOrderMutation.isError && (
+                <PaymentWarningBanner
+                  type="info"
+                  message={getApiErrorMessage(createOrderMutation.error)}
+                />
+              )}
 
               <motion.section
                 {...motionProps}
@@ -185,20 +183,13 @@ export default function CheckoutPage() {
                   </p>
                   <div className="mt-2 flex flex-wrap items-center gap-3">
                     <p className="font-heading text-4xl font-bold tracking-tight text-[#D4AF37] md:text-5xl">
-                      199.000 VNĐ
+                      {order ? formatCurrency(order.totalAmount) : "—"}
                     </p>
                     <span className="inline-flex h-9 items-center gap-2 rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-3 text-xs font-semibold uppercase tracking-[0.12em] text-[#F4E7B7]">
                       <ShieldCheck className="h-4 w-4 text-[#D4AF37]" />
                       Bảo vệ bởi SePay
                     </span>
                   </div>
-                </div>
-
-                <div className="mt-6">
-                  <PaymentMethodTabs
-                    activeMethod={activeMethod}
-                    onChange={setActiveMethod}
-                  />
                 </div>
               </motion.section>
 
@@ -216,22 +207,13 @@ export default function CheckoutPage() {
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <CopyableField
-                    label="Tên tài khoản"
-                    value="TALEX PREMIUM GLOBAL"
-                  />
-                  <CopyableField
-                    label="Tên ngân hàng"
-                    value="Ngân Hàng MB Bank"
-                  />
-                  <CopyableField
-                    label="Số tài khoản"
-                    value="0948 1122 3344"
-                  />
+                  <CopyableField label="Tên tài khoản" value={SEPAY_ACCOUNT_HOLDER} />
+                  <CopyableField label="Tên ngân hàng" value={SEPAY_BANK_NAME} />
+                  <CopyableField label="Số tài khoản" value={SEPAY_ACCOUNT_NUMBER} />
                   <div>
                     <CopyableField
                       label="Nội dung"
-                      value="TLX-882-ULTRA"
+                      value={order?.paymentCode ?? "—"}
                       isHighlight
                     />
                     <p className="mt-2 text-xs font-bold text-red-300">
@@ -273,18 +255,25 @@ export default function CheckoutPage() {
               <div className="sticky top-24 rounded-[28px] border border-white/8 bg-[#121214]/92 p-5 shadow-[0_20px_60px_rgba(0,0,0,0.48)] sm:p-7">
                 <div className="mb-6 text-center">
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#D4AF37]">
-                    {activeMethod === "SEPAY" ? "SePay VietQR" : "Cổng PayOS"}
+                    SePay VietQR
                   </p>
                   <h2 className="mt-2 font-heading text-2xl font-bold tracking-tight text-white">
                     Quét mã để thanh toán ngay
                   </h2>
                 </div>
 
-                <QRCodeDisplay
-                  qrUrl={mockQrUrl}
-                  timeLeft={timeLeft}
-                  status={status}
-                />
+                {isPreparing ? (
+                  <div className="flex aspect-square w-full max-w-[280px] mx-auto flex-col items-center justify-center gap-3 rounded-[28px] bg-[#121214] p-4 text-white/60">
+                    <Loader2 className="h-8 w-8 animate-spin text-[#D4AF37]" />
+                    <span className="text-sm font-medium">Đang tạo đơn hàng...</span>
+                  </div>
+                ) : (
+                  <QRCodeDisplay
+                    qrUrl={order.qrUrl}
+                    timeLeft={remainingSeconds}
+                    status={displayStatus}
+                  />
+                )}
 
                 <div className="mx-auto mt-6 max-w-sm text-center">
                   <p className="text-sm font-semibold text-white">
@@ -310,6 +299,7 @@ export default function CheckoutPage() {
                 <div className="mt-7 grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
                   <button
                     type="button"
+                    onClick={() => router.push("/premium")}
                     className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-white/12 bg-white/[0.04] px-5 text-sm font-semibold text-white/72 transition hover:border-white/22 hover:bg-white/[0.08] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/25 active:translate-y-px"
                   >
                     <X className="h-4 w-4" />
@@ -317,9 +307,11 @@ export default function CheckoutPage() {
                   </button>
 
                   <div className="inline-flex h-12 items-center justify-center rounded-xl border border-[#D4AF37]/25 bg-[#D4AF37]/10 px-4 text-xs font-semibold uppercase tracking-[0.14em] text-[#F4E7B7]">
-                    {status === "OUT_OF_TIME"
+                    {displayStatus === "OUT_OF_TIME"
                       ? "Đã hết hạn"
-                      : "Đang chờ thanh toán"}
+                      : displayStatus === "SUCCESS"
+                        ? "Đã thanh toán"
+                        : "Đang chờ thanh toán"}
                   </div>
                 </div>
               </div>
@@ -328,5 +320,13 @@ export default function CheckoutPage() {
         </section>
       </div>
     </main>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={null}>
+      <CheckoutPageContent />
+    </Suspense>
   );
 }
