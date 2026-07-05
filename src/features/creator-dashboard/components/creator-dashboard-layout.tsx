@@ -16,6 +16,7 @@ export type CreatorDashboardLayoutView =
   | "combos"
   | "analytics"
   | "revenue"
+  | "campaign"
   | "production";
 
 type CreatorDashboardLayoutProps = {

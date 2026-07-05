@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   LineChart,
   Menu,
+  Rocket,
   WalletCards,
   X,
   type LucideIcon,
@@ -33,28 +34,33 @@ type SidebarItem = {
 
 const sidebarItems: SidebarItem[] = [
   {
-    label: "Dashboard",
+    label: "Tổng quan",
     view: "dashboard",
     icon: LayoutDashboard,
   },
   {
-    label: "Series",
+    label: "Quản lý Series",
     view: "series",
     icon: Clapperboard,
     activeViews: ["series", "seasons", "episodes", "create", "comic", "video", "combos"],
   },
   {
-    label: "Analytics",
+    label: "Thống kê",
     view: "analytics",
     icon: BarChart3,
   },
   {
-    label: "Revenue",
+    label: "Doanh thu",
     view: "revenue",
     icon: WalletCards,
   },
   {
-    label: "Production",
+    label: "Tăng tương tác",
+    view: "campaign",
+    icon: Rocket,
+  },
+  {
+    label: "Sản xuất",
     view: "production",
     icon: LineChart,
   },
@@ -102,13 +108,16 @@ export function CreatorDashboardSidebar({
             <Menu className="h-5 w-5" />
           </button>
 
-          <div className={cn("min-w-0 transition-all duration-300", isCollapsed && "lg:hidden")}>
+          <div className={cn("flex min-w-0 items-center transition-all duration-300", isCollapsed && "lg:hidden")}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="https://res.cloudinary.com/dratbz8bh/image/upload/v1783173753/1-removebg-preview_xv2wde.png"
               alt="TaleX"
-              className="h-8 w-auto object-contain"
+              className="h-10 w-auto origin-left scale-110 object-contain"
             />
+            <span className="ml-2 truncate text-lg font-black tracking-tight text-zinc-50">
+              Creator Studio
+            </span>
           </div>
 
           <button
