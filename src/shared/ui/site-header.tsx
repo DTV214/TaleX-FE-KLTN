@@ -12,17 +12,11 @@ import {
   User as UserIcon,
 } from "lucide-react";
 import { DropdownMenu } from "radix-ui";
-import { siteConfig } from "@/core/config/site";
-import { isFullProfile, useAuthStore } from "@/features/auth/store/auth.store";
 import { logoutAction } from "@/features/auth/api/auth.actions";
+import { isFullProfile, useAuthStore } from "@/features/auth/store/auth.store";
 import { CoinWalletWidget } from "@/features/coin";
 import { useMissionHeartbeat } from "@/features/mission/hooks/useMissionHeartbeat";
 import { usePublicSidebarStore } from "@/shared/stores/public-sidebar.store";
-
-function isActiveRoute(pathname: string, href: string) {
-  if (href === "/") return pathname === "/";
-  return pathname.startsWith(href);
-}
 
 export function SiteHeader() {
   useMissionHeartbeat();
@@ -30,8 +24,6 @@ export function SiteHeader() {
   const pathname = usePathname();
   const router = useRouter();
   const toggleSidebar = usePublicSidebarStore((state) => state.toggleSidebar);
-
-  // Lấy thông tin user và hàm xóa Auth
   const { user, isAuthenticated, clearAuth } = useAuthStore();
   const profileUser = isFullProfile(user) ? user : null;
   const avatarLabel =
@@ -52,97 +44,62 @@ export function SiteHeader() {
     return null;
   }
 
-  // Hàm xử lý Đăng xuất ngay trên Header
   const handleLogout = async () => {
-    await logoutAction(); // Xóa cookie và gọi API BE
-    clearAuth(); // Xóa state
-    router.push("/login"); // Đẩy về login
+    await logoutAction();
+    clearAuth();
+    router.push("/login");
     router.refresh();
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-background/75 backdrop-blur-2xl">
+    <header className="fixed left-0 top-0 z-50 h-16 w-full border-b border-white/10 bg-black/95 backdrop-blur">
       <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_20%_0%,rgba(212,175,55,0.10),transparent_36%),radial-gradient(circle_at_70%_0%,rgba(255,255,255,0.06),transparent_30%)]" />
 
-      <div className="flex h-16 items-center justify-between gap-4 px-4 md:h-20 md:px-8">
-        <button
-          type="button"
-          onClick={toggleSidebar}
-          aria-label="Toggle Sidebar"
-          title="Toggle Sidebar"
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-foreground/85 transition hover:bg-white/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
-        >
-          <Menu className="h-6 w-6" />
-        </button>
+      <div className="flex h-16 items-center justify-between gap-4 px-4 md:px-6">
+        <div className="flex shrink-0 items-center gap-2">
+          <button
+            type="button"
+            onClick={toggleSidebar}
+            aria-label="Thu gọn hoặc mở rộng sidebar"
+            title="Thu gọn hoặc mở rộng sidebar"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-foreground/85 transition hover:bg-white/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+          >
+            <Menu className="h-6 w-6" />
+          </button>
 
-        {/* Logo */}
-        <Link
-          href="/"
-          aria-label="Trang chủ TaleX"
-          className="group flex min-w-fit items-center outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="https://res.cloudinary.com/dratbz8bh/image/upload/v1783173753/1-removebg-preview_xv2wde.png"
-            alt="TaleX Logo"
-            className="h-12 w-auto max-w-[150px] object-contain md:h-14 md:max-w-[180px]"
-          />
-        </Link>
+          <Link
+            href="/"
+            aria-label="Trang chủ TaleX"
+            className="group flex min-w-fit items-center gap-2 outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="https://res.cloudinary.com/dratbz8bh/image/upload/v1783173753/1-removebg-preview_xv2wde.png"
+              alt="TaleX Logo"
+              className="h-9 w-auto object-contain"
+            />
+            <span className="font-heading text-xl font-bold tracking-tight text-white transition-colors group-hover:text-primary">
+              TaleX
+            </span>
+          </Link>
+        </div>
 
-        {/* Navigation - Desktop */}
-        <nav
-          aria-label="Điều hướng chính"
-          className="hidden items-center gap-8 lg:flex"
-        >
-          {siteConfig.mainNav
-            .filter(
-              (item) =>
-                !item.title.includes("Creator") &&
-                !item.title.includes("Giới thiệu"),
-            )
-            .map((item) => {
-              const isActive = isActiveRoute(pathname, item.href);
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`group relative py-2 font-heading text-lg font-semibold tracking-wide transition-colors ${
-                    isActive
-                      ? "text-primary"
-                      : "text-foreground/65 hover:text-foreground"
-                  }`}
-                >
-                  {item.title}
-                  <span
-                    className={`absolute inset-x-0 -bottom-0.5 h-0.5 rounded-full bg-primary transition-all duration-300 ${
-                      isActive
-                        ? "opacity-100"
-                        : "scale-x-0 opacity-0 group-hover:opacity-100"
-                    }`}
-                  />
-                </Link>
-              );
-            })}
-        </nav>
-
-        {/* Thanh Tìm Kiếm - Desktop */}
-        <div className="ml-auto hidden min-w-[260px] max-w-xl flex-1 items-center lg:flex">
+        <div className="mx-auto hidden min-w-[260px] max-w-xl flex-1 items-center lg:flex">
           <label className="group relative w-full">
             <span className="sr-only">Tìm kiếm truyện, phim</span>
             <Search className="absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" />
             <input
               type="search"
               placeholder="Tìm kiếm truyện, phim..."
-              className="h-14 w-full rounded-2xl border border-white/10 bg-[#14151b]/85 px-14 text-base text-foreground outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-all placeholder:text-muted-foreground/75 focus:border-primary/50 focus:bg-black/50 focus:shadow-[0_0_28px_rgba(212,175,55,0.12)]"
+              className="h-12 w-full rounded-2xl border border-white/10 bg-[#14151b]/85 px-14 text-base text-foreground outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-all placeholder:text-muted-foreground/75 focus:border-primary/50 focus:bg-black/50 focus:shadow-[0_0_28px_rgba(212,175,55,0.12)]"
             />
           </label>
         </div>
 
-        {/* Nhóm Nút Tiện Ích */}
-        <div className="flex items-center gap-2 md:gap-3 lg:ml-0">
+        <div className="flex items-center gap-2 md:gap-3">
           <Link
             href="/premium"
-            className="hidden h-10 items-center justify-center gap-2 rounded-xl border border-[#D4AF37]/50 bg-[#D4AF37]/10 px-4 text-xs font-black text-[#D4AF37] transition-all hover:bg-[#D4AF37] hover:text-black hover:shadow-[0_0_15px_rgba(212,175,55,0.4)] md:flex md:h-11"
+            className="hidden h-10 items-center justify-center gap-2 rounded-xl border border-[#D4AF37]/50 bg-[#D4AF37]/10 px-4 text-xs font-black text-[#D4AF37] transition-all hover:bg-[#D4AF37] hover:text-black hover:shadow-[0_0_15px_rgba(212,175,55,0.4)] md:flex"
           >
             <Crown className="h-4 w-4" />
             Nâng cấp
@@ -152,26 +109,27 @@ export function SiteHeader() {
             type="button"
             aria-label="Thông báo"
             title="Thông báo"
-            className="hidden h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-foreground/75 transition hover:border-primary/40 hover:bg-white/[0.08] hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 md:flex md:h-11 md:w-11"
+            className="hidden h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-foreground/75 transition hover:border-primary/40 hover:bg-white/[0.08] hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 md:flex"
           >
             <Bell className="h-4 w-4" />
           </button>
 
           <button
             type="button"
+            aria-label="Tìm kiếm"
+            title="Tìm kiếm"
             className="flex h-10 w-10 items-center justify-center rounded-full text-foreground/80 transition hover:text-primary lg:hidden"
           >
             <Search className="h-5 w-5" />
           </button>
 
-          {/* KHU VỰC AVATAR & DROPDOWN MỚI */}
           {isAuthenticated && user ? (
             <>
               <CoinWalletWidget />
 
               <DropdownMenu.Root>
                 <DropdownMenu.Trigger asChild>
-                  <button className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-primary/35 bg-primary/10 text-primary transition hover:border-primary hover:shadow-[0_0_26px_rgba(212,175,55,0.24)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70 md:h-12 md:w-12">
+                  <button className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-primary/35 bg-primary/10 text-primary transition hover:border-primary hover:shadow-[0_0_26px_rgba(212,175,55,0.24)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70">
                     {profileUser?.avatarUrl ? (
                       <span
                         className="h-full w-full bg-cover bg-center"
@@ -180,7 +138,7 @@ export function SiteHeader() {
                         }}
                       />
                     ) : (
-                      <span className="font-heading text-xs font-extrabold uppercase md:text-sm">
+                      <span className="font-heading text-xs font-extrabold uppercase">
                         {avatarLabel}
                       </span>
                     )}
@@ -198,7 +156,9 @@ export function SiteHeader() {
                         {profileUser?.fullName || "TaleX Viewer"}
                       </p>
                       <p className="mt-0.5 truncate text-xs text-gray-500">
-                        {profileUser ? `@${profileUser.username}` : user.roleName}
+                        {profileUser
+                          ? `@${profileUser.username}`
+                          : user.roleName}
                       </p>
                     </div>
 
@@ -239,12 +199,11 @@ export function SiteHeader() {
           ) : (
             <Link
               href="/login"
-              className="flex h-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.05] px-4 text-xs font-bold text-gray-300 transition-all hover:border-[#D4AF37]/40 hover:bg-white/10 hover:text-[#D4AF37] md:h-11 md:px-6 md:text-sm"
+              className="flex h-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.05] px-4 text-xs font-bold text-gray-300 transition-all hover:border-[#D4AF37]/40 hover:bg-white/10 hover:text-[#D4AF37] md:px-6 md:text-sm"
             >
-              Đăng Nhập
+              Đăng nhập
             </Link>
           )}
-
         </div>
       </div>
     </header>

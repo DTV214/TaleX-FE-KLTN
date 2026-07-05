@@ -1,21 +1,10 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
 import {
-  Clock3,
   Film,
   Flame,
-  Heart,
-  History,
-  Home as HomeIcon,
-  ListVideo,
   Play,
-  Radio,
-  Sparkles,
-  UserRoundCog,
 } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
 import { ContinueWatching } from "@/features/home/components/continue-watching";
 import { InterestCategories } from "@/features/home/components/interest-categories";
 import { Top10Today } from "@/features/home/components/top-10-today";
@@ -29,13 +18,6 @@ import { DestinyCategories } from "@/features/home/components/destiny-categories
 import { EditorialSpotlight } from "@/features/home/components/editorial-spotlight";
 import { WebtoonAdaptationsRow } from "@/features/home/components/webtoon-adaptations-row";
 import { TrendingComics } from "@/features/intro/components/trending-comics";
-import { usePublicSidebarStore } from "@/shared/stores/public-sidebar.store";
-
-type MenuItem = {
-  title: string;
-  href: string;
-  icon: LucideIcon;
-};
 
 type ShortItem = {
   title: string;
@@ -52,24 +34,6 @@ type VideoItem = {
   thumbnail: string;
   avatar: string;
 };
-
-const primaryMenu: MenuItem[] = [
-  { title: "Trang chủ", href: "/", icon: HomeIcon },
-  { title: "Shorts", href: "/#shorts", icon: Flame },
-  { title: "Kênh đăng ký", href: "/subscriptions", icon: Radio },
-];
-
-const libraryMenu: MenuItem[] = [
-  { title: "Video đã xem", href: "/history", icon: History },
-  { title: "Danh sách phát", href: "/playlists", icon: ListVideo },
-  { title: "Xem sau", href: "/watch-later", icon: Clock3 },
-  { title: "Video đã thích", href: "/liked", icon: Heart },
-];
-
-const platformMenu: MenuItem[] = [
-  { title: "Giới thiệu", href: "/intro", icon: Sparkles },
-  { title: "Creator Studio", href: "/creator-dashboard", icon: UserRoundCog },
-];
 
 const filterChips = [
   "Tất cả",
@@ -253,12 +217,8 @@ const videos: VideoItem[] = [
 ];
 
 export default function Home() {
-  const isSidebarOpen = usePublicSidebarStore((state) => state.isSidebarOpen);
-
   return (
     <div className="flex h-[calc(100vh-64px)] w-full overflow-hidden bg-[#0F0F0F] text-white md:h-[calc(100vh-80px)]">
-      <Sidebar isOpen={isSidebarOpen} />
-
       <main className="relative h-full min-w-0 flex-1 overflow-y-auto p-4 transition-all duration-300 ease-in-out md:p-6 no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         <FilterChips />
         <ShortsSection />
@@ -267,72 +227,6 @@ export default function Home() {
       </main>
     </div>
   );
-}
-
-function Sidebar({ isOpen }: { isOpen: boolean }) {
-  return (
-    <aside
-      className={`hidden h-full flex-shrink-0 flex-col overflow-y-auto border-r border-white/5 bg-[#0F0F0F] py-4 transition-all duration-300 ease-in-out md:flex ${
-        isOpen ? "w-[240px] px-3" : "w-[72px] px-1"
-      }`}
-    >
-      <SidebarGroup items={primaryMenu} isOpen={isOpen} />
-      <SidebarDivider />
-      <SidebarGroup items={libraryMenu} isOpen={isOpen} />
-      <SidebarDivider />
-      <SidebarGroup items={platformMenu} isOpen={isOpen} />
-    </aside>
-  );
-}
-
-function SidebarGroup({
-  items,
-  isOpen,
-}: {
-  items: MenuItem[];
-  isOpen: boolean;
-}) {
-  const pathname = usePathname();
-
-  return (
-    <nav className="space-y-1">
-      {items.map((item) => {
-        const Icon = item.icon;
-        const isActive =
-          item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
-
-        return (
-          <Link
-            key={item.title}
-            href={item.href}
-            title={item.title}
-            className={`flex w-full items-center rounded-lg py-2.5 text-left text-sm font-medium text-white/82 transition-all duration-300 hover:bg-white/10 hover:text-white ${
-              isOpen ? "justify-start gap-3 px-3" : "justify-center gap-0 px-0"
-            } ${
-              isActive
-                ? "bg-white/10 text-[#D4AF37]"
-                : "text-white/82 hover:text-white"
-            }`}
-          >
-            <Icon className="h-5 w-5 shrink-0" strokeWidth={1.75} />
-            <span
-              className={`truncate whitespace-nowrap transition-all duration-200 ${
-                isOpen
-                  ? "max-w-[150px] opacity-100"
-                  : "max-w-0 overflow-hidden opacity-0"
-              }`}
-            >
-              {item.title}
-            </span>
-          </Link>
-        );
-      })}
-    </nav>
-  );
-}
-
-function SidebarDivider() {
-  return <div className="my-3 h-px bg-white/10" />;
 }
 
 function FilterChips() {

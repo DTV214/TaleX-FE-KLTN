@@ -1,12 +1,10 @@
 import type { Metadata } from "next";
 import { Montserrat, DM_Sans } from "next/font/google";
 import "./globals.css";
-import { SiteHeader } from "@/shared/ui/site-header";
-import { SiteFooter } from "@/shared/ui/site-footer";
-import { BackToTop } from "@/shared/ui/back-to-top";
 import { AppProviders } from "@/core/providers/app-providers";
 // Thêm đường dẫn import cho AuthProvider vừa tạo ở bước trước
 import { AuthProvider } from "@/features/auth/providers/auth-provider";
+import { PublicLayoutShell } from "@/shared/ui/public-layout-shell";
 
 // Font cho Tiêu đề (Headlines) - Hỗ trợ chuẩn vietnamese
 const montserrat = Montserrat({
@@ -43,16 +41,7 @@ export default function RootLayout({
             đều có thể truy cập và lắng nghe trạng thái đăng nhập toàn cục từ Zustand Store.
           */}
           <AuthProvider>
-            {/* Navbar nằm ở vị trí cao nhất */}
-            <SiteHeader />
-
-            {/* Vùng chứa nội dung chính sẽ tự động đẩy giãn nhờ flex-1 */}
-            <main className="flex-1 flex flex-col">{children}</main>
-
-            {/* Footer luôn nằm ở dưới cùng của mọi trang */}
-            <SiteFooter />
-
-            <BackToTop />
+            <PublicLayoutShell>{children}</PublicLayoutShell>
           </AuthProvider>
         </AppProviders>
       </body>
