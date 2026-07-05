@@ -17,6 +17,7 @@ import { isFullProfile, useAuthStore } from "@/features/auth/store/auth.store";
 import { logoutAction } from "@/features/auth/api/auth.actions";
 import { CoinWalletWidget } from "@/features/coin";
 import { useMissionHeartbeat } from "@/features/mission/hooks/useMissionHeartbeat";
+import { usePublicSidebarStore } from "@/shared/stores/public-sidebar.store";
 
 function isActiveRoute(pathname: string, href: string) {
   if (href === "/") return pathname === "/";
@@ -28,6 +29,7 @@ export function SiteHeader() {
 
   const pathname = usePathname();
   const router = useRouter();
+  const toggleSidebar = usePublicSidebarStore((state) => state.toggleSidebar);
 
   // Lấy thông tin user và hàm xóa Auth
   const { user, isAuthenticated, clearAuth } = useAuthStore();
@@ -62,18 +64,28 @@ export function SiteHeader() {
     <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-background/75 backdrop-blur-2xl">
       <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_20%_0%,rgba(212,175,55,0.10),transparent_36%),radial-gradient(circle_at_70%_0%,rgba(255,255,255,0.06),transparent_30%)]" />
 
-      <div className="container mx-auto flex h-16 md:h-20 items-center justify-between gap-4 md:gap-5 px-4 md:px-8 lg:justify-start">
+      <div className="flex h-16 items-center justify-between gap-4 px-4 md:h-20 md:px-8">
+        <button
+          type="button"
+          onClick={toggleSidebar}
+          aria-label="Toggle Sidebar"
+          title="Toggle Sidebar"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-foreground/85 transition hover:bg-white/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+        >
+          <Menu className="h-6 w-6" />
+        </button>
+
         {/* Logo */}
         <Link
           href="/"
           aria-label="Trang chủ TaleX"
-          className="group flex min-w-fit items-center outline-none"
+          className="group flex min-w-fit items-center outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="https://res.cloudinary.com/dratbz8bh/image/upload/v1783173753/1-removebg-preview_xv2wde.png"
             alt="TaleX Logo"
-            className="h-10 w-auto object-contain transition-all duration-300 ease-out group-hover:scale-105 group-hover:drop-shadow-[0_0_18px_rgba(212,175,55,0.7)] md:h-12"
+            className="h-12 w-auto max-w-[150px] object-contain md:h-14 md:max-w-[180px]"
           />
         </Link>
 
@@ -233,12 +245,6 @@ export function SiteHeader() {
             </Link>
           )}
 
-          <button
-            type="button"
-            className="flex h-10 w-10 md:h-11 md:w-11 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-foreground transition hover:border-primary/40 hover:text-primary lg:hidden"
-          >
-            <Menu className="h-5 w-5" />
-          </button>
         </div>
       </div>
     </header>

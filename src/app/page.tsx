@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   Clock3,
   Film,
@@ -9,7 +10,6 @@ import {
   History,
   Home as HomeIcon,
   ListVideo,
-  Menu,
   Play,
   Radio,
   Sparkles,
@@ -29,9 +29,11 @@ import { DestinyCategories } from "@/features/home/components/destiny-categories
 import { EditorialSpotlight } from "@/features/home/components/editorial-spotlight";
 import { WebtoonAdaptationsRow } from "@/features/home/components/webtoon-adaptations-row";
 import { TrendingComics } from "@/features/intro/components/trending-comics";
+import { usePublicSidebarStore } from "@/shared/stores/public-sidebar.store";
 
 type MenuItem = {
   title: string;
+  href: string;
   icon: LucideIcon;
 };
 
@@ -52,21 +54,21 @@ type VideoItem = {
 };
 
 const primaryMenu: MenuItem[] = [
-  { title: "Trang chủ", icon: HomeIcon },
-  { title: "Shorts", icon: Flame },
-  { title: "Kênh đăng ký", icon: Radio },
+  { title: "Trang chủ", href: "/", icon: HomeIcon },
+  { title: "Shorts", href: "/#shorts", icon: Flame },
+  { title: "Kênh đăng ký", href: "/subscriptions", icon: Radio },
 ];
 
 const libraryMenu: MenuItem[] = [
-  { title: "Video đã xem", icon: History },
-  { title: "Danh sách phát", icon: ListVideo },
-  { title: "Xem sau", icon: Clock3 },
-  { title: "Video đã thích", icon: Heart },
+  { title: "Video đã xem", href: "/history", icon: History },
+  { title: "Danh sách phát", href: "/playlists", icon: ListVideo },
+  { title: "Xem sau", href: "/watch-later", icon: Clock3 },
+  { title: "Video đã thích", href: "/liked", icon: Heart },
 ];
 
 const platformMenu: MenuItem[] = [
-  { title: "Giới thiệu", icon: Sparkles },
-  { title: "Creator Studio", icon: UserRoundCog },
+  { title: "Giới thiệu", href: "/intro", icon: Sparkles },
+  { title: "Creator Studio", href: "/creator-dashboard", icon: UserRoundCog },
 ];
 
 const filterChips = [
@@ -251,25 +253,14 @@ const videos: VideoItem[] = [
 ];
 
 export default function Home() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const isSidebarOpen = usePublicSidebarStore((state) => state.isSidebarOpen);
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-[#0F0F0F] text-white">
+    <div className="flex h-[calc(100vh-64px)] w-full overflow-hidden bg-[#0F0F0F] text-white md:h-[calc(100vh-80px)]">
       <Sidebar isOpen={isSidebarOpen} />
 
       <main className="relative h-full min-w-0 flex-1 overflow-y-auto p-4 transition-all duration-300 ease-in-out md:p-6 no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-        <div className="mb-4 flex min-w-0 items-center gap-3">
-          <button
-            type="button"
-            aria-label={isSidebarOpen ? "Thu gọn thanh bên" : "Mở rộng thanh bên"}
-            title={isSidebarOpen ? "Thu gọn thanh bên" : "Mở rộng thanh bên"}
-            onClick={() => setIsSidebarOpen((current) => !current)}
-            className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full text-white transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37]/70"
-          >
-            <Menu className="h-5 w-5" />
-          </button>
-          <FilterChips />
-        </div>
+        <FilterChips />
         <ShortsSection />
         <VideoGrid />
         <LegacyHomeSections />
@@ -301,18 +292,26 @@ function SidebarGroup({
   items: MenuItem[];
   isOpen: boolean;
 }) {
+  const pathname = usePathname();
+
   return (
     <nav className="space-y-1">
       {items.map((item) => {
         const Icon = item.icon;
+        const isActive =
+          item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
 
         return (
-          <button
+          <Link
             key={item.title}
-            type="button"
+            href={item.href}
             title={item.title}
             className={`flex w-full items-center rounded-lg py-2.5 text-left text-sm font-medium text-white/82 transition-all duration-300 hover:bg-white/10 hover:text-white ${
               isOpen ? "justify-start gap-3 px-3" : "justify-center gap-0 px-0"
+            } ${
+              isActive
+                ? "bg-white/10 text-[#D4AF37]"
+                : "text-white/82 hover:text-white"
             }`}
           >
             <Icon className="h-5 w-5 shrink-0" strokeWidth={1.75} />
@@ -325,7 +324,7 @@ function SidebarGroup({
             >
               {item.title}
             </span>
-          </button>
+          </Link>
         );
       })}
     </nav>
