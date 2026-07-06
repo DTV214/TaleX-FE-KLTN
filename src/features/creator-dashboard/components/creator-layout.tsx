@@ -13,6 +13,7 @@ import {
   LogOut,
   Clapperboard,
   Tag,
+  Zap,
 } from "lucide-react";
 import { useAuthStore } from "@/features/auth/store/auth.store";
 
@@ -33,6 +34,7 @@ export function CreatorLayout({ children, activeView, onNavigate }: CreatorLayou
     { label: "Revenue", view: "revenue", icon: DollarSign },
     { label: "Production", view: "production", icon: Clapperboard },
     { label: "Combo Management", view: "combos", icon: Tag },
+    { label: "Tăng tương tác", view: "campaign", icon: Zap },
   ];
 
   return (

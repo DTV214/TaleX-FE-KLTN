@@ -1,4 +1,4 @@
-﻿
+
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -23,7 +23,6 @@ import {
   useSyncExternalStore,
   type DragEvent,
   type FormEvent,
-  type MouseEvent,
   type ReactNode,
 } from "react";
 import {
@@ -35,6 +34,7 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronLeft,
+  ChevronRight,
   CircleAlert,
   Clapperboard,
   CloudUpload,
@@ -44,15 +44,19 @@ import {
   FileVideo,
   GripVertical,
   Image as ImageIcon,
+  Info,
+  Library,
   Loader2,
   Lock,
   Plus,
   RefreshCw,
   Rocket,
   Search,
+  Settings2,
   Tag,
   Trash2,
   UploadCloud,
+  Wallet,
   X,
   Zap,
   type LucideIcon,
@@ -101,10 +105,6 @@ import { ViolationDetailDialog } from "@/features/creator-dashboard/components/v
 import { usePipelineSSE } from "@/features/creator-dashboard/hooks/use-pipeline-sse";
 import { SignedHlsPlayer } from "@/features/playback/components/signed-hls-player";
 import { ComboManagementView } from "@/features/creator-dashboard/components/combo-management";
-import {
-  CreatorDashboardLayout,
-  type CreatorDashboardLayoutView,
-} from "@/features/creator-dashboard/components/creator-dashboard-layout";
 
 type DashboardView =
   | "series"
@@ -114,6 +114,7 @@ type DashboardView =
   | "comic"
   | "video"
   | "combos"
+  | "campaign"
   | "publish";
 
 type DashboardRouteState = {
@@ -124,7 +125,6 @@ type DashboardRouteState = {
 };
 
 const dashboardViews: DashboardView[] = [
-  "dashboard",
   "series",
   "seasons",
   "episodes",
@@ -132,10 +132,6 @@ const dashboardViews: DashboardView[] = [
   "comic",
   "video",
   "combos",
-  "analytics",
-  "revenue",
-  "campaign",
-  "production",
 ];
 
 const defaultDashboardRouteState: DashboardRouteState = {
@@ -308,68 +304,47 @@ const viewMeta: Record<
   DashboardView,
   { title: string; description: string; action?: string }
 > = {
-  dashboard: {
-    title: "Tổng quan",
-    description:
-      "Theo dõi nhanh tình trạng nội dung, xuất bản và các chỉ số quan trọng của kênh creator.",
-  },
   series: {
-    title: "Quản lý Series",
+    title: "Series Management",
     description:
-      "Tất cả series của creator nằm tại đây. Mở một series để quản lý mùa, tập và media.",
-    action: "Tạo Series mới",
+      "All creator series are listed here. Open one series to manage seasons, then episodes.",
+    action: "Create New Series",
   },
   seasons: {
-    title: "Quản lý Mùa",
+    title: "Season Management",
     description:
-      "Mỗi series có thể có một hoặc nhiều mùa. Mở mùa để quản lý danh sách tập.",
-    action: "Tạo Mùa",
+      "A series can have one or many seasons. Open a season to manage its episodes.",
+    action: "Create Season",
   },
   episodes: {
-    title: "Quản lý Tập",
+    title: "Episode Management",
     description:
-      "Tập là đơn vị nội dung của cả truyện tranh và video truyện.",
-    action: "Tạo Tập",
+      "Episodes are the season entries for both comic and video content.",
+    action: "Create Episode",
   },
   create: {
-    title: "Tạo Series mới",
-    description: "Thiết lập series truyện tranh hoặc video theo mô hình Series.",
+    title: "Create New Series",
+    description: "Set up a comic or video series using the Series model.",
   },
   comic: {
-    title: "Tải lên truyện tranh",
-    description: "Cập nhật tập truyện tranh và sắp xếp trang theo displayOrder.",
+    title: "Upload Comic Chapter",
+    description: "Create a comic episode and arrange pages by display order.",
   },
   video: {
-    title: "Tải lên video truyện",
-    description: "Cập nhật tập video và gắn một media video đang hoạt động.",
+    title: "Upload Video Episode",
+    description: "Create a video episode and attach one active video media URL.",
   },
   combos: {
-    title: "Quản lý Combo",
-    description: "Gom nhiều tập thành một combo với giá ưu đãi riêng.",
-  },
-  analytics: {
-    title: "Analytics",
-    description:
-      "Theo dõi lượt xem, hành vi đọc/xem và hiệu suất nội dung của creator.",
-  },
-  revenue: {
-    title: "Doanh thu",
-    description:
-      "Quản lý doanh thu, số dư và lịch sử thanh toán bằng đơn vị VNĐ.",
-  },
-  campaign: {
-    title: "Đẩy mạnh tương tác",
-    description:
-      "Tiếp cận hàng ngàn độc giả và khán giả mới bằng các gói đẩy xu hướng.",
-  },
-  production: {
-    title: "Production",
-    description:
-      "Theo dõi tiến độ sản xuất, pipeline kiểm duyệt và lịch xuất bản nội dung.",
+    title: "Combo Management",
+    description: "Group multiple episodes into a single combo with a custom price.",
   },
   publish: {
     title: "Publish",
     description: "Publish your content",
+  },
+  campaign: {
+    title: "Đẩy mạnh tương tác",
+    description: "Tiếp cận hàng ngàn độc giả và khán giả mới bằng các gói đẩy xu hướng.",
   },
 };
 
@@ -377,67 +352,6 @@ function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
 
-const creationSteps = [
-  { id: 1, label: "Cốt lõi", caption: "Series" },
-  { id: 2, label: "Mùa", caption: "Season" },
-  { id: 3, label: "Tập", caption: "Episode" },
-  { id: 4, label: "Nội dung", caption: "Media" },
-  { id: 5, label: "Xuất bản", caption: "Publish" },
-];
-
-function CreationStepper({ currentStep }: { currentStep: number }) {
-  return (
-    <div className="mb-6 overflow-x-auto rounded-2xl border border-white/10 bg-[#121212] p-4 shadow-[0_4px_20px_rgba(0,0,0,0.4)]">
-      <div className="grid min-w-[680px] grid-cols-5 gap-3">
-        {creationSteps.map((step, index) => {
-          const active = step.id === currentStep;
-          const completed = step.id < currentStep;
-          const highlighted = active || completed;
-
-          return (
-            <div key={step.id} className="flex min-w-0 items-center gap-3">
-              <div
-                className={cx(
-                  "flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-black transition-colors duration-200",
-                  highlighted
-                    ? "bg-yellow-400 text-black shadow-[0_0_24px_rgba(250,204,21,0.18)]"
-                    : "bg-[#1A1A1A] text-zinc-500",
-                )}
-              >
-                {String(step.id).padStart(2, "0")}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p
-                  className={cx(
-                    "truncate text-xs font-black uppercase tracking-[0.14em]",
-                    active
-                      ? "text-yellow-300"
-                      : completed
-                        ? "text-zinc-100"
-                        : "text-zinc-500",
-                  )}
-                >
-                  {step.label}
-                </p>
-                <p className="mt-0.5 truncate text-[11px] font-bold text-zinc-500">
-                  {step.caption}
-                </p>
-                {index < creationSteps.length - 1 && (
-                  <div
-                    className={cx(
-                      "mt-3 h-0.5 rounded-full",
-                      completed ? "bg-yellow-400" : "bg-white/10",
-                    )}
-                  />
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
 function reorderPages(pages: ComicPage[], fromId: string, toId: string) {
   const fromIndex = pages.findIndex((page) => page.id === fromId);
   const toIndex = pages.findIndex((page) => page.id === toId);
@@ -531,11 +445,11 @@ function formatApprovalStatusLabel(status: ContentApprovalStatus) {
 function getApprovalChipClass(status: ContentApprovalStatus) {
   switch (status) {
     case "APPROVED":
-      return "border-emerald-500/30 bg-emerald-500/10 text-emerald-400";
+      return "border-[#25B67A] bg-[#E9FBF2] text-[#067647]";
     case "REJECTED":
       return "border-red-500/50 bg-red-500/10 text-red-400";
     default:
-      return "border-amber-500/30 bg-amber-500/10 text-amber-400";
+      return "border-[#F4B9CC] bg-[#FFF4F8] text-[#B83268]";
   }
 }
 
@@ -1040,12 +954,12 @@ function CreatorDashboardContent() {
 
       return createSeason(selectedSeries.id, {
         seasonNumber: nextSeasonNumber,
-        title: `Mùa ${nextSeasonNumber}`,
-        description: "Mùa nháp được tạo từ Creator Dashboard.",
+        title: `Season ${nextSeasonNumber}`,
+        description: "Draft season created from creator dashboard.",
       });
     },
     onSuccess: (season) => {
-      setUploadMessage("Đã tạo mùa.");
+      setUploadMessage("Season created.");
       setDashboardRouteState({
         view: "seasons",
         seriesId: selectedSeries?.id ?? season.seriesId,
@@ -1154,7 +1068,7 @@ function CreatorDashboardContent() {
       });
     },
     onSuccess: () => {
-      setUploadMessage("Đã cập nhật mùa.");
+      setUploadMessage("Season updated.");
       setEditModal(null);
       queryClient.invalidateQueries({
         queryKey: ["creator-dashboard", "seasons", selectedSeries?.id],
@@ -1173,7 +1087,7 @@ function CreatorDashboardContent() {
       return season;
     },
     onSuccess: () => {
-      setUploadMessage("Đã xóa mùa.");
+      setUploadMessage("Season deleted.");
       setDeleteModal(null);
       setDashboardRouteState({
         view: "seasons",
@@ -1195,7 +1109,7 @@ function CreatorDashboardContent() {
   const hideSeasonMutation = useMutation({
     mutationFn: (season: SeasonRow) => hideSeason(season.id),
     onSuccess: () => {
-      setUploadMessage("Đã ẩn mùa.");
+      setUploadMessage("Season hidden.");
       queryClient.invalidateQueries({ queryKey: ["creator-dashboard", "seasons", selectedSeries?.id] });
     },
     onError: (error) => {
@@ -1206,7 +1120,7 @@ function CreatorDashboardContent() {
   const unhideSeasonMutation = useMutation({
     mutationFn: (season: SeasonRow) => unhideSeason(season.id),
     onSuccess: () => {
-      setUploadMessage("Mùa đã hiển thị.");
+      setUploadMessage("Season visible.");
       queryClient.invalidateQueries({ queryKey: ["creator-dashboard", "seasons", selectedSeries?.id] });
     },
     onError: (error) => {
@@ -1910,6 +1824,8 @@ function CreatorDashboardContent() {
               />
             ) : activeView === "combos" ? (
               <ComboManagementView />
+            ) : activeView === "campaign" ? (
+              <CampaignPurchaseView />
             ) : (
               <div className="p-8 text-white flex flex-col items-center justify-center min-h-[50vh]">
                 <h2 className="text-xl font-bold mb-4">View not mapped yet ({activeView})</h2>
@@ -2090,10 +2006,10 @@ function EditEntityModal({
 
   const title =
     modal.kind === "series"
-      ? "Cập nhật Series"
+      ? "Update Series"
       : modal.kind === "season"
-        ? "Cập nhật Mùa"
-        : "Cập nhật Tập";
+        ? "Update Season"
+        : "Update Episode";
 
 
   if (modal.kind === "series") {
@@ -2152,7 +2068,7 @@ function EditEntityModal({
 
       {modal.kind === "season" && (
         <form onSubmit={handleSeasonSubmit} className="space-y-5">
-          <Field label="Số mùa">
+          <Field label="Season Number">
             <input
               type="number"
               min={1}
@@ -2161,7 +2077,7 @@ function EditEntityModal({
               className={controlClass}
             />
           </Field>
-          <Field label="Tiêu đề" required>
+          <Field label="Title" required>
             <input
               name="title"
               required
@@ -2169,14 +2085,14 @@ function EditEntityModal({
               className={controlClass}
             />
           </Field>
-          <Field label="Mô tả">
+          <Field label="Description">
             <textarea
               name="description"
               defaultValue={modal.value.description}
               className={textareaClass}
             />
           </Field>
-          <Field label="Trạng thái">
+          <Field label="Lifecycle">
             <input
               value={formatStatusLabel(modal.value.status)}
               readOnly
@@ -2190,7 +2106,7 @@ function EditEntityModal({
       {modal.kind === "episode" && (
         <form onSubmit={handleEpisodeSubmit} className="space-y-5">
           <div className="grid gap-4 md:grid-cols-2">
-            <Field label="Số tập">
+            <Field label="Episode Number">
               <input
                 type="number"
                 min={1}
@@ -2199,7 +2115,7 @@ function EditEntityModal({
                 className={controlClass}
               />
             </Field>
-            <Field label="Loại nội dung">
+            <Field label="Content Type">
               <select
                 name="contentType"
                 defaultValue={modal.value.contentType}
@@ -2210,7 +2126,7 @@ function EditEntityModal({
               </select>
             </Field>
           </div>
-          <Field label="Tiêu đề" required>
+          <Field label="Title" required>
             <input
               name="title"
               required
@@ -2218,7 +2134,7 @@ function EditEntityModal({
               className={controlClass}
             />
           </Field>
-          <Field label="Mô tả">
+          <Field label="Description">
             <textarea
               name="description"
               defaultValue={modal.value.description}
@@ -2226,14 +2142,14 @@ function EditEntityModal({
             />
           </Field>
           <div className="grid gap-4 md:grid-cols-2">
-            <Field label="Trạng thái">
+            <Field label="Lifecycle">
               <input
                 value={formatStatusLabel(modal.value.status)}
                 readOnly
                 className={controlClass}
               />
             </Field>
-            <Field label="Tổng số trang">
+            <Field label="Total Page">
               <input
                 type="number"
                 min={0}
@@ -2286,8 +2202,8 @@ function SchedulePublishModal({
 
   return (
     <ModalShell
-      title="Lên lịch xuất bản"
-      subtitle="Chỉ những tập có media đã duyệt mới có thể lên lịch."
+      title="Schedule Publish"
+      subtitle="Only episodes with approved ready media can be scheduled."
       onClose={onClose}
       compact
     >
@@ -2302,7 +2218,7 @@ function SchedulePublishModal({
           </p>
         </div>
 
-        <Field label="Thời điểm xuất bản" required>
+        <Field label="Publish At" required>
           <input
             name="scheduledPublishAt"
             type="datetime-local"
@@ -2319,14 +2235,14 @@ function SchedulePublishModal({
             onClick={onClose}
             className="rounded-full border border-creator-border bg-creator-bg text-white border border-creator-border px-5 py-3 hover:border-creator-gold transition-colors text-sm font-black text-creator-muted"
           >
-            Hủy
+            Cancel
           </button>
           <button
             type="submit"
             disabled={isSaving}
-            className="rounded-xl bg-yellow-400 px-5 py-3 text-sm font-black text-black transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-full bg-[#007A8A] px-5 py-3 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isSaving ? "Đang lưu..." : "Lưu lịch"}
+            {isSaving ? "Saving..." : "Save Schedule"}
           </button>
         </div>
       </form>
@@ -2362,8 +2278,8 @@ function DeleteEntityModal({
 
   return (
     <ModalShell
-      title="Xác nhận xóa"
-      subtitle="Kiểm tra lại mục này trước khi xóa khỏi workspace."
+      title="Confirm Delete"
+      subtitle="Review the item before removing it from your workspace."
       onClose={onClose}
       compact
     >
@@ -2382,7 +2298,7 @@ function DeleteEntityModal({
             onClick={onClose}
             className="rounded-full border border-creator-border bg-creator-bg text-white border border-creator-border px-5 py-3 hover:border-creator-gold transition-colors text-sm font-black text-creator-muted"
           >
-            Hủy
+            Cancel
           </button>
           <button
             type="button"
@@ -2390,7 +2306,7 @@ function DeleteEntityModal({
             disabled={isDeleting}
             className="rounded-full bg-red-500 hover:bg-red-600 transition-colors px-5 py-3 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isDeleting ? "Đang xóa..." : "Xóa"}
+            {isDeleting ? "Deleting..." : "Delete"}
           </button>
         </div>
       </div>
@@ -2412,7 +2328,7 @@ function ModalShell({
   compact?: boolean;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 px-4 py-6">
       <div
         role="dialog"
         aria-modal="true"
@@ -2450,91 +2366,32 @@ function ModalActions({
   onClose: () => void;
 }) {
   return (
-    <div className="flex justify-end gap-3 border-t border-white/10 pt-5">
+    <div className="flex justify-end gap-3 border-t border-[#E8EDF5] pt-5">
       <button
         type="button"
         onClick={onClose}
         className="rounded-full border border-creator-border bg-creator-bg text-white border border-creator-border px-5 py-3 hover:border-creator-gold transition-colors text-sm font-black text-creator-muted"
       >
-        Hủy
+        Cancel
       </button>
       <button
         type="submit"
         disabled={isSaving}
         className="rounded-full bg-creator-gold px-5 py-3 text-sm font-black text-black hover:opacity-90 transition-opacity disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {isSaving ? "Đang lưu..." : "Lưu thay đổi"}
+        {isSaving ? "Saving..." : "Save Changes"}
       </button>
     </div>
   );
 }
 
-function CreatorPlaceholderView({ view }: { view: DashboardView }) {
-  const labels: Partial<Record<DashboardView, string>> = {
-    dashboard: "Tổng quan Creator Studio đang được kết nối với dữ liệu thật.",
-    analytics: "Analytics sẽ hiển thị lượt xem, tỷ lệ hoàn thành và xu hướng nội dung.",
-    revenue: "Doanh thu sẽ tổng hợp số dư, VNĐ, giao dịch và lịch sử rút tiền.",
-    production: "Production sẽ theo dõi pipeline sản xuất, kiểm duyệt và lịch xuất bản.",
-  };
-
-  return (
-    <div className="rounded-2xl border border-white/10 bg-[#121212] p-8 shadow-[0_24px_80px_rgba(0,0,0,0.24)]">
-      <div className="max-w-2xl">
-        <p className="text-xs font-black uppercase tracking-[0.18em] text-yellow-400">
-          Sắp ra mắt
-        </p>
-        <h2 className="mt-3 text-2xl font-black text-zinc-50">
-          {viewMeta[view].title}
-        </h2>
-        <p className="mt-3 text-sm font-semibold leading-6 text-zinc-400">
-          {labels[view] ?? "View này đang được chuẩn bị cho Creator Dashboard."}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-const campaignPlans = [
-  {
-    name: "Gói Khởi Động",
-    price: "50.000 VNĐ",
-    description: "Thử sức đẩy tương tác cho series mới ra mắt.",
-    benefits: ["5.000 Lượt xem", "100 Lượt thích", "Ưu tiên hiển thị 24 giờ"],
-    icon: Zap,
-    iconClass: "text-zinc-400",
-  },
-  {
-    name: "Gói Xu Hướng",
-    price: "150.000 VNĐ",
-    description: "Tăng tốc để tác phẩm lọt vào dòng đề xuất nổi bật.",
-    popular: true,
-    benefits: [
-      "20.000 Lượt xem",
-      "1.000 Lượt thích",
-      "Đề xuất trang chủ",
-      "Tối ưu tệp khán giả bằng AI",
-    ],
-    icon: Rocket,
-    iconClass: "text-yellow-400 group-hover:animate-bounce",
-  },
-  {
-    name: "Gói Toàn Cầu",
-    price: "500.000 VNĐ",
-    description: "Phủ sóng mạnh cho chiến dịch ra mắt hoặc mùa mới.",
-    benefits: [
-      "100.000 Lượt xem",
-      "5.000 Lượt thích",
-      "Thông báo Push toàn hệ thống",
-      "Báo cáo hiệu suất nâng cao",
-    ],
-    icon: Crown,
-    iconClass: "text-zinc-400 group-hover:animate-pulse",
-  },
-];
-
-const campaignBenefits: Array<{
-  title: string;
-  description: string;
+function DashboardNavButton({
+  active,
+  icon: Icon,
+  label,
+  onClick,
+}: {
+  active: boolean;
   icon: LucideIcon;
   label: string;
   onClick: () => void;
@@ -2556,7 +2413,15 @@ const campaignBenefits: Array<{
   );
 }
 
-function CampaignPurchaseView() {
+function MobileTab({
+  active,
+  label,
+  onClick,
+}: {
+  active: boolean;
+  label: string;
+  onClick: () => void;
+}) {
   return (
     <button
       type="button"
@@ -2583,7 +2448,6 @@ function ModelStep({ label }: { label: string }) {
 function SeriesManagementView({
   rows,
   isLoading,
-  onCreateSeries,
   onSelectSeries,
   onUpdateSeries,
   onDeleteSeries,
@@ -2592,7 +2456,6 @@ function SeriesManagementView({
 }: {
   rows: SeriesRow[];
   isLoading: boolean;
-  onCreateSeries: () => void;
   onSelectSeries: (seriesId: string) => void;
   onUpdateSeries: (series: SeriesRow) => void;
   onDeleteSeries: (series: SeriesRow) => void;
@@ -2611,7 +2474,7 @@ function SeriesManagementView({
       <div className="rounded-[24px] border-creator-border bg-creator-sidebar p-4 shadow-[0_20px_60px_rgba(30,42,68,0.07)]">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <label className="relative w-full lg:max-w-xl">
-            <Search className="absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-500" />
+            <Search className="absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-[#7F6F7A]" />
             <input
               type="search"
               placeholder="Search series title..."
@@ -2620,20 +2483,20 @@ function SeriesManagementView({
           </label>
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div className="grid h-12 grid-cols-3 rounded-xl border border-white/5 bg-zinc-900 p-1 text-sm font-black">
+            <div className="grid h-12 grid-cols-3 rounded-xl bg-[#ECF1FA] p-1 text-sm font-black text-slate-600">
               <FilterTab
                 active={filter === "ALL"}
-                label="Tất cả"
+                label="All"
                 onClick={() => setFilter("ALL")}
               />
               <FilterTab
                 active={filter === "COMIC"}
-                label="Truyện"
+                label="Comics"
                 onClick={() => setFilter("COMIC")}
               />
               <FilterTab
                 active={filter === "VIDEO"}
-                label="Video"
+                label="Videos"
                 onClick={() => setFilter("VIDEO")}
               />
             </div>
@@ -2656,9 +2519,14 @@ function SeriesManagementView({
           <span className="text-right">Actions</span>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
+        <div className="divide-y divide-[#E6EBF3]">
+          {!isLoading && filteredRows.length === 0 && (
+            <div className="px-8 py-10 text-center text-sm font-bold text-slate-500">
+              No series found for this creator.
+            </div>
+          )}
           {filteredRows.map((series) => (
-            <SeriesCard
+            <SeriesTableRow
               key={series.id}
               series={series}
               onSelectSeries={onSelectSeries}
@@ -2729,7 +2597,7 @@ function SelectionStatePanel({
   description: string;
 }) {
   return (
-    <Panel className="border-white/10 bg-[#121212] shadow-[0_24px_80px_rgba(0,0,0,0.28)]">
+    <Panel>
       <div className="py-10 text-center">
         <p className="text-lg font-black text-white">{title}</p>
         <p className="mt-2 text-sm font-bold text-slate-500">{description}</p>
@@ -2761,7 +2629,7 @@ function SeriesCoverImage({
   return <img src={src} alt="" className={className} />;
 }
 
-function SeriesCard({
+function SeriesTableRow({
   series,
   onSelectSeries,
   onUpdateSeries,
@@ -2780,36 +2648,13 @@ function SeriesCard({
   const isPublished = series.status === "PUBLISHED";
   const isDraft = series.status === "DRAFT";
   const isHidden = series.status === "HIDDEN";
-  const isActionRequired = series.status === "ACTION_REQUIRED";
-  const statusClass = cx(
-    "border border-white/20 bg-black/60 text-zinc-100 backdrop-blur-md",
-    isPublished && "text-cyan-300",
-    isDraft && "text-zinc-300",
-    (isHidden || isActionRequired) && "text-amber-300",
-    !isPublished && !isDraft && !isHidden && !isActionRequired && "text-red-300",
-  );
-
-  function stopAction(event: MouseEvent<HTMLButtonElement>) {
-    event.stopPropagation();
-  }
 
   return (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={() => onSelectSeries(series.id)}
-      onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          onSelectSeries(series.id);
-        }
-      }}
-      className="group relative flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#121212] shadow-[0_4px_20px_rgba(0,0,0,0.4)] outline-none transition-all duration-300 hover:-translate-y-1 hover:border-yellow-400/50 focus-visible:border-yellow-400/70 focus-visible:ring-4 focus-visible:ring-yellow-400/10"
-    >
-      <div className="relative aspect-[3/4] overflow-hidden bg-[#1A1A1A]">
+    <div className="grid min-h-[116px] grid-cols-1 gap-4 px-5 py-5 lg:grid-cols-[1.8fr_0.8fr_1fr_1fr_1.15fr] lg:items-center lg:px-8">
+      <div className="flex items-center gap-4">
         <SeriesCoverImage
           src={series.coverUrl}
-          className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+          className="h-20 w-20 rounded-xl object-cover shadow-sm"
         />
         <div className="min-w-0">
           <p className="truncate text-lg font-black text-white">
@@ -2823,23 +2668,19 @@ function SeriesCard({
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col px-4 pt-4">
-        <h3 className="truncate text-lg font-black text-zinc-50">
-          {series.title}
-        </h3>
-        <p className="mt-1 line-clamp-2 text-sm font-semibold leading-6 text-zinc-400">
-          {series.description || series.subtitle || "Chưa có mô tả cho series này."}
-        </p>
-      </div>
-
-      <div className="mt-4 flex items-center justify-between border-t border-white/10 px-4 py-3 text-xs font-bold text-zinc-400">
-        <span className="flex min-w-0 items-center gap-2">
-          {isComic ? (
-            <BookOpen className="h-4 w-4 shrink-0 text-purple-300" />
-          ) : (
-            <Clapperboard className="h-4 w-4 shrink-0 text-cyan-300" />
+      <div>
+        <span
+          className={cx(
+            "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-black",
+            isComic ? "bg-[#E9D3FF] text-[#5E1AA3]" : "bg-[#CDEEFF] text-[#075985]",
           )}
-          <span className="truncate">{isComic ? "Truyện tranh" : "Video"}</span>
+        >
+          {isComic ? (
+            <BookOpen className="h-4 w-4" />
+          ) : (
+            <Clapperboard className="h-4 w-4" />
+          )}
+          {isComic ? "Comic" : "Video"}
         </span>
       </div>
 
@@ -2963,23 +2804,21 @@ function SeasonManagementView({
 }) {
   return (
     <div className="space-y-6">
-      <CreationStepper currentStep={2} />
-
       <button
         type="button"
         onClick={onBack}
         className="inline-flex items-center gap-2 rounded-md bg-creator-sidebar border border-creator-border px-4 py-2 text-sm font-black text-creator-gold shadow-sm"
       >
         <ChevronLeft className="h-4 w-4" />
-        Quay lại Series
+        Back to Series
       </button>
 
-      <Panel className="border-white/10 bg-[#121212] shadow-[0_4px_20px_rgba(0,0,0,0.4)]">
+      <Panel>
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="flex min-w-0 items-center gap-4">
+          <div className="flex items-center gap-4">
             <SeriesCoverImage
               src={selectedSeries.coverUrl}
-              className="h-20 w-20 shrink-0 rounded-2xl object-cover"
+              className="h-20 w-20 rounded-2xl object-cover"
             />
             <div>
               <h2 className="text-2xl font-black text-white">
@@ -2994,10 +2833,10 @@ function SeasonManagementView({
             type="button"
             onClick={onCreateSeason}
             disabled={isCreatingSeason}
-            className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-yellow-400 px-5 text-sm font-black text-black shadow-[0_4px_20px_rgba(250,204,21,0.15)] transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[#007A8A] px-5 text-sm font-black text-white shadow-lg shadow-cyan-900/20 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <Plus className="h-5 w-5" />
-            {isCreatingSeason ? "Đang tạo..." : "Tạo Mùa"}
+            {isCreatingSeason ? "Creating..." : "Create Season"}
           </button>
         </div>
         <ApiStateNote isLoading={isLoading} />
@@ -3042,7 +2881,7 @@ function SeasonCard({
 }) {
   const statusStyle =
     season.status === "PUBLISHED"
-      ? "border-cyan-500/30 bg-cyan-500/10 text-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.1)]"
+      ? "bg-[#E8F8FF] text-[#0074A6] border-[#24B5FF]"
       : season.status === "DRAFT"
         ? "bg-creator-bg border border-creator-border text-red-400 border-creator-border"
         : "bg-creator-bg border border-creator-border text-creator-muted text-slate-500 border-[#D9E2F0]";
@@ -3054,8 +2893,8 @@ function SeasonCard({
       <div className="grid gap-5 lg:grid-cols-[1fr_180px_180px_180px] lg:items-center">
         <div>
           <div className="mb-2 flex flex-wrap items-center gap-2">
-            <span className="rounded-full border border-yellow-400/30 bg-yellow-400/10 px-3 py-1 text-xs font-black text-yellow-300">
-              Mùa {season.seasonNumber}
+            <span className="rounded-full bg-[#151A23] px-3 py-1 text-xs font-black text-white">
+              Season {season.seasonNumber}
             </span>
             <span
               className={cx(
@@ -3070,15 +2909,15 @@ function SeasonCard({
           <p className="mt-1 max-w-2xl text-sm font-semibold text-creator-muted">
             {season.description}
           </p>
-          <p className="mt-2 truncate text-xs font-bold text-zinc-500">{season.id}</p>
+          <p className="mt-2 text-xs font-bold text-slate-400">{season.id}</p>
         </div>
 
-        <MetricBox label="Tập" value={String(season.episodes)} />
+        <MetricBox label="Episodes" value={String(season.episodes)} />
         <MetricBox
-          label="Đã xuất bản"
+          label="Published"
           value={String(season.publishedEpisodes)}
         />
-        <div className="flex min-w-0 flex-wrap items-center justify-start gap-2 lg:justify-end">
+        <div className="flex items-center justify-end gap-2">
           <button
             type="button"
             onClick={onUpdate}
@@ -3120,7 +2959,7 @@ function SeasonCard({
             onClick={onSelect}
             className="rounded-full bg-creator-bg border border-creator-border text-creator-muted px-5 py-3 text-sm font-black text-white transition hover:text-white transition-colors"
           >
-            Quản lý Tập
+            Manage Episodes
           </button>
         </div>
       </div>
@@ -3291,7 +3130,7 @@ function EpisodeTableRow({
   const isComic = episode.contentType === "COMIC";
   const statusStyle =
     episode.status === "PUBLISHED"
-      ? "border-cyan-500/30 bg-cyan-500/10 text-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.1)]"
+      ? "border-[#24B5FF] bg-[#E8F8FF] text-[#0074A6]"
       : episode.status === "REVIEW"
         ? "border-[#F4B9CC] bg-[#FFF4F8] text-[#B83268]"
         : "border-creator-border bg-creator-sidebar text-[#9B536D]";
@@ -3310,10 +3149,8 @@ function EpisodeTableRow({
       <div>
         <span
           className={cx(
-            "inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-black",
-            isComic
-              ? "border-purple-400/20 bg-purple-400/10 text-purple-300"
-              : "border-cyan-400/20 bg-cyan-400/10 text-cyan-300",
+            "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-black",
+            isComic ? "bg-[#E9D3FF] text-[#5E1AA3]" : "bg-[#CDEEFF] text-[#075985]",
           )}
         >
           {isComic ? (
@@ -3321,7 +3158,7 @@ function EpisodeTableRow({
           ) : (
             <Clapperboard className="h-4 w-4" />
           )}
-          {isComic ? "Truyện tranh" : "Video"}
+          {isComic ? "Comic" : "Video"}
         </span>
       </div>
       <div className="space-y-2">
@@ -3336,10 +3173,10 @@ function EpisodeTableRow({
       </div>
       <div className="text-sm font-bold text-creator-muted">
         {isComic
-          ? `${episode.totalPage ?? episode.mediaCount} trang`
+          ? `${episode.totalPage ?? episode.mediaCount} pages`
           : `${episode.mediaCount} video`}
       </div>
-      <div className="flex min-w-0 flex-wrap items-center justify-start gap-3 lg:justify-end">
+      <div className="flex flex-wrap items-center justify-start gap-3 lg:justify-end">
         <button
           type="button"
           onClick={onUpdate}
@@ -3361,7 +3198,7 @@ function EpisodeTableRow({
           onClick={onOpenUpload}
           className="rounded-full bg-creator-bg border border-creator-border text-creator-muted px-5 py-3 text-sm font-black text-white transition hover:text-white transition-colors"
         >
-          {isComic ? "Mở upload truyện tranh" : "Mở upload video"}
+          {isComic ? "Open Comic Upload" : "Open Video Upload"}
         </button>
       </div>
     </div>
@@ -3738,8 +3575,8 @@ function ComicPageCard({
       className={cx(
         "group relative overflow-hidden rounded-xl border-2 bg-creator-sidebar shadow-sm transition",
         dragging
-          ? "scale-95 border-yellow-400 opacity-60"
-          : "border-white/10 hover:border-yellow-400/50",
+          ? "scale-95 border-[#B83268] opacity-60"
+          : "border-transparent hover:border-[#007A8A]",
       )}
     >
       <div className="relative aspect-[3/4]">
@@ -3948,7 +3785,7 @@ function VideoUploadView({
                 actorId={accountId}
                 disabledReason={
                   videos.length > 0
-                    ? "Xóa video hiện tại trước khi upload file thay thế."
+                    ? "Delete the current video before uploading a replacement."
                     : undefined
                 }
                 onCompleted={onUploadCompleted}
@@ -4137,7 +3974,7 @@ function VideoProcessingState({ video, onViewViolation }: { video: MediaResponse
       <p className="mt-2 max-w-md text-xs font-bold leading-relaxed">
         {inactive ? "Ná»™i dung Ä‘Ã£ bá»‹ áº©n do vi pháº¡m báº£n quyá»n hoáº·c kiá»ƒm duyá»‡t." : pending ? "Äang kiá»ƒm tra báº£n quyá»n vÃ  ná»™i dung..." : failed ? (video.errorMessage || "KhÃ´ng thá»ƒ xá»­ lÃ½ video.") : "Vui lÃ²ng chá» trong giÃ¢y lÃ¡t."}
       </p>
-      <span className={cx("mt-3 rounded-full px-3 py-1 text-[11px] font-black", inactive ? "bg-red-500/10 text-red-300" : pending ? "bg-amber-500/10 text-amber-300" : "bg-cyan-400/10 text-cyan-300")}>
+      <span className={cx("mt-3 rounded-full px-3 py-1 text-[11px] font-black", inactive ? "bg-red-100 text-red-700" : pending ? "bg-amber-100 text-amber-700" : "bg-[#E8F8FF] text-[#075985]")}>
         {formatMediaStatusLabel(video.status)}
       </span>
       {inactive && onViewViolation && (
@@ -4181,7 +4018,7 @@ function PanelHeader({
 }) {
   return (
     <div className={cx("flex items-start gap-3", !compact && "mb-5")}>
-      <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-yellow-400/10 text-yellow-400">
+      <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#FCE8F0] text-[#B83268]">
         <Icon className="h-4 w-4" />
       </div>
       <div>
@@ -4216,7 +4053,7 @@ function EpisodeUnlockFields({
         unlockType === "PAID" ? "md:grid-cols-2" : "md:grid-cols-1",
       )}
     >
-      <Field label="Kiểu mở khóa">
+      <Field label="Unlock Type">
         <select
           name="unlockType"
           value={unlockType}
@@ -4225,13 +4062,13 @@ function EpisodeUnlockFields({
           }
           className={controlClass}
         >
-          <option value="FREE">Miễn phí</option>
-          <option value="PAID">Trả phí</option>
+          <option value="FREE">FREE</option>
+          <option value="PAID">PAID</option>
         </select>
       </Field>
 
       {unlockType === "PAID" && (
-        <Field label="Giá VNĐ" required>
+        <Field label="Price VND" required>
           <input
             type="number"
             min={1}
@@ -4263,5 +4100,218 @@ function Field({
       </span>
       {children}
     </label>
+  );
+}
+const campaignPlans = [
+  {
+    name: "GÃ³i Khá»Ÿi Äá»™ng",
+    price: "50.000 VNÄ",
+    description: "Thá»­ sá»©c Ä‘áº©y tÆ°Æ¡ng tÃ¡c cho series má»›i ra máº¯t.",
+    benefits: ["5.000 LÆ°á»£t xem", "100 LÆ°á»£t thÃ­ch", "Æ¯u tiÃªn hiá»ƒn thá»‹ 24 giá»"],
+    icon: Zap,
+    iconClass: "text-zinc-400",
+  },
+  {
+    name: "GÃ³i Xu HÆ°á»›ng",
+    price: "150.000 VNÄ",
+    description: "TÄƒng tá»‘c Ä‘á»ƒ tÃ¡c pháº©m lá»t vÃ o dÃ²ng Ä‘á» xuáº¥t ná»•i báº­t.",
+    popular: true,
+    benefits: [
+      "20.000 LÆ°á»£t xem",
+      "1.000 LÆ°á»£t thÃ­ch",
+      "Äá» xuáº¥t trang chá»§",
+      "Tá»‘i Æ°u tá»‡p khÃ¡n giáº£ báº±ng AI",
+    ],
+    icon: Rocket,
+    iconClass: "text-yellow-400 group-hover:animate-bounce",
+  },
+  {
+    name: "GÃ³i ToÃ n Cáº§u",
+    price: "500.000 VNÄ",
+    description: "Phá»§ sÃ³ng máº¡nh cho chiáº¿n dá»‹ch ra máº¯t hoáº·c mÃ¹a má»›i.",
+    benefits: [
+      "100.000 LÆ°á»£t xem",
+      "5.000 LÆ°á»£t thÃ­ch",
+      "ThÃ´ng bÃ¡o Push toÃ n há»‡ thá»‘ng",
+      "BÃ¡o cÃ¡o hiá»‡u suáº¥t nÃ¢ng cao",
+    ],
+    icon: Crown,
+    iconClass: "text-zinc-400 group-hover:animate-pulse",
+  },
+];
+
+const campaignBenefits: Array<{
+  title: string;
+  description: string;
+  icon: LucideIcon;
+}> = [
+  {
+    title: "KhÃ¡n giáº£ thá»±c",
+    description: "TÄƒng tiáº¿p cáº­n tá»›i ngÆ°á»i dÃ¹ng Ä‘ang hoáº¡t Ä‘á»™ng trong há»‡ sinh thÃ¡i TaleX.",
+    icon: Eye,
+  },
+  {
+    title: "AI Target chuáº©n xÃ¡c",
+    description: "PhÃ¢n phá»‘i ná»™i dung theo thá»ƒ loáº¡i, hÃ nh vi Ä‘á»c/xem vÃ  lá»‹ch sá»­ tÆ°Æ¡ng tÃ¡c.",
+    icon: Zap,
+  },
+  {
+    title: "Thá»‘ng kÃª thá»i gian thá»±c",
+    description: "Theo dÃµi lÆ°á»£t xem, lÆ°á»£t thÃ­ch vÃ  hiá»‡u quáº£ tá»«ng gÃ³i ngay trong dashboard.",
+    icon: BarChart3,
+  },
+];
+
+function CampaignPurchaseView() {
+  return (
+    <div className="space-y-8">
+      <section className="overflow-hidden rounded-[28px] border border-white/10 bg-[#121212] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.4)] md:p-8">
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-center">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-yellow-400">
+              Creator Growth
+            </p>
+            <h2 className="mt-4 text-4xl font-black tracking-tight text-zinc-50 md:text-5xl">
+              TaleX Boost
+            </h2>
+            <p className="mt-4 max-w-2xl text-base font-semibold leading-7 text-zinc-400">
+              Äáº©y tÃ¡c pháº©m cá»§a báº¡n tá»›i Ä‘Ãºng nhÃ³m Ä‘á»™c giáº£ vÃ  khÃ¡n giáº£ tiá»m nÄƒng,
+              tÄƒng tá»‘c lÆ°á»£t xem, lÆ°á»£t thÃ­ch vÃ  cÆ¡ há»™i xuáº¥t hiá»‡n trÃªn cÃ¡c khu vá»±c Ä‘á» xuáº¥t.
+            </p>
+          </div>
+
+          <div className="relative flex flex-col justify-between gap-5 rounded-2xl border border-yellow-400/20 bg-[#1A1A1A] p-5 shadow-inner sm:flex-row sm:items-center">
+            <div className="flex min-w-0 flex-1 items-center gap-4">
+              <div
+                className="h-16 w-12 shrink-0 rounded-lg border border-white/10 bg-cover bg-center object-cover shadow-[0_12px_30px_rgba(0,0,0,0.35)] sm:h-20 sm:w-14"
+                style={{
+                  backgroundImage:
+                    "linear-gradient(160deg, rgba(250,204,21,0.18), rgba(8,47,73,0.7)), url('https://images.unsplash.com/photo-1518709268805-4e9042af2176?auto=format&fit=crop&w=400&q=80')",
+                }}
+              />
+              <div className="min-w-0 flex-1">
+                <p className="mb-1 truncate text-xs font-semibold text-zinc-400">
+                  Báº¡n Ä‘ang chá»n Ä‘áº©y tÆ°Æ¡ng tÃ¡c cho:
+                </p>
+                <h3 className="truncate text-base font-black text-zinc-50 sm:text-lg">
+                  The Lost Horizon
+                </h3>
+                <p className="mt-0.5 truncate text-xs font-bold text-yellow-400 sm:text-sm">
+                  Season 1 . Fantasy Adventure
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              className="mt-2 flex w-full shrink-0 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-xs font-bold text-zinc-300 transition-colors hover:bg-white/10 hover:text-yellow-400 sm:mt-0 sm:w-auto"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Äá»•i ná»™i dung
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section className="grid grid-cols-1 gap-8 md:grid-cols-3">
+        {campaignPlans.map((plan) => {
+          const Icon = plan.icon;
+          const content = (
+            <div className="relative flex h-full w-full flex-col overflow-hidden rounded-2xl bg-[#121212] p-6">
+              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-yellow-400/[0.03] to-transparent" />
+              {plan.popular && (
+                <div className="absolute left-1/2 top-3 z-10 -translate-x-1/2 rounded-full bg-yellow-400 px-4 py-1.5 text-xs font-black uppercase tracking-[0.12em] text-black shadow-[0_0_24px_rgba(250,204,21,0.25)]">
+                  Phá»• biáº¿n nháº¥t
+                </div>
+              )}
+
+              <div className="relative z-10">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-white/[0.04]">
+                  <Icon className={cx("h-6 w-6 transition-transform", plan.iconClass)} />
+                </div>
+                <h3 className={cx("text-xl font-black text-zinc-50", plan.popular ? "mt-8" : "mt-5")}>
+                  {plan.name}
+                </h3>
+                <p className="mt-3 min-h-12 text-sm font-semibold leading-6 text-zinc-400">
+                  {plan.description}
+                </p>
+                <div className="mt-6 flex items-end gap-2">
+                  <span className="text-3xl font-black tracking-tight text-zinc-50">
+                    {plan.price}
+                  </span>
+                </div>
+              </div>
+
+              <ul className="relative z-10 mt-7 flex-1 space-y-4">
+                {plan.benefits.map((benefit) => (
+                  <li
+                    key={benefit}
+                    className="flex items-start gap-3 text-sm font-bold leading-6 text-zinc-300"
+                  >
+                    <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-yellow-400" />
+                    {benefit}
+                  </li>
+                ))}
+              </ul>
+
+              <button
+                type="button"
+                className={cx(
+                  "relative z-10 mt-8 h-12 rounded-xl text-sm font-black transition",
+                  plan.popular
+                    ? "bg-yellow-400 text-black shadow-[0_4px_20px_rgba(250,204,21,0.18)] hover:bg-yellow-300 hover:shadow-[0_0_20px_rgba(250,204,21,0.4)]"
+                    : "border border-yellow-400/30 bg-yellow-400/5 text-yellow-400 hover:bg-yellow-400 hover:text-black",
+                )}
+              >
+                Mua GÃ³i NÃ y
+              </button>
+            </div>
+          );
+
+          if (plan.popular) {
+            return (
+              <div
+                key={plan.name}
+                className="group relative overflow-hidden rounded-2xl p-[2px] shadow-[0_0_30px_rgba(250,204,21,0.15)] transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_0_40px_rgba(250,204,21,0.15)] md:scale-105"
+              >
+                <div className="absolute inset-[-100%] bg-[conic-gradient(from_90deg_at_50%_50%,#121212_0%,#FACC15_50%,#121212_100%)] opacity-50 transition-opacity duration-500 animate-[spin_8s_linear_infinite] group-hover:opacity-100" />
+                {content}
+              </div>
+            );
+          }
+
+          return (
+            <div
+              key={plan.name}
+              className="group relative overflow-hidden rounded-2xl border border-white/10 shadow-[0_4px_20px_rgba(0,0,0,0.4)] transition-all duration-500 hover:-translate-y-2 hover:border-yellow-400/40 hover:shadow-[0_0_40px_rgba(250,204,21,0.15)]"
+            >
+              {content}
+            </div>
+          );
+        })}
+      </section>
+
+      <section className="grid gap-4 md:grid-cols-3">
+        {campaignBenefits.map((benefit) => {
+          const Icon = benefit.icon;
+
+          return (
+            <div
+              key={benefit.title}
+              className="group rounded-2xl border border-white/10 bg-[#121212] p-5 shadow-[0_4px_20px_rgba(0,0,0,0.4)] transition-all duration-300 hover:-translate-y-1 hover:border-yellow-400/40"
+            >
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-yellow-400/10 text-yellow-400">
+                <Icon className="h-5 w-5 transition-transform group-hover:scale-110" />
+              </div>
+              <h3 className="mt-4 text-lg font-black text-zinc-50">
+                {benefit.title}
+              </h3>
+              <p className="mt-2 text-sm font-semibold leading-6 text-zinc-400">
+                {benefit.description}
+              </p>
+            </div>
+          );
+        })}
+      </section>
+    </div>
   );
 }
