@@ -1,7 +1,20 @@
-
+﻿
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { PlayCircle, ImagePlus, Video, ShieldAlert, AlertTriangle, Fingerprint } from "lucide-react";
+import { Toaster } from "sonner";
+import { CreatorSeasonsList } from "@/features/creator-dashboard/components/creator-seasons-list";
+import { CreatorEpisodesList } from "@/features/creator-dashboard/components/creator-episodes-list";
+import { CreatorSeriesList } from "@/features/creator-dashboard/components/creator-series-list";
+import { CreatorLayout } from "@/features/creator-dashboard/components/creator-layout";
+import { CreatorStepper, StepState } from "@/features/creator-dashboard/components/creator-stepper";
+import { CoreIdentityStep } from "@/features/creator-dashboard/components/steps/core-identity-step";
+import { SeasonStructureStep } from "@/features/creator-dashboard/components/steps/season-structure-step";
+import { MediaUploadStep } from "@/features/creator-dashboard/components/steps/media-upload-step";
+import { ReadyPublishStep } from "@/features/creator-dashboard/components/steps/ready-publish-step";
+import { FinalReviewStep } from "@/features/creator-dashboard/components/steps/final-review-step";
+
 import {
   useEffect,
   useMemo,
@@ -78,6 +91,8 @@ import {
   type MediaResponse,
   type SeasonResponse,
   type SeriesResponse,
+  getCategories,
+  getTags,
 } from "@/features/creator-dashboard/api/creator-content-api";
 import { uploadImageToS3 } from "@/features/creator-dashboard/api/s3-upload-api";
 import { toast } from "sonner";
@@ -91,7 +106,15 @@ import {
   type CreatorDashboardLayoutView,
 } from "@/features/creator-dashboard/components/creator-dashboard-layout";
 
-type DashboardView = CreatorDashboardLayoutView;
+type DashboardView =
+  | "series"
+  | "seasons"
+  | "episodes"
+  | "create"
+  | "comic"
+  | "video"
+  | "combos"
+  | "publish";
 
 type DashboardRouteState = {
   view: DashboardView;
@@ -186,11 +209,11 @@ type EditModalState =
 
 type EditSubmitState =
   | {
-      kind: "series";
-      value: SeriesRow;
-      coverFile?: File;
-      bannerFile?: File;
-    }
+    kind: "series";
+    value: SeriesRow;
+    coverFile?: File;
+    bannerFile?: File;
+  }
   | { kind: "season"; value: SeasonRow }
   | { kind: "episode"; value: EpisodeRow };
 
@@ -344,6 +367,10 @@ const viewMeta: Record<
     description:
       "Theo dõi tiến độ sản xuất, pipeline kiểm duyệt và lịch xuất bản nội dung.",
   },
+  publish: {
+    title: "Publish",
+    description: "Publish your content",
+  },
 };
 
 function cx(...classes: Array<string | false | null | undefined>) {
@@ -446,7 +473,7 @@ function normalizeAssetUrl(value: string | undefined, fallback = "") {
 }
 
 function subscribeToClientMount() {
-  return () => {};
+  return () => { };
 }
 
 function getClientSnapshot() {
@@ -506,7 +533,7 @@ function getApprovalChipClass(status: ContentApprovalStatus) {
     case "APPROVED":
       return "border-emerald-500/30 bg-emerald-500/10 text-emerald-400";
     case "REJECTED":
-      return "border-red-500/30 bg-red-500/10 text-red-400";
+      return "border-red-500/50 bg-red-500/10 text-red-400";
     default:
       return "border-amber-500/30 bg-amber-500/10 text-amber-400";
   }
@@ -540,8 +567,8 @@ function toDateTimeLocalValue(value?: string) {
 }
 
 function formatMediaStatusLabel(status: MediaStatus) {
-  if (status === "PENDING") return "Đang kiểm duyệt";
-  if (status === "INACTIVE") return "Vi phạm chính sách";
+  if (status === "PENDING") return "Äang kiá»ƒm duyá»‡t";
+  if (status === "INACTIVE") return "Vi pháº¡m chÃ­nh sÃ¡ch";
   if (status === "HLS_PROCESSING") return "Processing";
   if (status === "HLS_READY") return "Ready";
   return formatStatusLabel(status as EpisodeStatus);
@@ -685,6 +712,7 @@ function mapMediaResponseToComicPage(media: MediaResponse): ComicPage {
 }
 
 export function CreatorDashboard() {
+
   const isMounted = useSyncExternalStore(
     subscribeToClientMount,
     getClientSnapshot,
@@ -698,7 +726,55 @@ export function CreatorDashboard() {
   return <CreatorDashboardContent />;
 }
 
+
+function MultiSelectField({ name, options, initialValues }: { name: string, options: { id: string, name: string }[], initialValues: string[] }) {
+  const [selected, setSelected] = useState<string[]>(initialValues);
+
+  const toggle = (id: string) => {
+    setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  return (
+    <div>
+      <input type="hidden" name={name} value={selected.join(',')} />
+      <div className="flex flex-wrap gap-2 mt-2">
+        {options.map(opt => (
+          <button
+            key={opt.id}
+            type="button"
+            onClick={() => toggle(opt.id)}
+            className={`px-3 py-1.5 rounded-md text-sm transition-colors border ${selected.includes(opt.id)
+                ? "bg-creator-gold text-black border-creator-gold font-medium"
+                : "bg-creator-sidebar border-creator-border text-creator-muted hover:border-white/30"
+              }`}
+          >
+            {opt.name}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+
 function CreatorDashboardContent() {
+  const categoriesQuery = useQuery({
+    queryKey: ['categories'],
+    queryFn: async () => {
+      const res = await getCategories();
+      return res.content?.map((c: any) => ({ id: c.categoryId, name: c.categoryName })) || [];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const tagsQuery = useQuery({
+    queryKey: ['tags'],
+    queryFn: async () => {
+      const res = await getTags();
+      return res.content?.map((t: any) => ({ id: t.tagId, name: t.tagName })) || [];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
   usePipelineSSE({ enabled: true });
 
   const queryClient = useQueryClient();
@@ -790,7 +866,7 @@ function CreatorDashboardContent() {
     },
   });
 
-  // Track media status changes → show toast notification
+  // Track media status changes â†’ show toast notification
   const prevMediaStatusRef = useRef<Record<string, string>>({});
   useEffect(() => {
     const mediaList = mediaQuery.data ?? [];
@@ -799,24 +875,24 @@ function CreatorDashboardContent() {
       const oldStatus = prev[media.mediaId];
       if (oldStatus && oldStatus !== media.status) {
         if (media.status === "ACTIVE" && (oldStatus === "PENDING" || oldStatus === "HLS_READY")) {
-          const type = media.mediaType === "IMAGE" ? "Ảnh" : "Video";
-          toast.success(`${type} đã được xuất bản`, {
-            description: `Nội dung đã qua kiểm duyệt thành công và hiện đang hiển thị trên nền tảng TaleX.`,
+          const type = media.mediaType === "IMAGE" ? "áº¢nh" : "Video";
+          toast.success(`${type} Ä‘Ã£ Ä‘Æ°á»£c xuáº¥t báº£n`, {
+            description: `Ná»™i dung Ä‘Ã£ qua kiá»ƒm duyá»‡t thÃ nh cÃ´ng vÃ  hiá»‡n Ä‘ang hiá»ƒn thá»‹ trÃªn ná»n táº£ng TaleX.`,
             duration: 10000,
           });
         } else if (media.status === "INACTIVE" && oldStatus === "PENDING") {
-          toast.error("Nội dung không đạt kiểm duyệt", {
-            description: "Nội dung vi phạm chính sách nền tảng và đã bị tạm ẩn. Vui lòng xem chi tiết vi phạm để chỉnh sửa.",
+          toast.error("Ná»™i dung khÃ´ng Ä‘áº¡t kiá»ƒm duyá»‡t", {
+            description: "Ná»™i dung vi pháº¡m chÃ­nh sÃ¡ch ná»n táº£ng vÃ  Ä‘Ã£ bá»‹ táº¡m áº©n. Vui lÃ²ng xem chi tiáº¿t vi pháº¡m Ä‘á»ƒ chá»‰nh sá»­a.",
             duration: 15000,
           });
         } else if (media.status === "FAILED") {
-          toast.error("Xử lý nội dung thất bại", {
-            description: media.errorMessage || "Đã xảy ra lỗi trong quá trình xử lý. Vui lòng thử đăng tải lại hoặc liên hệ hỗ trợ.",
+          toast.error("Xá»­ lÃ½ ná»™i dung tháº¥t báº¡i", {
+            description: media.errorMessage || "ÄÃ£ xáº£y ra lá»—i trong quÃ¡ trÃ¬nh xá»­ lÃ½. Vui lÃ²ng thá»­ Ä‘Äƒng táº£i láº¡i hoáº·c liÃªn há»‡ há»— trá»£.",
             duration: 10000,
           });
         } else if (media.status === "PENDING" && oldStatus === "HLS_PROCESSING") {
-          toast.info("Đang kiểm duyệt nội dung", {
-            description: "Hệ thống đang kiểm tra bản quyền và nội dung. Quá trình này có thể mất vài phút.",
+          toast.info("Äang kiá»ƒm duyá»‡t ná»™i dung", {
+            description: "Há»‡ thá»‘ng Ä‘ang kiá»ƒm tra báº£n quyá»n vÃ  ná»™i dung. QuÃ¡ trÃ¬nh nÃ y cÃ³ thá»ƒ máº¥t vÃ i phÃºt.",
             duration: 5000,
           });
         }
@@ -830,8 +906,8 @@ function CreatorDashboardContent() {
   const existingMediaPages = useMemo(
     () =>
       (mediaQuery.data ?? [])
-      .filter((media) => media.mediaType === "IMAGE" && !media.isDeleted)
-      .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0))
+        .filter((media) => media.mediaType === "IMAGE" && !media.isDeleted)
+        .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0))
         .map(mapMediaResponseToComicPage),
     [mediaQuery.data],
   );
@@ -1528,6 +1604,17 @@ function CreatorDashboardContent() {
     if (episode.contentType === "COMIC") {
       setComicPages([]);
     }
+
+    if (episode.status === "PUBLISHED") {
+      setDashboardRouteState({
+        view: "publish",
+        seriesId: selectedSeries?.id ?? selectedSeriesId,
+        seasonId: episode.seasonId,
+        episodeId: episode.id,
+      });
+      return;
+    }
+
     setDashboardRouteState({
       view: episode.contentType === "COMIC" ? "comic" : "video",
       seriesId: selectedSeries?.id ?? selectedSeriesId,
@@ -1645,302 +1732,234 @@ function CreatorDashboardContent() {
     deleteMediaMutation.mutate(deleteModal.value);
   }
 
-  function handleLayoutNavigate(view: DashboardView) {
-    setUploadMessage(null);
+  // ===== NEW CREATOR DASHBOARD UI =====
+  const stepperSteps = [
+    { id: "core", label: "Series", state: (activeView === "create" || activeView === "series") ? "current" : (["seasons", "episodes", "comic", "video", "publish"].includes(activeView) ? "completed" : "upcoming") as any },
+    { id: "structure", label: "Season", state: activeView === "seasons" ? "current" : (["episodes", "comic", "video", "publish"].includes(activeView) ? "completed" : "upcoming") as any },
+    { id: "content", label: "Episode", state: activeView === "episodes" ? "current" : (["comic", "video", "publish"].includes(activeView) ? "completed" : "upcoming") as any },
+    { id: "moderation", label: "Media", state: (activeView === "comic" || activeView === "video") ? "current" : (activeView === "publish" ? "completed" : "upcoming") as any },
+    { id: "publishing", label: "Publishing", state: activeView === "publish" ? "current" : "upcoming" as any },
+  ];
 
-    if (view === "series") {
-      openSeriesManagement();
-      return;
-    }
-
-    if (view === "create") {
-      openCreateSeries();
-      return;
-    }
-
-    clearUploadDrafts();
-    setDashboardRouteState({
-      view,
-      seriesId: "",
-      seasonId: "",
-      episodeId: "",
-    });
-  }
+  const isSeriesFlow = ["series", "create", "seasons", "episodes", "comic", "video", "publish"].includes(activeView);
 
   return (
     <>
-      <CreatorDashboardLayout
-        activeView={activeView}
-        title={viewMeta[activeView].title}
-        description={viewMeta[activeView].description}
-        onNavigate={handleLayoutNavigate}
-      >
-        <section className="min-w-0">
-          {uploadMessage && activeView !== "comic" && activeView !== "video" && (
-            <div className="mb-6 rounded-2xl border border-yellow-400/20 bg-[#161616] px-4 py-3 text-sm font-bold text-zinc-300">
-              {uploadMessage}
-            </div>
-          )}
+      <CreatorLayout activeView={activeView} onNavigate={(view) => { clearUploadDrafts(); setDashboardRouteState({ view: view as any, seriesId: "", seasonId: "", episodeId: "" }); }}>
+        <div className="w-full">
+          {isSeriesFlow && <CreatorStepper steps={stepperSteps} />}
 
-          {activeView === "series" && (
-            <SeriesManagementView
-              rows={displaySeriesRows}
-              isLoading={seriesQuery.isLoading}
-              onCreateSeries={openCreateSeries}
-              onSelectSeries={openSeriesSeasons}
-              onUpdateSeries={handleUpdateSeries}
-              onDeleteSeries={handleDeleteSeries}
-              onHideSeries={(series) => hideSeriesMutation.mutate(series)}
-              onUnhideSeries={(series) => unhideSeriesMutation.mutate(series)}
-            />
-          )}
-
-          {activeView === "seasons" && selectedSeries && (
-            <SeasonManagementView
-              selectedSeries={selectedSeries}
-              seasons={displaySeasonRows}
-              isLoading={seasonsQuery.isLoading}
-              onBack={openSeriesManagement}
-              onSelectSeason={openSeasonEpisodes}
-              onCreateSeason={handleCreateSeason}
-              isCreatingSeason={createSeasonMutation.isPending}
-              onUpdateSeason={handleUpdateSeason}
-              onDeleteSeason={handleDeleteSeason}
-              onHideSeason={(season) => hideSeasonMutation.mutate(season)}
-              onUnhideSeason={(season) => unhideSeasonMutation.mutate(season)}
-            />
-          )}
-
-          {activeView === "seasons" &&
-            !selectedSeries &&
-            isRestoringSeriesSelection && (
-              <SelectionStatePanel
-                title="Loading selected series..."
-                description="Loading data for the selected series."
+          <div className="mt-4 pb-20">
+            {activeView === "series" ? (
+              <CreatorSeriesList
+                seriesList={displaySeriesRows}
+                onSelect={(seriesId) => {
+                  setSelectedSeriesId(seriesId);
+                  setDashboardRouteState({ view: "seasons", seriesId, seasonId: "", episodeId: "" });
+                }}
+                onCreate={() => openCreateSeries()}
+                onEdit={(series) => {
+                  setSelectedSeriesId(series.id);
+                  handleUpdateSeries(series);
+                }}
+                onDelete={handleDeleteSeries}
               />
-            )}
-
-          {activeView === "seasons" &&
-            !selectedSeries &&
-            !isRestoringSeriesSelection && (
-              <SelectionStatePanel
-                title="No series selected."
-                description="Create or select a series before managing seasons."
+            ) : activeView === "create" ? (
+              <CoreIdentityStep
+                initialData={{
+                  title: selectedSeries?.title,
+                  description: selectedSeries?.description,
+                  contentType: selectedSeries?.contentType || "COMIC",
+                  visibility: selectedSeries?.visibility || "PUBLIC",
+                  ageRating: selectedSeries?.ageRating || "EVERYONE",
+                  language: selectedSeries?.language || "vi",
+                  categoryIds: selectedSeries?.categoryIds || [],
+                  tagIds: selectedSeries?.tagIds || [],
+                  coverUrl: selectedSeries?.coverUrl,
+                  bannerUrl: selectedSeries?.bannerUrl,
+                }}
+                categories={categoriesQuery.data || []}
+                tags={tagsQuery.data || []}
+                onSave={(data) => {
+                  if (!selectedSeriesId || activeView === "create" && !selectedSeries) {
+                    createSeriesMutation.mutate(data as any);
+                  } else if (selectedSeries) {
+                    handleSubmitEdit({ kind: "series", value: { ...selectedSeries, ...data } as any, coverFile: data.coverFile, bannerFile: data.bannerFile });
+                  }
+                }}
+                onCancel={() => openSeriesManagement()}
               />
-            )}
-
-          {activeView === "episodes" && selectedSeries && selectedSeason && (
-            <EpisodeManagementView
-              selectedSeries={selectedSeries}
-              selectedSeason={selectedSeason}
-              episodes={displayEpisodeRows}
-              isLoading={episodesQuery.isLoading}
-              onBack={() =>
-                setDashboardRouteState({
-                  view: "seasons",
-                  seriesId: selectedSeries.id,
-                  seasonId: "",
-                  episodeId: "",
-                })
-              }
-              onCreateEpisode={() => createEpisodeMutation.mutate()}
-              isCreatingEpisode={createEpisodeMutation.isPending}
-              onOpenUpload={openEpisodeUpload}
-              onUpdateEpisode={handleUpdateEpisode}
-              onDeleteEpisode={handleDeleteEpisode}
-            />
-          )}
-
-          {activeView === "episodes" &&
-            (!selectedSeries || !selectedSeason) &&
-            (isRestoringSeriesSelection || isRestoringSeasonSelection) && (
-              <SelectionStatePanel
-                title="Loading selected season..."
-                description="Loading data for the selected season."
+            ) : activeView === "seasons" ? (
+              <CreatorSeasonsList
+                seasons={displaySeasonRows}
+                onSelect={(seasonId) => {
+                  setSelectedSeasonId(seasonId);
+                  setDashboardRouteState({ view: "episodes", seriesId: selectedSeriesId, seasonId, episodeId: "" });
+                }}
+                onCreate={() => createSeasonMutation.mutate()}
+                onEdit={(season) => handleUpdateSeason(season)}
+                onDelete={handleDeleteSeason}
+                onBack={() => setDashboardRouteState({ view: "series", seriesId: "", seasonId: "", episodeId: "" })}
               />
-            )}
-
-          {activeView === "episodes" &&
-            (!selectedSeries || !selectedSeason) &&
-            !isRestoringSeriesSelection &&
-            !isRestoringSeasonSelection && (
-              <SelectionStatePanel
-                title="No season selected."
-                description="Create or select a season before managing episodes."
+            ) : activeView === "episodes" ? (
+              (selectedSeries && selectedSeason ? (
+                <EpisodeManagementView
+                  selectedSeries={selectedSeries}
+                  selectedSeason={selectedSeason}
+                  episodes={displayEpisodeRows}
+                  isLoading={episodesQuery.isLoading}
+                  onBack={() => setDashboardRouteState({ view: "seasons", seriesId: selectedSeries.id, seasonId: "", episodeId: "" })}
+                  onCreateEpisode={() => createEpisodeMutation.mutate()}
+                  isCreatingEpisode={createEpisodeMutation.isPending}
+                  onOpenUpload={openEpisodeUpload}
+                  onUpdateEpisode={handleUpdateEpisode}
+                  onDeleteEpisode={handleDeleteEpisode}
+                />
+              ) : (
+                <div className="p-8 text-white flex flex-col items-center justify-center min-h-[50vh]">
+                  <h2 className="text-xl font-bold mb-4">No season selected.</h2>
+                </div>
+              ))
+            ) : activeView === "comic" ? (
+              (selectedSeries && selectedSeason && selectedEpisode ? (
+                <ComicUploadView
+                  selectedSeries={selectedSeries}
+                  selectedSeason={selectedSeason}
+                  selectedEpisode={selectedEpisode}
+                  pages={displayComicPages}
+                  draggingPageId={draggingPageId}
+                  onDragStart={setDraggingPageId}
+                  onDragEnd={() => setDraggingPageId(null)}
+                  onDropPage={movePage}
+                  onMovePage={movePageByOffset}
+                  onFilesSelected={handleComicFilesSelected}
+                  isUploading={saveComicPagesMutation.isPending}
+                  onSaveOrder={() => saveComicPagesMutation.mutate()}
+                  isSavingOrder={saveComicPagesMutation.isPending}
+                  onDeletePage={handleDeleteComicPage}
+                  isLoadingMedia={mediaQuery.isLoading}
+                  uploadMessage={uploadMessage}
+                  onSaveEpisode={(episode) => updateEpisodeMutation.mutate(episode)}
+                  isSavingEpisode={updateEpisodeMutation.isPending}
+                  onGoToPublishing={() => setDashboardRouteState({ view: "publish", seriesId: selectedSeries.id, seasonId: selectedSeason.id, episodeId: selectedEpisode.id })}
+                  canSchedulePublish={hasApprovedComicMedia}
+                  onSchedulePublish={(episode) => handleSchedulePublish({ kind: "episode", value: episode })}
+                  onHideEpisode={(episode) => hideEpisodeMutation.mutate(episode)}
+                  onUnhideEpisode={(episode) => unhideEpisodeMutation.mutate(episode)}
+                  isHidingEpisode={hideEpisodeMutation.isPending || unhideEpisodeMutation.isPending}
+                  onCancelSchedule={(episode) => cancelScheduleMutation.mutate(episode.id)}
+                  isCancelingSchedule={cancelScheduleMutation.isPending}
+                  onPublishNow={(episode) => publishEpisodeMutation.mutate(episode.id)}
+                  isPublishingNow={publishEpisodeMutation.isPending}
+                  onBack={() => setDashboardRouteState({ view: "episodes", seriesId: selectedSeries.id, seasonId: selectedSeason.id, episodeId: "" })}
+                />
+              ) : (
+                <div className="p-8 text-white flex flex-col items-center justify-center min-h-[50vh]">
+                  <h2 className="text-xl font-bold mb-4">No episode selected.</h2>
+                </div>
+              ))
+            ) : activeView === "video" ? (
+              (selectedSeries && selectedSeason && selectedEpisode ? (
+                <VideoUploadView
+                  selectedSeries={selectedSeries}
+                  selectedSeason={selectedSeason}
+                  selectedEpisode={selectedEpisode}
+                  videos={existingVideoMedia}
+                  isLoadingMedia={mediaQuery.isLoading}
+                  uploadMessage={uploadMessage}
+                  onUploadCompleted={handleVideoUploadCompleted}
+                  onDeleteVideo={handleDeleteVideo}
+                  onSaveEpisode={(episode) => updateEpisodeMutation.mutate(episode)}
+                  isSavingEpisode={updateEpisodeMutation.isPending}
+                  onGoToPublishing={() => setDashboardRouteState({ view: "publish", seriesId: selectedSeries.id, seasonId: selectedSeason.id, episodeId: selectedEpisode.id })}
+                  accountId={accountId}
+                  onSchedulePublish={(episode) => handleSchedulePublish({ kind: "episode", value: episode })}
+                  onHideEpisode={(episode) => hideEpisodeMutation.mutate(episode)}
+                  onUnhideEpisode={(episode) => unhideEpisodeMutation.mutate(episode)}
+                  isHidingEpisode={hideEpisodeMutation.isPending || unhideEpisodeMutation.isPending}
+                  onCancelSchedule={(episode) => cancelScheduleMutation.mutate(episode.id)}
+                  isCancelingSchedule={cancelScheduleMutation.isPending}
+                  onPublishNow={(episode) => publishEpisodeMutation.mutate(episode.id)}
+                  isPublishingNow={publishEpisodeMutation.isPending}
+                  onBack={() => setDashboardRouteState({ view: "episodes", seriesId: selectedSeries.id, seasonId: selectedSeason.id, episodeId: "" })}
+                />
+              ) : (
+                <div className="p-8 text-white flex flex-col items-center justify-center min-h-[50vh]">
+                  <h2 className="text-xl font-bold mb-4">No episode selected.</h2>
+                </div>
+              ))
+            ) : activeView === "publish" as any ? (
+              <FinalReviewStep
+                mediaUrl={existingVideoMedia[0]?.fileUrl || existingVideoMedia[0]?.originalUrl || displayComicPages[0]?.image || ""}
+                isPublishing={publishEpisodeMutation.isPending}
+                onPublish={() => publishEpisodeMutation.mutate(selectedEpisodeId)}
+                onSchedulePublish={() => handleSchedulePublish({ kind: "episode", value: selectedEpisode! })}
+                onSaveDraft={() => openSeriesManagement()}
+                onBack={() => {
+                  if (selectedEpisode?.status === "PUBLISHED") {
+                    setDashboardRouteState({ view: "episodes", seriesId: selectedSeriesId, seasonId: selectedSeasonId, episodeId: "" });
+                  } else {
+                    setDashboardRouteState({ view: selectedEpisode?.contentType === "COMIC" ? "comic" : "video", seriesId: selectedSeriesId, seasonId: selectedSeasonId, episodeId: selectedEpisodeId });
+                  }
+                }}
+                selectedEpisode={selectedEpisode}
+                onSaveEpisode={(episode) => updateEpisodeMutation.mutate(episode)}
+                isSavingEpisode={updateEpisodeMutation.isPending}
+                onHideEpisode={(episode) => hideEpisodeMutation.mutate(episode)}
+                isHidingEpisode={hideEpisodeMutation.isPending}
               />
+            ) : activeView === "combos" ? (
+              <ComboManagementView />
+            ) : (
+              <div className="p-8 text-white flex flex-col items-center justify-center min-h-[50vh]">
+                <h2 className="text-xl font-bold mb-4">View not mapped yet ({activeView})</h2>
+                <button
+                  onClick={openSeriesManagement}
+                  className="px-6 py-2 bg-creator-gold text-black rounded"
+                >
+                  Back to Dashboard
+                </button>
+              </div>
             )}
+          </div>
+        </div>
+      </CreatorLayout>
 
-          {activeView === "create" && (
-            <CreateSeriesView
-              contentType={contentType}
-              onContentTypeChange={setContentType}
-              onSubmit={(input) => createSeriesMutation.mutate(input)}
-              isSubmitting={createSeriesMutation.isPending}
-            />
-          )}
+      {editModal && (
+        <EditEntityModal
+          modal={editModal}
+          isSaving={updateSeriesMutation.isPending || updateSeasonMutation.isPending || updateEpisodeMutation.isPending}
+          uploadMessage={uploadMessage}
+          onClose={() => setEditModal(null)}
+          onSubmit={handleSubmitEdit}
+          categories={categoriesQuery.data || []}
+          tags={tagsQuery.data || []}
+        />
+      )}
 
-          {activeView === "comic" && selectedEpisode && (
-            <ComicUploadView
-              selectedSeries={selectedSeries}
-              selectedSeason={selectedSeason}
-              selectedEpisode={selectedEpisode}
-              pages={displayComicPages}
-              draggingPageId={draggingPageId}
-              onDragStart={setDraggingPageId}
-              onDragEnd={() => setDraggingPageId(null)}
-              onDropPage={movePage}
-              onMovePage={movePageByOffset}
-              onFilesSelected={handleComicFilesSelected}
-              isUploading={saveComicPagesMutation.isPending}
-              onSaveOrder={() => saveComicPagesMutation.mutate()}
-              isSavingOrder={saveComicPagesMutation.isPending}
-              onDeletePage={handleDeleteComicPage}
-              isLoadingMedia={mediaQuery.isLoading}
-              uploadMessage={uploadMessage}
-              onSaveEpisode={(episode) => updateEpisodeMutation.mutate(episode)}
-              isSavingEpisode={updateEpisodeMutation.isPending}
-              canSchedulePublish={hasApprovedComicMedia}
-              onSchedulePublish={(episode) =>
-                handleSchedulePublish({ kind: "episode", value: episode })
-              }
-              onHideEpisode={(episode) => hideEpisodeMutation.mutate(episode)}
-              onUnhideEpisode={(episode) => unhideEpisodeMutation.mutate(episode)}
-              isHidingEpisode={hideEpisodeMutation.isPending || unhideEpisodeMutation.isPending}
-              onCancelSchedule={(episode) => cancelScheduleMutation.mutate(episode.id)}
-              isCancelingSchedule={cancelScheduleMutation.isPending}
-              onPublishNow={(episode) => publishEpisodeMutation.mutate(episode.id)}
-              isPublishingNow={publishEpisodeMutation.isPending}
-              onBack={() =>
-                setDashboardRouteState({
-                  view: "episodes",
-                  seriesId: selectedSeries?.id ?? selectedSeriesId,
-                  seasonId: selectedSeason?.id ?? selectedSeasonId,
-                  episodeId: "",
-                })
-              }
-            />
-          )}
+      {deleteModal && (
+        <DeleteEntityModal
+          modal={deleteModal}
+          isDeleting={deleteSeriesMutation.isPending || deleteSeasonMutation.isPending || deleteEpisodeMutation.isPending || deleteMediaMutation.isPending}
+          onClose={() => setDeleteModal(null)}
+          onConfirm={handleConfirmDelete}
+        />
+      )}
 
-          {activeView === "comic" &&
-            !selectedEpisode &&
-            isRestoringEpisodeSelection && (
-              <SelectionStatePanel
-                title="Loading selected episode..."
-                description="Loading data for the selected episode."
-              />
-            )}
-
-          {activeView === "comic" &&
-            !selectedEpisode &&
-            !isRestoringEpisodeSelection && (
-              <SelectionStatePanel
-                title="No episode selected."
-                description="Create or select an episode before uploading comic pages."
-              />
-            )}
-
-          {activeView === "video" && selectedEpisode && (
-            <VideoUploadView
-              selectedSeries={selectedSeries}
-              selectedSeason={selectedSeason}
-              selectedEpisode={selectedEpisode}
-              videos={existingVideoMedia}
-              isLoadingMedia={mediaQuery.isLoading}
-              uploadMessage={uploadMessage}
-              onUploadCompleted={handleVideoUploadCompleted}
-              onDeleteVideo={handleDeleteVideo}
-              onSaveEpisode={(episode) => updateEpisodeMutation.mutate(episode)}
-              isSavingEpisode={updateEpisodeMutation.isPending}
-              accountId={accountId}
-              onSchedulePublish={(episode) =>
-                handleSchedulePublish({ kind: "episode", value: episode })
-              }
-              onHideEpisode={(episode) => hideEpisodeMutation.mutate(episode)}
-              onUnhideEpisode={(episode) => unhideEpisodeMutation.mutate(episode)}
-              isHidingEpisode={hideEpisodeMutation.isPending || unhideEpisodeMutation.isPending}
-              onCancelSchedule={(episode) => cancelScheduleMutation.mutate(episode.id)}
-              isCancelingSchedule={cancelScheduleMutation.isPending}
-              onPublishNow={(episode) => publishEpisodeMutation.mutate(episode.id)}
-              isPublishingNow={publishEpisodeMutation.isPending}
-              onBack={() =>
-                setDashboardRouteState({
-                  view: "episodes",
-                  seriesId: selectedSeries?.id ?? selectedSeriesId,
-                  seasonId: selectedSeason?.id ?? selectedSeasonId,
-                  episodeId: "",
-                })
-              }
-            />
-          )}
-
-          {activeView === "video" &&
-            !selectedEpisode &&
-            isRestoringEpisodeSelection && (
-              <SelectionStatePanel
-                title="Loading selected episode..."
-                description="Loading data for the selected episode."
-              />
-            )}
-
-          {activeView === "video" &&
-            !selectedEpisode &&
-            !isRestoringEpisodeSelection && (
-              <SelectionStatePanel
-                title="No episode selected."
-                description="Create or select an episode before uploading video."
-              />
-            )}
-
-          {activeView === "combos" && <ComboManagementView />}
-
-          {activeView === "campaign" && <CampaignPurchaseView />}
-
-          {(activeView === "dashboard" ||
-            activeView === "analytics" ||
-            activeView === "revenue" ||
-            activeView === "production") && (
-            <CreatorPlaceholderView view={activeView} />
-          )}
-        </section>
-      </CreatorDashboardLayout>
-      <EditEntityModal
-        key={editModal ? `${editModal.kind}-${editModal.value.id}` : "closed"}
-        modal={editModal}
-        isSaving={
-          updateSeriesMutation.isPending ||
-          updateSeasonMutation.isPending ||
-          updateEpisodeMutation.isPending
-        }
-        uploadMessage={uploadMessage}
-        onClose={() => setEditModal(null)}
-        onSubmit={handleSubmitEdit}
-      />
-      <SchedulePublishModal
-        modal={scheduleModal}
-        isSaving={schedulePublishMutation.isPending}
-        onClose={() => setScheduleModal(null)}
-        onSubmit={(scheduledPublishAt) => {
-          if (!scheduleModal) {
-            return;
+      {scheduleModal && (
+        <SchedulePublishModal
+          modal={scheduleModal}
+          isSaving={schedulePublishMutation.isPending}
+          onClose={() => setScheduleModal(null)}
+          onSubmit={(date: string) =>
+            schedulePublishMutation.mutate({
+              target: scheduleModal,
+              scheduledPublishAt: date,
+            })
           }
-
-          schedulePublishMutation.mutate({
-            target: scheduleModal,
-            scheduledPublishAt,
-          });
-        }}
-      />
-      <DeleteEntityModal
-        modal={deleteModal}
-        isDeleting={
-          deleteSeriesMutation.isPending ||
-          deleteSeasonMutation.isPending ||
-          deleteEpisodeMutation.isPending ||
-          deleteMediaMutation.isPending
-        }
-        onClose={() => setDeleteModal(null)}
-        onConfirm={handleConfirmDelete}
-      />
+        />
+      )}
+      <Toaster position="top-center" />
     </>
   );
 }
@@ -1951,12 +1970,16 @@ function EditEntityModal({
   uploadMessage,
   onClose,
   onSubmit,
+  categories,
+  tags,
 }: {
   modal: EditModalState;
   isSaving: boolean;
   uploadMessage: string | null;
   onClose: () => void;
   onSubmit: (nextValue: EditSubmitState) => void;
+  categories: { id: string; name: string }[];
+  tags: { id: string; name: string }[];
 }) {
   const [coverFile, setCoverFile] = useState<File | undefined>();
   const [bannerFile, setBannerFile] = useState<File | undefined>();
@@ -1966,9 +1989,9 @@ function EditEntityModal({
   }
 
   const controlClass =
-    "h-11 w-full rounded-xl border border-white/10 bg-[#1A1A1A] px-3 text-sm font-semibold text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-yellow-400/50 focus:ring-4 focus:ring-yellow-400/10";
+    "h-11 w-full rounded-xl border border-creator-border bg-creator-bg px-3 text-sm font-semibold outline-none focus:border-creator-gold focus:bg-creator-bg text-white";
   const textareaClass =
-    "min-h-24 w-full resize-none rounded-xl border border-white/10 bg-[#1A1A1A] p-3 text-sm font-semibold text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-yellow-400/50 focus:ring-4 focus:ring-yellow-400/10";
+    "min-h-24 w-full resize-none rounded-xl border border-creator-border bg-creator-bg p-3 text-sm font-semibold outline-none focus:border-creator-gold focus:bg-creator-bg text-white";
 
   function handleSeriesSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -2072,150 +2095,60 @@ function EditEntityModal({
         ? "Cập nhật Mùa"
         : "Cập nhật Tập";
 
+
+  if (modal.kind === "series") {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 px-4 py-6 overflow-y-auto">
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="relative w-full max-w-7xl rounded-[24px] border border-creator-border bg-creator-bg shadow-[0_30px_90px_rgba(15,23,42,0.25)]"
+        >
+          <div className="sticky top-0 z-10 flex justify-between items-center bg-creator-bg p-6 pb-2 border-b border-creator-border rounded-t-[24px]">
+            <h2 className="text-2xl font-bold text-white">Update Series</h2>
+            <button
+              onClick={onClose}
+              type="button"
+              className="rounded-full bg-creator-sidebar p-2 text-creator-muted transition-colors hover:bg-slate-700 hover:text-white"
+            >
+              <X size={20} />
+            </button>
+          </div>
+          <div className="p-6 overflow-y-auto max-h-[80vh]">
+            <CoreIdentityStep
+              isUpdate={true}
+              initialData={{
+                title: modal.value.title,
+                description: modal.value.description,
+                contentType: modal.value.contentType,
+                visibility: modal.value.visibility,
+                ageRating: modal.value.ageRating,
+                language: modal.value.language,
+                categoryIds: modal.value.categoryIds,
+                tagIds: modal.value.tagIds,
+                coverUrl: modal.value.coverUrl,
+                bannerUrl: modal.value.bannerUrl,
+              }}
+              categories={categories}
+              tags={tags}
+              onCancel={onClose}
+              onSave={(data) => {
+                onSubmit({
+                  kind: "series",
+                  value: { ...modal.value, ...data } as any,
+                  coverFile: data.coverFile,
+                  bannerFile: data.bannerFile
+                });
+              }}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <ModalShell title={title} subtitle="Chỉnh sửa thông tin và lưu thay đổi." onClose={onClose}>
-      {modal.kind === "series" && (
-        <form onSubmit={handleSeriesSubmit} className="space-y-5">
-          {uploadMessage && (
-            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm font-bold text-amber-300">
-              {uploadMessage}
-            </div>
-          )}
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <Field label="Loại nội dung" required>
-              <select
-                name="contentType"
-                defaultValue={modal.value.contentType}
-                className={controlClass}
-              >
-                <option value="COMIC">COMIC</option>
-                <option value="VIDEO">VIDEO</option>
-              </select>
-            </Field>
-          </div>
-
-          <Field label="Tiêu đề" required>
-            <input
-              name="title"
-              required
-              defaultValue={modal.value.title}
-              className={controlClass}
-            />
-          </Field>
-
-          <Field label="Mô tả">
-            <textarea
-              name="description"
-              defaultValue={modal.value.description}
-              className={textareaClass}
-            />
-          </Field>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <Field label="Cover URL">
-              <input
-                name="coverUrl"
-                defaultValue={modal.value.coverUrl}
-                className={controlClass}
-              />
-            </Field>
-            <Field label="Banner URL">
-              <input
-                name="bannerUrl"
-                defaultValue={modal.value.bannerUrl}
-                className={controlClass}
-              />
-            </Field>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <ArtworkUploadField
-              title="Thay ảnh bìa"
-              helper="Ảnh mới không bắt buộc"
-              file={coverFile}
-              onFileChange={setCoverFile}
-            />
-            <ArtworkUploadField
-              title="Thay banner"
-              helper="Ảnh mới không bắt buộc"
-              file={bannerFile}
-              onFileChange={setBannerFile}
-            />
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <Field label="Trạng thái">
-              <input
-                value={formatStatusLabel(modal.value.status)}
-                readOnly
-                className={controlClass}
-              />
-            </Field>
-            <Field label="Hiển thị">
-              <select
-                name="visibility"
-                defaultValue={modal.value.visibility}
-                className={controlClass}
-              >
-                <option value="PUBLIC">Công khai</option>
-                <option value="PRIVATE">Riêng tư</option>
-              </select>
-            </Field>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <Field label="Độ tuổi">
-              <input
-                name="ageRating"
-                defaultValue={modal.value.ageRating}
-                className={controlClass}
-              />
-            </Field>
-            <Field label="Ngôn ngữ">
-              <select
-                name="language"
-                defaultValue={modal.value.language}
-                className={controlClass}
-              >
-                <option value="vi">Tiếng Việt</option>
-                <option value="en">Tiếng Anh</option>
-              </select>
-            </Field>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <Field label="Thể loại (Genres)">
-              <select
-                name="categoryIds"
-                defaultValue={modal.value.categoryIds[0] ?? ""}
-                className={controlClass}
-              >
-                <option value="">Chọn thể loại</option>
-                <option value="action">Hành động</option>
-                <option value="fantasy">Fantasy</option>
-                <option value="romance">Lãng mạn</option>
-                <option value="mystery">Bí ẩn</option>
-              </select>
-            </Field>
-            <Field label="Từ khóa (Tags)">
-              <select
-                name="tagIds"
-                defaultValue={modal.value.tagIds[0] ?? ""}
-                className={controlClass}
-              >
-                <option value="">Chọn từ khóa</option>
-                <option value="slow-burn">Slow burn</option>
-                <option value="revenge">Báo thù</option>
-                <option value="royal">Hoàng gia</option>
-                <option value="adventure">Phiêu lưu</option>
-              </select>
-            </Field>
-          </div>
-
-          <ModalActions isSaving={isSaving} onClose={onClose} />
-        </form>
-      )}
+    <ModalShell title={title} subtitle="Edit the fields and save your changes." onClose={onClose}>
 
       {modal.kind === "season" && (
         <form onSubmit={handleSeasonSubmit} className="space-y-5">
@@ -2359,13 +2292,13 @@ function SchedulePublishModal({
       compact
     >
       <form onSubmit={handleSubmit} className="space-y-5">
-        <div className="rounded-2xl border border-white/10 bg-[#1A1A1A] p-4">
-          <p className="text-xs font-black uppercase tracking-[0.12em] text-zinc-500">
+        <div className="rounded-2xl border border-[#D9E2F0] bg-creator-bg p-4">
+          <p className="text-xs font-black uppercase tracking-[0.12em] text-slate-400">
             {modal.kind}
           </p>
-          <p className="mt-1 text-lg font-black text-zinc-50">{title}</p>
-          <p className="mt-2 text-xs font-bold text-zinc-400">
-            Lịch hiện tại: {formatDateTime(modal.value.scheduledPublishAt)}
+          <p className="mt-1 text-lg font-black text-white">{title}</p>
+          <p className="mt-2 text-xs font-bold text-creator-muted">
+            Current schedule: {formatDateTime(modal.value.scheduledPublishAt)}
           </p>
         </div>
 
@@ -2376,7 +2309,7 @@ function SchedulePublishModal({
             required
             min={toDateTimeLocalValue()}
             defaultValue={toDateTimeLocalValue(modal.value.scheduledPublishAt)}
-            className="h-12 w-full rounded-xl border border-white/10 bg-[#1A1A1A] px-4 text-sm font-semibold text-zinc-100 outline-none transition focus:border-yellow-400/50 focus:ring-4 focus:ring-yellow-400/10"
+            className="h-12 w-full rounded-xl border border-creator-border bg-creator-bg px-4 text-sm font-semibold outline-none focus:border-creator-gold focus:bg-creator-bg text-white"
           />
         </Field>
 
@@ -2384,7 +2317,7 @@ function SchedulePublishModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl border border-zinc-700 bg-transparent px-5 py-3 text-sm font-black text-zinc-400 transition hover:border-white/20 hover:text-white"
+            className="rounded-full border border-creator-border bg-creator-bg text-white border border-creator-border px-5 py-3 hover:border-creator-gold transition-colors text-sm font-black text-creator-muted"
           >
             Hủy
           </button>
@@ -2435,11 +2368,11 @@ function DeleteEntityModal({
       compact
     >
       <div className="space-y-5">
-        <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-4">
-          <p className="text-sm font-bold text-zinc-400">
-            Bạn đang xóa:
+        <div className="rounded-2xl border border-red-500/50 bg-red-500/10 p-4">
+          <p className="text-sm font-bold text-creator-muted">
+            You are deleting:
           </p>
-          <p className="mt-1 text-lg font-black text-red-300">
+          <p className="mt-1 text-lg font-black text-red-400">
             {entityLabel}
           </p>
         </div>
@@ -2447,7 +2380,7 @@ function DeleteEntityModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl border border-zinc-700 bg-transparent px-5 py-3 text-sm font-black text-zinc-400 transition hover:border-white/20 hover:text-white"
+            className="rounded-full border border-creator-border bg-creator-bg text-white border border-creator-border px-5 py-3 hover:border-creator-gold transition-colors text-sm font-black text-creator-muted"
           >
             Hủy
           </button>
@@ -2455,7 +2388,7 @@ function DeleteEntityModal({
             type="button"
             onClick={onConfirm}
             disabled={isDeleting}
-            className="rounded-xl bg-red-500 px-5 py-3 text-sm font-black text-white transition hover:bg-red-400 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-full bg-red-500 hover:bg-red-600 transition-colors px-5 py-3 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isDeleting ? "Đang xóa..." : "Xóa"}
           </button>
@@ -2484,21 +2417,21 @@ function ModalShell({
         role="dialog"
         aria-modal="true"
         className={cx(
-          "max-h-[90vh] w-full overflow-y-auto rounded-[24px] border border-white/10 bg-[#121212] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.4)]",
+          "max-h-[90vh] w-full overflow-y-auto rounded-[24px] border border-creator-border bg-creator-sidebar p-6 shadow-[0_30px_90px_rgba(15,23,42,0.25)]",
           compact ? "max-w-lg" : "max-w-3xl",
         )}
       >
         <div className="mb-6 flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-black text-zinc-50">{title}</h2>
-            <p className="mt-1 text-sm font-semibold text-zinc-400">
+            <h2 className="text-2xl font-black text-white">{title}</h2>
+            <p className="mt-1 text-sm font-semibold text-creator-muted">
               {subtitle}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-zinc-400 transition hover:bg-white/10 hover:text-white"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-creator-bg border border-creator-border text-creator-muted text-creator-muted transition hover:text-white transition-colors"
           >
             <X className="h-5 w-5" />
           </button>
@@ -2521,14 +2454,14 @@ function ModalActions({
       <button
         type="button"
         onClick={onClose}
-        className="rounded-xl border border-zinc-700 bg-transparent px-5 py-3 text-sm font-black text-zinc-400 transition hover:border-white/20 hover:text-white"
+        className="rounded-full border border-creator-border bg-creator-bg text-white border border-creator-border px-5 py-3 hover:border-creator-gold transition-colors text-sm font-black text-creator-muted"
       >
         Hủy
       </button>
       <button
         type="submit"
         disabled={isSaving}
-        className="rounded-xl bg-yellow-400 px-5 py-3 text-sm font-black text-black transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-60"
+        className="rounded-full bg-creator-gold px-5 py-3 text-sm font-black text-black hover:opacity-90 transition-opacity disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isSaving ? "Đang lưu..." : "Lưu thay đổi"}
       </button>
@@ -2603,174 +2536,46 @@ const campaignBenefits: Array<{
   title: string;
   description: string;
   icon: LucideIcon;
-}> = [
-  {
-    title: "Khán giả thực",
-    description: "Tăng tiếp cận tới người dùng đang hoạt động trong hệ sinh thái TaleX.",
-    icon: Eye,
-  },
-  {
-    title: "AI Target chuẩn xác",
-    description: "Phân phối nội dung theo thể loại, hành vi đọc/xem và lịch sử tương tác.",
-    icon: Zap,
-  },
-  {
-    title: "Thống kê thời gian thực",
-    description: "Theo dõi lượt xem, lượt thích và hiệu quả từng gói ngay trong dashboard.",
-    icon: BarChart3,
-  },
-];
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cx(
+        "flex h-12 w-full items-center gap-3 rounded-2xl px-4 text-left text-sm font-black transition",
+        active
+          ? "bg-[#151A23] text-white shadow-lg shadow-slate-900/15"
+          : "text-slate-500 hover:bg-creator-sidebar hover:text-white",
+      )}
+    >
+      <Icon className="h-5 w-5" />
+      {label}
+    </button>
+  );
+}
 
 function CampaignPurchaseView() {
   return (
-    <div className="space-y-8">
-      <section className="overflow-hidden rounded-[28px] border border-white/10 bg-[#121212] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.4)] md:p-8">
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-center">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-yellow-400">
-              Creator Growth
-            </p>
-            <h2 className="mt-4 text-4xl font-black tracking-tight text-zinc-50 md:text-5xl">
-              TaleX Boost
-            </h2>
-            <p className="mt-4 max-w-2xl text-base font-semibold leading-7 text-zinc-400">
-              Đẩy tác phẩm của bạn tới đúng nhóm độc giả và khán giả tiềm năng,
-              tăng tốc lượt xem, lượt thích và cơ hội xuất hiện trên các khu vực đề xuất.
-            </p>
-          </div>
+    <button
+      type="button"
+      onClick={onClick}
+      className={cx(
+        "h-9 rounded-full px-4 text-xs font-black transition",
+        active ? "bg-[#151A23] text-white" : "bg-creator-sidebar text-creator-muted",
+      )}
+    >
+      {label}
+    </button>
+  );
+}
 
-          <div className="relative flex flex-col justify-between gap-5 rounded-2xl border border-yellow-400/20 bg-[#1A1A1A] p-5 shadow-inner sm:flex-row sm:items-center">
-            <div className="flex min-w-0 flex-1 items-center gap-4">
-              <div
-                className="h-16 w-12 shrink-0 rounded-lg border border-white/10 bg-cover bg-center object-cover shadow-[0_12px_30px_rgba(0,0,0,0.35)] sm:h-20 sm:w-14"
-                style={{
-                  backgroundImage:
-                    "linear-gradient(160deg, rgba(250,204,21,0.18), rgba(8,47,73,0.7)), url('https://images.unsplash.com/photo-1518709268805-4e9042af2176?auto=format&fit=crop&w=400&q=80')",
-                }}
-              />
-              <div className="min-w-0 flex-1">
-                <p className="mb-1 truncate text-xs font-semibold text-zinc-400">
-                  Bạn đang chọn đẩy tương tác cho:
-                </p>
-                <h3 className="truncate text-base font-black text-zinc-50 sm:text-lg">
-                  The Lost Horizon
-                </h3>
-                <p className="mt-0.5 truncate text-xs font-bold text-yellow-400 sm:text-sm">
-                  Season 1 . Fantasy Adventure
-                </p>
-              </div>
-            </div>
-            <button
-              type="button"
-              className="mt-2 flex w-full shrink-0 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-xs font-bold text-zinc-300 transition-colors hover:bg-white/10 hover:text-yellow-400 sm:mt-0 sm:w-auto"
-            >
-              <RefreshCw className="h-4 w-4" />
-              Đổi nội dung
-            </button>
-          </div>
-        </div>
-      </section>
-
-      <section className="grid grid-cols-1 gap-8 md:grid-cols-3">
-        {campaignPlans.map((plan) => {
-          const Icon = plan.icon;
-          const content = (
-            <div className="relative flex h-full w-full flex-col overflow-hidden rounded-2xl bg-[#121212] p-6">
-              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-yellow-400/[0.03] to-transparent" />
-              {plan.popular && (
-                <div className="absolute left-1/2 top-3 z-10 -translate-x-1/2 rounded-full bg-yellow-400 px-4 py-1.5 text-xs font-black uppercase tracking-[0.12em] text-black shadow-[0_0_24px_rgba(250,204,21,0.25)]">
-                  Phổ biến nhất
-                </div>
-              )}
-
-              <div className="relative z-10">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-white/[0.04]">
-                  <Icon className={cx("h-6 w-6 transition-transform", plan.iconClass)} />
-                </div>
-                <h3 className={cx("text-xl font-black text-zinc-50", plan.popular ? "mt-8" : "mt-5")}>
-                  {plan.name}
-                </h3>
-                <p className="mt-3 min-h-12 text-sm font-semibold leading-6 text-zinc-400">
-                  {plan.description}
-                </p>
-                <div className="mt-6 flex items-end gap-2">
-                  <span className="text-3xl font-black tracking-tight text-zinc-50">
-                    {plan.price}
-                  </span>
-                </div>
-              </div>
-
-              <ul className="relative z-10 mt-7 flex-1 space-y-4">
-                {plan.benefits.map((benefit) => (
-                  <li
-                    key={benefit}
-                    className="flex items-start gap-3 text-sm font-bold leading-6 text-zinc-300"
-                  >
-                    <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-yellow-400" />
-                    {benefit}
-                  </li>
-                ))}
-              </ul>
-
-              <button
-                type="button"
-                className={cx(
-                  "relative z-10 mt-8 h-12 rounded-xl text-sm font-black transition",
-                  plan.popular
-                    ? "bg-yellow-400 text-black shadow-[0_4px_20px_rgba(250,204,21,0.18)] hover:bg-yellow-300 hover:shadow-[0_0_20px_rgba(250,204,21,0.4)]"
-                    : "border border-yellow-400/30 bg-yellow-400/5 text-yellow-400 hover:bg-yellow-400 hover:text-black",
-                )}
-              >
-                Mua Gói Này
-              </button>
-            </div>
-          );
-
-          if (plan.popular) {
-            return (
-              <div
-                key={plan.name}
-                className="group relative overflow-hidden rounded-2xl p-[2px] shadow-[0_0_30px_rgba(250,204,21,0.15)] transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_0_40px_rgba(250,204,21,0.15)] md:scale-105"
-              >
-                <div className="absolute inset-[-100%] bg-[conic-gradient(from_90deg_at_50%_50%,#121212_0%,#FACC15_50%,#121212_100%)] opacity-50 transition-opacity duration-500 animate-[spin_8s_linear_infinite] group-hover:opacity-100" />
-                {content}
-              </div>
-            );
-          }
-
-          return (
-            <div
-              key={plan.name}
-              className="group relative overflow-hidden rounded-2xl border border-white/10 shadow-[0_4px_20px_rgba(0,0,0,0.4)] transition-all duration-500 hover:-translate-y-2 hover:border-yellow-400/40 hover:shadow-[0_0_40px_rgba(250,204,21,0.15)]"
-            >
-              {content}
-            </div>
-          );
-        })}
-      </section>
-
-      <section className="grid gap-4 md:grid-cols-3">
-        {campaignBenefits.map((benefit) => {
-          const Icon = benefit.icon;
-
-          return (
-            <div
-              key={benefit.title}
-              className="group rounded-2xl border border-white/10 bg-[#121212] p-5 shadow-[0_4px_20px_rgba(0,0,0,0.4)] transition-all duration-300 hover:-translate-y-1 hover:border-yellow-400/40"
-            >
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-yellow-400/10 text-yellow-400">
-                <Icon className="h-5 w-5 transition-transform group-hover:scale-110" />
-              </div>
-              <h3 className="mt-4 text-lg font-black text-zinc-50">
-                {benefit.title}
-              </h3>
-              <p className="mt-2 text-sm font-semibold leading-6 text-zinc-400">
-                {benefit.description}
-              </p>
-            </div>
-          );
-        })}
-      </section>
+function ModelStep({ label }: { label: string }) {
+  return (
+    <div className="flex items-center justify-between rounded-xl bg-creator-bg border border-creator-border px-3 py-2 text-white">
+      <span>{label}</span>
+      <ChevronRight className="h-4 w-4 text-slate-300" />
     </div>
   );
 }
@@ -2803,39 +2608,14 @@ function SeriesManagementView({
 
   return (
     <div className="space-y-7">
-      <CreationStepper currentStep={1} />
-
-      <div className="flex flex-col gap-4 rounded-[24px] border border-white/10 bg-[#121212] p-5 shadow-[0_4px_20px_rgba(0,0,0,0.4)] lg:flex-row lg:items-end lg:justify-between">
-        <div className="min-w-0">
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-yellow-400">
-            Creator Library
-          </p>
-          <h2 className="mt-2 text-3xl font-black tracking-tight text-zinc-50">
-            Series của tôi
-          </h2>
-          <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-zinc-400">
-            Quản lý series, mùa và các tập của bạn.
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={onCreateSeries}
-          className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-yellow-400 px-5 text-sm font-black text-black shadow-[0_4px_20px_rgba(250,204,21,0.15)] transition hover:bg-yellow-300"
-        >
-          <Plus className="h-5 w-5" />
-          Tạo Series mới
-        </button>
-      </div>
-
-      <div className="rounded-[24px] border border-white/10 bg-[#121212] p-4 shadow-[0_4px_20px_rgba(0,0,0,0.4)]">
+      <div className="rounded-[24px] border-creator-border bg-creator-sidebar p-4 shadow-[0_20px_60px_rgba(30,42,68,0.07)]">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <label className="relative w-full lg:max-w-xl">
             <Search className="absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-500" />
             <input
               type="search"
-              placeholder="Tìm kiếm tên series..."
-              className="h-14 w-full rounded-full border border-white/10 bg-white/[0.06] pl-14 pr-5 text-sm font-semibold text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-yellow-400/50 focus:bg-white/[0.08] focus:ring-4 focus:ring-yellow-400/10"
+              placeholder="Search series title..."
+              className="h-14 w-full rounded-full border border-creator-border bg-creator-bg pl-14 pr-5 text-sm font-semibold text-white outline-none transition focus:border-creator-gold focus:bg-creator-bg text-white"
             />
           </label>
 
@@ -2858,8 +2638,8 @@ function SeriesManagementView({
               />
             </div>
 
-            <button className="flex h-12 items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.06] px-5 text-sm font-bold text-zinc-300 transition hover:border-yellow-400/50 hover:text-yellow-400">
-              Tất cả trạng thái
+            <button className="flex h-12 items-center justify-between gap-3 rounded-xl border border-creator-border bg-creator-bg px-5 text-sm font-bold text-white">
+              All Statuses
               <ChevronDown className="h-4 w-4" />
             </button>
           </div>
@@ -2867,12 +2647,14 @@ function SeriesManagementView({
         <ApiStateNote isLoading={isLoading} />
       </div>
 
-      <div>
-        {!isLoading && filteredRows.length === 0 && (
-          <div className="rounded-2xl border border-white/10 bg-[#121212] px-8 py-10 text-center text-sm font-bold text-zinc-400 shadow-[0_4px_20px_rgba(0,0,0,0.4)]">
-            Creator này chưa có series nào.
-          </div>
-        )}
+      <div className="overflow-hidden rounded-[24px] border border-creator-border bg-creator-sidebar shadow-[0_20px_60px_rgba(30,42,68,0.07)]">
+        <div className="grid grid-cols-[1.8fr_0.8fr_1fr_1fr_1.15fr] bg-creator-bg border border-creator-border text-creator-muted px-8 py-5 text-xs font-black uppercase tracking-[0.12em] text-creator-muted max-lg:hidden">
+          <span>Series Details</span>
+          <span>Type</span>
+          <span>Status</span>
+          <span>Performance</span>
+          <span className="text-right">Actions</span>
+        </div>
 
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
           {filteredRows.map((series) => (
@@ -2886,6 +2668,14 @@ function SeriesManagementView({
               onUnhideSeries={onUnhideSeries}
             />
           ))}
+        </div>
+
+        <div className="flex items-center justify-between bg-creator-bg border border-creator-border text-creator-muted px-8 py-5 text-sm font-bold text-creator-muted">
+          <span>Showing {filteredRows.length} series</span>
+          <div className="flex items-center gap-3">
+            <ChevronLeft className="h-5 w-5 text-slate-400" />
+            <ChevronRight className="h-5 w-5 text-slate-900" />
+          </div>
         </div>
       </div>
     </div>
@@ -2907,9 +2697,7 @@ function FilterTab({
       onClick={onClick}
       className={cx(
         "rounded-lg px-5 transition",
-        active
-          ? "bg-yellow-400 text-black shadow-lg shadow-yellow-400/10"
-          : "text-zinc-400 hover:text-yellow-300",
+        active ? "bg-creator-bg text-white shadow-sm" : "text-creator-muted",
       )}
     >
       {label}
@@ -2927,7 +2715,7 @@ function ApiStateNote({
   }
 
   return (
-    <div className="mt-4 rounded-2xl border border-white/5 bg-[#1A1A1A] px-4 py-3 text-xs font-bold text-zinc-400">
+    <div className="mt-4 rounded-2xl bg-creator-bg px-4 py-3 text-xs font-bold text-slate-500">
       Loading content...
     </div>
   );
@@ -2943,8 +2731,8 @@ function SelectionStatePanel({
   return (
     <Panel className="border-white/10 bg-[#121212] shadow-[0_24px_80px_rgba(0,0,0,0.28)]">
       <div className="py-10 text-center">
-        <p className="text-lg font-black text-zinc-50">{title}</p>
-        <p className="mt-2 text-sm font-bold text-zinc-400">{description}</p>
+        <p className="text-lg font-black text-white">{title}</p>
+        <p className="mt-2 text-sm font-bold text-slate-500">{description}</p>
       </div>
     </Panel>
   );
@@ -2962,7 +2750,7 @@ function SeriesCoverImage({
       <div
         className={cx(
           className,
-          "flex items-center justify-center border border-white/10 bg-[#1A1A1A] text-zinc-500",
+          "flex items-center justify-center bg-creator-bg border border-creator-border text-creator-muted text-slate-400",
         )}
       >
         <ImageIcon className="h-7 w-7" />
@@ -3023,77 +2811,15 @@ function SeriesCard({
           src={series.coverUrl}
           className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
         />
-        <span
-          className={cx(
-            "absolute bottom-3 left-3 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-black",
-            statusClass,
-          )}
-        >
-          <span
-            className={cx(
-              "h-2 w-2 rounded-full",
-              isPublished && "bg-cyan-400",
-              isDraft && "bg-zinc-500",
-              (isHidden || isActionRequired) && "bg-amber-400",
-              !isPublished &&
-                !isDraft &&
-                !isHidden &&
-                !isActionRequired &&
-                "bg-red-400",
-            )}
-          />
-          {formatStatusLabel(series.status)}
-        </span>
-
-        <div className="absolute right-3 top-3 flex gap-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-          <button
-            type="button"
-            onClick={(event) => {
-              stopAction(event);
-              onUpdateSeries(series);
-            }}
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/20 bg-black/55 text-zinc-200 backdrop-blur-md transition hover:border-yellow-400/50 hover:text-yellow-400"
-            title="Cập nhật series"
-          >
-            <Edit3 className="h-4 w-4" />
-          </button>
-          {isPublished && (
-            <button
-              type="button"
-              onClick={(event) => {
-                stopAction(event);
-                onHideSeries(series);
-              }}
-              className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/20 bg-black/55 text-zinc-200 backdrop-blur-md transition hover:border-yellow-400/50 hover:text-yellow-400"
-              title="Ẩn series"
-            >
-              <Eye className="h-4 w-4" />
-            </button>
-          )}
-          {isHidden && (
-            <button
-              type="button"
-              onClick={(event) => {
-                stopAction(event);
-                onUnhideSeries(series);
-              }}
-              className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/20 bg-black/55 text-zinc-200 backdrop-blur-md transition hover:border-yellow-400/50 hover:text-yellow-400"
-              title="Hiện series"
-            >
-              <Zap className="h-4 w-4" />
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={(event) => {
-              stopAction(event);
-              onDeleteSeries(series);
-            }}
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/20 bg-black/55 text-zinc-200 backdrop-blur-md transition hover:border-red-400/50 hover:text-red-400"
-            title="Xóa series"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
+        <div className="min-w-0">
+          <p className="truncate text-lg font-black text-white">
+            {series.title}
+          </p>
+          <p className="text-sm font-bold text-creator-muted">
+            {series.subtitle} <span className="text-slate-300">.</span>{" "}
+            {series.episodes} Episodes
+          </p>
+          <p className="mt-1 text-xs font-bold text-slate-400">{series.id}</p>
         </div>
       </div>
 
@@ -3115,10 +2841,96 @@ function SeriesCard({
           )}
           <span className="truncate">{isComic ? "Truyện tranh" : "Video"}</span>
         </span>
-        <span className="flex shrink-0 items-center gap-1.5">
-          <Eye className="h-4 w-4" />
-          {series.views || "0 Views"}
+      </div>
+
+      <div className="space-y-2">
+        <span
+          className={cx(
+            "inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-black",
+            isPublished && "border border-[#24B5FF] bg-[#E8F8FF] text-[#0074A6]",
+            isDraft && "border border-creator-border bg-creator-bg border border-creator-border text-red-400",
+            !isPublished &&
+            !isDraft &&
+            "bg-[#FFD8D4] text-red-400",
+          )}
+        >
+          {isPublished ? (
+            <span className="h-2 w-2 rounded-full bg-[#24B5FF]" />
+          ) : isDraft ? (
+            <span className="h-2 w-2 rounded-full bg-[#E8BBCB]" />
+          ) : (
+            <CircleAlert className="h-4 w-4" />
+          )}
+          {formatStatusLabel(series.status)}
         </span>
+      </div>
+
+      <div className="text-sm font-bold text-creator-muted">
+        {series.revenue ? (
+          <div className="space-y-1">
+            <p className="flex items-center gap-2">
+              <Eye className="h-4 w-4" />
+              {series.views}
+            </p>
+            <p className="flex items-center gap-2">
+              <Wallet className="h-4 w-4" />
+              {series.revenue}
+            </p>
+          </div>
+        ) : (
+          <span>{series.views}</span>
+        )}
+      </div>
+
+      <div className="flex flex-wrap items-center justify-start gap-3 lg:justify-end">
+        <button
+          type="button"
+          onClick={() => onUpdateSeries(series)}
+          className="rounded-full p-2 text-creator-muted transition hover:bg-[#F3E8EE] hover:text-[#B83268]"
+          title="Update series"
+        >
+          <Edit3 className="h-5 w-5" />
+        </button>
+        {isPublished && (
+          <button
+            type="button"
+            onClick={() => onHideSeries(series)}
+            className="rounded-full p-2 text-creator-muted transition hover:bg-[#FFF3CD] hover:text-[#856404]"
+            title="Hide series"
+          >
+            <Eye className="h-5 w-5" />
+          </button>
+        )}
+        {isHidden && (
+          <button
+            type="button"
+            onClick={() => onUnhideSeries(series)}
+            className="rounded-full p-2 text-creator-muted transition hover:bg-[#E8F8FF] hover:text-creator-gold"
+            title="Unhide series"
+          >
+            <Zap className="h-5 w-5" />
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={() => onDeleteSeries(series)}
+          className="rounded-full p-2 text-creator-muted transition hover:bg-[#FFE8E8] hover:text-red-400"
+          title="Delete series"
+        >
+          <Trash2 className="h-5 w-5" />
+        </button>
+        <button
+          type="button"
+          onClick={() => onSelectSeries(series.id)}
+          className={cx(
+            "rounded-full px-5 py-3 text-sm font-black transition",
+            isDraft
+              ? "bg-[#B83268] text-white"
+              : "bg-creator-bg border border-creator-border text-creator-muted text-white hover:text-white transition-colors",
+          )}
+        >
+          Manage Seasons
+        </button>
       </div>
     </div>
   );
@@ -3156,7 +2968,7 @@ function SeasonManagementView({
       <button
         type="button"
         onClick={onBack}
-        className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-bold text-zinc-300 transition hover:border-yellow-400/50 hover:text-yellow-400"
+        className="inline-flex items-center gap-2 rounded-md bg-creator-sidebar border border-creator-border px-4 py-2 text-sm font-black text-creator-gold shadow-sm"
       >
         <ChevronLeft className="h-4 w-4" />
         Quay lại Series
@@ -3169,12 +2981,12 @@ function SeasonManagementView({
               src={selectedSeries.coverUrl}
               className="h-20 w-20 shrink-0 rounded-2xl object-cover"
             />
-            <div className="min-w-0">
-              <h2 className="truncate text-2xl font-black text-zinc-50">
+            <div>
+              <h2 className="text-2xl font-black text-white">
                 {selectedSeries.title}
               </h2>
-              <p className="text-sm font-bold text-zinc-400">
-                {selectedSeries.contentType} series . {seasons.length} mùa
+              <p className="text-sm font-bold text-creator-muted">
+                {selectedSeries.contentType} series . {seasons.length} seasons
               </p>
             </div>
           </div>
@@ -3193,8 +3005,8 @@ function SeasonManagementView({
 
       <div className="grid gap-4">
         {!isLoading && seasons.length === 0 && (
-          <div className="rounded-2xl border border-white/10 bg-[#121212] px-5 py-8 text-center text-sm font-bold text-zinc-400 shadow-[0_4px_20px_rgba(0,0,0,0.4)]">
-            Series này chưa có mùa nào.
+          <div className="rounded-2xl bg-creator-sidebar border border-creator-border px-5 py-8 text-center text-sm font-bold text-slate-500 shadow-sm">
+            No seasons found for this series.
           </div>
         )}
         {seasons.map((season) => (
@@ -3232,15 +3044,15 @@ function SeasonCard({
     season.status === "PUBLISHED"
       ? "border-cyan-500/30 bg-cyan-500/10 text-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.1)]"
       : season.status === "DRAFT"
-        ? "border-zinc-700 bg-zinc-800/60 text-zinc-400"
-        : "border-amber-500/30 bg-amber-500/10 text-amber-400";
+        ? "bg-creator-bg border border-creator-border text-red-400 border-creator-border"
+        : "bg-creator-bg border border-creator-border text-creator-muted text-slate-500 border-[#D9E2F0]";
   const isHidden = season.status === "HIDDEN";
   const isPublished = season.status === "PUBLISHED";
 
   return (
-    <div className="rounded-[22px] border border-white/10 bg-[#121212] p-5 shadow-[0_4px_20px_rgba(0,0,0,0.4)] transition-colors duration-200 hover:bg-white/[0.02]">
-      <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_140px_140px_minmax(0,240px)] lg:items-center">
-        <div className="min-w-0">
+    <div className="rounded-[22px] border border-creator-border bg-creator-sidebar p-5 shadow-[0_16px_44px_rgba(30,42,68,0.05)]">
+      <div className="grid gap-5 lg:grid-cols-[1fr_180px_180px_180px] lg:items-center">
+        <div>
           <div className="mb-2 flex flex-wrap items-center gap-2">
             <span className="rounded-full border border-yellow-400/30 bg-yellow-400/10 px-3 py-1 text-xs font-black text-yellow-300">
               Mùa {season.seasonNumber}
@@ -3254,8 +3066,8 @@ function SeasonCard({
               {formatStatusLabel(season.status)}
             </span>
           </div>
-          <h3 className="truncate text-xl font-black text-zinc-50">{season.title}</h3>
-          <p className="mt-1 max-w-2xl break-words text-sm font-semibold text-zinc-400">
+          <h3 className="text-xl font-black text-white">{season.title}</h3>
+          <p className="mt-1 max-w-2xl text-sm font-semibold text-creator-muted">
             {season.description}
           </p>
           <p className="mt-2 truncate text-xs font-bold text-zinc-500">{season.id}</p>
@@ -3270,8 +3082,8 @@ function SeasonCard({
           <button
             type="button"
             onClick={onUpdate}
-            className="rounded-xl p-2 text-zinc-400 transition hover:bg-white/[0.05] hover:text-yellow-400"
-            title="Cập nhật mùa"
+            className="rounded-full p-2 text-creator-muted transition hover:bg-[#F3E8EE] hover:text-[#B83268]"
+            title="Update season"
           >
             <Edit3 className="h-5 w-5" />
           </button>
@@ -3279,8 +3091,8 @@ function SeasonCard({
             <button
               type="button"
               onClick={onHide}
-              className="rounded-xl p-2 text-zinc-400 transition hover:bg-white/[0.05] hover:text-yellow-400"
-              title="Ẩn mùa"
+              className="rounded-full p-2 text-creator-muted transition hover:bg-[#FFF3CD] hover:text-[#856404]"
+              title="Hide season"
             >
               <Eye className="h-5 w-5" />
             </button>
@@ -3289,8 +3101,8 @@ function SeasonCard({
             <button
               type="button"
               onClick={onUnhide}
-              className="rounded-xl p-2 text-zinc-400 transition hover:bg-white/[0.05] hover:text-yellow-400"
-              title="Hiện mùa"
+              className="rounded-full p-2 text-creator-muted transition hover:bg-[#E8F8FF] hover:text-creator-gold"
+              title="Unhide season"
             >
               <Zap className="h-5 w-5" />
             </button>
@@ -3298,15 +3110,15 @@ function SeasonCard({
           <button
             type="button"
             onClick={onDelete}
-            className="rounded-xl p-2 text-zinc-400 transition hover:bg-white/[0.05] hover:text-red-400"
-            title="Xóa mùa"
+            className="rounded-full p-2 text-creator-muted transition hover:bg-[#FFE8E8] hover:text-red-400"
+            title="Delete season"
           >
             <Trash2 className="h-5 w-5" />
           </button>
           <button
             type="button"
             onClick={onSelect}
-            className="min-w-0 rounded-xl border border-yellow-400/30 bg-yellow-400/5 px-5 py-3 text-sm font-black text-yellow-400 transition hover:bg-yellow-400 hover:text-black"
+            className="rounded-full bg-creator-bg border border-creator-border text-creator-muted px-5 py-3 text-sm font-black text-white transition hover:text-white transition-colors"
           >
             Quản lý Tập
           </button>
@@ -3316,6 +3128,10 @@ function SeasonCard({
   );
 }
 
+
+// ============================================================================
+// EPISODE MANAGEMENT VIEW
+// ============================================================================
 function EpisodeManagementView({
   selectedSeries,
   selectedSeason,
@@ -3340,65 +3156,121 @@ function EpisodeManagementView({
   onDeleteEpisode: (episode: EpisodeRow) => void;
 }) {
   return (
-    <div className="space-y-6">
-      <CreationStepper currentStep={3} />
+    <div className="max-w-5xl mx-auto p-6 text-creator-text space-y-6">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-2">
+        <div>
+          <button
+            type="button"
+            onClick={onBack}
+            className="inline-flex items-center gap-2 text-sm font-bold text-creator-muted hover:text-white transition-colors mb-4"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Back to Seasons
+          </button>
+          <h2 className="text-3xl font-bold text-white mb-2">
+            {selectedSeason.title}
+          </h2>
+          <p className="text-creator-muted">
+            {selectedSeries.title} . Season {selectedSeason.seasonNumber}
+          </p>
+        </div>
+      </div>
 
-      <button
-        type="button"
-        onClick={onBack}
-        className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-bold text-zinc-300 transition hover:border-yellow-400/50 hover:text-yellow-400"
-      >
-        <ChevronLeft className="h-4 w-4" />
-        Quay lại Mùa
-      </button>
+      <ApiStateNote isLoading={isLoading} />
 
-      <Panel className="border-white/10 bg-[#121212] shadow-[0_4px_20px_rgba(0,0,0,0.4)]">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="min-w-0">
-            <h2 className="truncate text-2xl font-black text-zinc-50">
-              {selectedSeason.title}
-            </h2>
-            <p className="truncate text-sm font-bold text-zinc-400">
-              {selectedSeries.title} . Mùa {selectedSeason.seasonNumber} .
-              Danh sách tập trong mùa này
-            </p>
+      {/* Season Card matching Mockup */}
+
+
+      <div className="bg-creator-sidebar border border-creator-border rounded-xl overflow-hidden shadow-xl">
+        <div className="p-6 border-b border-creator-border flex flex-col sm:flex-row justify-between items-start sm:items-center bg-creator-card/30 gap-4">
+          <div>
+            <div className="flex items-center gap-3 mb-1">
+              <span className="text-xs font-bold px-2.5 py-1 bg-creator-gold/10 text-creator-gold rounded border border-creator-gold/20">
+                SEASON {selectedSeason.seasonNumber < 10 ? `0${selectedSeason.seasonNumber}` : selectedSeason.seasonNumber}
+              </span>
+              <h3 className="text-xl font-bold text-white">{selectedSeason.title}</h3>
+            </div>
+            <p className="text-sm text-creator-muted mt-2 max-w-2xl">{selectedSeason.description}</p>
           </div>
           <button
             type="button"
             onClick={onCreateEpisode}
             disabled={isCreatingEpisode}
-            className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-yellow-400 px-5 text-sm font-black text-black shadow-[0_4px_20px_rgba(250,204,21,0.15)] transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex h-10 items-center justify-center gap-2 rounded bg-creator-gold px-5 text-sm font-black text-black transition-colors hover:bg-creator-gold-hover disabled:cursor-not-allowed disabled:opacity-60"
           >
-            <Plus className="h-5 w-5" />
-            {isCreatingEpisode ? "Đang tạo..." : "Tạo Tập"}
+            <Plus className="h-4 w-4" />
+            {isCreatingEpisode ? "Creating..." : "Add Episode"}
           </button>
         </div>
-        <ApiStateNote isLoading={isLoading} />
-      </Panel>
 
-      <div className="overflow-hidden rounded-[24px] border border-white/10 bg-[#121212] shadow-[0_4px_20px_rgba(0,0,0,0.4)]">
-        <div className="grid grid-cols-[minmax(0,1.4fr)_110px_120px_100px_minmax(0,260px)] border-b border-white/10 bg-[#1A1A1A] px-8 py-5 text-xs font-black uppercase tracking-[0.12em] text-zinc-400 max-lg:hidden">
-          <span>Thông tin Tập</span>
-          <span>Loại</span>
-          <span>Trạng thái</span>
-          <span>Media</span>
-          <span className="text-right">Hành động</span>
-        </div>
-        <div className="divide-y divide-white/10">
-          {!isLoading && episodes.length === 0 && (
-            <div className="px-8 py-10 text-center text-sm font-bold text-zinc-400">
-              Mùa này chưa có tập nào.
+        <div className="p-0">
+          {!isLoading && episodes.length === 0 ? (
+            <div className="p-12 text-center flex flex-col items-center justify-center">
+              <div className="w-16 h-16 rounded-full bg-creator-bg border border-creator-border flex items-center justify-center mb-4">
+                <PlayCircle size={32} className="text-creator-muted" />
+              </div>
+              <h3 className="text-lg font-medium text-white mb-2">No episodes yet</h3>
+              <p className="text-sm text-creator-muted">Click "Add Episode" to start building this season.</p>
             </div>
+          ) : (
+            <ul className="divide-y divide-creator-border">
+              {episodes.map((episode) => (
+                <li key={episode.id} className="flex flex-col sm:flex-row sm:items-center gap-4 p-5 hover:bg-white/5 transition-colors group">
+                  <div className="flex items-center gap-4 flex-1 cursor-pointer" onClick={() => onOpenUpload(episode)}>
+                    <GripVertical size={18} className="text-creator-border group-hover:text-creator-muted cursor-grab hidden sm:block" />
+                    <div className="w-10 h-10 shrink-0 rounded-lg bg-creator-bg border border-creator-border flex items-center justify-center text-sm font-bold text-creator-muted shadow-inner">
+                      {episode.episodeNumber}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-base font-bold text-white truncate">{episode.title}</h4>
+                      <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-creator-muted font-medium">
+                        <span className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-creator-bg border border-creator-border">
+                          {episode.contentType === "COMIC" ? <BookOpen size={12} /> : <Clapperboard size={12} />}
+                          {episode.contentType === "COMIC" ? `${episode.totalPage ?? episode.mediaCount} pages` : `${episode.mediaCount} video`}
+                        </span>
+                        <span>â€¢</span>
+                        <span className={cx(
+                          "px-2 py-0.5 rounded border",
+                          episode.status === "PUBLISHED" ? "border-green-500/30 text-green-400 bg-green-500/10" :
+                            episode.status === "REVIEW" ? "border-creator-gold/30 text-creator-gold bg-creator-gold/10" :
+                              "border-creator-muted/30 text-creator-muted bg-creator-bg"
+                        )}>
+                          {formatStatusLabel(episode.status)}
+                        </span>
+                        <span className="truncate max-w-[200px]">{episode.description}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Actions Container */}
+                  <div className="flex items-center gap-2 pl-14 sm:pl-0 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onUpdateEpisode(episode); }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-creator-bg border border-creator-border rounded hover:bg-white/10 transition-colors"
+                      title="Settings (Unlock, Schedule)"
+                    >
+                      <Edit3 size={14} /> Settings
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onOpenUpload(episode); }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-black bg-creator-gold rounded hover:bg-creator-gold-hover transition-colors"
+                      title="Upload Media"
+                    >
+                      {episode.contentType === "COMIC" ? <ImagePlus size={14} /> : <Video size={14} />} Media
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onDeleteEpisode(episode); }}
+                      className="p-1.5 text-creator-muted hover:text-red-400 rounded hover:bg-red-400/10 transition-colors ml-1"
+                      title="Delete Episode"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
           )}
-          {episodes.map((episode) => (
-            <EpisodeTableRow
-              key={episode.id}
-              episode={episode}
-              onOpenUpload={() => onOpenUpload(episode)}
-              onUpdate={() => onUpdateEpisode(episode)}
-              onDelete={() => onDeleteEpisode(episode)}
-            />
-          ))}
         </div>
       </div>
     </div>
@@ -3421,21 +3293,19 @@ function EpisodeTableRow({
     episode.status === "PUBLISHED"
       ? "border-cyan-500/30 bg-cyan-500/10 text-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.1)]"
       : episode.status === "REVIEW"
-        ? "border-amber-500/30 bg-amber-500/10 text-amber-400"
-        : episode.status === "DRAFT"
-          ? "border-zinc-700 bg-zinc-800/60 text-zinc-400"
-          : "border-amber-500/30 bg-amber-500/10 text-amber-400";
+        ? "border-[#F4B9CC] bg-[#FFF4F8] text-[#B83268]"
+        : "border-creator-border bg-creator-sidebar text-[#9B536D]";
 
   return (
-    <div className="grid min-h-[104px] min-w-0 grid-cols-1 gap-4 px-5 py-5 transition-colors duration-200 hover:bg-white/[0.02] lg:grid-cols-[minmax(0,1.4fr)_110px_120px_100px_minmax(0,260px)] lg:items-center lg:px-8">
-      <div className="min-w-0">
-        <p className="truncate text-lg font-black text-zinc-50">
-          Tập {episode.episodeNumber}: {episode.title}
+    <div className="grid min-h-[104px] grid-cols-1 gap-4 px-5 py-5 lg:grid-cols-[1.4fr_0.7fr_0.8fr_0.8fr_1fr] lg:items-center lg:px-8">
+      <div>
+        <p className="text-lg font-black text-white">
+          Ep {episode.episodeNumber}: {episode.title}
         </p>
-        <p className="mt-1 truncate text-sm font-semibold text-zinc-400">
+        <p className="mt-1 text-sm font-semibold text-creator-muted">
           {episode.description}
         </p>
-        <p className="mt-1 truncate text-xs font-bold text-zinc-500">{episode.id}</p>
+        <p className="mt-1 text-xs font-bold text-creator-muted">{episode.id}</p>
       </div>
       <div>
         <span
@@ -3464,7 +3334,7 @@ function EpisodeTableRow({
           {formatStatusLabel(episode.status)}
         </span>
       </div>
-      <div className="text-sm font-bold text-zinc-400">
+      <div className="text-sm font-bold text-creator-muted">
         {isComic
           ? `${episode.totalPage ?? episode.mediaCount} trang`
           : `${episode.mediaCount} video`}
@@ -3473,23 +3343,23 @@ function EpisodeTableRow({
         <button
           type="button"
           onClick={onUpdate}
-          className="rounded-xl p-2 text-zinc-400 transition hover:bg-white/[0.05] hover:text-yellow-400"
-          title="Cập nhật tập"
+          className="rounded-full p-2 text-creator-muted transition hover:bg-[#F3E8EE] hover:text-[#B83268]"
+          title="Update episode"
         >
           <Edit3 className="h-5 w-5" />
         </button>
         <button
           type="button"
           onClick={onDelete}
-          className="rounded-xl p-2 text-zinc-400 transition hover:bg-white/[0.05] hover:text-red-400"
-          title="Xóa tập"
+          className="rounded-full p-2 text-creator-muted transition hover:bg-[#FFE8E8] hover:text-red-400"
+          title="Delete episode"
         >
           <Trash2 className="h-5 w-5" />
         </button>
         <button
           type="button"
           onClick={onOpenUpload}
-          className="min-w-0 rounded-xl border border-yellow-400/30 bg-yellow-400/5 px-5 py-2.5 text-sm font-black text-yellow-400 transition hover:bg-yellow-400 hover:text-black"
+          className="rounded-full bg-creator-bg border border-creator-border text-creator-muted px-5 py-3 text-sm font-black text-white transition hover:text-white transition-colors"
         >
           {isComic ? "Mở upload truyện tranh" : "Mở upload video"}
         </button>
@@ -3500,238 +3370,19 @@ function EpisodeTableRow({
 
 function MetricBox({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-white/5 bg-[#1A1A1A] p-4">
-      <p className="text-xs font-black uppercase tracking-[0.14em] text-zinc-500">
+    <div className="rounded-2xl bg-creator-bg p-4">
+      <p className="text-xs font-black uppercase tracking-[0.14em] text-creator-muted">
         {label}
       </p>
-      <p className="mt-1 text-2xl font-black text-zinc-50">{value}</p>
+      <p className="mt-1 text-2xl font-black text-white">{value}</p>
     </div>
   );
 }
 
-function CreateSeriesView({
-  contentType,
-  onContentTypeChange,
-  onSubmit,
-  isSubmitting,
-}: {
-  contentType: ContentType;
-  onContentTypeChange: (type: ContentType) => void;
-  onSubmit: (input: CreateSeriesInput) => void;
-  isSubmitting: boolean;
-}) {
-  const [coverFile, setCoverFile] = useState<File | undefined>();
-  const [bannerFile, setBannerFile] = useState<File | undefined>();
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const title = readFormString(form, "title");
-
-    if (!title) {
-      return;
-    }
-
-    onSubmit({
-      title,
-      description: readFormString(form, "description"),
-      contentType,
-      visibility: readFormString(form, "visibility") as Visibility,
-      ageRating: readFormString(form, "ageRating"),
-      language: readFormString(form, "language"),
-      categoryIds: splitIdList(readFormString(form, "categoryIds")),
-      tagIds: splitIdList(readFormString(form, "tagIds")),
-      coverFile,
-      bannerFile,
-    });
-  }
-
-  const inputClass =
-    "w-full rounded-xl border border-white/10 bg-[#1A1A1A] p-4 text-sm font-semibold text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-yellow-400/50 focus:ring-4 focus:ring-yellow-400/10";
-  const compactInputClass =
-    "h-12 w-full rounded-xl border border-white/10 bg-[#1A1A1A] px-4 text-sm font-semibold text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-yellow-400/50 focus:ring-4 focus:ring-yellow-400/10";
-  return (
-    <form onSubmit={handleSubmit} className="mx-auto max-w-6xl space-y-8">
-      <CreationStepper currentStep={1} />
-
-      <div>
-        <p className="text-xs font-black uppercase tracking-[0.2em] text-yellow-400">
-          Bản sắc cốt lõi
-        </p>
-        <h2 className="mt-3 text-4xl font-black tracking-tight text-zinc-50">
-          Thông tin cốt lõi
-        </h2>
-        <p className="mt-3 max-w-3xl text-sm font-semibold leading-6 text-zinc-400">
-          Xác định bầu không khí cốt lõi cho series, định vị thể loại và chuẩn
-          bị artwork trước khi bước vào cấu trúc mùa/tập.
-        </p>
-      </div>
-
-      <div className="grid gap-10 lg:grid-cols-[1fr_380px]">
-        <div className="space-y-6">
-          <section className="rounded-2xl border border-white/10 bg-[#121212] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.24)]">
-            <div className="grid gap-5">
-              <Field label="Tên Series" required>
-                <input
-                  name="title"
-                  required
-                  defaultValue="The Lost Horizon"
-                  placeholder="Nhập tên series..."
-                  className={compactInputClass}
-                />
-              </Field>
-
-              <div>
-                <p className="mb-3 text-xs font-black uppercase tracking-[0.14em] text-zinc-400">
-                  Phân loại thể loại <span className="text-yellow-400">*</span>
-                </p>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <TypeOption
-                    active={contentType === "COMIC"}
-                    icon={BookOpen}
-                    title="Truyện tranh"
-                    description="Tập truyện sử dụng các trang ảnh theo thứ tự."
-                    onClick={() => onContentTypeChange("COMIC")}
-                  />
-                  <TypeOption
-                    active={contentType === "VIDEO"}
-                    icon={Clapperboard}
-                    title="Video truyện"
-                    description="Tập truyện sử dụng một video media chính."
-                    onClick={() => onContentTypeChange("VIDEO")}
-                  />
-                </div>
-              </div>
-
-              <Field label="Mô tả" required>
-                <textarea
-                  name="description"
-                  rows={6}
-                  placeholder="Mô tả bối cảnh, cảm xúc và lời hứa trải nghiệm của series..."
-                  className={cx(inputClass, "resize-none")}
-                />
-              </Field>
-
-              <div className="grid gap-4 md:grid-cols-3">
-                <Field label="Hiển thị">
-                  <select name="visibility" defaultValue="PUBLIC" className={compactInputClass}>
-                    <option value="PUBLIC">Công khai</option>
-                    <option value="PRIVATE">Riêng tư</option>
-                  </select>
-                </Field>
-                <Field label="Độ tuổi">
-                  <select name="ageRating" defaultValue="13+" className={compactInputClass}>
-                    <option value="13+">13+</option>
-                    <option value="16+">16+</option>
-                    <option value="18+">18+</option>
-                  </select>
-                </Field>
-                <Field label="Ngôn ngữ">
-                  <select
-                    name="language"
-                    defaultValue="vi"
-                    className={compactInputClass}
-                  >
-                    <option value="vi">Tiếng Việt</option>
-                    <option value="en">Tiếng Anh</option>
-                  </select>
-                </Field>
-              </div>
-            </div>
-          </section>
-
-          <section className="rounded-2xl border border-white/10 bg-[#121212] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.24)]">
-            <div className="mb-5 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-yellow-400/10 text-yellow-400">
-                <Tag className="h-5 w-5" />
-              </div>
-              <div>
-                <h3 className="text-lg font-black text-zinc-50">
-                  Phân loại nội dung
-                </h3>
-                <p className="text-sm font-semibold text-zinc-400">
-                  Chọn thể loại và từ khóa để định vị series trong thư viện.
-                </p>
-              </div>
-            </div>
-
-            <div className="grid gap-5 md:grid-cols-2">
-              <Field label="Thể loại (Genres)">
-                <select
-                  name="categoryIds"
-                  defaultValue=""
-                  className={compactInputClass}
-                >
-                  <option value="">Chọn thể loại</option>
-                  <option value="action">Hành động</option>
-                  <option value="fantasy">Fantasy</option>
-                  <option value="romance">Lãng mạn</option>
-                  <option value="mystery">Bí ẩn</option>
-                </select>
-              </Field>
-              <Field label="Từ khóa (Tags)">
-                <select
-                  name="tagIds"
-                  defaultValue=""
-                  className={compactInputClass}
-                >
-                  <option value="">Chọn từ khóa</option>
-                  <option value="slow-burn">Slow burn</option>
-                  <option value="revenge">Báo thù</option>
-                  <option value="royal">Hoàng gia</option>
-                  <option value="adventure">Phiêu lưu</option>
-                </select>
-              </Field>
-            </div>
-          </section>
-        </div>
-
-        <aside className="space-y-6">
-          <section className="rounded-2xl border border-white/10 bg-[#121212] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.24)]">
-            <div className="mb-5 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-yellow-400/10 text-yellow-400">
-                <ImageIcon className="h-5 w-5" />
-              </div>
-              <div>
-                <h3 className="text-lg font-black text-zinc-50">
-                  Ảnh chủ đạo
-                </h3>
-                <p className="text-sm font-semibold text-zinc-400">
-                  Ảnh đại diện sẽ được upload trước rồi lưu URL vào Series.
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-5">
-              <ArtworkUploadField
-                title="Ảnh banner"
-                helper="3840 x 2160 Recommended"
-                file={bannerFile}
-                onFileChange={setBannerFile}
-              />
-              <ArtworkUploadField
-                title="Poster / Bìa"
-                helper="1500 x 2000 Recommended"
-                file={coverFile}
-                onFileChange={setCoverFile}
-                tall
-              />
-            </div>
-          </section>
-
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="flex h-14 w-full items-center justify-center rounded-xl bg-yellow-400 text-sm font-black text-black shadow-[0_18px_46px_rgba(250,204,21,0.18)] transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {isSubmitting ? "Đang tạo..." : "Tạo Series & Tiếp tục ->"}
-          </button>
-        </aside>
-      </div>
-    </form>
-  );
-}
-
+// ============================================================================
+// COMIC UPLOAD VIEW
+// ============================================================================
 function ComicUploadView({
   selectedSeries,
   selectedSeason,
@@ -3760,6 +3411,7 @@ function ComicUploadView({
   isCancelingSchedule,
   onPublishNow,
   isPublishingNow,
+  onGoToPublishing,
   onBack,
 }: {
   selectedSeries: SeriesRow | null;
@@ -3768,9 +3420,9 @@ function ComicUploadView({
   pages: ComicPage[];
   draggingPageId: string | null;
   onDragStart: (id: string) => void;
-  onDragEnd: () => void;
-  onDropPage: (fromId: string, toId: string) => void;
-  onMovePage: (pageId: string, offset: number) => void;
+  onDragEnd: (id: string) => void;
+  onDropPage: (draggedId: string, targetId: string) => void;
+  onMovePage: (id: string, offset: number) => void;
   onFilesSelected: (files: FileList | File[] | null) => void;
   isUploading: boolean;
   onSaveOrder: () => void;
@@ -3789,395 +3441,261 @@ function ComicUploadView({
   isCancelingSchedule: boolean;
   onPublishNow: (episode: EpisodeRow) => void;
   isPublishingNow: boolean;
+  onGoToPublishing: () => void;
   onBack: () => void;
 }) {
-  const episodeControlClass =
-    "h-12 w-full rounded-xl border border-white/10 bg-[#1A1A1A] px-4 text-sm font-semibold text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-yellow-400/50 focus:ring-4 focus:ring-yellow-400/10";
-
-  function handlePageDrop(event: DragEvent<HTMLDivElement>) {
-    event.preventDefault();
-    onFilesSelected(Array.from(event.dataTransfer.files));
-  }
-
-  function handleEpisodeSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const title = readFormString(form, "title");
-
-    if (!title) {
-      return;
-    }
-
-    onSaveEpisode({
-      ...selectedEpisode,
-      episodeNumber: readFormNumber(
-        form,
-        "episodeNumber",
-        selectedEpisode.episodeNumber,
-      )!,
-      title,
-      description: readFormString(form, "description"),
-      contentType: "COMIC",
-      totalPage: readFormNumber(form, "totalPage", selectedEpisode.totalPage),
-    });
-  }
-
-  function handleUnlockSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const unlockType = readFormString(form, "unlockType") as EpisodeUnlockType;
-    const priceVnd =
-      unlockType === "PAID"
-        ? readFormNumber(form, "priceVnd", selectedEpisode.priceVnd) ?? 0
-        : 0;
-
-    if (unlockType === "PAID" && priceVnd <= 0) {
-      return;
-    }
-
-    onSaveEpisode({
-      ...selectedEpisode,
-      unlockType,
-      priceVnd,
-    });
-  }
-
+  const [editForm, setEditForm] = useState({ episodeNumber: selectedEpisode.episodeNumber, title: selectedEpisode.title, description: selectedEpisode.description || "", unlockType: selectedEpisode.unlockType || "FREE", priceVnd: selectedEpisode.priceVnd || 0 });
   return (
-    <div className="space-y-4">
-      <CreationStepper currentStep={4} />
+    <div className="max-w-6xl mx-auto p-6 text-creator-text space-y-8">
+      {/* Header matching mockup */}
+      <div>
+        <button
+          type="button"
+          onClick={onBack}
+          className="inline-flex items-center gap-2 text-sm font-bold text-creator-muted hover:text-white transition-colors mb-6"
+        >
+          <ChevronLeft className="h-4 w-4" />
+          Back to Season
+        </button>
+        <h2 className="text-4xl font-bold text-white mb-3">Finalizing Asset Review</h2>
+        <p className="text-creator-muted max-w-2xl text-sm leading-relaxed">
+          Upload your high-fidelity cinematic assets and let TaleX AI ensure policy compliance and original content verification.
+        </p>
+      </div>
 
-      <button
-        type="button"
-        onClick={onBack}
-        className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-bold text-zinc-300 transition hover:border-yellow-400/50 hover:text-yellow-400"
-      >
-        <ChevronLeft className="h-4 w-4" />
-        Quay lại Tập
-      </button>
-
-      <div className="grid gap-6 xl:grid-cols-[330px_minmax(0,1fr)]">
-        <aside className="space-y-5">
-          <Panel>
-          <PanelHeader
-            icon={BookOpen}
-            title="Thông tin Tập"
-            subtitle="Chỉnh metadata của tập truyện tranh và lưu riêng với danh sách trang."
-          />
-          <div className="mb-5 grid gap-3 text-sm font-bold text-[#5D5160]">
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.12em] text-slate-400">
-                Series
-              </p>
-              <p className="mt-1 text-base font-black text-zinc-50">
-                {selectedSeries?.title ?? "Unknown series"}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.12em] text-slate-400">
-                Mùa
-              </p>
-              <p className="mt-1 text-base font-black text-zinc-50">
-                {selectedSeason
-                  ? `Mùa ${selectedSeason.seasonNumber}: ${selectedSeason.title}`
-                  : selectedEpisode.seasonId}
-              </p>
-            </div>
-          </div>
-          <form
-            key={`comic-details-${selectedEpisode.id}`}
-            onSubmit={handleEpisodeSubmit}
-            className="space-y-4"
-          >
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Số tập">
-                <input
-                  type="number"
-                  min={1}
-                  name="episodeNumber"
-                  defaultValue={selectedEpisode.episodeNumber}
-                  className={episodeControlClass}
-                />
-              </Field>
-              <Field label="Tổng số trang">
-                <input
-                  type="number"
-                  min={0}
-                  name="totalPage"
-                  defaultValue={selectedEpisode.totalPage ?? 0}
-                  className={episodeControlClass}
-                />
-              </Field>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Trạng thái">
-                <input
-                  value={formatStatusLabel(selectedEpisode.status)}
-                  readOnly
-                  className={episodeControlClass}
-                />
-              </Field>
-              <Field label="Loại">
-                <input
-                  value="COMIC"
-                  readOnly
-                  className={episodeControlClass}
-                />
-              </Field>
-            </div>
-            <Field label="Tiêu đề tập" required>
-              <input
-                name="title"
-                required
-                defaultValue={selectedEpisode.title}
-                placeholder="Điều gì xảy ra trong tập này?"
-                className={episodeControlClass}
-              />
-            </Field>
-            <Field label="Mô tả">
-              <textarea
-                name="description"
-                rows={4}
-                defaultValue={selectedEpisode.description}
-                placeholder="Ghi chú tác giả hoặc mô tả tập..."
-                className="w-full resize-none rounded-xl border border-white/10 bg-[#1A1A1A] p-4 text-sm font-semibold text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-yellow-400/50 focus:ring-4 focus:ring-yellow-400/10"
-              />
-            </Field>
-            <button
-              type="submit"
-              disabled={isSavingEpisode}
-              className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-yellow-400 text-sm font-black text-black shadow-[0_4px_20px_rgba(250,204,21,0.15)] transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <CheckCircle2 className="h-4 w-4" />
-              {isSavingEpisode ? "Đang lưu..." : "Lưu thông tin Tập"}
-            </button>
-          </form>
-          </Panel>
-
-          <Panel>
-          <PanelHeader
-            icon={Lock}
-            title="Thiết lập mở khóa"
-            subtitle="Cấu hình cách mở khóa tập này và lưu riêng với thông tin tập."
-          />
-          <form
-            key={`comic-unlock-${selectedEpisode.id}-${selectedEpisode.unlockType}-${selectedEpisode.priceVnd}`}
-            onSubmit={handleUnlockSubmit}
-            className="space-y-4"
-          >
-            <EpisodeUnlockFields
-              defaultUnlockType={selectedEpisode.unlockType}
-              defaultPriceVnd={selectedEpisode.priceVnd}
-              controlClass={episodeControlClass}
-            />
-            <p className="text-xs font-semibold leading-relaxed text-slate-500">
-              Tập này sẽ khả dụng sau khi được duyệt. Trang truyện được lưu dưới dạng
-              image URL và sắp xếp theo displayOrder.
-            </p>
-            <button
-              type="submit"
-              disabled={isSavingEpisode}
-              className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-yellow-400 text-sm font-black text-black transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <CheckCircle2 className="h-4 w-4" />
-              {isSavingEpisode ? "Đang lưu..." : "Lưu mở khóa"}
-            </button>
-          </form>
-          </Panel>
-
-          <Panel>
-          <PanelHeader icon={Calendar} title="Xuất bản" />
-          <div className="space-y-4">
-            <div
-              className={cx(
-                "rounded-xl border p-4 text-xs font-bold leading-relaxed",
-                getApprovalChipClass(
-                  canSchedulePublish ? "APPROVED" : "PENDING_REVIEW",
-                ),
-              )}
-            >
-              Kiểm duyệt media: {canSchedulePublish ? "Đã có trang được duyệt" : "Cần trang đã duyệt"}
-            </div>
-            <div className="rounded-xl border border-white/10 bg-[#1A1A1A] p-4 text-xs font-bold leading-relaxed text-zinc-400">
-              Lịch xuất bản: {formatDateTime(selectedEpisode.scheduledPublishAt)}
-            </div>
-            {selectedEpisode.status === "PUBLISHED" && (
-              <button
-                type="button"
-                onClick={() => onHideEpisode(selectedEpisode)}
-                disabled={isHidingEpisode}
-                className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-amber-400/30 bg-amber-400/10 text-sm font-black text-amber-300 transition hover:bg-amber-400 hover:text-black disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <Eye className="h-4 w-4" />
-                {isHidingEpisode ? "Đang xử lý..." : "Ẩn Tập"}
-              </button>
-            )}
-            {selectedEpisode.status === "HIDDEN" && (
-              <button
-                type="button"
-                onClick={() => onUnhideEpisode(selectedEpisode)}
-                disabled={isHidingEpisode}
-                className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-cyan-400/30 bg-cyan-400/10 text-sm font-black text-cyan-300 transition hover:bg-cyan-400 hover:text-black disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <Zap className="h-4 w-4" />
-                {isHidingEpisode ? "Đang xử lý..." : "Hiện Tập"}
-              </button>
-            )}
-            {selectedEpisode.status === "SCHEDULED" ? (
-              <button
-                type="button"
-                onClick={() => onCancelSchedule(selectedEpisode)}
-                disabled={isCancelingSchedule}
-                className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 text-sm font-black text-red-300 transition hover:bg-red-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <X className="h-4 w-4" />
-                {isCancelingSchedule ? "Đang hủy..." : "Hủy lịch"}
-              </button>
-            ) : (
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => onSchedulePublish(selectedEpisode)}
-                  disabled={!canSchedulePublish || selectedEpisode.status === "PUBLISHED"}
-                  className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-yellow-400/30 bg-yellow-400/5 text-sm font-black text-yellow-400 transition hover:bg-yellow-400 hover:text-black disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/5 disabled:text-zinc-600"
-                >
-                  <Calendar className="h-4 w-4" />
-                  Lên lịch
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onPublishNow(selectedEpisode)}
-                  disabled={!canSchedulePublish || selectedEpisode.status === "PUBLISHED" || isPublishingNow}
-                  className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-yellow-400 text-sm font-black text-black transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-zinc-600"
-                >
-                  <CloudUpload className="h-4 w-4" />
-                  {isPublishingNow ? "Đang xuất bản..." : "Xuất bản ngay"}
-                </button>
-              </div>
-            )}
-          </div>
-          </Panel>
-        </aside>
-
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+        {/* Left Column: Upload Workspace */}
         <div className="space-y-6">
-          <Panel>
-          <div className="mb-5 flex items-start justify-between gap-4">
-            <PanelHeader
-            icon={UploadCloud}
-            title="Trang truyện tranh"
-            subtitle="Chọn trang từ máy, sau đó lưu một lần để upload và giữ thứ tự."
-            compact
-          />
-            <span className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-black text-zinc-300">
-              {pages.length} trang đã chọn
-            </span>
-          </div>
 
-          <div
-            className="mb-6 flex min-h-[230px] flex-col items-center justify-center rounded-2xl border border-dashed border-yellow-400/30 bg-yellow-400/5 p-8 text-center"
-            onDragOver={(event) => event.preventDefault()}
-            onDrop={handlePageDrop}
-          >
-            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-yellow-400/10 text-yellow-400">
-              <CloudUpload className="h-7 w-7" />
-            </div>
-            <p className="text-lg font-black text-zinc-50">
-              Kéo thả trang truyện vào đây
-            </p>
-            <p className="mt-2 max-w-md text-sm font-semibold leading-relaxed text-zinc-400">
-              Chọn hoặc thả trang truyện. Chưa có gì được upload cho tới khi bạn lưu.
-            </p>
-            <label className="mt-5 inline-flex cursor-pointer rounded-xl border border-yellow-400/30 bg-yellow-400/5 px-5 py-2.5 text-xs font-black text-yellow-400 transition hover:bg-yellow-400 hover:text-black">
-              Chọn file
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                className="sr-only"
-                onChange={(event) => {
-                  onFilesSelected(event.target.files);
-                  event.currentTarget.value = "";
-                }}
-              />
-            </label>
-          </div>
-
-          <div className="mb-3 flex items-center justify-between">
-            <p className="text-xs font-black uppercase tracking-[0.16em] text-zinc-400">
-              Thứ tự trang
-            </p>
-            <p className="flex items-center gap-2 text-xs font-bold text-zinc-400">
-              <GripVertical className="h-4 w-4" />
-              Kéo để sắp xếp
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-            {isLoadingMedia && (
-              <div className="col-span-full rounded-2xl border border-white/10 bg-[#1A1A1A] px-4 py-5 text-center text-sm font-bold text-zinc-400">
-                Đang tải trang hiện có...
+          <div className="bg-creator-sidebar border border-creator-border rounded-xl p-8 shadow-xl mb-6">
+            <h3 className="text-lg font-bold text-white mb-6">Episode Details</h3>
+            <div className="space-y-5">
+              <div className="grid gap-5 md:grid-cols-2">
+                <div>
+                  <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Episode Number</label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={editForm.episodeNumber}
+                    onChange={(e) => setEditForm({ ...editForm, episodeNumber: Number(e.target.value) })}
+                    className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Episode Title *</label>
+                  <input
+                    type="text"
+                    required
+                    value={editForm.title}
+                    onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                    className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
+                  />
+                </div>
               </div>
-            )}
 
-            {!isLoadingMedia && pages.length === 0 && (
-              <div className="col-span-full rounded-2xl border border-white/10 bg-[#1A1A1A] px-4 py-5 text-center text-sm font-bold text-zinc-400">
-                Tập này chưa có trang media. Hãy chọn file ảnh để upload.
+              <div>
+                <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Description</label>
+                <textarea
+                  rows={3}
+                  value={editForm.description}
+                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                  className="w-full resize-none rounded-md border border-creator-border bg-creator-bg p-3 text-sm text-white outline-none focus:border-creator-gold"
+                />
               </div>
-            )}
+              <div className="grid gap-5 md:grid-cols-2 mt-4 pt-4 border-t border-creator-border">
+                <div>
+                  <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Unlock Type</label>
+                  <select
+                    value={editForm.unlockType}
+                    onChange={(e) => setEditForm({ ...editForm, unlockType: e.target.value as EpisodeUnlockType })}
+                    className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
+                  >
+                    <option value="FREE">FREE</option>
+                    <option value="PAID">PAID</option>
+                  </select>
+                </div>
 
-            {pages.map((page) => (
-              <ComicPageCard
-                key={page.id}
-                page={page}
-                dragging={draggingPageId === page.id}
-                onDragStart={() => onDragStart(page.id)}
-                onDragEnd={onDragEnd}
-                onDrop={() => {
-                  if (draggingPageId) {
-                    onDropPage(draggingPageId, page.id);
-                  }
-                }}
-                onMoveUp={() => onMovePage(page.id, -1)}
-                onMoveDown={() => onMovePage(page.id, 1)}
-                onDelete={() => onDeletePage(page)}
-              />
-            ))}
-
-            <label className="flex aspect-[3/4] min-h-[220px] cursor-pointer items-center justify-center rounded-xl border border-dashed border-yellow-400/30 bg-yellow-400/5 text-yellow-400 transition hover:bg-yellow-400 hover:text-black">
-              <Plus className="h-7 w-7" />
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                className="sr-only"
-                onChange={(event) => {
-                  onFilesSelected(event.target.files);
-                  event.currentTarget.value = "";
-                }}
-              />
-            </label>
-          </div>
-          </Panel>
-
-          {uploadMessage && (
-            <div className="rounded-2xl border border-white/10 bg-[#1A1A1A] px-4 py-3 text-sm font-bold text-zinc-300">
-              {uploadMessage}
+                {editForm.unlockType === "PAID" && (
+                  <div>
+                    <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Price (VND) *</label>
+                    <input
+                      type="number"
+                      min={1}
+                      value={editForm.priceVnd}
+                      onChange={(e) => setEditForm({ ...editForm, priceVnd: Number(e.target.value) })}
+                      className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
+                    />
+                  </div>
+                )}
+              </div>
             </div>
-          )}
-
-          <div className="flex flex-wrap items-center justify-end gap-3">
-            {isUploading && (
-              <span className="rounded-full border border-cyan-400/30 bg-cyan-400/10 px-4 py-3 text-sm font-black text-cyan-300">
-                Đang lưu trang...
+          </div>
+          <div className="bg-creator-sidebar border border-creator-border rounded-xl p-8 shadow-xl">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-bold text-white">Upload Workspace</h3>
+              <span className="text-xs font-bold px-3 py-1.5 bg-creator-bg border border-creator-border rounded text-creator-muted uppercase tracking-wider">
+                JPG, PNG accepted
               </span>
+            </div>
+
+            {/* Dropzone */}
+            <label className="mb-8 flex min-h-[220px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-creator-gold/30 bg-[#13110F] p-8 text-center transition hover:bg-creator-bg group">
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => onFilesSelected(e.target.files)}
+                disabled={isUploading}
+              />
+              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-creator-gold/10 text-creator-gold group-hover:bg-creator-gold/20 transition-colors">
+                <UploadCloud className="h-6 w-6" />
+              </div>
+              <p className="text-sm font-bold text-white mb-2">Drag & Drop cinematic assets</p>
+              <p className="text-xs font-medium text-creator-muted">Max file size: 10MB per page</p>
+            </label>
+
+            {uploadMessage && (
+              <div className="mb-6 p-4 rounded-xl bg-creator-bg border border-creator-border text-sm text-creator-muted flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-4 h-4 border-2 border-creator-gold border-t-transparent rounded-full animate-spin"></div>
+                  <span>{uploadMessage}</span>
+                </div>
+              </div>
             )}
-            <button
-              type="button"
-              onClick={onSaveOrder}
-              disabled={isSavingOrder}
-              className="rounded-xl bg-yellow-400 px-5 py-3 text-sm font-black text-black transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isSavingOrder ? "Đang lưu..." : "Lưu trang"}
-            </button>
+
+            {/* Grid of uploaded pages */}
+            {pages.length > 0 && (
+              <div className="space-y-4 pt-6 border-t border-creator-border">
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-sm font-bold text-white">Uploaded Pages ({pages.length})</h4>
+                  <button
+                    onClick={onSaveOrder}
+                    disabled={isSavingOrder}
+                    className="text-xs font-bold px-4 py-2 bg-creator-bg border border-creator-border text-white rounded hover:bg-white/10 transition-colors disabled:opacity-50"
+                  >
+                    {isSavingOrder ? "Saving..." : "Save Order"}
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                  {pages.map((page, index) => (
+                    <ComicPageCard
+                      key={page.id}
+                      page={page}
+                      dragging={draggingPageId === page.id}
+                      onDragStart={() => onDragStart(page.id)}
+                      onDragEnd={() => onDragEnd(page.id)}
+                      onDrop={() => {
+                        if (draggingPageId) {
+                          onDropPage(draggingPageId, page.id);
+                        }
+                      }}
+                      onMoveUp={() => onMovePage(page.id, -1)}
+                      onMoveDown={() => onMovePage(page.id, 1)}
+                      onDelete={() => onDeletePage(page)}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Alert Box matching mockup */}
+          <div className="bg-creator-sidebar border border-creator-border rounded-xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-4">
+              <div className="w-5 h-5 rounded-full bg-creator-gold flex items-center justify-center shrink-0 mt-0.5">
+                <Info className="h-3 w-3 text-black" />
+              </div>
+              <p className="text-sm font-medium text-creator-muted max-w-sm">
+                Scans typically take 2-5 minutes.
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => onSaveEpisode({ ...selectedEpisode, ...editForm })}
+                disabled={isSavingEpisode}
+                className="px-6 py-2.5 bg-creator-bg border border-creator-border text-white text-sm font-bold rounded hover:bg-white/10 shrink-0 disabled:opacity-50"
+              >
+                {isSavingEpisode ? "Saving..." : "Save Details"}
+              </button>
+              {canSchedulePublish && (
+                <button
+                  onClick={onGoToPublishing}
+                  className="px-6 py-2.5 bg-creator-gold text-black text-sm font-bold rounded hover:bg-creator-gold-hover shrink-0"
+                >
+                  Continue to Publishing
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: AI Policy Scan */}
+        <div className="space-y-6">
+          <div className="bg-creator-sidebar border border-creator-border rounded-xl p-6 shadow-xl">
+            <h3 className="text-xs font-black uppercase tracking-[0.16em] text-creator-gold mb-6">AI POLICY SCAN</h3>
+            <div className="space-y-5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 text-sm font-medium text-white">
+                  <ShieldAlert className="h-4 w-4 text-creator-muted" /> Violence
+                </div>
+                <span className="text-[10px] font-bold px-2 py-1 bg-green-500/10 text-green-400 rounded-full border border-green-500/20">Safe (99%)</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 text-sm font-medium text-white">
+                  <AlertTriangle className="h-4 w-4 text-creator-muted" /> Sensitive Content
+                </div>
+                <span className="text-[10px] font-bold px-2 py-1 bg-creator-gold/10 text-creator-gold rounded-full border border-creator-gold/20">Pending...</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 text-sm font-medium text-white">
+                  <CheckCircle2 className="h-4 w-4 text-creator-muted" /> Policy Alignment
+                </div>
+                <span className="text-[10px] font-bold px-2 py-1 bg-green-500/10 text-green-400 rounded-full border border-green-500/20">Matched</span>
+              </div>
+
+              <div className="pt-5 mt-5 border-t border-creator-border">
+                <div className="flex justify-between text-xs font-bold mb-2">
+                  <span className="text-creator-muted">Overall Scan Progress</span>
+                  <span className="text-creator-gold">64%</span>
+                </div>
+                <div className="h-1 bg-creator-bg rounded-full overflow-hidden">
+                  <div className="h-full bg-creator-gold w-[64%]"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-creator-sidebar border border-creator-border rounded-xl p-6 shadow-xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-6 opacity-10">
+              <ShieldAlert size={100} />
+            </div>
+            <div className="relative z-10">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xs font-black uppercase tracking-[0.16em] text-creator-gold">COPYRIGHT GUARD</h3>
+                <span className="text-[10px] font-bold px-2 py-0.5 bg-creator-bg border border-creator-border rounded text-creator-muted">MILVUS V2</span>
+              </div>
+
+              <div className="aspect-video bg-[#090807] rounded-lg border border-creator-border flex items-center justify-center mb-6">
+                <div className="w-12 h-12 rounded-full bg-creator-gold/10 flex items-center justify-center border border-creator-gold/20">
+                  <Fingerprint className="h-6 w-6 text-creator-gold" />
+                </div>
+              </div>
+
+              <div className="flex justify-between items-end mb-4">
+                <span className="text-sm font-medium text-creator-muted">Similarity Index</span>
+                <span className="text-2xl font-bold text-white">1.2%</span>
+              </div>
+
+              <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg flex items-center gap-3 mb-4">
+                <CheckCircle2 className="h-5 w-5 text-green-400 shrink-0" />
+                <span className="text-xs font-bold text-green-400">Unique Asset Status Confirmed</span>
+              </div>
+
+              <p className="text-[10px] text-center text-creator-muted max-w-[200px] mx-auto leading-relaxed">
+                Vector search engine compared 4M+ existing frames across global databases. No infringement detected.
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -4211,14 +3729,14 @@ function ComicPageCard({
         event.dataTransfer.effectAllowed = "move";
         onDragStart();
       }}
-      onDragEnd={onDragEnd}
+      onDragEnd={() => onDragEnd()}
       onDragOver={(event) => event.preventDefault()}
       onDrop={(event) => {
         event.preventDefault();
         onDrop();
       }}
       className={cx(
-        "group relative overflow-hidden rounded-xl border-2 bg-[#121212] shadow-[0_4px_20px_rgba(0,0,0,0.4)] transition-colors duration-200",
+        "group relative overflow-hidden rounded-xl border-2 bg-creator-sidebar shadow-sm transition",
         dragging
           ? "scale-95 border-yellow-400 opacity-60"
           : "border-white/10 hover:border-yellow-400/50",
@@ -4228,20 +3746,20 @@ function ComicPageCard({
         {page.image ? (
           <img src={page.image} alt="" className="h-full w-full object-cover" />
         ) : (
-          <div className="flex h-full w-full items-center justify-center bg-[#1A1A1A] text-xs font-black text-zinc-500">
+          <div className="flex h-full w-full items-center justify-center bg-creator-bg border border-creator-border text-creator-muted text-xs font-black text-creator-muted">
             No preview
           </div>
         )}
         <span className="absolute left-2 top-2 flex h-7 w-7 items-center justify-center rounded-lg bg-[#151A23] text-xs font-black text-white">
           {page.displayOrder}
         </span>
-        <span className="absolute right-2 top-2 rounded-lg bg-black/70 p-1.5 text-zinc-200 shadow">
+        <span className="absolute right-2 top-2 rounded-lg bg-creator-sidebar/90 p-1.5 text-creator-text shadow">
           <GripVertical className="h-4 w-4" />
         </span>
       </div>
 
       <div className="space-y-2 p-3">
-        <p className="truncate text-sm font-black text-zinc-50">
+        <p className="truncate text-sm font-black text-white">
           {page.title}
         </p>
         <div className="grid grid-cols-3 gap-2">
@@ -4250,7 +3768,7 @@ function ComicPageCard({
             aria-label={`Move ${page.title} up`}
             title="Move up"
             onClick={onMoveUp}
-            className="flex h-9 min-w-0 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] text-zinc-400 transition hover:text-yellow-400"
+            className="flex h-9 min-w-0 items-center justify-center rounded-lg bg-creator-bg border border-creator-border text-creator-muted text-creator-muted transition hover:bg-[#E3EBF7]"
           >
             <ArrowUp className="h-4 w-4" />
           </button>
@@ -4259,7 +3777,7 @@ function ComicPageCard({
             aria-label={`Move ${page.title} down`}
             title="Move down"
             onClick={onMoveDown}
-            className="flex h-9 min-w-0 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] text-zinc-400 transition hover:text-yellow-400"
+            className="flex h-9 min-w-0 items-center justify-center rounded-lg bg-creator-bg border border-creator-border text-creator-muted text-creator-muted transition hover:bg-[#E3EBF7]"
           >
             <ArrowDown className="h-4 w-4" />
           </button>
@@ -4268,7 +3786,7 @@ function ComicPageCard({
             aria-label={`Delete ${page.title}`}
             title="Delete"
             onClick={onDelete}
-            className="flex h-9 min-w-0 items-center justify-center rounded-lg border border-red-500/30 bg-red-500/10 text-red-400 transition hover:bg-red-500 hover:text-white"
+            className="flex h-9 min-w-0 items-center justify-center rounded-lg bg-[#FFE8E8] text-red-400 transition hover:bg-[#FFDCDC]"
           >
             <Trash2 className="h-4 w-4" />
           </button>
@@ -4278,6 +3796,10 @@ function ComicPageCard({
   );
 }
 
+
+// ============================================================================
+// VIDEO UPLOAD VIEW
+// ============================================================================
 function VideoUploadView({
   selectedSeries,
   selectedSeason,
@@ -4298,6 +3820,7 @@ function VideoUploadView({
   isCancelingSchedule,
   onPublishNow,
   isPublishingNow,
+  onGoToPublishing,
   onBack,
 }: {
   selectedSeries: SeriesRow | null;
@@ -4319,234 +3842,105 @@ function VideoUploadView({
   isCancelingSchedule: boolean;
   onPublishNow: (episode: EpisodeRow) => void;
   isPublishingNow: boolean;
+  onGoToPublishing: () => void;
   onBack: () => void;
 }) {
-  const currentVideo = videos[0];
-  const canSchedule = videos.some(
-    (video) =>
-      video.approvalStatus === "APPROVED" && isPlayableVideoStatus(video.status),
-  );
-  const episodeControlClass =
-    "h-12 w-full rounded-xl border border-white/10 bg-[#1A1A1A] px-4 text-sm font-semibold text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-yellow-400/50 focus:ring-4 focus:ring-yellow-400/10";
-
-  function handleEpisodeSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const title = readFormString(form, "title");
-
-    if (!title) {
-      return;
-    }
-
-    onSaveEpisode({
-      ...selectedEpisode,
-      episodeNumber: readFormNumber(
-        form,
-        "episodeNumber",
-        selectedEpisode.episodeNumber,
-      )!,
-      title,
-      description: readFormString(form, "description"),
-      contentType: "VIDEO",
-    });
-  }
-
-  function handleUnlockSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const unlockType = readFormString(form, "unlockType") as EpisodeUnlockType;
-    const priceVnd =
-      unlockType === "PAID"
-        ? readFormNumber(form, "priceVnd", selectedEpisode.priceVnd) ?? 0
-        : 0;
-
-    if (unlockType === "PAID" && priceVnd <= 0) {
-      return;
-    }
-
-    onSaveEpisode({
-      ...selectedEpisode,
-      unlockType,
-      priceVnd,
-    });
-  }
-
   const [violationMediaId, setViolationMediaId] = useState<string | null>(null);
-
+  const [editForm, setEditForm] = useState({ episodeNumber: selectedEpisode.episodeNumber, title: selectedEpisode.title, description: selectedEpisode.description || "", unlockType: selectedEpisode.unlockType || "FREE", priceVnd: selectedEpisode.priceVnd || 0 });
+  const canSchedule = videos.some((video) => video.approvalStatus === "APPROVED");
   return (
-    <div className="space-y-4">
-      <CreationStepper currentStep={4} />
+    <div className="max-w-6xl mx-auto p-6 text-creator-text space-y-8">
+      {/* Header matching mockup */}
+      <div>
+        <button
+          type="button"
+          onClick={onBack}
+          className="inline-flex items-center gap-2 text-sm font-bold text-creator-muted hover:text-white transition-colors mb-6"
+        >
+          <ChevronLeft className="h-4 w-4" />
+          Back to Season
+        </button>
+        <h2 className="text-4xl font-bold text-white mb-3">Finalizing Asset Review</h2>
+        <p className="text-creator-muted max-w-2xl text-sm leading-relaxed">
+          Upload your high-fidelity cinematic assets and let TaleX AI ensure policy compliance and original content verification.
+        </p>
+      </div>
 
-      <button
-        type="button"
-        onClick={onBack}
-        className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-bold text-zinc-300 transition hover:border-yellow-400/50 hover:text-yellow-400"
-      >
-        <ChevronLeft className="h-4 w-4" />
-        Quay lại Tập
-      </button>
-
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+        {/* Left Column: Upload Workspace */}
         <div className="space-y-6">
-        <Panel>
-          <PanelHeader
-            icon={Clapperboard}
-            title="Thông tin Tập"
-            subtitle="Chỉnh metadata của tập video và lưu trước khi xuất bản."
-          />
-          <div className="mb-5 grid gap-3 text-sm font-bold text-[#5D5160] md:grid-cols-2">
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.12em] text-slate-400">
-                Series
-              </p>
-              <p className="mt-1 text-base font-black text-zinc-50">
-                {selectedSeries?.title ?? "Unknown series"}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.12em] text-slate-400">
-                Mùa
-              </p>
-              <p className="mt-1 text-base font-black text-zinc-50">
-                {selectedSeason
-                  ? `Mùa ${selectedSeason.seasonNumber}: ${selectedSeason.title}`
-                  : selectedEpisode.seasonId}
-              </p>
+          <div className="bg-creator-sidebar border border-creator-border rounded-xl p-8 shadow-xl mb-6">
+            <h3 className="text-lg font-bold text-white mb-6">Episode Details</h3>
+            <div className="space-y-5">
+              <div className="grid gap-5 md:grid-cols-2">
+                <div>
+                  <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Episode Number</label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={editForm.episodeNumber}
+                    onChange={(e) => setEditForm({ ...editForm, episodeNumber: Number(e.target.value) })}
+                    className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Episode Title *</label>
+                  <input
+                    type="text"
+                    required
+                    value={editForm.title}
+                    onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                    className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Description</label>
+                <textarea
+                  rows={3}
+                  value={editForm.description}
+                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                  className="w-full resize-none rounded-md border border-creator-border bg-creator-bg p-3 text-sm text-white outline-none focus:border-creator-gold"
+                />
+              </div>
+              <div className="grid gap-5 md:grid-cols-2 mt-4 pt-4 border-t border-creator-border">
+                <div>
+                  <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Unlock Type</label>
+                  <select
+                    value={editForm.unlockType}
+                    onChange={(e) => setEditForm({ ...editForm, unlockType: e.target.value as EpisodeUnlockType })}
+                    className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
+                  >
+                    <option value="FREE">FREE</option>
+                    <option value="PAID">PAID</option>
+                  </select>
+                </div>
+
+                {editForm.unlockType === "PAID" && (
+                  <div>
+                    <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Price (VND) *</label>
+                    <input
+                      type="number"
+                      min={1}
+                      value={editForm.priceVnd}
+                      onChange={(e) => setEditForm({ ...editForm, priceVnd: Number(e.target.value) })}
+                      className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
+                    />
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-          <form
-            key={selectedEpisode.id}
-            onSubmit={handleEpisodeSubmit}
-            className="space-y-5"
-          >
-            <div className="grid gap-5 md:grid-cols-3">
-              <Field label="Số tập">
-                <input
-                  type="number"
-                  min={1}
-                  name="episodeNumber"
-                  defaultValue={selectedEpisode.episodeNumber}
-                  className={episodeControlClass}
-                />
-              </Field>
-              <Field label="Trạng thái">
-                <input
-                  value={formatStatusLabel(selectedEpisode.status)}
-                  readOnly
-                  className={episodeControlClass}
-                />
-              </Field>
-              <Field label="Loại nội dung">
-                <input
-                  value="VIDEO"
-                  readOnly
-                  className={episodeControlClass}
-                />
-              </Field>
-            </div>
-            <Field label="Tiêu đề tập" required>
-              <input
-                name="title"
-                required
-                defaultValue={selectedEpisode.title}
-                className={episodeControlClass}
-              />
-            </Field>
-            <Field label="Mô tả">
-              <textarea
-                name="description"
-                rows={5}
-                defaultValue={selectedEpisode.description}
-                className="w-full resize-none rounded-xl border border-white/10 bg-[#1A1A1A] p-4 text-sm font-semibold text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-yellow-400/50 focus:ring-4 focus:ring-yellow-400/10"
-              />
-            </Field>
-            <div className="flex justify-end">
-              <button
-                type="submit"
-                disabled={isSavingEpisode}
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-yellow-400 px-5 text-sm font-black text-black shadow-[0_4px_20px_rgba(250,204,21,0.15)] transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <CheckCircle2 className="h-4 w-4" />
-                {isSavingEpisode ? "Đang lưu..." : "Lưu thông tin Tập"}
-              </button>
-            </div>
-          </form>
-        </Panel>
-
-        <Panel>
-          <PanelHeader
-            icon={FileVideo}
-            title="Media video"
-            subtitle="Gắn một file video cho tập này."
-          />
-          <div className="space-y-5">
-            <div>
-              <p className="mb-2 text-xs font-black text-zinc-400">
-                Video hiện tại
-              </p>
-              {isLoadingMedia && (
-                <div className="rounded-2xl border border-white/10 bg-[#1A1A1A] px-4 py-5 text-center text-sm font-bold text-zinc-400">
-                  Đang tải video...
-                </div>
-              )}
-              {!isLoadingMedia && videos.length === 0 && (
-                <div className="rounded-2xl border border-white/10 bg-[#1A1A1A] px-4 py-5 text-center text-sm font-bold text-zinc-400">
-                  Tập này chưa có video.
-                </div>
-              )}
-              {!isLoadingMedia && videos.length > 0 && (
-                <div className="space-y-4">
-                  {videos.map((video) => (
-                    <div
-                      key={video.mediaId}
-                      className="rounded-2xl border border-white/10 bg-[#1A1A1A] p-3"
-                    >
-                      {isPlayableVideoStatus(video.status) ? (
-                        <SignedHlsPlayer episodeId={video.episodeId} compact creatorMode />
-                      ) : (
-                        <VideoProcessingState video={video} onViewViolation={setViolationMediaId} />
-                      )}
-                        <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs font-bold text-zinc-400">
-                          <span>
-                            {video.mimeType} . {formatBytes(video.fileSize)} .{" "}
-                            {formatMediaStatusLabel(video.status)}
-                          </span>
-                          <span
-                            className={cx(
-                              "rounded-full border px-3 py-1 font-black",
-                              getApprovalChipClass(video.approvalStatus ?? "PENDING_REVIEW"),
-                            )}
-                          >
-                            {formatApprovalStatusLabel(video.approvalStatus ?? "PENDING_REVIEW")}
-                          </span>
-                          <div className="flex flex-wrap gap-2">
-                            <a
-                              href={`/watch/${video.episodeId}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 font-black text-yellow-400 transition hover:bg-yellow-400 hover:text-black"
-                            >
-                              Xem trang
-                            </a>
-                            <button
-                              type="button"
-                              onClick={() => onDeleteVideo(video)}
-                              className="rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 font-black text-red-400 transition hover:bg-red-500 hover:text-white"
-                            >
-                              Xóa
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              )}
+          <div className="bg-creator-sidebar border border-creator-border rounded-xl p-8 shadow-xl">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-bold text-white">Upload Workspace</h3>
+              <span className="text-xs font-bold px-3 py-1.5 bg-creator-bg border border-creator-border rounded text-creator-muted uppercase tracking-wider">
+                MP4, MOV, CBR accepted
+              </span>
             </div>
 
-            <div>
-              <p className="mb-2 text-xs font-black text-zinc-400">
-                File video
-              </p>
+            <div className="mb-6">
               <ResumableVideoUploader
                 key={selectedEpisode.id}
                 episodeId={selectedEpisode.id}
@@ -4561,132 +3955,158 @@ function VideoUploadView({
               />
             </div>
 
-          </div>
-        </Panel>
-        </div>
-
-        <aside className="space-y-5">
-        <Panel>
-          <PanelHeader
-            icon={Lock}
-            title="Thiết lập mở khóa"
-            subtitle="Cấu hình cách mở khóa tập này và lưu riêng với thông tin tập."
-          />
-          <form
-            key={`${selectedEpisode.id}-${selectedEpisode.unlockType}-${selectedEpisode.priceVnd}`}
-            onSubmit={handleUnlockSubmit}
-            className="space-y-4"
-          >
-            <EpisodeUnlockFields
-              defaultUnlockType={selectedEpisode.unlockType}
-              defaultPriceVnd={selectedEpisode.priceVnd}
-              controlClass={episodeControlClass}
-            />
-            <button
-              type="submit"
-              disabled={isSavingEpisode}
-              className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-yellow-400 text-sm font-black text-black transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <CheckCircle2 className="h-4 w-4" />
-              {isSavingEpisode ? "Đang lưu..." : "Lưu mở khóa"}
-            </button>
-          </form>
-        </Panel>
-
-        <Panel>
-          <PanelHeader icon={Calendar} title="Xuất bản" />
-          <div className="space-y-4">
-            <div
-              className={cx(
-                "rounded-xl border p-4 text-xs font-bold leading-relaxed",
-                getApprovalChipClass(currentVideo?.approvalStatus ?? "PENDING_REVIEW"),
-              )}
-            >
-              Kiểm duyệt media:{" "}
-              {formatApprovalStatusLabel(currentVideo?.approvalStatus ?? "PENDING_REVIEW")}
-            </div>
-            <div className="rounded-xl border border-white/10 bg-[#1A1A1A] p-4 text-xs font-bold leading-relaxed text-zinc-400">
-              Lịch xuất bản: {formatDateTime(selectedEpisode.scheduledPublishAt)}
-            </div>
-            <div className="rounded-xl border border-cyan-400/30 bg-cyan-400/10 p-4 text-xs font-bold leading-relaxed text-cyan-300">
-              Tập mới cần kiểm duyệt trước khi được xuất bản.
-            </div>
-            {/* Hide / Unhide episode */}
-            {selectedEpisode.status === "PUBLISHED" && (
-              <button
-                type="button"
-                onClick={() => onHideEpisode(selectedEpisode)}
-                disabled={isHidingEpisode}
-                className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-amber-400/30 bg-amber-400/10 text-sm font-black text-amber-300 transition hover:bg-amber-400 hover:text-black disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <Eye className="h-4 w-4" />
-                {isHidingEpisode ? "Đang xử lý..." : "Ẩn Tập"}
-              </button>
-            )}
-            {selectedEpisode.status === "HIDDEN" && (
-              <button
-                type="button"
-                onClick={() => onUnhideEpisode(selectedEpisode)}
-                disabled={isHidingEpisode}
-                className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-cyan-400/30 bg-cyan-400/10 text-sm font-black text-cyan-300 transition hover:bg-cyan-400 hover:text-black disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <Zap className="h-4 w-4" />
-                {isHidingEpisode ? "Đang xử lý..." : "Hiện Tập"}
-              </button>
-            )}
-
-            {selectedEpisode.status === "SCHEDULED" ? (
-              <button
-                type="button"
-                onClick={() => onCancelSchedule(selectedEpisode)}
-                disabled={isCancelingSchedule}
-                className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 text-sm font-black text-red-300 transition hover:bg-red-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <X className="h-4 w-4" />
-                {isCancelingSchedule ? "Đang hủy..." : "Hủy lịch"}
-              </button>
-            ) : (
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => onSchedulePublish(selectedEpisode)}
-                  disabled={!canSchedule || selectedEpisode.status === "PUBLISHED"}
-                  className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-yellow-400/30 bg-yellow-400/5 text-sm font-black text-yellow-400 transition hover:bg-yellow-400 hover:text-black disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/5 disabled:text-zinc-600"
-                >
-                  <Calendar className="h-4 w-4" />
-                  Lên lịch
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onPublishNow(selectedEpisode)}
-                  disabled={!canSchedule || selectedEpisode.status === "PUBLISHED" || isPublishingNow}
-                  className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-yellow-400 text-sm font-black text-black transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-zinc-600"
-                >
-                  <CloudUpload className="h-4 w-4" />
-                  {isPublishingNow ? "Đang xuất bản..." : "Xuất bản ngay"}
-                </button>
+            {/* List of uploaded files */}
+            {isLoadingMedia ? (
+              <div className="p-6 rounded-xl bg-creator-bg border border-creator-border flex flex-col items-center justify-center text-creator-muted">
+                <div className="w-6 h-6 border-2 border-creator-gold border-t-transparent rounded-full animate-spin mb-3"></div>
+                <span className="text-sm font-bold">Loading media...</span>
+              </div>
+            ) : videos.length > 0 && (
+              <div className="space-y-4">
+                {videos.map((video) => (
+                  <div key={video.mediaId} className="rounded-xl border border-creator-border bg-creator-bg overflow-hidden group">
+                    <div className="p-4 border-b border-creator-border flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Clapperboard className="h-5 w-5 text-creator-gold" />
+                        <div>
+                          <p className="text-sm font-bold text-white max-w-[200px] truncate" title={(video as any).fileName || video.fileUrl?.split("/").pop() || video.fileUrl}>
+                            {(video as any).fileName || video.fileUrl?.split("/").pop() || "Video File"}
+                          </p>
+                          <p className="text-xs font-medium text-creator-muted uppercase tracking-wider">
+                            {video.mimeType} â€¢ {formatBytes(video.fileSize)}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={cx(
+                          "px-2.5 py-1 text-[10px] font-bold rounded uppercase tracking-wider border",
+                          getApprovalChipClass(video.approvalStatus ?? "PENDING_REVIEW")
+                        )}>
+                          {formatApprovalStatusLabel(video.approvalStatus ?? "PENDING_REVIEW")}
+                        </span>
+                        <button
+                          onClick={() => onDeleteVideo(video)}
+                          className="w-8 h-8 flex items-center justify-center rounded bg-creator-sidebar text-creator-muted hover:text-red-400 hover:bg-red-400/10 transition-colors border border-creator-border hover:border-red-400/30"
+                          title="Delete Video"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="p-4 bg-black/20">
+                      {isPlayableVideoStatus(video.status) ? (
+                        <div className="rounded-lg overflow-hidden border border-creator-border">
+                          <SignedHlsPlayer episodeId={video.episodeId} compact creatorMode />
+                        </div>
+                      ) : (
+                        <VideoProcessingState video={video} onViewViolation={setViolationMediaId} />
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
-        </Panel>
 
-        {uploadMessage && (
-          <div className="rounded-xl border border-white/10 bg-[#1A1A1A] px-4 py-3 text-sm font-bold text-zinc-300">
-            {uploadMessage}
+          {/* Alert Box matching mockup */}
+          <div className="bg-creator-sidebar border border-creator-border rounded-xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-4">
+              <div className="w-5 h-5 rounded-full bg-creator-gold flex items-center justify-center shrink-0 mt-0.5">
+                <Info className="h-3 w-3 text-black" />
+              </div>
+              <p className="text-sm font-medium text-creator-muted max-w-sm">
+                Scans typically take 2-5 minutes.
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => onSaveEpisode({ ...selectedEpisode, ...editForm })}
+                disabled={isSavingEpisode}
+                className="px-6 py-2.5 bg-creator-bg border border-creator-border text-white text-sm font-bold rounded hover:bg-white/10 shrink-0 disabled:opacity-50"
+              >
+                {isSavingEpisode ? "Saving..." : "Save Details"}
+              </button>
+              {canSchedule && (
+                <button
+                  onClick={onGoToPublishing}
+                  className="px-6 py-2.5 bg-creator-gold text-black text-sm font-bold rounded hover:bg-creator-gold-hover shrink-0"
+                >
+                  Continue to Publishing
+                </button>
+              )}
+            </div>
           </div>
-        )}
+        </div>
 
-        <button className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] text-sm font-black text-zinc-300 transition hover:border-yellow-400/50 hover:text-yellow-400">
-          <CheckCircle2 className="h-4 w-4" />
-          Lưu nháp
-        </button>
-        </aside>
+        {/* Right Column: AI Policy Scan */}
+        <div className="space-y-6">
+          <div className="bg-creator-sidebar border border-creator-border rounded-xl p-6 shadow-xl">
+            <h3 className="text-xs font-black uppercase tracking-[0.16em] text-creator-gold mb-6">AI POLICY SCAN</h3>
+            <div className="space-y-5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 text-sm font-medium text-white">
+                  <ShieldAlert className="h-4 w-4 text-creator-muted" /> Violence
+                </div>
+                <span className="text-[10px] font-bold px-2 py-1 bg-green-500/10 text-green-400 rounded-full border border-green-500/20">Safe (99%)</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 text-sm font-medium text-white">
+                  <AlertTriangle className="h-4 w-4 text-creator-muted" /> Sensitive Content
+                </div>
+                <span className="text-[10px] font-bold px-2 py-1 bg-creator-gold/10 text-creator-gold rounded-full border border-creator-gold/20">Pending...</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 text-sm font-medium text-white">
+                  <CheckCircle2 className="h-4 w-4 text-creator-muted" /> Policy Alignment
+                </div>
+                <span className="text-[10px] font-bold px-2 py-1 bg-green-500/10 text-green-400 rounded-full border border-green-500/20">Matched</span>
+              </div>
+
+              <div className="pt-5 mt-5 border-t border-creator-border">
+                <div className="flex justify-between text-xs font-bold mb-2">
+                  <span className="text-creator-muted">Overall Scan Progress</span>
+                  <span className="text-creator-gold">64%</span>
+                </div>
+                <div className="h-1 bg-creator-bg rounded-full overflow-hidden">
+                  <div className="h-full bg-creator-gold w-[64%]"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-creator-sidebar border border-creator-border rounded-xl p-6 shadow-xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-6 opacity-10">
+              <ShieldAlert size={100} />
+            </div>
+            <div className="relative z-10">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xs font-black uppercase tracking-[0.16em] text-creator-gold">COPYRIGHT GUARD</h3>
+                <span className="text-[10px] font-bold px-2 py-0.5 bg-creator-bg border border-creator-border rounded text-creator-muted">MILVUS V2</span>
+              </div>
+
+              <div className="aspect-video bg-[#090807] rounded-lg border border-creator-border flex items-center justify-center mb-6">
+                <div className="w-12 h-12 rounded-full bg-creator-gold/10 flex items-center justify-center border border-creator-gold/20">
+                  <Fingerprint className="h-6 w-6 text-creator-gold" />
+                </div>
+              </div>
+
+              <div className="flex justify-between items-end mb-4">
+                <span className="text-sm font-medium text-creator-muted">Similarity Index</span>
+                <span className="text-2xl font-bold text-white">1.2%</span>
+              </div>
+
+              <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg flex items-center gap-3 mb-4">
+                <CheckCircle2 className="h-5 w-5 text-green-400 shrink-0" />
+                <span className="text-xs font-bold text-green-400">Unique Asset Status Confirmed</span>
+              </div>
+
+              <p className="text-[10px] text-center text-creator-muted max-w-[200px] mx-auto leading-relaxed">
+                Vector search engine compared 4M+ existing frames across global databases. No infringement detected.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
-      <ViolationDetailDialog
-        mediaId={violationMediaId ?? ""}
-        open={violationMediaId !== null}
-        onOpenChange={(open) => { if (!open) setViolationMediaId(null); }}
-      />
     </div>
   );
 }
@@ -4697,10 +4117,10 @@ function VideoProcessingState({ video, onViewViolation }: { video: MediaResponse
   const inactive = video.status === "INACTIVE";
 
   const bgClass = failed || inactive
-    ? "border-red-500/30 bg-red-500/10 text-red-300"
+    ? "border-red-500/50 bg-red-500/10 text-red-400"
     : pending
-      ? "border-amber-500/30 bg-amber-500/10 text-amber-300"
-      : "border-cyan-400/30 bg-cyan-400/10 text-cyan-300";
+      ? "border-amber-300/30 bg-amber-50 text-amber-800"
+      : "border-[#D9E2F0] bg-creator-sidebar text-creator-muted";
 
   return (
     <div className={cx("flex aspect-video w-full flex-col items-center justify-center rounded-xl border px-4 text-center", bgClass)}>
@@ -4709,20 +4129,20 @@ function VideoProcessingState({ video, onViewViolation }: { video: MediaResponse
       ) : pending ? (
         <Loader2 className="mb-3 h-8 w-8 animate-spin text-amber-600" />
       ) : (
-        <Loader2 className="mb-3 h-8 w-8 animate-spin text-[#007A8A]" />
+        <Loader2 className="mb-3 h-8 w-8 animate-spin text-creator-gold" />
       )}
-      <p className="text-sm font-black text-zinc-50">
-        {inactive ? "Nội dung vi phạm chính sách" : pending ? "Đang kiểm duyệt nội dung" : failed ? "Xử lý video thất bại" : "Video đang được xử lý"}
+      <p className="text-sm font-black text-white">
+        {inactive ? "Ná»™i dung vi pháº¡m chÃ­nh sÃ¡ch" : pending ? "Äang kiá»ƒm duyá»‡t ná»™i dung" : failed ? "Video processing failed" : "Video is still processing"}
       </p>
       <p className="mt-2 max-w-md text-xs font-bold leading-relaxed">
-        {inactive ? "Nội dung đã bị ẩn do vi phạm bản quyền hoặc kiểm duyệt." : pending ? "Đang kiểm tra bản quyền và nội dung..." : failed ? (video.errorMessage || "Không thể xử lý video.") : "Vui lòng chờ trong giây lát."}
+        {inactive ? "Ná»™i dung Ä‘Ã£ bá»‹ áº©n do vi pháº¡m báº£n quyá»n hoáº·c kiá»ƒm duyá»‡t." : pending ? "Äang kiá»ƒm tra báº£n quyá»n vÃ  ná»™i dung..." : failed ? (video.errorMessage || "KhÃ´ng thá»ƒ xá»­ lÃ½ video.") : "Vui lÃ²ng chá» trong giÃ¢y lÃ¡t."}
       </p>
       <span className={cx("mt-3 rounded-full px-3 py-1 text-[11px] font-black", inactive ? "bg-red-500/10 text-red-300" : pending ? "bg-amber-500/10 text-amber-300" : "bg-cyan-400/10 text-cyan-300")}>
         {formatMediaStatusLabel(video.status)}
       </span>
       {inactive && onViewViolation && (
-        <button onClick={() => onViewViolation(video.mediaId)} className="mt-2 text-xs font-semibold text-red-300 underline hover:text-red-200">
-          Xem chi tiết vi phạm
+        <button onClick={() => onViewViolation(video.mediaId)} className="mt-2 text-xs font-semibold text-red-600 underline hover:text-red-800">
+          Xem chi tiáº¿t vi pháº¡m
         </button>
       )}
     </div>
@@ -4739,7 +4159,7 @@ function Panel({
   return (
     <section
       className={cx(
-        "rounded-[20px] border border-white/10 bg-[#121212] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.4)]",
+        "rounded-[20px] border border-[#E5EAF3] bg-creator-sidebar p-6 shadow-[0_20px_60px_rgba(30,42,68,0.06)]",
         className,
       )}
     >
@@ -4765,9 +4185,9 @@ function PanelHeader({
         <Icon className="h-4 w-4" />
       </div>
       <div>
-        <h2 className="text-lg font-black text-zinc-50">{title}</h2>
+        <h2 className="text-lg font-black text-white">{title}</h2>
         {subtitle && (
-          <p className="mt-1 text-sm font-semibold leading-relaxed text-zinc-400">
+          <p className="mt-1 text-sm font-semibold leading-relaxed text-creator-muted">
             {subtitle}
           </p>
         )}
@@ -4838,119 +4258,10 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="mb-2 block text-xs font-black text-zinc-400">
-        {label} {required && <span className="text-yellow-400">*</span>}
+      <span className="mb-2 block text-xs font-black text-creator-muted">
+        {label} {required && <span className="text-[#B83268]">*</span>}
       </span>
       {children}
     </label>
-  );
-}
-
-function TypeOption({
-  active,
-  icon: Icon,
-  title,
-  description,
-  onClick,
-}: {
-  active: boolean;
-  icon: LucideIcon;
-  title: string;
-  description: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cx(
-        "group min-h-36 rounded-2xl border bg-[#1A1A1A] p-5 text-left transition hover:border-yellow-400/50 hover:bg-[#202020]",
-        active
-          ? "border-yellow-400 shadow-[0_0_34px_rgba(250,204,21,0.12)]"
-          : "border-white/10",
-      )}
-    >
-      <div
-        className={cx(
-          "mb-4 flex h-11 w-11 items-center justify-center rounded-xl border transition",
-          active
-            ? "border-yellow-400/40 bg-yellow-400/10 text-yellow-400"
-            : "border-white/10 bg-white/[0.04] text-zinc-500 group-hover:text-yellow-400",
-        )}
-      >
-        <Icon className="h-5 w-5" />
-      </div>
-      <span className="block text-base font-black text-zinc-50">{title}</span>
-      <p className="mt-2 text-sm font-semibold leading-6 text-zinc-400">
-        {description}
-      </p>
-    </button>
-  );
-}
-
-function ArtworkUploadField({
-  title,
-  helper,
-  file,
-  onFileChange,
-  tall,
-}: {
-  title: string;
-  helper: string;
-  file?: File;
-  onFileChange: (file: File | undefined) => void;
-  tall?: boolean;
-}) {
-  const previewUrl = useMemo(
-    () => (file ? URL.createObjectURL(file) : undefined),
-    [file],
-  );
-
-  useEffect(() => {
-    return () => {
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
-      }
-    };
-  }, [previewUrl]);
-
-  return (
-    <div>
-      <p className="text-xs font-black uppercase tracking-[0.14em] text-zinc-300">
-        {title}
-      </p>
-      <p className="mt-1 text-[11px] font-semibold text-zinc-500">{helper}</p>
-      <label
-        className={cx(
-          "mt-3 flex cursor-pointer items-center justify-center overflow-hidden rounded-2xl border border-dashed border-white/10 bg-[#1A1A1A] text-center transition hover:border-yellow-400/50 hover:bg-[#202020]",
-          tall ? "aspect-[3/4]" : "aspect-video",
-        )}
-      >
-        {previewUrl ? (
-          <img src={previewUrl} alt="" className="h-full w-full object-cover" />
-        ) : (
-          <div className="px-5">
-            <ImageIcon className="mx-auto mb-3 h-7 w-7 text-yellow-400" />
-            <p className="text-xs font-black uppercase tracking-[0.16em] text-zinc-200">
-              Tải lên
-            </p>
-            <p className="mt-2 text-xs font-semibold text-zinc-500">
-              Chọn file ảnh
-            </p>
-          </div>
-        )}
-        <input
-          type="file"
-          accept="image/*"
-          className="sr-only"
-          onChange={(event) => onFileChange(event.target.files?.[0])}
-        />
-      </label>
-      {file && (
-        <p className="mt-2 truncate text-xs font-bold text-yellow-400">
-          {file.name}
-        </p>
-      )}
-    </div>
   );
 }

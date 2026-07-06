@@ -439,3 +439,15 @@ export async function deleteMedia(id: string, actorId?: string) {
     }),
   );
 }
+
+export async function getCategories() {
+  return unwrapBaseResponse<BasePageResponse<CategoryResponse>>(
+    httpClient.get('/api/v1/categories?pageSize=100')
+  );
+}
+
+export async function getTags() {
+  return unwrapBaseResponse<BasePageResponse<TagResponse>>(
+    httpClient.get('/api/v1/tags?pageSize=100')
+  );
+}

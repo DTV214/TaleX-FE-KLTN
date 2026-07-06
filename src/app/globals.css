@@ -37,6 +37,17 @@
   --ring: #D4AF37;
 
   --radius: 0.625rem;
+
+  /* Creator Dashboard Specific Colors */
+  --creator-gold: #E2B13C;
+  --creator-gold-hover: #f3c75c;
+  --creator-bg: #13110F;
+  --creator-sidebar: #090807;
+  --creator-card: #181614;
+  --creator-card-hover: #1E1B18;
+  --creator-border: #2A2622;
+  --creator-text: #F3F4F6;
+  --creator-muted: #858079;
 }
 
 /* 
@@ -71,6 +82,17 @@
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
+
+  /* Creator Dashboard */
+  --color-creator-gold: var(--creator-gold);
+  --color-creator-gold-hover: var(--creator-gold-hover);
+  --color-creator-bg: var(--creator-bg);
+  --color-creator-sidebar: var(--creator-sidebar);
+  --color-creator-card: var(--creator-card);
+  --color-creator-card-hover: var(--creator-card-hover);
+  --color-creator-border: var(--creator-border);
+  --color-creator-text: var(--creator-text);
+  --color-creator-muted: var(--creator-muted);
 }
 
 /* BƯỚC 3: Tiện ích tái sử dụng - Glassmorphism */

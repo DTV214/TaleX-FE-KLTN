@@ -115,7 +115,7 @@ export function ResumableVideoUploader({
     event.currentTarget.value = "";
   }
 
-  function handleDrop(event: DragEvent<HTMLDivElement>) {
+  function handleDrop(event: DragEvent<HTMLLabelElement>) {
     event.preventDefault();
 
     if (disabled || upload.isUploading) {
@@ -126,14 +126,23 @@ export function ResumableVideoUploader({
   }
 
   return (
-    <div className="space-y-4">
-      <div
-        className="rounded-2xl border border-dashed border-[#E8AFC1] bg-[#F1F5FE] p-5 text-center transition hover:border-[#B83268] hover:bg-[#F8FAFF]"
+    <div className="space-y-6">
+      <label
+        className={`mb-4 flex min-h-[220px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed ${
+          disabled || upload.isUploading ? 'opacity-50 cursor-not-allowed border-creator-border bg-creator-bg' : 'border-creator-gold/30 bg-[#13110F] hover:bg-creator-bg transition group'
+        } p-8 text-center`}
         onDragOver={(event) => event.preventDefault()}
         onDrop={handleDrop}
       >
+        <input
+          type="file"
+          accept="video/*"
+          className="hidden"
+          disabled={disabled || upload.isUploading}
+          onChange={handleInputChange}
+        />
         {previewUrl ? (
-          <div className="overflow-hidden rounded-xl bg-black shadow-sm">
+          <div className="overflow-hidden rounded-xl bg-black shadow-sm w-full relative z-10">
             <video
               src={previewUrl}
               controls
@@ -141,90 +150,79 @@ export function ResumableVideoUploader({
             />
           </div>
         ) : (
-          <div className="py-6">
-            <FileVideo className="mx-auto mb-4 h-10 w-10 text-[#E85D90]" />
-            <p className="text-lg font-black text-[#151A23]">
-              Drag and drop video here
-            </p>
-            <p className="mt-2 text-sm font-semibold text-[#5D5160]">
-              Select a video file for this episode.
-            </p>
+          <>
+            <div className="w-16 h-16 bg-creator-bg rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+              <UploadCloud size={28} className="text-creator-gold" />
+            </div>
+            <p className="text-lg font-bold text-white mb-2">Drag and drop your video here</p>
+            <p className="text-sm text-creator-muted max-w-sm mb-6">Or click to browse from your computer. MP4 and MOV recommended.</p>
+            <div className="px-6 py-2.5 bg-white/5 group-hover:bg-white/10 rounded-md text-sm font-medium transition-colors border border-creator-border text-white">
+              Select Video
+            </div>
+          </>
+        )}
+      </label>
+
+      {upload.selectedFile && !previewUrl && (
+        <p className="text-sm font-bold text-creator-gold text-center">
+          Selected: {upload.selectedFile.name}
+        </p>
+      )}
+
+      {!upload.selectedFile && upload.persistedUpload && (
+        <p className="text-sm font-bold text-creator-gold text-center">
+          Pending upload: {upload.persistedUpload.fileName}
+        </p>
+      )}
+
+      {(upload.isUploading || upload.status === "paused" || upload.status === "completed" || upload.progress > 0) && (
+        <div className="rounded-xl border border-creator-border bg-creator-sidebar p-5">
+          <div className="mb-3 flex items-center justify-between gap-3 text-sm font-bold text-white">
+            <span>{statusText[upload.status]}</span>
+            <span>{upload.progress}%</span>
           </div>
-        )}
-
-        {upload.selectedFile && (
-          <p className="mt-3 text-xs font-black text-[#007A8A]">
-            {upload.selectedFile.name}
-          </p>
-        )}
-
-        {!upload.selectedFile && upload.persistedUpload && (
-          <p className="mt-3 text-xs font-black text-[#007A8A]">
-            Pending upload: {upload.persistedUpload.fileName}
-          </p>
-        )}
-
-        <label
-          aria-disabled={disabled || upload.isUploading}
-          className="mt-5 inline-flex cursor-pointer rounded-full bg-[#B83268] px-5 py-2.5 text-xs font-black text-white aria-disabled:cursor-not-allowed aria-disabled:opacity-60"
-        >
-          Browse Files
-          <input
-            type="file"
-            accept="video/*"
-            className="sr-only"
-            disabled={disabled || upload.isUploading}
-            onChange={handleInputChange}
-          />
-        </label>
-      </div>
-
-      <div className="rounded-2xl border border-[#E5EAF3] bg-white p-4">
-        <div className="mb-3 flex items-center justify-between gap-3 text-xs font-black text-[#5D5160]">
-          <span>{statusText[upload.status]}</span>
-          <span>{upload.progress}%</span>
+          <div className="h-2 overflow-hidden rounded-full bg-creator-bg border border-creator-border">
+            <div
+              className="h-full rounded-full bg-creator-gold transition-all"
+              style={{ width: `${upload.progress}%` }}
+            />
+          </div>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs font-medium text-creator-muted">
+            <span>
+              {formatBytes(upload.uploadedBytes)} / {formatBytes(upload.totalBytes)}
+            </span>
+            {upload.speedBytesPerSecond > 0 && (
+              <span>{formatBytes(upload.speedBytesPerSecond)}/s</span>
+            )}
+          </div>
         </div>
-        <div className="h-3 overflow-hidden rounded-full bg-[#E5EAF3]">
-          <div
-            className="h-full rounded-full bg-[#007A8A] transition-all"
-            style={{ width: `${upload.progress}%` }}
-          />
-        </div>
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs font-bold text-[#5D5160]">
-          <span>
-            {formatBytes(upload.uploadedBytes)} / {formatBytes(upload.totalBytes)}
-          </span>
-          {upload.speedBytesPerSecond > 0 && (
-            <span>{formatBytes(upload.speedBytesPerSecond)}/s</span>
-          )}
-        </div>
-      </div>
+      )}
 
       {disabledReason && (
-        <div className="rounded-xl border border-[#FFE0A3] bg-[#FFF8E6] px-4 py-3 text-sm font-bold text-[#7A4B00]">
+        <div className="rounded-xl border border-yellow-500/50 bg-yellow-500/10 px-4 py-3 text-sm font-bold text-yellow-500">
           {disabledReason}
         </div>
       )}
 
       {upload.error && (
-        <div className="rounded-xl border border-[#FFD8D4] bg-[#FFF7F6] px-4 py-3 text-sm font-bold text-[#B42318]">
+        <div className="rounded-xl border border-red-500/50 bg-red-500/10 px-4 py-3 text-sm font-bold text-red-400">
           {upload.error}
         </div>
       )}
 
       {upload.status === "completed" && (
-        <div className="flex items-center gap-2 rounded-xl border border-[#C8F7DC] bg-[#F0FFF6] px-4 py-3 text-sm font-bold text-[#047857]">
+        <div className="flex items-center gap-2 rounded-xl border border-green-500/50 bg-green-500/10 px-4 py-3 text-sm font-bold text-green-400">
           <CheckCircle2 className="h-4 w-4" />
           Video uploaded. Processing playback now.
         </div>
       )}
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-3 pt-2">
         <button
           type="button"
           onClick={primaryAction.action}
           disabled={disabled || upload.isUploading || !upload.selectedFile}
-          className="flex h-12 items-center justify-center gap-2 rounded-xl bg-[#B83268] px-4 text-sm font-black text-white shadow-lg shadow-pink-900/20 disabled:cursor-not-allowed disabled:opacity-60 sm:col-span-2"
+          className="flex py-3 items-center justify-center gap-2 rounded-md bg-creator-gold px-4 text-sm font-bold text-black hover:bg-creator-gold-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed sm:col-span-2"
         >
           <PrimaryIcon className="h-4 w-4" />
           {upload.isUploading ? "Uploading..." : primaryAction.label}
@@ -234,7 +232,7 @@ export function ResumableVideoUploader({
           <button
             type="button"
             onClick={upload.pauseUpload}
-            className="flex h-12 items-center justify-center gap-2 rounded-xl border border-[#E8BBCB] bg-white px-4 text-sm font-black text-[#5D5160]"
+            className="flex py-3 items-center justify-center gap-2 rounded-md border border-creator-border bg-white/5 hover:bg-white/10 px-4 text-sm font-medium text-white transition-colors"
           >
             <PauseCircle className="h-4 w-4" />
             Pause
@@ -244,7 +242,7 @@ export function ResumableVideoUploader({
             type="button"
             onClick={upload.cancelUpload}
             disabled={!upload.persistedUpload && !upload.selectedFile}
-            className="flex h-12 items-center justify-center gap-2 rounded-xl border border-[#E8BBCB] bg-white px-4 text-sm font-black text-[#5D5160] disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex py-3 items-center justify-center gap-2 rounded-md border border-creator-border bg-white/5 hover:bg-white/10 px-4 text-sm font-medium text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <XCircle className="h-4 w-4" />
             Cancel
