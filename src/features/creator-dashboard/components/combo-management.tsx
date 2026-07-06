@@ -56,8 +56,8 @@ export function ComboManagementView() {
     <div className="max-w-7xl mx-auto p-6 text-creator-text space-y-8">
       <div className="flex justify-between items-end border-b border-creator-border pb-6">
         <div>
-          <h2 className="text-3xl font-bold text-white mb-2">Combo Management</h2>
-          <p className="text-creator-muted text-sm">Group multiple episodes into a single combo with a custom price.</p>
+          <h2 className="text-3xl font-bold text-white mb-2">Quản lý Combo</h2>
+          <p className="text-creator-muted text-sm">Gộp nhiều tập thành một combo với mức giá tùy chỉnh.</p>
         </div>
         <button
           onClick={() => setView("create")}
@@ -74,8 +74,8 @@ export function ComboManagementView() {
         </div>
       ) : combos.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl border border-creator-border border-dashed bg-creator-sidebar/50 py-16">
-          <h3 className="text-lg font-bold text-white mb-2">No combos found</h3>
-          <p className="mb-6 text-sm text-creator-muted max-w-sm text-center">Group episodes together to offer them at a discounted price for your readers.</p>
+          <h3 className="text-lg font-bold text-white mb-2">Chưa có combo nào</h3>
+          <p className="mb-6 text-sm text-creator-muted max-w-sm text-center">Nhóm các tập lại với nhau để cung cấp mức giá ưu đãi cho độc giả.</p>
           <button
             onClick={() => setView("create")}
             className="rounded bg-creator-gold px-6 py-2.5 text-sm font-bold text-black hover:opacity-90 transition-colors"
@@ -98,15 +98,15 @@ export function ComboManagementView() {
                 
                 <div className="space-y-2 text-sm bg-creator-bg rounded-lg border border-creator-border p-4">
                   <div className="flex justify-between items-center">
-                    <span className="text-creator-muted uppercase tracking-wider text-xs font-bold">Episodes</span>
+                    <span className="text-creator-muted uppercase tracking-wider text-xs font-bold">Số tập</span>
                     <span className="font-bold text-white">{combo.episodes?.length || 0}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-creator-muted uppercase tracking-wider text-xs font-bold">Original Price</span>
+                    <span className="text-creator-muted uppercase tracking-wider text-xs font-bold">Giá gốc</span>
                     <span className="font-medium line-through text-creator-muted">{combo.originalPriceVnd.toLocaleString()} đ</span>
                   </div>
                   <div className="flex justify-between items-center pt-2 border-t border-creator-border mt-2">
-                    <span className="text-creator-muted uppercase tracking-wider text-xs font-bold">Combo Price</span>
+                    <span className="text-creator-muted uppercase tracking-wider text-xs font-bold">Giá Combo</span>
                     <span className="font-black text-creator-gold text-lg">{combo.priceVnd.toLocaleString()} đ</span>
                   </div>
                 </div>
@@ -236,7 +236,7 @@ function ComboForm({
 
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Title</label>
+            <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Tiêu đề</label>
             <input
               type="text"
               required
@@ -247,7 +247,7 @@ function ComboForm({
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Description</label>
+            <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Mô tả</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -256,7 +256,7 @@ function ComboForm({
           </div>
 
           <div className="border-t border-b border-creator-border py-6 my-6">
-            <h3 className="text-lg font-bold mb-4">Select Episodes</h3>
+            <h3 className="text-lg font-bold mb-4">Chọn tập</h3>
             
             <div className="grid gap-4 md:grid-cols-3 mb-4">
               <div>
@@ -269,7 +269,7 @@ function ComboForm({
                     setSelectedSeasonId("");
                   }}
                 >
-                  <option value="">-- Select Series --</option>
+                  <option value="">-- Chọn Series --</option>
                   {seriesQuery.data?.content?.map((s: any) => (
                     <option key={s.seriesId} value={s.seriesId}>{s.title}</option>
                   ))}
@@ -277,14 +277,14 @@ function ComboForm({
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Season</label>
+                <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Mùa</label>
                 <select
                   className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
                   value={selectedSeasonId}
                   onChange={(e) => setSelectedSeasonId(e.target.value)}
                   disabled={!selectedSeriesId}
                 >
-                  <option value="">-- Select Season --</option>
+                  <option value="">-- Chọn Mùa --</option>
                   {seasonsQuery.data?.map((s: any) => (
                     <option key={s.seasonId} value={s.seasonId}>{s.title}</option>
                   ))}
@@ -292,7 +292,7 @@ function ComboForm({
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Episode</label>
+                <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Tập</label>
                 <select
                   className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
                   onChange={(e) => {
@@ -303,7 +303,7 @@ function ComboForm({
                   disabled={!selectedSeasonId}
                   value=""
                 >
-                  <option value="">-- Select Episode to Add --</option>
+                  <option value="">-- Chọn tập để thêm --</option>
                   {episodesQuery.data?.map((ep: any) => (
                     <option key={ep.episodeId} value={ep.episodeId}>{ep.title} ({ep.priceVnd}đ)</option>
                   ))}
@@ -312,9 +312,9 @@ function ComboForm({
             </div>
 
             <div className="space-y-2">
-              <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Episodes in this combo:</label>
+              <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Các tập trong combo này:</label>
               {selectedEpisodes.length === 0 ? (
-                <p className="text-sm text-creator-muted italic">No episodes added yet.</p>
+                <p className="text-sm text-creator-muted italic">Chưa thêm tập nào.</p>
               ) : (
                 <ul className="space-y-2">
                   {selectedEpisodes.map((ep) => (
@@ -339,12 +339,12 @@ function ComboForm({
 
           <div className="bg-creator-bg border border-creator-border p-4 rounded-xl space-y-3">
             <div className="flex justify-between items-center text-sm">
-              <span className="text-creator-muted font-bold">Original Total Price:</span>
+              <span className="text-creator-muted font-bold">Tổng giá gốc:</span>
               <span className="line-through text-creator-muted text-base">{originalTotalPrice.toLocaleString()} đ</span>
             </div>
             
             <div className="flex justify-between items-center pt-3 border-t border-creator-border">
-              <span className="text-creator-muted font-black">Final Combo Price (VND):</span>
+              <span className="text-creator-muted font-black">Giá Combo cuối cùng (VNĐ):</span>
               <input
                 type="number"
                 required

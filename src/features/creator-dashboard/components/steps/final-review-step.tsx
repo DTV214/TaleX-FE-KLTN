@@ -67,7 +67,7 @@ export function FinalReviewStep({
         </div>
 
         <div className="bg-creator-sidebar border border-creator-border rounded-xl p-5 mt-8">
-          <h3 className="font-semibold text-white mb-4">Pre-release Master</h3>
+          <h3 className="font-semibold text-white mb-4">Bản xem trước trước khi phát hành</h3>
           
           <div className="w-full aspect-video bg-black rounded-lg overflow-hidden border border-creator-border mb-6">
             {mediaUrl ? (
@@ -81,7 +81,7 @@ export function FinalReviewStep({
 
           {!isPublished && (
             <div className="space-y-4">
-              <h4 className="font-medium text-white text-sm">Manual Verification Checklist</h4>
+              <h4 className="font-medium text-white text-sm">Danh sách kiểm tra thủ công</h4>
               
               <label className="flex items-start gap-3 p-3 border border-creator-border rounded-lg cursor-pointer hover:bg-white/5 transition-colors">
                 <input 
@@ -91,8 +91,8 @@ export function FinalReviewStep({
                   onChange={(e) => setAgreedToTerms(e.target.checked)}
                 />
                 <div>
-                  <span className="text-sm font-medium text-white block">I confirm this content belongs to me</span>
-                  <span className="text-xs text-creator-muted">I hold all necessary rights and permissions to publish this material on TaleX.</span>
+                  <span className="text-sm font-medium text-white block">Tôi xác nhận nội dung này thuộc quyền sở hữu của tôi</span>
+                  <span className="text-xs text-creator-muted">Tôi nắm giữ toàn bộ quyền hạn và sự cho phép để xuất bản nội dung này trên TaleX.</span>
                 </div>
               </label>
 
@@ -103,8 +103,8 @@ export function FinalReviewStep({
                   defaultChecked
                 />
                 <div>
-                  <span className="text-sm font-medium text-white block">Audio/Video Sync Verified</span>
-                  <span className="text-xs text-creator-muted">The master file plays correctly without sync issues.</span>
+                  <span className="text-sm font-medium text-white block">Đã xác minh đồng bộ Âm thanh/Hình ảnh</span>
+                  <span className="text-xs text-creator-muted">File gốc phát chính xác không gặp lỗi đồng bộ.</span>
                 </div>
               </label>
             </div>
@@ -113,11 +113,11 @@ export function FinalReviewStep({
 
         {/* Episode Details Edit Form */}
         <div className="bg-creator-sidebar border border-creator-border rounded-xl p-6 shadow-xl mb-6">
-          <h3 className="text-lg font-bold text-white mb-6">Episode Details</h3>
+          <h3 className="text-lg font-bold text-white mb-6">Chi tiết Tập</h3>
           <div className="space-y-5">
             <div className="grid gap-5 md:grid-cols-2">
               <div>
-                <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Episode Number</label>
+                <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Số thứ tự Tập</label>
                 <input
                   type="number"
                   min={1}
@@ -127,7 +127,7 @@ export function FinalReviewStep({
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Episode Title *</label>
+                <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Tiêu đề Tập *</label>
                 <input
                   type="text"
                   required
@@ -139,7 +139,7 @@ export function FinalReviewStep({
             </div>
             
             <div>
-              <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Description</label>
+              <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Mô tả</label>
               <textarea
                 rows={3}
                 value={editForm.description}
@@ -165,24 +165,24 @@ export function FinalReviewStep({
       {/* Right - Pipeline & Actions */}
       <div className="w-full lg:w-96 space-y-6">
         <div className="bg-creator-sidebar border border-creator-border rounded-xl p-5">
-          <h3 className="font-semibold text-white mb-4">Review Pipeline</h3>
+          <h3 className="font-semibold text-white mb-4">Tiến trình kiểm duyệt</h3>
           
           <div className="relative pl-6 space-y-6 before:absolute before:inset-y-2 before:left-[11px] before:w-[2px] before:bg-creator-border">
             <div className="relative">
               <div className="absolute -left-[30px] top-0.5 w-4 h-4 rounded-full bg-green-500 border-4 border-creator-sidebar shadow-sm"></div>
-              <h4 className="text-sm font-bold text-white">AI Policy Scan</h4>
-              <p className="text-xs text-creator-muted mt-0.5">Passed automatically</p>
+              <h4 className="text-sm font-bold text-white">AI Quét chính sách</h4>
+              <p className="text-xs text-creator-muted mt-0.5">Đã vượt qua tự động</p>
             </div>
             
             <div className="relative">
               <div className="absolute -left-[30px] top-0.5 w-4 h-4 rounded-full bg-green-500 border-4 border-creator-sidebar shadow-sm"></div>
-              <h4 className="text-sm font-bold text-white">Copyright Check</h4>
-              <p className="text-xs text-creator-muted mt-0.5">Original content verified</p>
+              <h4 className="text-sm font-bold text-white">Kiểm tra bản quyền</h4>
+              <p className="text-xs text-creator-muted mt-0.5">Xác nhận nội dung gốc</p>
             </div>
             
             <div className="relative">
               <div className="absolute -left-[30px] top-0.5 w-4 h-4 rounded-full bg-creator-gold border-4 border-creator-sidebar shadow-sm"></div>
-              <h4 className="text-sm font-bold text-creator-gold">Final Creator Review</h4>
+              <h4 className="text-sm font-bold text-creator-gold">Đánh giá cuối cùng của Tác giả</h4>
               <p className="text-xs text-creator-muted mt-0.5">{isPublished ? "Completed" : "Awaiting your confirmation"}</p>
             </div>
           </div>
@@ -197,7 +197,7 @@ export function FinalReviewStep({
               value={reviewerNotes}
               onChange={(e) => setReviewerNotes(e.target.value)}
               className="w-full bg-creator-bg border border-creator-border rounded-md p-3 text-sm text-white placeholder-creator-muted focus:outline-none focus:border-creator-gold min-h-[100px]"
-              placeholder="Add any notes for the moderation team if needed..."
+              placeholder="Thêm ghi chú cho đội kiểm duyệt nếu cần..."
             ></textarea>
           </div>
         )}

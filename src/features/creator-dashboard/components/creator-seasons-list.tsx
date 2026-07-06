@@ -21,8 +21,8 @@ export function CreatorSeasonsList({ seasons, onSelect, onCreate, onEdit, onDele
           >
             &larr; Back to Series
           </button>
-          <h2 className="text-3xl font-bold text-white mb-2">Seasons</h2>
-          <p className="text-creator-muted">Select a season to manage its episodes, or create a new one.</p>
+          <h2 className="text-3xl font-bold text-white mb-2">Mùa</h2>
+          <p className="text-creator-muted">Chọn một mùa để quản lý các tập, hoặc tạo mùa mới.</p>
         </div>
         <button 
           onClick={onCreate}
@@ -37,9 +37,9 @@ export function CreatorSeasonsList({ seasons, onSelect, onCreate, onEdit, onDele
           <div className="w-20 h-20 bg-creator-bg rounded-full flex items-center justify-center mb-6">
             <Layers size={40} className="text-creator-muted" />
           </div>
-          <h3 className="text-xl font-bold text-white mb-3">No Seasons Found</h3>
-          <p className="text-creator-muted max-w-md mb-8">
-            This series doesn't have any seasons yet. Click the button below to add one.
+          <h3 className="text-xl font-bold text-white mb-3">Không tìm thấy mùa nào</h3>
+          <p className="mb-6 text-sm text-creator-muted max-w-sm text-center">
+            Series này chưa có mùa nào. Bấm vào nút bên dưới để thêm mùa mới.
           </p>
           <button 
             onClick={onCreate}

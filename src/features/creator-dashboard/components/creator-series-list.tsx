@@ -25,8 +25,8 @@ export function CreatorSeriesList({ seriesList, onSelect, onCreate, onEdit, onDe
     <div className="max-w-7xl mx-auto p-6 text-creator-text">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
         <div>
-          <h2 className="text-3xl font-bold text-white mb-2">My Series</h2>
-          <p className="text-creator-muted">Manage your series, seasons, and episodes.</p>
+          <h2 className="text-3xl font-bold text-white mb-2">Series của tôi</h2>
+          <p className="text-creator-muted">Quản lý series, mùa và tập của bạn.</p>
         </div>
         <button 
           onClick={onCreate}
@@ -41,7 +41,7 @@ export function CreatorSeriesList({ seriesList, onSelect, onCreate, onEdit, onDe
           <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-creator-muted" />
           <input 
             type="text" 
-            placeholder="Search series by title..."
+            placeholder="Tìm kiếm series theo tiêu đề..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full bg-creator-sidebar border border-creator-border rounded-lg pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-creator-gold transition-colors"
@@ -54,8 +54,8 @@ export function CreatorSeriesList({ seriesList, onSelect, onCreate, onEdit, onDe
             onChange={(e) => setFilterType(e.target.value)}
             className="bg-creator-sidebar border border-creator-border rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-creator-gold transition-colors w-full sm:w-auto outline-none cursor-pointer"
           >
-            <option value="ALL">All Formats</option>
-            <option value="COMIC">Comic</option>
+            <option value="ALL">Tất cả định dạng</option>
+            <option value="COMIC">Truyện tranh</option>
             <option value="VIDEO">Video</option>
           </select>
         </div>

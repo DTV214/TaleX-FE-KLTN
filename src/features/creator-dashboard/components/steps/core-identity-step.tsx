@@ -89,13 +89,13 @@ export function CoreIdentityStep({ initialData, onSave, onCancel, categories, ta
       {/* Left Column - Form Fields */}
       <div className="flex-1 space-y-6">
         <div>
-          <h2 className="text-2xl font-bold text-white mb-1">Core Identity</h2>
+          <h2 className="text-2xl font-bold text-white mb-1">Thông tin cốt lõi</h2>
           <p className="text-sm text-creator-muted">Define the fundamental characteristics of your new series.</p>
         </div>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-2">Series Title</label>
+            <label className="block text-sm font-medium mb-2">Tiêu đề Series</label>
             <input 
               type="text" 
               value={formData.title}
@@ -107,7 +107,7 @@ export function CoreIdentityStep({ initialData, onSave, onCancel, categories, ta
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Narrative Overview</label>
+            <label className="block text-sm font-medium mb-2">Tổng quan nội dung</label>
             <textarea 
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -119,21 +119,21 @@ export function CoreIdentityStep({ initialData, onSave, onCancel, categories, ta
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Content Type</label>
+            <label className="block text-sm font-medium mb-2">Loại nội dung</label>
             <div className="flex gap-4">
               <label className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-md border transition-colors ${isUpdate ? "cursor-not-allowed opacity-60" : "cursor-pointer"} ${formData.contentType === "COMIC" ? "border-creator-gold bg-creator-gold/10 text-creator-gold" : "border-creator-border bg-creator-sidebar text-creator-muted hover:border-white/30"}`}>
                 <input type="radio" name="contentType" className="hidden" checked={formData.contentType === "COMIC"} onChange={() => !isUpdate && setFormData({ ...formData, contentType: "COMIC" })} disabled={isUpdate} />
-                <span className="font-medium">Comic / Webtoon</span>
+                <span className="font-medium">Truyện tranh / Webtoon</span>
               </label>
               <label className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-md border transition-colors ${isUpdate ? "cursor-not-allowed opacity-60" : "cursor-pointer"} ${formData.contentType === "VIDEO" ? "border-creator-gold bg-creator-gold/10 text-creator-gold" : "border-creator-border bg-creator-sidebar text-creator-muted hover:border-white/30"}`}>
                 <input type="radio" name="contentType" className="hidden" checked={formData.contentType === "VIDEO"} onChange={() => !isUpdate && setFormData({ ...formData, contentType: "VIDEO" })} disabled={isUpdate} />
-                <span className="font-medium">Video Series</span>
+                <span className="font-medium">Series Video</span>
               </label>
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Genre Classification</label>
+            <label className="block text-sm font-medium mb-2">Phân loại thể loại</label>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
               {categories.map((cat) => (
                 <button
@@ -153,7 +153,7 @@ export function CoreIdentityStep({ initialData, onSave, onCancel, categories, ta
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Tags</label>
+            <label className="block text-sm font-medium mb-2">Thẻ tag</label>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
               {tags.map((tag) => (
                 <button
@@ -174,33 +174,33 @@ export function CoreIdentityStep({ initialData, onSave, onCancel, categories, ta
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-2">Original Language</label>
+              <label className="block text-sm font-medium mb-2">Ngôn ngữ gốc</label>
               <div className="relative">
                 <select 
                   value={formData.language}
                   onChange={(e) => setFormData({ ...formData, language: e.target.value })}
                   className="w-full bg-creator-sidebar border border-creator-border rounded-md px-4 py-3 text-white appearance-none focus:outline-none focus:border-creator-gold"
                 >
-                  <option value="vi">Vietnamese</option>
-                  <option value="en">English</option>
-                  <option value="jp">Japanese</option>
-                  <option value="kr">Korean</option>
+                  <option value="vi">Tiếng Việt</option>
+                  <option value="en">Tiếng Anh</option>
+                  <option value="jp">Tiếng Nhật</option>
+                  <option value="kr">Tiếng Hàn</option>
                 </select>
                 <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-creator-muted pointer-events-none" size={16} />
               </div>
             </div>
             
             <div>
-              <label className="block text-sm font-medium mb-2">Age Rating</label>
+              <label className="block text-sm font-medium mb-2">Độ tuổi</label>
               <div className="relative">
                 <select 
                   value={formData.ageRating}
                   onChange={(e) => setFormData({ ...formData, ageRating: e.target.value })}
                   className="w-full bg-creator-sidebar border border-creator-border rounded-md px-4 py-3 text-white appearance-none focus:outline-none focus:border-creator-gold"
                 >
-                  <option value="EVERYONE">Everyone (G)</option>
-                  <option value="TEEN">Teen (13+)</option>
-                  <option value="MATURE">Mature (18+)</option>
+                  <option value="EVERYONE">Mọi người (G)</option>
+                  <option value="TEEN">Thanh thiếu niên (13+)</option>
+                  <option value="MATURE">Người trưởng thành (18+)</option>
                 </select>
                 <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-creator-muted pointer-events-none" size={16} />
               </div>
@@ -212,14 +212,14 @@ export function CoreIdentityStep({ initialData, onSave, onCancel, categories, ta
       {/* Right Column - Media Assets */}
       <div className="w-full lg:w-80 space-y-6">
         <div className="bg-creator-sidebar border border-creator-border rounded-xl p-5">
-          <h3 className="font-semibold text-white mb-4">Media Assets</h3>
+          <h3 className="font-semibold text-white mb-4">Tài nguyên đa phương tiện</h3>
           
           <div className="space-y-5">
             {/* Vertical Poster */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-medium">Vertical Poster</label>
-                <span className="text-xs text-creator-muted">2:3 Ratio</span>
+                <label className="text-sm font-medium">Poster dọc</label>
+                <span className="text-xs text-creator-muted">Tỷ lệ 2:3</span>
               </div>
               <div 
                 onClick={() => posterInputRef.current?.click()}
@@ -232,7 +232,7 @@ export function CoreIdentityStep({ initialData, onSave, onCancel, categories, ta
                     <img src={posterPreview} alt="Poster Preview" className="w-full h-full object-cover" />
                     <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                       <Upload size={20} className="text-white mb-1" />
-                      <span className="text-xs font-medium text-white">Change Poster</span>
+                      <span className="text-xs font-medium text-white">Đổi Poster</span>
                     </div>
                   </>
                 ) : (
@@ -240,7 +240,7 @@ export function CoreIdentityStep({ initialData, onSave, onCancel, categories, ta
                     <div className="w-10 h-10 bg-creator-border rounded-full flex items-center justify-center mb-2">
                       <ImageIcon size={18} className="text-creator-muted" />
                     </div>
-                    <span className="text-xs text-creator-muted px-4 text-center">Upload poster</span>
+                    <span className="text-xs text-creator-muted px-4 text-center">Tải Poster lên</span>
                   </>
                 )}
                 <input 
@@ -256,8 +256,8 @@ export function CoreIdentityStep({ initialData, onSave, onCancel, categories, ta
             {/* Widescreen Banner */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-medium">Widescreen Banner</label>
-                <span className="text-xs text-creator-muted">16:9 Ratio</span>
+                <label className="text-sm font-medium">Banner ngang</label>
+                <span className="text-xs text-creator-muted">Tỷ lệ 16:9</span>
               </div>
               <div 
                 onClick={() => bannerInputRef.current?.click()}
@@ -270,7 +270,7 @@ export function CoreIdentityStep({ initialData, onSave, onCancel, categories, ta
                     <img src={bannerPreview} alt="Banner Preview" className="w-full h-full object-cover" />
                     <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                       <Upload size={20} className="text-white mb-1" />
-                      <span className="text-xs font-medium text-white">Change Banner</span>
+                      <span className="text-xs font-medium text-white">Đổi Banner</span>
                     </div>
                   </>
                 ) : (
@@ -278,7 +278,7 @@ export function CoreIdentityStep({ initialData, onSave, onCancel, categories, ta
                     <div className="w-10 h-10 bg-creator-border rounded-full flex items-center justify-center mb-2">
                       <ImageIcon size={18} className="text-creator-muted" />
                     </div>
-                    <span className="text-xs text-creator-muted px-4 text-center">Click or drag image to upload banner</span>
+                    <span className="text-xs text-creator-muted px-4 text-center">Nhấp hoặc kéo ảnh vào để tải banner lên</span>
                   </>
                 )}
                 <input 

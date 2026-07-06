@@ -28,12 +28,12 @@ export function CreatorLayout({ children, activeView, onNavigate }: CreatorLayou
   const user = useAuthStore((state) => state.user);
 
   const navItems = [
-    { label: "Dashboard", view: "dashboard", icon: LayoutDashboard },
-    { label: "My Series", view: "series", icon: Film },
-    { label: "Analytics", view: "analytics", icon: BarChart2 },
-    { label: "Revenue", view: "revenue", icon: DollarSign },
-    { label: "Production", view: "production", icon: Clapperboard },
-    { label: "Combo Management", view: "combos", icon: Tag },
+    { label: "Tổng quan", view: "dashboard", icon: LayoutDashboard },
+    { label: "Series của tôi", view: "series", icon: Film },
+    { label: "Thống kê", view: "analytics", icon: BarChart2 },
+    { label: "Doanh thu", view: "revenue", icon: DollarSign },
+    { label: "Quản lý sản xuất", view: "production", icon: Clapperboard },
+    { label: "Quản lý Combo", view: "combos", icon: Tag },
     { label: "Tăng tương tác", view: "campaign", icon: Zap },
   ];
 
@@ -72,14 +72,14 @@ export function CreatorLayout({ children, activeView, onNavigate }: CreatorLayou
         <div className="p-4 border-t border-creator-border">
           <button className="flex items-center gap-3 px-4 py-3 rounded-md text-creator-muted hover:text-white hover:bg-white/5 transition-colors w-full text-left">
             <Settings size={18} />
-            Settings
+            Cài đặt
           </button>
           <button 
             onClick={logout}
             className="flex items-center gap-3 px-4 py-3 rounded-md text-creator-muted hover:text-white hover:bg-white/5 transition-colors w-full text-left mt-1"
           >
             <LogOut size={18} />
-            Sign Out
+            Đăng xuất
           </button>
         </div>
       </aside>
@@ -92,7 +92,7 @@ export function CreatorLayout({ children, activeView, onNavigate }: CreatorLayou
             <Search className="absolute left-3 text-creator-muted" size={18} />
             <input 
               type="text" 
-              placeholder="Search in your studio..." 
+              placeholder="Tìm kiếm trong studio..." 
               className="w-full bg-creator-card border border-creator-border rounded-full py-2 pl-10 pr-4 text-sm text-white placeholder:text-creator-muted focus:outline-none focus:border-creator-gold transition-colors"
             />
           </div>
@@ -112,7 +112,7 @@ export function CreatorLayout({ children, activeView, onNavigate }: CreatorLayou
               </div>
               <div className="flex flex-col">
                 <span className="text-sm font-medium">{(user as any)?.username || "Creator"}</span>
-                <span className="text-xs text-creator-muted">Pro Publisher</span>
+                <span className="text-xs text-creator-muted">Nhà xuất bản Pro</span>
               </div>
             </div>
           </div>

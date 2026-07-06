@@ -16,8 +16,8 @@ export function ReadyPublishStep({ mediaUrl, title, description, onContinue, onB
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-500/20 text-green-500 mb-4">
           <CheckCircle2 size={32} />
         </div>
-        <h2 className="text-3xl font-bold text-white mb-2">Analysis Success</h2>
-        <p className="text-creator-muted">Your content has passed all AI verification checks and is ready for final review.</p>
+        <h2 className="text-3xl font-bold text-white mb-2">Phân tích thành công</h2>
+        <p className="text-creator-muted">Nội dung của bạn đã vượt qua tất cả kiểm tra AI và sẵn sàng chờ xét duyệt cuối cùng.</p>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-8">
@@ -29,7 +29,7 @@ export function ReadyPublishStep({ mediaUrl, title, description, onContinue, onB
               {mediaUrl ? (
                 <img src={mediaUrl} alt="Media Preview" className="w-full h-full object-cover opacity-60" />
               ) : (
-                <div className="text-creator-muted text-sm">Media Preview</div>
+                <div className="text-creator-muted text-sm">Xem trước phương tiện</div>
               )}
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="w-12 h-12 rounded-full bg-creator-gold/90 text-black flex items-center justify-center pl-1 group-hover:scale-110 transition-transform cursor-pointer">
@@ -52,7 +52,7 @@ export function ReadyPublishStep({ mediaUrl, title, description, onContinue, onB
 
         {/* Right - Analysis Results */}
         <div className="flex-1 space-y-6">
-          <h3 className="text-xl font-bold text-white">AI Analysis Results</h3>
+          <h3 className="text-xl font-bold text-white">Kết quả phân tích AI</h3>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Policy Check */}
@@ -60,12 +60,12 @@ export function ReadyPublishStep({ mediaUrl, title, description, onContinue, onB
               <div className="w-10 h-10 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center mb-4">
                 <CheckCircle2 size={20} />
               </div>
-              <h4 className="font-semibold text-white mb-1">Content Policy</h4>
-              <p className="text-sm text-creator-muted mb-4">No violations of community guidelines detected.</p>
+              <h4 className="font-semibold text-white mb-1">Chính sách nội dung</h4>
+              <p className="text-sm text-creator-muted mb-4">Không phát hiện vi phạm nguyên tắc cộng đồng.</p>
               <div className="w-full bg-creator-bg rounded-full h-1.5 mb-1">
                 <div className="bg-blue-500 h-1.5 rounded-full w-full"></div>
               </div>
-              <div className="text-xs text-right text-creator-muted mt-2">100% Passed</div>
+              <div className="text-xs text-right text-creator-muted mt-2">Đạt 100%</div>
             </div>
 
             {/* Copyright */}
@@ -73,12 +73,12 @@ export function ReadyPublishStep({ mediaUrl, title, description, onContinue, onB
               <div className="w-10 h-10 rounded-full bg-purple-500/10 text-purple-500 flex items-center justify-center mb-4">
                 <ShieldCheck size={20} />
               </div>
-              <h4 className="font-semibold text-white mb-1">Copyright Guard</h4>
-              <p className="text-sm text-creator-muted mb-4">Original content verified. No existing matches.</p>
+              <h4 className="font-semibold text-white mb-1">Bảo vệ bản quyền</h4>
+              <p className="text-sm text-creator-muted mb-4">Xác minh nội dung gốc. Không có sự trùng lặp.</p>
               <div className="w-full bg-creator-bg rounded-full h-1.5 mb-1">
                 <div className="bg-purple-500 h-1.5 rounded-full w-full"></div>
               </div>
-              <div className="text-xs text-right text-creator-muted mt-2">0% Match</div>
+              <div className="text-xs text-right text-creator-muted mt-2">Trùng khớp 0%</div>
             </div>
 
             {/* Quality Analysis */}
@@ -86,12 +86,12 @@ export function ReadyPublishStep({ mediaUrl, title, description, onContinue, onB
               <div className="w-10 h-10 rounded-full bg-creator-gold/10 text-creator-gold flex items-center justify-center mb-4">
                 <Activity size={20} />
               </div>
-              <h4 className="font-semibold text-white mb-1">Quality Score</h4>
-              <p className="text-sm text-creator-muted mb-4">High resolution and optimal bitrate detected.</p>
+              <h4 className="font-semibold text-white mb-1">Điểm chất lượng</h4>
+              <p className="text-sm text-creator-muted mb-4">Độ phân giải cao và bitrate tối ưu.</p>
               <div className="w-full bg-creator-bg rounded-full h-1.5 mb-1">
                 <div className="bg-creator-gold h-1.5 rounded-full w-[95%]"></div>
               </div>
-              <div className="text-xs text-right text-creator-muted mt-2">Excellent</div>
+              <div className="text-xs text-right text-creator-muted mt-2">Tuyệt vời</div>
             </div>
           </div>
 

@@ -21,8 +21,8 @@ export function CreatorEpisodesList({ episodes, onSelect, onCreate, onEdit, onDe
           >
             &larr; Back to Seasons
           </button>
-          <h2 className="text-3xl font-bold text-white mb-2">Episodes</h2>
-          <p className="text-creator-muted">Select an episode to manage its content, or add a new one.</p>
+          <h2 className="text-3xl font-bold text-white mb-2">Số tập</h2>
+          <p className="text-creator-muted">Chọn một tập để quản lý nội dung, hoặc thêm tập mới.</p>
         </div>
         <button 
           onClick={onCreate}
@@ -37,9 +37,9 @@ export function CreatorEpisodesList({ episodes, onSelect, onCreate, onEdit, onDe
           <div className="w-20 h-20 bg-creator-bg rounded-full flex items-center justify-center mb-6">
             <ListVideo size={40} className="text-creator-muted" />
           </div>
-          <h3 className="text-xl font-bold text-white mb-3">No Episodes Found</h3>
+          <h3 className="text-xl font-bold text-white mb-3">Không tìm thấy tập nào</h3>
           <p className="text-creator-muted max-w-md mb-8">
-            This season doesn't have any episodes yet. Click the button below to add one.
+            Mùa này chưa có tập nào. Bấm vào nút bên dưới để thêm tập mới.
           </p>
           <button 
             onClick={onCreate}

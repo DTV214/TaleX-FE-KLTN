@@ -154,8 +154,8 @@ export function ResumableVideoUploader({
             <div className="w-16 h-16 bg-creator-bg rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
               <UploadCloud size={28} className="text-creator-gold" />
             </div>
-            <p className="text-lg font-bold text-white mb-2">Drag and drop your video here</p>
-            <p className="text-sm text-creator-muted max-w-sm mb-6">Or click to browse from your computer. MP4 and MOV recommended.</p>
+            <p className="text-lg font-bold text-white mb-2">Kéo và thả video của bạn vào đây</p>
+            <p className="text-sm text-creator-muted max-w-sm mb-6">Hoặc nhấp để tải lên từ máy tính. Khuyên dùng MP4 và MOV.</p>
             <div className="px-6 py-2.5 bg-white/5 group-hover:bg-white/10 rounded-md text-sm font-medium transition-colors border border-creator-border text-white">
               Select Video
             </div>

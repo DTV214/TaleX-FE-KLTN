@@ -58,8 +58,8 @@ export function SeasonStructureStep({
       {/* Left Column - Visual Structure */}
       <div className="flex-1 space-y-6">
         <div>
-          <h2 className="text-2xl font-bold text-white mb-1">Season Structure</h2>
-          <p className="text-sm text-creator-muted">Organize your series into seasons and episodes.</p>
+          <h2 className="text-2xl font-bold text-white mb-1">Cấu trúc Mùa</h2>
+          <p className="text-sm text-creator-muted">Tổ chức series của bạn thành các mùa và tập.</p>
         </div>
 
         <div className="space-y-6 mt-8">
@@ -68,7 +68,7 @@ export function SeasonStructureStep({
               <div className="w-16 h-16 bg-creator-bg rounded-full flex items-center justify-center mb-4">
                 <PlayCircle size={32} className="text-creator-muted" />
               </div>
-              <h3 className="text-lg font-medium text-white mb-2">No seasons yet</h3>
+              <h3 className="text-lg font-medium text-white mb-2">Chưa có mùa nào</h3>
               <p className="text-sm text-creator-muted max-w-sm">
                 Start building your series architecture by creating your first season on the right.
               </p>
@@ -137,11 +137,11 @@ export function SeasonStructureStep({
       {/* Right Column - Create Form & Actions */}
       <div className="w-full lg:w-80 space-y-6">
         <div className="bg-creator-sidebar border border-creator-border rounded-xl p-5">
-          <h3 className="font-semibold text-white mb-4">Create New Season</h3>
+          <h3 className="font-semibold text-white mb-4">Tạo Mùa mới</h3>
           
           <form onSubmit={handleCreateSeason} className="space-y-4">
             <div>
-              <label className="block text-xs font-medium mb-1.5 text-creator-muted">Season Number</label>
+              <label className="block text-xs font-medium mb-1.5 text-creator-muted">Số thứ tự Mùa</label>
               <input 
                 type="number" 
                 value={newSeasonForm.seasonNumber}
@@ -153,25 +153,25 @@ export function SeasonStructureStep({
             </div>
             
             <div>
-              <label className="block text-xs font-medium mb-1.5 text-creator-muted">Season Title</label>
+              <label className="block text-xs font-medium mb-1.5 text-creator-muted">Tiêu đề Mùa</label>
               <input 
                 type="text" 
                 value={newSeasonForm.title}
                 onChange={(e) => setNewSeasonForm({...newSeasonForm, title: e.target.value})}
                 className="w-full bg-creator-bg border border-creator-border rounded-md px-3 py-2 text-white text-sm focus:outline-none focus:border-creator-gold"
-                placeholder="E.g., The Beginning"
+                placeholder="VD: Sự khởi đầu"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium mb-1.5 text-creator-muted">Description (Optional)</label>
+              <label className="block text-xs font-medium mb-1.5 text-creator-muted">Mô tả (Không bắt buộc)</label>
               <textarea 
                 value={newSeasonForm.description}
                 onChange={(e) => setNewSeasonForm({...newSeasonForm, description: e.target.value})}
                 rows={3}
                 className="w-full bg-creator-bg border border-creator-border rounded-md px-3 py-2 text-white text-sm focus:outline-none focus:border-creator-gold"
-                placeholder="What happens in this season?"
+                placeholder="Điều gì xảy ra trong mùa này?"
               />
             </div>
 
