@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Check, Edit3, MessageSquare, AlertCircle, Eye, Rocket, X, Calendar, EyeOff } from "lucide-react";
+import { Check, Edit3, MessageSquare, AlertCircle, Eye, Rocket, X, Calendar, EyeOff, ShieldAlert, AlertTriangle } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { getMediaViolations } from "@/features/creator-dashboard/api/creator-content-api";
+import { AIPolicyAndCopyright } from "@/features/creator-dashboard/components/ai-policy-and-copyright";
 
 interface FinalReviewComicStepProps {
   pages: any[];
@@ -70,23 +73,7 @@ export function FinalReviewComicStep({
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 mb-6 max-h-[500px] overflow-y-auto pr-2">
             {pages.length > 0 ? (
               pages.map((page) => (
-                <div key={page.id} className="relative overflow-hidden rounded-xl border border-creator-border bg-creator-sidebar shadow-sm">
-                  <div className="relative aspect-[3/4]">
-                    {page.image ? (
-                      <img src={page.image} alt="" className="h-full w-full object-cover" />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center bg-creator-bg border border-creator-border text-creator-muted text-xs font-black">
-                        No preview
-                      </div>
-                    )}
-                    <span className="absolute left-2 top-2 flex h-7 w-7 items-center justify-center rounded-lg bg-[#151A23] text-xs font-black text-white">
-                      {page.displayOrder}
-                    </span>
-                  </div>
-                  <div className="p-3">
-                    <p className="truncate text-sm font-black text-white">{page.title}</p>
-                  </div>
-                </div>
+                <ComicPagePreview key={page.id} page={page} />
               ))
             ) : (
               <div className="col-span-full py-10 flex items-center justify-center text-creator-muted text-sm border border-dashed border-creator-border rounded-xl">
@@ -180,29 +167,7 @@ export function FinalReviewComicStep({
 
       {/* Right - Pipeline & Actions */}
       <div className="w-full lg:w-96 space-y-6">
-        <div className="bg-creator-sidebar border border-creator-border rounded-xl p-5">
-          <h3 className="font-semibold text-white mb-4">Tiến trình kiểm duyệt</h3>
-
-          <div className="relative pl-6 space-y-6 before:absolute before:inset-y-2 before:left-[11px] before:w-[2px] before:bg-creator-border">
-            <div className="relative">
-              <div className="absolute -left-[30px] top-0.5 w-4 h-4 rounded-full bg-green-500 border-4 border-creator-sidebar shadow-sm"></div>
-              <h4 className="text-sm font-bold text-white">AI Quét chính sách</h4>
-              <p className="text-xs text-creator-muted mt-0.5">Đã vượt qua tự động</p>
-            </div>
-
-            <div className="relative">
-              <div className="absolute -left-[30px] top-0.5 w-4 h-4 rounded-full bg-green-500 border-4 border-creator-sidebar shadow-sm"></div>
-              <h4 className="text-sm font-bold text-white">Kiểm tra bản quyền</h4>
-              <p className="text-xs text-creator-muted mt-0.5">Xác nh­n nÙi dung gÑc</p>
-            </div>
-
-            <div className="relative">
-              <div className="absolute -left-[30px] top-0.5 w-4 h-4 rounded-full bg-creator-gold border-4 border-creator-sidebar shadow-sm"></div>
-              <h4 className="text-sm font-bold text-creator-gold">ánh giá cuÑi cùng cça Tác gi£</h4>
-              <p className="text-xs text-creator-muted mt-0.5">{isPublished ? "Completed" : "Awaiting your confirmation"}</p>
-            </div>
-          </div>
-        </div>
+        <AIPolicyAndCopyright mediaId={pages.find(p => !p.id.startsWith("LOCAL-"))?.id} />
 
         {!isPublished && (
           <div className="bg-creator-sidebar border border-creator-border rounded-xl p-5">
@@ -282,6 +247,63 @@ export function FinalReviewComicStep({
             </>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function ComicPagePreview({ page }: { page: any }) {
+  const isLocal = page.id.startsWith("LOCAL-");
+  const violationsQuery = useQuery({
+    queryKey: ["creator-dashboard", "media-violations", page.id],
+    queryFn: () => getMediaViolations(page.id),
+    enabled: !isLocal,
+  });
+
+  const violations = violationsQuery.data;
+  const hasCopyrightViolations = violations?.copyrightViolations && violations.copyrightViolations.length > 0;
+  const hasCensorshipViolations = violations?.censorshipResults && violations.censorshipResults.length > 0;
+  const hasAnyViolations = hasCopyrightViolations || hasCensorshipViolations;
+
+  return (
+    <div className={`relative overflow-hidden rounded-xl border ${hasAnyViolations ? 'border-red-500' : 'border-creator-border'} bg-creator-sidebar shadow-sm group`}>
+      <div className="relative aspect-[3/4]">
+        {page.image ? (
+          <img src={page.image} alt="" className="h-full w-full object-cover" />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-creator-bg border border-creator-border text-creator-muted text-xs font-black">
+            No preview
+          </div>
+        )}
+        <span className="absolute left-2 top-2 flex h-7 w-7 items-center justify-center rounded-lg bg-[#151A23] text-xs font-black text-white shadow-md">
+          {page.displayOrder}
+        </span>
+        
+        {hasAnyViolations && (
+          <div className="absolute top-2 right-2 bg-red-500 text-white p-1.5 rounded-full shadow-lg">
+            <ShieldAlert size={16} />
+          </div>
+        )}
+        
+        {hasAnyViolations && (
+          <div className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity p-4 flex flex-col justify-center items-center text-center overflow-y-auto backdrop-blur-sm z-10">
+            <AlertTriangle className="text-red-500 mb-2" size={24} />
+            <span className="text-red-400 font-bold text-sm mb-2">Vi phạm chính sách</span>
+            {hasCopyrightViolations && (
+              <p className="text-xs text-gray-300 mb-1">
+                <span className="font-semibold text-white">Bản quyền:</span> {violations.copyrightViolations.length} vi phạm
+              </p>
+            )}
+            {hasCensorshipViolations && (
+              <p className="text-xs text-gray-300">
+                <span className="font-semibold text-white">Nội dung:</span> {violations.censorshipResults.map((c: any) => c.primaryViolationLabel).join(", ")}
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+      <div className="p-3">
+        <p className={`truncate text-sm font-black ${hasAnyViolations ? 'text-red-400' : 'text-white'}`}>{page.title}</p>
       </div>
     </div>
   );

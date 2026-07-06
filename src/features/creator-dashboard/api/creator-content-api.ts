@@ -23,6 +23,49 @@ export type MediaStatus =
   | "DELETED"
   | "FAILED";
 
+export type MediaCopyrightResponseDto = {
+  mediaCopyrightId: string;
+  mediaId: string;
+  sourceMediaId?: string;
+  startTimeTarget?: number;
+  endTimeTarget?: number;
+  startTimeSource?: number;
+  endTimeSource?: number;
+  similarityScore?: number;
+  violationType: string;
+  isValid?: boolean;
+  note?: string;
+  checkedAt?: string;
+};
+
+export type ViolationDetailResponseDto = {
+  violationDetailId: string;
+  violationAt?: number;
+  endViolationAt?: number;
+  label: string;
+  confidence?: number;
+  suggestion?: string;
+};
+
+export type ContentCensorshipResponseDto = {
+  censorshipId: string;
+  mediaId: string;
+  primaryViolationLabel?: string;
+  confidenceScore?: number;
+  checkedAt?: string;
+  reviewedBy?: string;
+  reviewerNotes?: string;
+  status: string;
+  violationDetails?: ViolationDetailResponseDto[];
+};
+
+export type MediaViolationsResponseDto = {
+  mediaId: string;
+  contentId: string;
+  copyrightViolations: MediaCopyrightResponseDto[];
+  censorshipResults: ContentCensorshipResponseDto[];
+};
+
 export type CategoryResponse = {
   categoryId: string;
   categoryName: string;
@@ -371,6 +414,12 @@ export async function unhideEpisode(id: string) {
 export async function listMediaByEpisode(episodeId: string) {
   return unwrapBaseResponse<MediaResponse[]>(
     httpClient.get(`/api/v1/episodes/${episodeId}/media`),
+  );
+}
+
+export async function getMediaViolations(mediaId: string) {
+  return unwrapBaseResponse<MediaViolationsResponseDto>(
+    httpClient.get(`/api/v1/media/${mediaId}/violations`),
   );
 }
 

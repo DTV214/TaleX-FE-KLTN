@@ -98,6 +98,7 @@ import {
   type SeriesResponse,
   getCategories,
   getTags,
+  getMediaViolations,
 } from "@/features/creator-dashboard/api/creator-content-api";
 import { uploadImageToS3 } from "@/features/creator-dashboard/api/s3-upload-api";
 import { toast } from "sonner";
@@ -106,6 +107,7 @@ import { ViolationDetailDialog } from "@/features/creator-dashboard/components/v
 import { usePipelineSSE } from "@/features/creator-dashboard/hooks/use-pipeline-sse";
 import { SignedHlsPlayer } from "@/features/playback/components/signed-hls-player";
 import { ComboManagementView } from "@/features/creator-dashboard/components/combo-management";
+import { AIPolicyAndCopyright } from "@/features/creator-dashboard/components/ai-policy-and-copyright";
 
 type DashboardView =
   | "series"
@@ -1827,6 +1829,7 @@ function CreatorDashboardContent() {
                 />
               ) : (
                 <FinalReviewStep
+                  mediaId={existingVideoMedia[0]?.mediaId}
                   mediaUrl={existingVideoMedia[0]?.fileUrl || existingVideoMedia[0]?.originalUrl || ""}
                   isPublishing={publishEpisodeMutation.isPending}
                   onPublish={() => publishEpisodeMutation.mutate(selectedEpisodeId)}
@@ -3492,73 +3495,7 @@ function ComicUploadView({
         </div>
 
         {/* Right Column: AI Policy Scan */}
-        <div className="space-y-6">
-          <div className="bg-creator-sidebar border border-creator-border rounded-xl p-6 shadow-xl">
-            <h3 className="text-xs font-black uppercase tracking-[0.16em] text-creator-gold mb-6">AI QUÉT CHÍNH SÁCH</h3>
-            <div className="space-y-5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3 text-sm font-medium text-white">
-                  <ShieldAlert className="h-4 w-4 text-creator-muted" /> Violence
-                </div>
-                <span className="text-[10px] font-bold px-2 py-1 bg-green-500/10 text-green-400 rounded-full border border-green-500/20">An toàn (99%)</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3 text-sm font-medium text-white">
-                  <AlertTriangle className="h-4 w-4 text-creator-muted" /> Sensitive Content
-                </div>
-                <span className="text-[10px] font-bold px-2 py-1 bg-creator-gold/10 text-creator-gold rounded-full border border-creator-gold/20">Đang chờ...</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3 text-sm font-medium text-white">
-                  <CheckCircle2 className="h-4 w-4 text-creator-muted" /> Policy Alignment
-                </div>
-                <span className="text-[10px] font-bold px-2 py-1 bg-green-500/10 text-green-400 rounded-full border border-green-500/20">Phù hợp</span>
-              </div>
-
-              <div className="pt-5 mt-5 border-t border-creator-border">
-                <div className="flex justify-between text-xs font-bold mb-2">
-                  <span className="text-creator-muted">Tiến trình quét tổng thể</span>
-                  <span className="text-creator-gold">64%</span>
-                </div>
-                <div className="h-1 bg-creator-bg rounded-full overflow-hidden">
-                  <div className="h-full bg-creator-gold w-[64%]"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-creator-sidebar border border-creator-border rounded-xl p-6 shadow-xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-6 opacity-10">
-              <ShieldAlert size={100} />
-            </div>
-            <div className="relative z-10">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xs font-black uppercase tracking-[0.16em] text-creator-gold">BẢO VỆ BẢN QUYỀN</h3>
-                <span className="text-[10px] font-bold px-2 py-0.5 bg-creator-bg border border-creator-border rounded text-creator-muted">Hệ thống MILVUS V2</span>
-              </div>
-
-              <div className="aspect-video bg-[#090807] rounded-lg border border-creator-border flex items-center justify-center mb-6">
-                <div className="w-12 h-12 rounded-full bg-creator-gold/10 flex items-center justify-center border border-creator-gold/20">
-                  <Fingerprint className="h-6 w-6 text-creator-gold" />
-                </div>
-              </div>
-
-              <div className="flex justify-between items-end mb-4">
-                <span className="text-sm font-medium text-creator-muted">Chỉ số tương đồng</span>
-                <span className="text-2xl font-bold text-white">1.2%</span>
-              </div>
-
-              <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg flex items-center gap-3 mb-4">
-                <CheckCircle2 className="h-5 w-5 text-green-400 shrink-0" />
-                <span className="text-xs font-bold text-green-400">Đã xác nhận tài nguyên nguyên bản</span>
-              </div>
-
-              <p className="text-[10px] text-center text-creator-muted max-w-[200px] mx-auto leading-relaxed">
-                Vector search engine compared 4M+ existing frames across global databases. No infringement detected.
-              </p>
-            </div>
-          </div>
-        </div>
+        <AIPolicyAndCopyright mediaId={pages.find(p => !p.id.startsWith("LOCAL-"))?.id} />
       </div>
     </div>
   );
@@ -3583,6 +3520,18 @@ function ComicPageCard({
   onMoveDown: () => void;
   onDelete: () => void;
 }) {
+  const isLocal = page.id.startsWith("LOCAL-");
+  const violationsQuery = useQuery({
+    queryKey: ["creator-dashboard", "media-violations", page.id],
+    queryFn: () => getMediaViolations(page.id),
+    enabled: !isLocal,
+  });
+
+  const violations = violationsQuery.data;
+  const hasCopyrightViolations = violations?.copyrightViolations && violations.copyrightViolations.length > 0;
+  const hasCensorshipViolations = violations?.censorshipResults && violations.censorshipResults.length > 0;
+  const hasAnyViolations = hasCopyrightViolations || hasCensorshipViolations;
+
   return (
     <div
       draggable
@@ -3597,10 +3546,9 @@ function ComicPageCard({
         onDrop();
       }}
       className={cx(
-        "group relative overflow-hidden rounded-xl border-2 bg-creator-sidebar shadow-sm transition",
-        dragging
-          ? "scale-95 border-[#B83268] opacity-60"
-          : "border-transparent hover:border-[#007A8A]",
+        "group relative overflow-hidden rounded-xl border-2 shadow-sm transition",
+        hasAnyViolations ? "bg-red-500/5 border-red-500" : "bg-creator-sidebar border-transparent hover:border-[#007A8A]",
+        dragging && "scale-95 border-[#B83268] opacity-60"
       )}
     >
       <div className="relative aspect-[3/4]">
@@ -3611,16 +3559,39 @@ function ComicPageCard({
             No preview
           </div>
         )}
-        <span className="absolute left-2 top-2 flex h-7 w-7 items-center justify-center rounded-lg bg-[#151A23] text-xs font-black text-white">
+        <span className="absolute left-2 top-2 flex h-7 w-7 items-center justify-center rounded-lg bg-[#151A23] text-xs font-black text-white z-20">
           {page.displayOrder}
         </span>
-        <span className="absolute right-2 top-2 rounded-lg bg-creator-sidebar/90 p-1.5 text-creator-text shadow">
+        <span className="absolute right-2 top-2 rounded-lg bg-creator-sidebar/90 p-1.5 text-creator-text shadow z-20">
           <GripVertical className="h-4 w-4" />
         </span>
+        
+        {hasAnyViolations && (
+          <div className="absolute top-2 right-10 bg-red-500 text-white p-1.5 rounded-lg shadow z-20">
+            <ShieldAlert size={16} />
+          </div>
+        )}
+        
+        {hasAnyViolations && (
+          <div className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity p-4 flex flex-col justify-center items-center text-center overflow-y-auto backdrop-blur-sm z-10 cursor-help">
+            <AlertTriangle className="text-red-500 mb-2" size={24} />
+            <span className="text-red-400 font-bold text-sm mb-2">Vi phạm chính sách</span>
+            {hasCopyrightViolations && (
+              <p className="text-xs text-gray-300 mb-1">
+                <span className="font-semibold text-white">Bản quyền:</span> {violations.copyrightViolations.length} vi phạm
+              </p>
+            )}
+            {hasCensorshipViolations && (
+              <p className="text-xs text-gray-300">
+                <span className="font-semibold text-white">Nội dung:</span> {violations.censorshipResults.map((c: any) => c.primaryViolationLabel).join(", ")}
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
-      <div className="space-y-2 p-3">
-        <p className="truncate text-sm font-black text-white">
+      <div className="space-y-2 p-3 relative z-20">
+        <p className={`truncate text-sm font-black ${hasAnyViolations ? 'text-red-400' : 'text-white'}`}>
           {page.title}
         </p>
         <div className="grid grid-cols-3 gap-2">
@@ -3899,74 +3870,6 @@ function VideoUploadView({
           </div>
         </div>
 
-        {/* Right Column: AI Policy Scan */}
-        <div className="space-y-6">
-          <div className="bg-creator-sidebar border border-creator-border rounded-xl p-6 shadow-xl">
-            <h3 className="text-xs font-black uppercase tracking-[0.16em] text-creator-gold mb-6">AI QUÉT CHÍNH SÁCH</h3>
-            <div className="space-y-5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3 text-sm font-medium text-white">
-                  <ShieldAlert className="h-4 w-4 text-creator-muted" /> Violence
-                </div>
-                <span className="text-[10px] font-bold px-2 py-1 bg-green-500/10 text-green-400 rounded-full border border-green-500/20">An toàn (99%)</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3 text-sm font-medium text-white">
-                  <AlertTriangle className="h-4 w-4 text-creator-muted" /> Sensitive Content
-                </div>
-                <span className="text-[10px] font-bold px-2 py-1 bg-creator-gold/10 text-creator-gold rounded-full border border-creator-gold/20">Đang chờ...</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3 text-sm font-medium text-white">
-                  <CheckCircle2 className="h-4 w-4 text-creator-muted" /> Policy Alignment
-                </div>
-                <span className="text-[10px] font-bold px-2 py-1 bg-green-500/10 text-green-400 rounded-full border border-green-500/20">Phù hợp</span>
-              </div>
-
-              <div className="pt-5 mt-5 border-t border-creator-border">
-                <div className="flex justify-between text-xs font-bold mb-2">
-                  <span className="text-creator-muted">Tiến trình quét tổng thể</span>
-                  <span className="text-creator-gold">64%</span>
-                </div>
-                <div className="h-1 bg-creator-bg rounded-full overflow-hidden">
-                  <div className="h-full bg-creator-gold w-[64%]"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-creator-sidebar border border-creator-border rounded-xl p-6 shadow-xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-6 opacity-10">
-              <ShieldAlert size={100} />
-            </div>
-            <div className="relative z-10">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xs font-black uppercase tracking-[0.16em] text-creator-gold">BẢO VỆ BẢN QUYỀN</h3>
-                <span className="text-[10px] font-bold px-2 py-0.5 bg-creator-bg border border-creator-border rounded text-creator-muted">Hệ thống MILVUS V2</span>
-              </div>
-
-              <div className="aspect-video bg-[#090807] rounded-lg border border-creator-border flex items-center justify-center mb-6">
-                <div className="w-12 h-12 rounded-full bg-creator-gold/10 flex items-center justify-center border border-creator-gold/20">
-                  <Fingerprint className="h-6 w-6 text-creator-gold" />
-                </div>
-              </div>
-
-              <div className="flex justify-between items-end mb-4">
-                <span className="text-sm font-medium text-creator-muted">Chỉ số tương đồng</span>
-                <span className="text-2xl font-bold text-white">1.2%</span>
-              </div>
-
-              <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg flex items-center gap-3 mb-4">
-                <CheckCircle2 className="h-5 w-5 text-green-400 shrink-0" />
-                <span className="text-xs font-bold text-green-400">Đã xác nhận tài nguyên nguyên bản</span>
-              </div>
-
-              <p className="text-[10px] text-center text-creator-muted max-w-[200px] mx-auto leading-relaxed">
-                Vector search engine compared 4M+ existing frames across global databases. No infringement detected.
-              </p>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );

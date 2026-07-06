@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { Check, Edit3, MessageSquare, AlertCircle, Eye, Rocket, X, Calendar, EyeOff } from "lucide-react";
+import { Check, Edit3, MessageSquare, AlertCircle, Eye, Rocket, X, Calendar, EyeOff, ShieldAlert, AlertTriangle } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { getMediaViolations } from "@/features/creator-dashboard/api/creator-content-api";
+import { AIPolicyAndCopyright } from "@/features/creator-dashboard/components/ai-policy-and-copyright";
 
 interface FinalReviewStepProps {
+  mediaId?: string;
   mediaUrl?: string;
   isPublishing?: boolean;
   onPublish: () => void;
@@ -17,6 +21,7 @@ interface FinalReviewStepProps {
 }
 
 export function FinalReviewStep({ 
+  mediaId,
   mediaUrl, 
   isPublishing, 
   onPublish, 
@@ -55,6 +60,17 @@ export function FinalReviewStep({
 
   const isPublished = selectedEpisode?.status === "PUBLISHED";
 
+  const violationsQuery = useQuery({
+    queryKey: ["creator-dashboard", "media-violations", mediaId],
+    queryFn: () => getMediaViolations(mediaId!),
+    enabled: !!mediaId,
+  });
+
+  const violations = violationsQuery.data;
+  const hasCopyrightViolations = violations?.copyrightViolations && violations.copyrightViolations.length > 0;
+  const hasCensorshipViolations = violations?.censorshipResults && violations.censorshipResults.length > 0;
+  const hasAnyViolations = hasCopyrightViolations || hasCensorshipViolations;
+
   return (
     <div className="flex flex-col lg:flex-row gap-8 max-w-7xl mx-auto p-6 text-creator-text">
       {/* Left - Video Preview & Episode Details */}
@@ -69,12 +85,34 @@ export function FinalReviewStep({
         <div className="bg-creator-sidebar border border-creator-border rounded-xl p-5 mt-8">
           <h3 className="font-semibold text-white mb-4">Bản xem trước trước khi phát hành</h3>
           
-          <div className="w-full aspect-video bg-black rounded-lg overflow-hidden border border-creator-border mb-6">
+          <div className="w-full aspect-video bg-black rounded-lg overflow-hidden border border-creator-border mb-6 relative">
             {mediaUrl ? (
               <video src={mediaUrl} controls className="w-full h-full object-contain" poster={mediaUrl}></video>
             ) : (
               <div className="w-full h-full flex items-center justify-center text-creator-muted">
                 Preview not available
+              </div>
+            )}
+            {hasAnyViolations && (
+              <div className="absolute top-4 right-4 max-w-sm bg-black/80 backdrop-blur-sm border border-red-500/50 text-white p-4 rounded-xl shadow-lg">
+                <div className="flex items-center gap-2 text-red-400 font-bold mb-2">
+                  <ShieldAlert size={18} />
+                  <span>Phát hiện vi phạm chính sách</span>
+                </div>
+                <div className="text-xs text-gray-300 space-y-2">
+                  {hasCopyrightViolations && (
+                    <div>
+                      <span className="font-semibold text-white">Bản quyền: </span>
+                      Đã phát hiện {violations.copyrightViolations.length} vi phạm bản quyền. Vui lòng kiểm tra lại nội dung.
+                    </div>
+                  )}
+                  {hasCensorshipViolations && (
+                    <div>
+                      <span className="font-semibold text-white">Nội dung không phù hợp: </span>
+                      {violations.censorshipResults.map(c => c.primaryViolationLabel).join(", ")}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -164,29 +202,7 @@ export function FinalReviewStep({
 
       {/* Right - Pipeline & Actions */}
       <div className="w-full lg:w-96 space-y-6">
-        <div className="bg-creator-sidebar border border-creator-border rounded-xl p-5">
-          <h3 className="font-semibold text-white mb-4">Tiến trình kiểm duyệt</h3>
-          
-          <div className="relative pl-6 space-y-6 before:absolute before:inset-y-2 before:left-[11px] before:w-[2px] before:bg-creator-border">
-            <div className="relative">
-              <div className="absolute -left-[30px] top-0.5 w-4 h-4 rounded-full bg-green-500 border-4 border-creator-sidebar shadow-sm"></div>
-              <h4 className="text-sm font-bold text-white">AI Quét chính sách</h4>
-              <p className="text-xs text-creator-muted mt-0.5">Đã vượt qua tự động</p>
-            </div>
-            
-            <div className="relative">
-              <div className="absolute -left-[30px] top-0.5 w-4 h-4 rounded-full bg-green-500 border-4 border-creator-sidebar shadow-sm"></div>
-              <h4 className="text-sm font-bold text-white">Kiểm tra bản quyền</h4>
-              <p className="text-xs text-creator-muted mt-0.5">Xác nhận nội dung gốc</p>
-            </div>
-            
-            <div className="relative">
-              <div className="absolute -left-[30px] top-0.5 w-4 h-4 rounded-full bg-creator-gold border-4 border-creator-sidebar shadow-sm"></div>
-              <h4 className="text-sm font-bold text-creator-gold">Đánh giá cuối cùng của Tác giả</h4>
-              <p className="text-xs text-creator-muted mt-0.5">{isPublished ? "Completed" : "Awaiting your confirmation"}</p>
-            </div>
-          </div>
-        </div>
+        <AIPolicyAndCopyright mediaId={mediaId} />
 
         {!isPublished && (
           <div className="bg-creator-sidebar border border-creator-border rounded-xl p-5">
