@@ -14,6 +14,7 @@ import { SeasonStructureStep } from "@/features/creator-dashboard/components/ste
 import { MediaUploadStep } from "@/features/creator-dashboard/components/steps/media-upload-step";
 import { ReadyPublishStep } from "@/features/creator-dashboard/components/steps/ready-publish-step";
 import { FinalReviewStep } from "@/features/creator-dashboard/components/steps/final-review-step";
+import { FinalReviewComicStep } from "@/features/creator-dashboard/components/steps/final-review-comic-step";
 
 import {
   useEffect,
@@ -419,6 +420,17 @@ function splitIdList(value: string) {
     .filter(Boolean);
 }
 
+function formatApprovalStatusLabel(status: ContentApprovalStatus) {
+  switch (status) {
+    case "APPROVED":
+      return "Đã duyệt";
+    case "REJECTED":
+      return "Bị từ chối";
+    default:
+      return "Chờ duyệt";
+  }
+}
+
 function formatStatusLabel(status: SeriesStatus | SeasonStatus | EpisodeStatus) {
   if (status === "ACTION_REQUIRED") {
     return "Cần xử lý";
@@ -431,16 +443,6 @@ function formatStatusLabel(status: SeriesStatus | SeasonStatus | EpisodeStatus) 
   return status;
 }
 
-function formatApprovalStatusLabel(status: ContentApprovalStatus) {
-  switch (status) {
-    case "APPROVED":
-      return "Đã duyệt";
-    case "REJECTED":
-      return "Bị từ chối";
-    default:
-      return "Chờ duyệt";
-  }
-}
 
 function getApprovalChipClass(status: ContentApprovalStatus) {
   switch (status) {
@@ -481,8 +483,8 @@ function toDateTimeLocalValue(value?: string) {
 }
 
 function formatMediaStatusLabel(status: MediaStatus) {
-  if (status === "PENDING") return "Äang kiá»ƒm duyá»‡t";
-  if (status === "INACTIVE") return "Vi pháº¡m chÃ­nh sÃ¡ch";
+  if (status === "PENDING") return "Đang kiểm duyệt";
+  if (status === "INACTIVE") return "Vi phạm chính sách";
   if (status === "HLS_PROCESSING") return "Processing";
   if (status === "HLS_READY") return "Ready";
   return formatStatusLabel(status as EpisodeStatus);
@@ -658,8 +660,8 @@ function MultiSelectField({ name, options, initialValues }: { name: string, opti
             type="button"
             onClick={() => toggle(opt.id)}
             className={`px-3 py-1.5 rounded-md text-sm transition-colors border ${selected.includes(opt.id)
-                ? "bg-creator-gold text-black border-creator-gold font-medium"
-                : "bg-creator-sidebar border-creator-border text-creator-muted hover:border-white/30"
+              ? "bg-creator-gold text-black border-creator-gold font-medium"
+              : "bg-creator-sidebar border-creator-border text-creator-muted hover:border-white/30"
               }`}
           >
             {opt.name}
@@ -780,7 +782,7 @@ function CreatorDashboardContent() {
     },
   });
 
-  // Track media status changes â†’ show toast notification
+  // Track media status changes → show toast notification
   const prevMediaStatusRef = useRef<Record<string, string>>({});
   useEffect(() => {
     const mediaList = mediaQuery.data ?? [];
@@ -789,24 +791,24 @@ function CreatorDashboardContent() {
       const oldStatus = prev[media.mediaId];
       if (oldStatus && oldStatus !== media.status) {
         if (media.status === "ACTIVE" && (oldStatus === "PENDING" || oldStatus === "HLS_READY")) {
-          const type = media.mediaType === "IMAGE" ? "áº¢nh" : "Video";
-          toast.success(`${type} Ä‘Ã£ Ä‘Æ°á»£c xuáº¥t báº£n`, {
-            description: `Ná»™i dung Ä‘Ã£ qua kiá»ƒm duyá»‡t thÃ nh cÃ´ng vÃ  hiá»‡n Ä‘ang hiá»ƒn thá»‹ trÃªn ná»n táº£ng TaleX.`,
+          const type = media.mediaType === "IMAGE" ? "Ảnh" : "Video";
+          toast.success(`${type} đã được xuất bản`, {
+            description: `Nội dung đã qua kiểm duyệt thành công và hiện đang hiển thị trên nền tảng TaleX.`,
             duration: 10000,
           });
         } else if (media.status === "INACTIVE" && oldStatus === "PENDING") {
-          toast.error("Ná»™i dung khÃ´ng Ä‘áº¡t kiá»ƒm duyá»‡t", {
-            description: "Ná»™i dung vi pháº¡m chÃ­nh sÃ¡ch ná»n táº£ng vÃ  Ä‘Ã£ bá»‹ táº¡m áº©n. Vui lÃ²ng xem chi tiáº¿t vi pháº¡m Ä‘á»ƒ chá»‰nh sá»­a.",
+          toast.error("Nội dung không đạt kiểm duyệt", {
+            description: "Nội dung vi phạm chính sách nền tảng và đã bị tạm ẩn. Vui lòng xem chi tiết vi phạm để chỉnh sửa.",
             duration: 15000,
           });
         } else if (media.status === "FAILED") {
-          toast.error("Xá»­ lÃ½ ná»™i dung tháº¥t báº¡i", {
-            description: media.errorMessage || "ÄÃ£ xáº£y ra lá»—i trong quÃ¡ trÃ¬nh xá»­ lÃ½. Vui lÃ²ng thá»­ Ä‘Äƒng táº£i láº¡i hoáº·c liÃªn há»‡ há»— trá»£.",
+          toast.error("Xử lý nội dung thất bại", {
+            description: media.errorMessage || "Đã xảy ra lỗi trong quá trình xử lý. Vui lòng thử đăng tải lại hoặc liên hệ hỗ trợ.",
             duration: 10000,
           });
         } else if (media.status === "PENDING" && oldStatus === "HLS_PROCESSING") {
-          toast.info("Äang kiá»ƒm duyá»‡t ná»™i dung", {
-            description: "Há»‡ thá»‘ng Ä‘ang kiá»ƒm tra báº£n quyá»n vÃ  ná»™i dung. QuÃ¡ trÃ¬nh nÃ y cÃ³ thá»ƒ máº¥t vÃ i phÃºt.",
+          toast.info("Đang kiểm duyệt nội dung", {
+            description: "Hệ thống đang kiểm tra bản quyền và nội dung. Quá trình này có thể mất vài phút.",
             duration: 5000,
           });
         }
@@ -893,7 +895,7 @@ function CreatorDashboardContent() {
       });
     },
     onSuccess: (series) => {
-      setUploadMessage("Đã tạo Series.");
+      setUploadMessage("ÄÃ£ táº¡o Series.");
       setDashboardRouteState({
         view: "seasons",
         seriesId: series.seriesId,
@@ -914,16 +916,16 @@ function CreatorDashboardContent() {
   const createEpisodeMutation = useMutation({
     mutationFn: async () => {
       if (!selectedSeries || !selectedSeason) {
-        throw new Error("Chọn một mùa trước khi tạo tập.");
+        throw new Error("Chá»n má»™t mÃ¹a trÆ°á»›c khi táº¡o táº­p.");
       }
 
       const created = await createEpisode(selectedSeason.id, {
         episodeNumber: displayEpisodeRows.length + 1,
         title:
           selectedSeries.contentType === "COMIC"
-            ? "Tập truyện tranh mới"
-            : "Tập video mới",
-        description: "Tập nháp được tạo từ bảng điều khiển.",
+            ? "Táº­p truyá»‡n tranh má»›i"
+            : "Táº­p video má»›i",
+        description: "Táº­p nhÃ¡p Ä‘Æ°á»£c táº¡o tá»« báº£ng Ä‘iá»u khiá»ƒn.",
         contentType: selectedSeries.contentType,
         unlockType: "FREE",
         priceVnd: 0,
@@ -947,7 +949,7 @@ function CreatorDashboardContent() {
   const createSeasonMutation = useMutation({
     mutationFn: async () => {
       if (!selectedSeries) {
-        throw new Error("Chọn một series trước khi tạo mùa.");
+        throw new Error("Chá»n má»™t series trÆ°á»›c khi táº¡o mÃ¹a.");
       }
 
       const nextSeasonNumber = displaySeasonRows.length + 1;
@@ -955,11 +957,11 @@ function CreatorDashboardContent() {
       return createSeason(selectedSeries.id, {
         seasonNumber: nextSeasonNumber,
         title: `Season ${nextSeasonNumber}`,
-        description: "Mùa nháp được tạo từ bảng điều khiển.",
+        description: "MÃ¹a nhÃ¡p Ä‘Æ°á»£c táº¡o tá»« báº£ng Ä‘iá»u khiá»ƒn.",
       });
     },
     onSuccess: (season) => {
-      setUploadMessage("Đã tạo Mùa.");
+      setUploadMessage("ÄÃ£ táº¡o MÃ¹a.");
       setDashboardRouteState({
         view: "seasons",
         seriesId: selectedSeries?.id ?? season.seriesId,
@@ -1004,7 +1006,7 @@ function CreatorDashboardContent() {
       });
     },
     onSuccess: () => {
-      setUploadMessage("Đã cập nhật Series.");
+      setUploadMessage("ÄÃ£ cáº­p nháº­t Series.");
       setEditModal(null);
       queryClient.invalidateQueries({
         queryKey: ["creator-dashboard", "series"],
@@ -1023,7 +1025,7 @@ function CreatorDashboardContent() {
       return series;
     },
     onSuccess: () => {
-      setUploadMessage("Đã xóa Series.");
+      setUploadMessage("ÄÃ£ xÃ³a Series.");
       setDeleteModal(null);
       openSeriesManagement();
       queryClient.invalidateQueries({
@@ -1040,7 +1042,7 @@ function CreatorDashboardContent() {
   const hideSeriesMutation = useMutation({
     mutationFn: (series: SeriesRow) => hideSeries(series.id),
     onSuccess: () => {
-      setUploadMessage("Đã ẩn Series.");
+      setUploadMessage("ÄÃ£ áº©n Series.");
       queryClient.invalidateQueries({ queryKey: ["creator-dashboard", "series"] });
     },
     onError: (error) => {
@@ -1051,7 +1053,7 @@ function CreatorDashboardContent() {
   const unhideSeriesMutation = useMutation({
     mutationFn: (series: SeriesRow) => unhideSeries(series.id),
     onSuccess: () => {
-      setUploadMessage("Đã hiện Series.");
+      setUploadMessage("ÄÃ£ hiá»‡n Series.");
       queryClient.invalidateQueries({ queryKey: ["creator-dashboard", "series"] });
     },
     onError: (error) => {
@@ -1068,7 +1070,7 @@ function CreatorDashboardContent() {
       });
     },
     onSuccess: () => {
-      setUploadMessage("Đã cập nhật Mùa.");
+      setUploadMessage("ÄÃ£ cáº­p nháº­t MÃ¹a.");
       setEditModal(null);
       queryClient.invalidateQueries({
         queryKey: ["creator-dashboard", "seasons", selectedSeries?.id],
@@ -1087,7 +1089,7 @@ function CreatorDashboardContent() {
       return season;
     },
     onSuccess: () => {
-      setUploadMessage("Đã xóa Mùa.");
+      setUploadMessage("ÄÃ£ xÃ³a MÃ¹a.");
       setDeleteModal(null);
       setDashboardRouteState({
         view: "seasons",
@@ -1109,7 +1111,7 @@ function CreatorDashboardContent() {
   const hideSeasonMutation = useMutation({
     mutationFn: (season: SeasonRow) => hideSeason(season.id),
     onSuccess: () => {
-      setUploadMessage("Đã ẩn Mùa.");
+      setUploadMessage("ÄÃ£ áº©n MÃ¹a.");
       queryClient.invalidateQueries({ queryKey: ["creator-dashboard", "seasons", selectedSeries?.id] });
     },
     onError: (error) => {
@@ -1120,7 +1122,7 @@ function CreatorDashboardContent() {
   const unhideSeasonMutation = useMutation({
     mutationFn: (season: SeasonRow) => unhideSeason(season.id),
     onSuccess: () => {
-      setUploadMessage("Đã hiện Mùa.");
+      setUploadMessage("ÄÃ£ hiá»‡n MÃ¹a.");
       queryClient.invalidateQueries({ queryKey: ["creator-dashboard", "seasons", selectedSeries?.id] });
     },
     onError: (error) => {
@@ -1144,7 +1146,7 @@ function CreatorDashboardContent() {
       });
     },
     onSuccess: () => {
-      setUploadMessage("Đã cập nhật Tập.");
+      setUploadMessage("ÄÃ£ cáº­p nháº­t Táº­p.");
       setEditModal(null);
       queryClient.invalidateQueries({
         queryKey: ["creator-dashboard", "episodes", selectedSeason?.id],
@@ -1163,7 +1165,7 @@ function CreatorDashboardContent() {
       return episode;
     },
     onSuccess: () => {
-      setUploadMessage("Đã xóa Tập.");
+      setUploadMessage("ÄÃ£ xÃ³a Táº­p.");
       setDeleteModal(null);
       setDashboardRouteState({
         view: "episodes",
@@ -1185,7 +1187,7 @@ function CreatorDashboardContent() {
   const hideEpisodeMutation = useMutation({
     mutationFn: (episode: EpisodeRow) => hideEpisode(episode.id),
     onSuccess: () => {
-      setUploadMessage("Đã ẩn Tập.");
+      setUploadMessage("ÄÃ£ áº©n Táº­p.");
       queryClient.invalidateQueries({ queryKey: ["creator-dashboard", "episodes", selectedSeason?.id] });
     },
     onError: (error) => {
@@ -1196,7 +1198,7 @@ function CreatorDashboardContent() {
   const unhideEpisodeMutation = useMutation({
     mutationFn: (episode: EpisodeRow) => unhideEpisode(episode.id),
     onSuccess: () => {
-      setUploadMessage("Đã hiện Tập.");
+      setUploadMessage("ÄÃ£ hiá»‡n Táº­p.");
       queryClient.invalidateQueries({ queryKey: ["creator-dashboard", "episodes", selectedSeason?.id] });
     },
     onError: (error) => {
@@ -1215,7 +1217,7 @@ function CreatorDashboardContent() {
       return scheduleEpisodePublish(target.value.id, { scheduledPublishAt });
     },
     onSuccess: () => {
-      setUploadMessage("Đã lưu lịch xuất bản.");
+      setUploadMessage("ÄÃ£ lÆ°u lá»‹ch xuáº¥t báº£n.");
       setScheduleModal(null);
       queryClient.invalidateQueries({
         queryKey: ["creator-dashboard", "episodes", selectedSeason?.id],
@@ -1234,7 +1236,7 @@ function CreatorDashboardContent() {
   const cancelScheduleMutation = useMutation({
     mutationFn: (episodeId: string) => cancelEpisodeSchedulePublish(episodeId),
     onSuccess: () => {
-      setUploadMessage("Đã hủy lịch.");
+      setUploadMessage("ÄÃ£ há»§y lá»‹ch.");
       queryClient.invalidateQueries({
         queryKey: ["creator-dashboard", "episodes", selectedSeason?.id],
       });
@@ -1268,7 +1270,7 @@ function CreatorDashboardContent() {
   const saveComicPagesMutation = useMutation({
     mutationFn: async () => {
       if (!selectedEpisode) {
-        throw new Error("Chọn một tập trước khi lưu thứ tự hiển thị.");
+        throw new Error("Chá»n má»™t táº­p trÆ°á»›c khi lÆ°u thá»© tá»± hiá»ƒn thá»‹.");
       }
 
       const pagesToSave = displayComicPages.map((page, index) => ({
@@ -1281,7 +1283,7 @@ function CreatorDashboardContent() {
       const localPages = pagesToSave.filter((page) => page.file);
 
       if (savedPages.length === 0 && localPages.length === 0) {
-        throw new Error("Chọn tệp trang truyện trước khi lưu.");
+        throw new Error("Chá»n tá»‡p trang truyá»‡n trÆ°á»›c khi lÆ°u.");
       }
 
       if (savedPages.length > 0) {
@@ -1350,7 +1352,7 @@ function CreatorDashboardContent() {
       setUploadMessage(
         createdPages.length > 0
           ? `${createdPages.length} page(s) uploaded and display order saved.`
-          : "Đã lưu thứ tự hiển thị.",
+          : "ÄÃ£ lÆ°u thá»© tá»± hiá»ƒn thá»‹.",
       );
       setComicPages([]);
       queryClient.invalidateQueries({
@@ -1380,7 +1382,7 @@ function CreatorDashboardContent() {
       setDeleteModal(null);
 
       if (isBackendMediaTarget(media) && media.mediaType === "VIDEO") {
-        setUploadMessage("Đã xóa Video.");
+        setUploadMessage("ÄÃ£ xÃ³a Video.");
         queryClient.invalidateQueries({
           queryKey: ["creator-dashboard", "media", selectedEpisode?.id],
         });
@@ -1651,7 +1653,7 @@ function CreatorDashboardContent() {
     { id: "core", label: "Series", state: (activeView === "create" || activeView === "series") ? "current" : (["seasons", "episodes", "comic", "video", "publish"].includes(activeView) ? "completed" : "upcoming") as any },
     { id: "structure", label: "Season", state: activeView === "seasons" ? "current" : (["episodes", "comic", "video", "publish"].includes(activeView) ? "completed" : "upcoming") as any },
     { id: "content", label: "Episode", state: activeView === "episodes" ? "current" : (["comic", "video", "publish"].includes(activeView) ? "completed" : "upcoming") as any },
-    { id: "moderation", label: "Tệp tin", state: (activeView === "comic" || activeView === "video") ? "current" : (activeView === "publish" ? "completed" : "upcoming") as any },
+    { id: "moderation", label: "Media", state: (activeView === "comic" || activeView === "video") ? "current" : (activeView === "publish" ? "completed" : "upcoming") as any },
     { id: "publishing", label: "Xuất bản", state: activeView === "publish" ? "current" : "upcoming" as any },
   ];
 
@@ -1803,25 +1805,47 @@ function CreatorDashboardContent() {
                 </div>
               ))
             ) : activeView === "publish" as any ? (
-              <FinalReviewStep
-                mediaUrl={existingVideoMedia[0]?.fileUrl || existingVideoMedia[0]?.originalUrl || displayComicPages[0]?.image || ""}
-                isPublishing={publishEpisodeMutation.isPending}
-                onPublish={() => publishEpisodeMutation.mutate(selectedEpisodeId)}
-                onSchedulePublish={() => handleSchedulePublish({ kind: "episode", value: selectedEpisode! })}
-                onSaveDraft={() => openSeriesManagement()}
-                onBack={() => {
-                  if (selectedEpisode?.status === "PUBLISHED") {
-                    setDashboardRouteState({ view: "episodes", seriesId: selectedSeriesId, seasonId: selectedSeasonId, episodeId: "" });
-                  } else {
-                    setDashboardRouteState({ view: selectedEpisode?.contentType === "COMIC" ? "comic" : "video", seriesId: selectedSeriesId, seasonId: selectedSeasonId, episodeId: selectedEpisodeId });
-                  }
-                }}
-                selectedEpisode={selectedEpisode}
-                onSaveEpisode={(episode) => updateEpisodeMutation.mutate(episode)}
-                isSavingEpisode={updateEpisodeMutation.isPending}
-                onHideEpisode={(episode) => hideEpisodeMutation.mutate(episode)}
-                isHidingEpisode={hideEpisodeMutation.isPending}
-              />
+              selectedEpisode?.contentType === "COMIC" ? (
+                <FinalReviewComicStep
+                  pages={displayComicPages}
+                  isPublishing={publishEpisodeMutation.isPending}
+                  onPublish={() => publishEpisodeMutation.mutate(selectedEpisodeId)}
+                  onSchedulePublish={() => handleSchedulePublish({ kind: "episode", value: selectedEpisode! })}
+                  onSaveDraft={() => openSeriesManagement()}
+                  onBack={() => {
+                    if (selectedEpisode?.status === "PUBLISHED") {
+                      setDashboardRouteState({ view: "episodes", seriesId: selectedSeriesId, seasonId: selectedSeasonId, episodeId: "" });
+                    } else {
+                      setDashboardRouteState({ view: "comic", seriesId: selectedSeriesId, seasonId: selectedSeasonId, episodeId: selectedEpisodeId });
+                    }
+                  }}
+                  selectedEpisode={selectedEpisode}
+                  onSaveEpisode={(episode) => updateEpisodeMutation.mutate(episode)}
+                  isSavingEpisode={updateEpisodeMutation.isPending}
+                  onHideEpisode={(episode) => hideEpisodeMutation.mutate(episode)}
+                  isHidingEpisode={hideEpisodeMutation.isPending}
+                />
+              ) : (
+                <FinalReviewStep
+                  mediaUrl={existingVideoMedia[0]?.fileUrl || existingVideoMedia[0]?.originalUrl || ""}
+                  isPublishing={publishEpisodeMutation.isPending}
+                  onPublish={() => publishEpisodeMutation.mutate(selectedEpisodeId)}
+                  onSchedulePublish={() => handleSchedulePublish({ kind: "episode", value: selectedEpisode! })}
+                  onSaveDraft={() => openSeriesManagement()}
+                  onBack={() => {
+                    if (selectedEpisode?.status === "PUBLISHED") {
+                      setDashboardRouteState({ view: "episodes", seriesId: selectedSeriesId, seasonId: selectedSeasonId, episodeId: "" });
+                    } else {
+                      setDashboardRouteState({ view: "video", seriesId: selectedSeriesId, seasonId: selectedSeasonId, episodeId: selectedEpisodeId });
+                    }
+                  }}
+                  selectedEpisode={selectedEpisode}
+                  onSaveEpisode={(episode) => updateEpisodeMutation.mutate(episode)}
+                  isSavingEpisode={updateEpisodeMutation.isPending}
+                  onHideEpisode={(episode) => hideEpisodeMutation.mutate(episode)}
+                  isHidingEpisode={hideEpisodeMutation.isPending}
+                />
+              )
             ) : activeView === "combos" ? (
               <ComboManagementView />
             ) : activeView === "campaign" ? (
@@ -2021,7 +2045,7 @@ function EditEntityModal({
           className="relative w-full max-w-7xl rounded-[24px] border border-creator-border bg-creator-bg shadow-[0_30px_90px_rgba(15,23,42,0.25)]"
         >
           <div className="sticky top-0 z-10 flex justify-between items-center bg-creator-bg p-6 pb-2 border-b border-creator-border rounded-t-[24px]">
-            <h2 className="text-2xl font-bold text-white">Cập nhật Series</h2>
+            <h2 className="text-2xl font-bold text-white">Cáº­p nháº­t Series</h2>
             <button
               onClick={onClose}
               type="button"
@@ -2121,7 +2145,7 @@ function EditEntityModal({
                 defaultValue={modal.value.contentType}
                 className={controlClass}
               >
-                <option value="COMIC">Truyện tranh</option>
+                <option value="COMIC">Truyá»‡n tranh</option>
                 <option value="VIDEO">Video</option>
               </select>
             </Field>
@@ -2512,10 +2536,10 @@ function SeriesManagementView({
 
       <div className="overflow-hidden rounded-[24px] border border-creator-border bg-creator-sidebar shadow-[0_20px_60px_rgba(30,42,68,0.07)]">
         <div className="grid grid-cols-[1.8fr_0.8fr_1fr_1fr_1.15fr] bg-creator-bg border border-creator-border text-creator-muted px-8 py-5 text-xs font-black uppercase tracking-[0.12em] text-creator-muted max-lg:hidden">
-          <span>Chi tiết Series</span>
-          <span>Loại</span>
+          <span>Chi tiáº¿t Series</span>
+          <span>Loáº¡i</span>
           <span>Trạng thái</span>
-          <span>Hiệu suất</span>
+          <span>Hiá»‡u suáº¥t</span>
           <span className="text-right">Thao tác</span>
         </div>
 
@@ -2912,9 +2936,9 @@ function SeasonCard({
           <p className="mt-2 text-xs font-bold text-slate-400">{season.id}</p>
         </div>
 
-        <MetricBox label="Số tập" value={String(season.episodes)} />
+        <MetricBox label="Sá»‘ táº­p" value={String(season.episodes)} />
         <MetricBox
-          label="Đã xuất bản"
+          label="ÄÃ£ xuáº¥t báº£n"
           value={String(season.publishedEpisodes)}
         />
         <div className="flex items-center justify-end gap-2">
@@ -3068,7 +3092,7 @@ function EpisodeManagementView({
                           {episode.contentType === "COMIC" ? <BookOpen size={12} /> : <Clapperboard size={12} />}
                           {episode.contentType === "COMIC" ? `${episode.totalPage ?? episode.mediaCount} pages` : `${episode.mediaCount} video`}
                         </span>
-                        <span>â€¢</span>
+                        <span>•</span>
                         <span className={cx(
                           "px-2 py-0.5 rounded border",
                           episode.status === "PUBLISHED" ? "border-green-500/30 text-green-400 bg-green-500/10" :
@@ -3354,7 +3378,7 @@ function ComicUploadView({
 
                 {editForm.unlockType === "PAID" && (
                   <div>
-                    <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Giá (VNĐ) *</label>
+                    <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">GiÃ¡ (VNÄ) *</label>
                     <input
                       type="number"
                       min={1}
@@ -3756,7 +3780,7 @@ function VideoUploadView({
 
                 {editForm.unlockType === "PAID" && (
                   <div>
-                    <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Giá (VNĐ) *</label>
+                    <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">GiÃ¡ (VNÄ) *</label>
                     <input
                       type="number"
                       min={1}
@@ -3796,7 +3820,7 @@ function VideoUploadView({
             {isLoadingMedia ? (
               <div className="p-6 rounded-xl bg-creator-bg border border-creator-border flex flex-col items-center justify-center text-creator-muted">
                 <div className="w-6 h-6 border-2 border-creator-gold border-t-transparent rounded-full animate-spin mb-3"></div>
-                <span className="text-sm font-bold">Đang tải tài nguyên...</span>
+                <span className="text-sm font-bold">Äang táº£i tÃ i nguyÃªn...</span>
               </div>
             ) : videos.length > 0 && (
               <div className="space-y-4">
@@ -3810,7 +3834,7 @@ function VideoUploadView({
                             {(video as any).fileName || video.fileUrl?.split("/").pop() || "Video File"}
                           </p>
                           <p className="text-xs font-medium text-creator-muted uppercase tracking-wider">
-                            {video.mimeType} â€¢ {formatBytes(video.fileSize)}
+                            {video.mimeType} • {formatBytes(video.fileSize)}
                           </p>
                         </div>
                       </div>
@@ -3969,17 +3993,17 @@ function VideoProcessingState({ video, onViewViolation }: { video: MediaResponse
         <Loader2 className="mb-3 h-8 w-8 animate-spin text-creator-gold" />
       )}
       <p className="text-sm font-black text-white">
-        {inactive ? "Ná»™i dung vi pháº¡m chÃ­nh sÃ¡ch" : pending ? "Äang kiá»ƒm duyá»‡t ná»™i dung" : failed ? "Video processing failed" : "Video is still processing"}
+        {inactive ? "Nội dung vi phạm chính sách" : pending ? "Ã„Âang kiÃ¡Â»Æ’m duyÃ¡Â»â€¡t nÃ¡Â»â„¢i dung" : failed ? "Video processing failed" : "Video is still processing"}
       </p>
       <p className="mt-2 max-w-md text-xs font-bold leading-relaxed">
-        {inactive ? "Ná»™i dung Ä‘Ã£ bá»‹ áº©n do vi pháº¡m báº£n quyá»n hoáº·c kiá»ƒm duyá»‡t." : pending ? "Äang kiá»ƒm tra báº£n quyá»n vÃ  ná»™i dung..." : failed ? (video.errorMessage || "KhÃ´ng thá»ƒ xá»­ lÃ½ video.") : "Vui lÃ²ng chá» trong giÃ¢y lÃ¡t."}
+        {inactive ? "NÃ¡Â»â„¢i dung Ã„â€˜ÃƒÂ£ bÃ¡Â»â€¹ Ã¡ÂºÂ©n do vi phÃ¡ÂºÂ¡m bÃ¡ÂºÂ£n quyÃ¡Â»Ân hoÃ¡ÂºÂ·c kiÃ¡Â»Æ’m duyÃ¡Â»â€¡t." : pending ? "Ã„Âang kiÃ¡Â»Æ’m tra bÃ¡ÂºÂ£n quyÃ¡Â»Ân vÃƒÂ  nÃ¡Â»â„¢i dung..." : failed ? (video.errorMessage || "Không thể xử lý video.") : "Vui lÃƒÂ²ng chÃ¡Â»Â trong giÃƒÂ¢y lÃƒÂ¡t."}
       </p>
       <span className={cx("mt-3 rounded-full px-3 py-1 text-[11px] font-black", inactive ? "bg-red-100 text-red-700" : pending ? "bg-amber-100 text-amber-700" : "bg-[#E8F8FF] text-[#075985]")}>
         {formatMediaStatusLabel(video.status)}
       </span>
       {inactive && onViewViolation && (
         <button onClick={() => onViewViolation(video.mediaId)} className="mt-2 text-xs font-semibold text-red-600 underline hover:text-red-800">
-          Xem chi tiáº¿t vi pháº¡m
+          Xem chi tiết vi phạm
         </button>
       )}
     </div>
@@ -4068,7 +4092,7 @@ function EpisodeUnlockFields({
       </Field>
 
       {unlockType === "PAID" && (
-        <Field label="Giá VNĐ" required>
+        <Field label="GiÃ¡ VNÄ" required>
           <input
             type="number"
             min={1}
@@ -4104,22 +4128,22 @@ function Field({
 }
 const campaignPlans = [
   {
-    name: "Gói Khởi Động",
-    price: "50.000 VNĐ",
+    name: "GÃ³i Khá»Ÿi Äá»™ng",
+    price: "50.000 VNÄ",
     description: "Thử sức đẩy tương tác cho series mới ra mắt.",
-    benefits: ["5.000 Lượt xem", "100 Lượt thích", "Ưu tiên hiển thị 24 giờ"],
+    benefits: ["5.000 Lượt xem", "100 Lượt thích", "Æ¯u tiÃªn hiá»ƒn thá»‹ 24 giá»"],
     icon: Zap,
     iconClass: "text-zinc-400",
   },
   {
     name: "Gói Xu Hướng",
-    price: "150.000 VNĐ",
-    description: "Tăng tốc để tác phẩm lọt vào dòng đề xuất nổi bật.",
+    price: "150.000 VNÄ",
+    description: "TÄƒng tá»‘c Ä‘á»ƒ tÃ¡c pháº©m lá»t vÃ o dÃ²ng Ä‘á» xuáº¥t ná»•i báº­t.",
     popular: true,
     benefits: [
       "20.000 Lượt xem",
       "1.000 Lượt thích",
-      "Đề xuất trang chủ",
+      "Äá» xuáº¥t trang chá»§",
       "Tối ưu tệp khán giả bằng AI",
     ],
     icon: Rocket,
@@ -4127,7 +4151,7 @@ const campaignPlans = [
   },
   {
     name: "Gói Toàn Cầu",
-    price: "500.000 VNĐ",
+    price: "500.000 VNÄ",
     description: "Phủ sóng mạnh cho chiến dịch ra mắt hoặc mùa mới.",
     benefits: [
       "100.000 Lượt xem",
@@ -4145,22 +4169,22 @@ const campaignBenefits: Array<{
   description: string;
   icon: LucideIcon;
 }> = [
-  {
-    title: "Khán giả thực",
-    description: "Tăng tiếp cận tới người dùng đang hoạt động trong hệ sinh thái TaleX.",
-    icon: Eye,
-  },
-  {
-    title: "AI Target chuẩn xác",
-    description: "Phân phối nội dung theo thể loại, hành vi đọc/xem và lịch sử tương tác.",
-    icon: Zap,
-  },
-  {
-    title: "Thống kê thời gian thực",
-    description: "Theo dõi lượt xem, lượt thích và hiệu quả từng gói ngay trong dashboard.",
-    icon: BarChart3,
-  },
-];
+    {
+      title: "Khán giả thực",
+      description: "TÄƒng tiáº¿p cáº­n tá»›i ngÆ°á»i dÃ¹ng Ä‘ang hoáº¡t Ä‘á»™ng trong há»‡ sinh thÃ¡i TaleX.",
+      icon: Eye,
+    },
+    {
+      title: "AI Target chuẩn xác",
+      description: "PhÃ¢n phá»‘i ná»™i dung theo thá»ƒ loáº¡i, hÃ nh vi Ä‘á»c/xem vÃ  lá»‹ch sá»­ tÆ°Æ¡ng tÃ¡c.",
+      icon: Zap,
+    },
+    {
+      title: "Thá»‘ng kÃª thá»i gian thá»±c",
+      description: "Theo dõi lượt xem, lượt thích và hiệu quả từng gói ngay trong dashboard.",
+      icon: BarChart3,
+    },
+  ];
 
 function CampaignPurchaseView() {
   return (
@@ -4175,8 +4199,8 @@ function CampaignPurchaseView() {
               TaleX Boost
             </h2>
             <p className="mt-4 max-w-2xl text-base font-semibold leading-7 text-zinc-400">
-              Äáº©y tÃ¡c pháº©m cá»§a báº¡n tá»›i Ä‘Ãºng nhÃ³m Ä‘á»™c giáº£ vÃ  khÃ¡n giáº£ tiá»m nÄƒng,
-              tÄƒng tá»‘c lÆ°á»£t xem, lÆ°á»£t thÃ­ch vÃ  cÆ¡ há»™i xuáº¥t hiá»‡n trÃªn cÃ¡c khu vá»±c Ä‘á» xuáº¥t.
+              Ã„ÂÃ¡ÂºÂ©y tÃƒÂ¡c phÃ¡ÂºÂ©m cÃ¡Â»Â§a bÃ¡ÂºÂ¡n tÃ¡Â»â€ºi Ã„â€˜ÃƒÂºng nhÃƒÂ³m Ã„â€˜Ã¡Â»â„¢c giÃ¡ÂºÂ£ vÃƒÂ  khÃƒÂ¡n giÃ¡ÂºÂ£ tiÃ¡Â»Âm nÃ„Æ’ng,
+              tÃ„Æ’ng tÃ¡Â»â€˜c lÃ†Â°Ã¡Â»Â£t xem, lÃ†Â°Ã¡Â»Â£t thÃƒÂ­ch vÃƒÂ  cÃ†Â¡ hÃ¡Â»â„¢i xuÃ¡ÂºÂ¥t hiÃ¡Â»â€¡n trÃƒÂªn cÃƒÂ¡c khu vÃ¡Â»Â±c Ã„â€˜Ã¡Â»Â xuÃ¡ÂºÂ¥t.
             </p>
           </div>
 
@@ -4191,7 +4215,7 @@ function CampaignPurchaseView() {
               />
               <div className="min-w-0 flex-1">
                 <p className="mb-1 truncate text-xs font-semibold text-zinc-400">
-                  Báº¡n Ä‘ang chá»n Ä‘áº©y tÆ°Æ¡ng tÃ¡c cho:
+                  BÃ¡ÂºÂ¡n Ã„â€˜ang chÃ¡Â»Ân Ã„â€˜Ã¡ÂºÂ©y tÃ†Â°Ã†Â¡ng tÃƒÂ¡c cho:
                 </p>
                 <h3 className="truncate text-base font-black text-zinc-50 sm:text-lg">
                   The Lost Horizon
@@ -4206,7 +4230,7 @@ function CampaignPurchaseView() {
               className="mt-2 flex w-full shrink-0 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-xs font-bold text-zinc-300 transition-colors hover:bg-white/10 hover:text-yellow-400 sm:mt-0 sm:w-auto"
             >
               <RefreshCw className="h-4 w-4" />
-              Äá»•i ná»™i dung
+              Ã„ÂÃ¡Â»â€¢i nÃ¡Â»â„¢i dung
             </button>
           </div>
         </div>
@@ -4220,7 +4244,7 @@ function CampaignPurchaseView() {
               <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-yellow-400/[0.03] to-transparent" />
               {plan.popular && (
                 <div className="absolute left-1/2 top-3 z-10 -translate-x-1/2 rounded-full bg-yellow-400 px-4 py-1.5 text-xs font-black uppercase tracking-[0.12em] text-black shadow-[0_0_24px_rgba(250,204,21,0.25)]">
-                  Phá»• biáº¿n nháº¥t
+                  Phổ biến nhất
                 </div>
               )}
 
@@ -4262,7 +4286,7 @@ function CampaignPurchaseView() {
                     : "border border-yellow-400/30 bg-yellow-400/5 text-yellow-400 hover:bg-yellow-400 hover:text-black",
                 )}
               >
-                Mua GÃ³i NÃ y
+                Mua Gói Này
               </button>
             </div>
           );
