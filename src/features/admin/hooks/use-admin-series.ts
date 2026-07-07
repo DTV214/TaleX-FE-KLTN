@@ -2,10 +2,9 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  deleteAdminSeries,
+  forceHideSeries,
+  forceUnhideSeries,
   getAllSeries,
-  hideSeries,
-  unhideSeries,
 } from "@/features/admin/api/admin-series.api";
 
 export const adminSeriesKeys = {
@@ -26,18 +25,7 @@ export function useToggleSeriesVisibility() {
 
   return useMutation({
     mutationFn: ({ hidden, id }: { hidden: boolean; id: string }) =>
-      hidden ? unhideSeries(id) : hideSeries(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: adminSeriesKeys.lists() });
-    },
-  });
-}
-
-export function useDeleteSeriesAdmin() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (id: string) => deleteAdminSeries(id),
+      hidden ? forceUnhideSeries(id) : forceHideSeries(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: adminSeriesKeys.lists() });
     },

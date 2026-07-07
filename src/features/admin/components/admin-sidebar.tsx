@@ -49,6 +49,7 @@ const contentNavItems = [
 const navItems = [
   { name: "Bảng Điều Khiển", href: "/admin/dashboard", icon: LayoutDashboard },
   { name: "Người Dùng", href: "/admin/users", icon: Users },
+  { name: "Người sáng tạo", href: "/admin/creators", icon: Users },
   {
     name: "Cấp Creator",
     href: "/admin/creator-tiers",

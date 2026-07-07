@@ -132,24 +132,18 @@ export async function getAllSeries() {
     .filter((series) => series.id);
 }
 
-export async function hideSeries(id: string) {
+export async function forceHideSeries(id: string) {
   const data = await unwrapBaseResponse<AdminSeriesApiItem>(
-    httpClient.patch(`${ADMIN_SERIES_ENDPOINT}/${id}/hide`),
+    httpClient.patch(`${ADMIN_SERIES_ENDPOINT}/${id}/force-hide`),
   );
 
   return normalizeSeries(data);
 }
 
-export async function unhideSeries(id: string) {
+export async function forceUnhideSeries(id: string) {
   const data = await unwrapBaseResponse<AdminSeriesApiItem>(
-    httpClient.patch(`${ADMIN_SERIES_ENDPOINT}/${id}/unhide`),
+    httpClient.patch(`${ADMIN_SERIES_ENDPOINT}/${id}/force-unhide`),
   );
 
   return normalizeSeries(data);
-}
-
-export async function deleteAdminSeries(id: string) {
-  return unwrapBaseResponse<void>(
-    httpClient.delete(`${ADMIN_SERIES_ENDPOINT}/${id}`),
-  );
 }

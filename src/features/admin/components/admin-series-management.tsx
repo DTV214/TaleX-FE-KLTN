@@ -6,7 +6,6 @@ import {
   EyeOff,
   Film,
   Loader2,
-  Trash2,
   X,
 } from "lucide-react";
 import { useState } from "react";
@@ -17,12 +16,11 @@ import {
   type AdminSeriesStatus,
 } from "@/features/admin/api/admin-series.api";
 import {
-  useDeleteSeriesAdmin,
   useGetAllSeries,
   useToggleSeriesVisibility,
 } from "@/features/admin/hooks/use-admin-series";
 
-type ConfirmAction = "hide" | "unhide" | "delete";
+type ConfirmAction = "hide" | "unhide";
 
 const contentTypeStyles: Record<AdminSeriesContentType, string> = {
   VIDEO: "border-cyan-200 bg-cyan-50 text-cyan-700",
@@ -86,19 +84,11 @@ function SeriesConfirmModal({
 }) {
   if (!open || !series || !action) return null;
 
-  const isDelete = action === "delete";
-  const title =
-    action === "delete"
-      ? "Xóa Tác phẩm?"
-      : action === "hide"
-        ? "Ẩn Tác phẩm?"
-        : "Hiện Tác phẩm?";
+  const title = action === "hide" ? "Ép Ẩn Tác phẩm?" : "Mở Ẩn Tác phẩm?";
   const description =
-    action === "delete"
-      ? "Tác phẩm sẽ bị xóa mềm khỏi hệ thống quản trị. Người dùng và creator có thể không còn nhìn thấy nội dung này."
-      : action === "hide"
-        ? "Tác phẩm sẽ bị ẩn khỏi các khu vực hiển thị công khai để xử lý vi phạm hoặc rà soát thêm."
-        : "Tác phẩm sẽ được hiển thị trở lại theo trạng thái backend cho phép.";
+    action === "hide"
+      ? "Tác phẩm sẽ bị ép ẩn khỏi các khu vực hiển thị công khai để xử lý vi phạm hoặc rà soát thêm."
+      : "Tác phẩm sẽ được mở ẩn trở lại theo trạng thái backend cho phép.";
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm animate-in fade-in duration-200">
@@ -110,6 +100,13 @@ function SeriesConfirmModal({
               <span className="font-bold text-slate-900">{series.title}</span>{" "}
               - {description}
             </p>
+            {action === "hide" && (
+              <p className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-bold leading-6 text-red-700">
+                Lưu ý: Việc ép ẩn cấp độ Series sẽ vô hiệu hóa hoàn toàn quyền
+                thao tác chỉnh sửa/upload/xóa của Creator lên các nội dung
+                Season, Episode, Media bên trong.
+              </p>
+            )}
           </div>
           <button
             type="button"
@@ -135,14 +132,10 @@ function SeriesConfirmModal({
             type="button"
             onClick={onConfirm}
             disabled={isLoading}
-            className={`inline-flex h-11 items-center justify-center gap-2 rounded-lg px-5 text-sm font-bold text-white shadow-sm transition disabled:cursor-not-allowed disabled:opacity-60 ${
-              isDelete
-                ? "bg-red-600 hover:bg-red-700"
-                : "bg-violet-600 hover:bg-violet-700"
-            }`}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-violet-600 px-5 text-sm font-bold text-white shadow-sm transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-            {isDelete ? "Xóa" : action === "hide" ? "Ẩn" : "Hiện"}
+            {action === "hide" ? "Ép Ẩn" : "Mở Ẩn"}
           </button>
         </div>
       </div>
@@ -153,15 +146,13 @@ function SeriesConfirmModal({
 export function AdminSeriesManagement() {
   const seriesQuery = useGetAllSeries();
   const toggleVisibilityMutation = useToggleSeriesVisibility();
-  const deleteMutation = useDeleteSeriesAdmin();
   const [selectedSeries, setSelectedSeries] = useState<AdminSeriesItem | null>(
     null,
   );
   const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null);
 
   const seriesList = seriesQuery.data ?? [];
-  const isMutating =
-    toggleVisibilityMutation.isPending || deleteMutation.isPending;
+  const isMutating = toggleVisibilityMutation.isPending;
 
   function openConfirm(series: AdminSeriesItem, action: ConfirmAction) {
     setSelectedSeries(series);
@@ -177,18 +168,6 @@ export function AdminSeriesManagement() {
   function handleConfirm() {
     if (!selectedSeries || !confirmAction) return;
 
-    if (confirmAction === "delete") {
-      deleteMutation.mutate(selectedSeries.id, {
-        onSuccess: () => {
-          toast.success("Đã xóa tác phẩm.");
-          setSelectedSeries(null);
-          setConfirmAction(null);
-        },
-        onError: (error) => toast.error(getErrorMessage(error)),
-      });
-      return;
-    }
-
     toggleVisibilityMutation.mutate(
       {
         id: selectedSeries.id,
@@ -198,8 +177,8 @@ export function AdminSeriesManagement() {
         onSuccess: () => {
           toast.success(
             confirmAction === "unhide"
-              ? "Đã hiện tác phẩm."
-              : "Đã ẩn tác phẩm.",
+              ? "Đã mở ẩn tác phẩm."
+              : "Đã ép ẩn tác phẩm.",
           );
           setSelectedSeries(null);
           setConfirmAction(null);
@@ -216,8 +195,8 @@ export function AdminSeriesManagement() {
           Quản lý Tác phẩm (Series)
         </h1>
         <p className="mt-2 max-w-3xl text-sm font-medium leading-6 text-slate-500">
-          Theo dõi toàn bộ phim bộ và truyện tranh trên hệ thống, xử lý ẩn/hiện
-          hoặc xóa mềm khi có vi phạm.
+          Theo dõi toàn bộ phim bộ và truyện tranh trên hệ thống, xử lý ép
+          ẩn/mở ẩn theo quyền đặc biệt của Admin khi có vi phạm.
         </p>
       </div>
 
@@ -303,22 +282,13 @@ export function AdminSeriesManagement() {
                           }
                           disabled={isMutating || isDeleted}
                           className="rounded-lg p-2 text-slate-400 transition hover:bg-violet-50 hover:text-violet-600 disabled:cursor-not-allowed disabled:opacity-40"
-                          title={isHidden ? "Hiện" : "Ẩn"}
+                          title={isHidden ? "Mở ẩn" : "Ép ẩn"}
                         >
                           {isHidden ? (
                             <Eye className="h-4 w-4" />
                           ) : (
                             <EyeOff className="h-4 w-4" />
                           )}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => openConfirm(series, "delete")}
-                          disabled={isMutating || isDeleted}
-                          className="rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40"
-                          title="Xóa"
-                        >
-                          <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
                     </td>
