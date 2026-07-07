@@ -6,6 +6,7 @@ import {
   Bell,
   Clapperboard,
   Crown,
+  LayoutDashboard,
   LogOut,
   Menu,
   Search,
@@ -30,6 +31,13 @@ export function SiteHeader() {
     profileUser?.username.slice(0, 2) ||
     user?.roleName.slice(0, 2) ||
     "TX";
+  const isAdminRole = user?.roleName === "ADMIN" || user?.roleName === "STAFF";
+  const workspaceMenu = {
+    href: isAdminRole ? "/admin/dashboard" : "/creator-dashboard",
+    label: isAdminRole ? "Trang Quản Trị" : "Creator Studio",
+    icon: isAdminRole ? LayoutDashboard : Clapperboard,
+  };
+  const WorkspaceIcon = workspaceMenu.icon;
 
   const isAuthOrAdminPage =
     pathname === "/login" ||
@@ -163,11 +171,11 @@ export function SiteHeader() {
                     </div>
 
                     <DropdownMenu.Item
-                      onSelect={() => router.push("/creator-dashboard")}
+                      onSelect={() => router.push(workspaceMenu.href)}
                       className="flex cursor-pointer select-none items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium outline-none transition-colors hover:bg-white/5 hover:text-primary focus:bg-white/5 focus:text-primary"
                     >
-                      <Clapperboard className="h-4 w-4" />
-                      Creator Studio
+                      <WorkspaceIcon className="h-4 w-4" />
+                      {workspaceMenu.label}
                     </DropdownMenu.Item>
 
                     <DropdownMenu.Item asChild>

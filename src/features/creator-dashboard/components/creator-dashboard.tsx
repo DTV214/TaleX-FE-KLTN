@@ -4031,22 +4031,22 @@ function Field({
 }
 const campaignPlans = [
   {
-    name: "GÃ³i Khá»Ÿi Äá»™ng",
-    price: "50.000 VNÄ",
+    name: "Gói Khởi Động",
+    price: "50.000 VNĐ",
     description: "Thử sức đẩy tương tác cho series mới ra mắt.",
-    benefits: ["5.000 Lượt xem", "100 Lượt thích", "Æ¯u tiÃªn hiá»ƒn thá»‹ 24 giá»"],
+    benefits: ["5.000 Lượt xem", "100 Lượt thích", "Ưu tiên hiển thị 24 giờ"],
     icon: Zap,
     iconClass: "text-zinc-400",
   },
   {
     name: "Gói Xu Hướng",
-    price: "150.000 VNÄ",
-    description: "TÄƒng tá»‘c Ä‘á»ƒ tÃ¡c pháº©m lá»t vÃ o dÃ²ng Ä‘á» xuáº¥t ná»•i báº­t.",
+    price: "150.000 VNĐ",
+    description: "Tăng tốc để tác phẩm lọt vào dòng đề xuất nổi bật.",
     popular: true,
     benefits: [
       "20.000 Lượt xem",
       "1.000 Lượt thích",
-      "Äá» xuáº¥t trang chá»§",
+      "Đề xuất trang chủ",
       "Tối ưu tệp khán giả bằng AI",
     ],
     icon: Rocket,
@@ -4054,7 +4054,7 @@ const campaignPlans = [
   },
   {
     name: "Gói Toàn Cầu",
-    price: "500.000 VNÄ",
+    price: "500.000 VNĐ",
     description: "Phủ sóng mạnh cho chiến dịch ra mắt hoặc mùa mới.",
     benefits: [
       "100.000 Lượt xem",
@@ -4074,16 +4074,16 @@ const campaignBenefits: Array<{
 }> = [
     {
       title: "Khán giả thực",
-      description: "TÄƒng tiáº¿p cáº­n tá»›i ngÆ°á»i dÃ¹ng Ä‘ang hoáº¡t Ä‘á»™ng trong há»‡ sinh thÃ¡i TaleX.",
+      description: "Tăng tiếp cận tới người dùng đang hoạt động trong hệ sinh thái TaleX.",
       icon: Eye,
     },
     {
       title: "AI Target chuẩn xác",
-      description: "PhÃ¢n phá»‘i ná»™i dung theo thá»ƒ loáº¡i, hÃ nh vi Ä‘á»c/xem vÃ  lá»‹ch sá»­ tÆ°Æ¡ng tÃ¡c.",
+      description: "Phân phối nội dung theo thể loại, hành vi đọc/xem và lịch sử tương tác.",
       icon: Zap,
     },
     {
-      title: "Thá»‘ng kÃª thá»i gian thá»±c",
+      title: "Thống kê thời gian thực",
       description: "Theo dõi lượt xem, lượt thích và hiệu quả từng gói ngay trong dashboard.",
       icon: BarChart3,
     },
@@ -4102,8 +4102,8 @@ function CampaignPurchaseView() {
               TaleX Boost
             </h2>
             <p className="mt-4 max-w-2xl text-base font-semibold leading-7 text-zinc-400">
-              Ã„ÂÃ¡ÂºÂ©y tÃƒÂ¡c phÃ¡ÂºÂ©m cÃ¡Â»Â§a bÃ¡ÂºÂ¡n tÃ¡Â»â€ºi Ã„â€˜ÃƒÂºng nhÃƒÂ³m Ã„â€˜Ã¡Â»â„¢c giÃ¡ÂºÂ£ vÃƒÂ  khÃƒÂ¡n giÃ¡ÂºÂ£ tiÃ¡Â»Âm nÃ„Æ’ng,
-              tÃ„Æ’ng tÃ¡Â»â€˜c lÃ†Â°Ã¡Â»Â£t xem, lÃ†Â°Ã¡Â»Â£t thÃƒÂ­ch vÃƒÂ  cÃ†Â¡ hÃ¡Â»â„¢i xuÃ¡ÂºÂ¥t hiÃ¡Â»â€¡n trÃƒÂªn cÃƒÂ¡c khu vÃ¡Â»Â±c Ã„â€˜Ã¡Â»Â xuÃ¡ÂºÂ¥t.
+              Đẩy tác phẩm của bạn tới đúng nhóm độc giả và khán giả tiềm năng,
+              tăng tốc lượt xem, lượt thích và cơ hội xuất hiện trên các khu vực đề xuất.
             </p>
           </div>
 
@@ -4118,7 +4118,7 @@ function CampaignPurchaseView() {
               />
               <div className="min-w-0 flex-1">
                 <p className="mb-1 truncate text-xs font-semibold text-zinc-400">
-                  BÃ¡ÂºÂ¡n Ã„â€˜ang chÃ¡Â»Ân Ã„â€˜Ã¡ÂºÂ©y tÃ†Â°Ã†Â¡ng tÃƒÂ¡c cho:
+                  Bạn đang chọn đẩy tương tác cho:
                 </p>
                 <h3 className="truncate text-base font-black text-zinc-50 sm:text-lg">
                   The Lost Horizon
@@ -4133,7 +4133,7 @@ function CampaignPurchaseView() {
               className="mt-2 flex w-full shrink-0 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-xs font-bold text-zinc-300 transition-colors hover:bg-white/10 hover:text-yellow-400 sm:mt-0 sm:w-auto"
             >
               <RefreshCw className="h-4 w-4" />
-              Ã„ÂÃ¡Â»â€¢i nÃ¡Â»â„¢i dung
+              Đổi nội dung
             </button>
           </div>
         </div>

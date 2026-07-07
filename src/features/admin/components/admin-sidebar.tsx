@@ -15,6 +15,7 @@ import {
   FileText,
   Folder,
   Grid3X3,
+  Home,
   Image as ImageIcon,
   LayoutDashboard,
   LogOut,
@@ -282,6 +283,25 @@ export function AdminSidebar() {
         </button>
 
         <div className="space-y-1 border-t border-slate-100 pt-4">
+          <Link
+            href="/"
+            className={`flex w-full items-center rounded-lg py-2.5 text-sm font-medium text-slate-600 transition-all hover:bg-slate-100 hover:text-slate-900 ${
+              isSidebarOpen ? "justify-start gap-3 px-4" : "justify-center px-0"
+            }`}
+            title="Về Trang Chủ"
+          >
+            <Home className="h-5 w-5 shrink-0 text-slate-400" />
+            <span
+              className={`truncate whitespace-nowrap transition-all duration-200 ${
+                isSidebarOpen
+                  ? "max-w-[120px] opacity-100"
+                  : "max-w-0 overflow-hidden opacity-0"
+              }`}
+            >
+              Về Trang Chủ
+            </span>
+          </Link>
+
           <button
             className={`flex w-full items-center rounded-lg py-2.5 text-sm font-medium text-slate-600 transition-all hover:bg-slate-100 hover:text-slate-900 ${
               isSidebarOpen ? "justify-start gap-3 px-4" : "justify-center px-0"
