@@ -3870,6 +3870,8 @@ function VideoUploadView({
           </div>
         </div>
 
+        {/* Right Column: AI Policy Scan & Copyright Protection */}
+        <AIPolicyAndCopyright mediaId={videos[0]?.mediaId} />
       </div>
     </div>
   );
