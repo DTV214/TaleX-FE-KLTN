@@ -897,7 +897,7 @@ function CreatorDashboardContent() {
       });
     },
     onSuccess: (series) => {
-      setUploadMessage("ÄÃ£ táº¡o Series.");
+      setUploadMessage("Đã tạo Series.");
       setDashboardRouteState({
         view: "seasons",
         seriesId: series.seriesId,
@@ -918,16 +918,16 @@ function CreatorDashboardContent() {
   const createEpisodeMutation = useMutation({
     mutationFn: async () => {
       if (!selectedSeries || !selectedSeason) {
-        throw new Error("Chá»n má»™t mÃ¹a trÆ°á»›c khi táº¡o táº­p.");
+        throw new Error("Chọn một mùa trước khi tạo tập.");
       }
 
       const created = await createEpisode(selectedSeason.id, {
         episodeNumber: displayEpisodeRows.length + 1,
         title:
           selectedSeries.contentType === "COMIC"
-            ? "Táº­p truyá»‡n tranh má»›i"
-            : "Táº­p video má»›i",
-        description: "Táº­p nhÃ¡p Ä‘Æ°á»£c táº¡o tá»« báº£ng Ä‘iá»u khiá»ƒn.",
+            ? "Tập truyện tranh mới"
+            : "Tập video mới",
+        description: "Tập nháp được tạo từ bảng điều khiển.",
         contentType: selectedSeries.contentType,
         unlockType: "FREE",
         priceVnd: 0,
@@ -951,7 +951,7 @@ function CreatorDashboardContent() {
   const createSeasonMutation = useMutation({
     mutationFn: async () => {
       if (!selectedSeries) {
-        throw new Error("Chá»n má»™t series trÆ°á»›c khi táº¡o mÃ¹a.");
+        throw new Error("Chọn một series trước khi tạo mùa.");
       }
 
       const nextSeasonNumber = displaySeasonRows.length + 1;
@@ -959,11 +959,11 @@ function CreatorDashboardContent() {
       return createSeason(selectedSeries.id, {
         seasonNumber: nextSeasonNumber,
         title: `Season ${nextSeasonNumber}`,
-        description: "MÃ¹a nhÃ¡p Ä‘Æ°á»£c táº¡o tá»« báº£ng Ä‘iá»u khiá»ƒn.",
+        description: "Mùa nháp được tạo từ bảng điều khiển.",
       });
     },
     onSuccess: (season) => {
-      setUploadMessage("ÄÃ£ táº¡o MÃ¹a.");
+      setUploadMessage("Đã tạo Mùa.");
       setDashboardRouteState({
         view: "seasons",
         seriesId: selectedSeries?.id ?? season.seriesId,
@@ -1008,7 +1008,7 @@ function CreatorDashboardContent() {
       });
     },
     onSuccess: () => {
-      setUploadMessage("ÄÃ£ cáº­p nháº­t Series.");
+      setUploadMessage("Đã cập nhật Series.");
       setEditModal(null);
       queryClient.invalidateQueries({
         queryKey: ["creator-dashboard", "series"],
@@ -1027,7 +1027,7 @@ function CreatorDashboardContent() {
       return series;
     },
     onSuccess: () => {
-      setUploadMessage("ÄÃ£ xÃ³a Series.");
+      setUploadMessage("Đã xóa Series.");
       setDeleteModal(null);
       openSeriesManagement();
       queryClient.invalidateQueries({
@@ -1044,7 +1044,7 @@ function CreatorDashboardContent() {
   const hideSeriesMutation = useMutation({
     mutationFn: (series: SeriesRow) => hideSeries(series.id),
     onSuccess: () => {
-      setUploadMessage("ÄÃ£ áº©n Series.");
+      setUploadMessage("Đã ẩn Series.");
       queryClient.invalidateQueries({ queryKey: ["creator-dashboard", "series"] });
     },
     onError: (error) => {
@@ -1055,7 +1055,7 @@ function CreatorDashboardContent() {
   const unhideSeriesMutation = useMutation({
     mutationFn: (series: SeriesRow) => unhideSeries(series.id),
     onSuccess: () => {
-      setUploadMessage("ÄÃ£ hiá»‡n Series.");
+      setUploadMessage("Đã hiện Series.");
       queryClient.invalidateQueries({ queryKey: ["creator-dashboard", "series"] });
     },
     onError: (error) => {
@@ -1072,7 +1072,7 @@ function CreatorDashboardContent() {
       });
     },
     onSuccess: () => {
-      setUploadMessage("ÄÃ£ cáº­p nháº­t MÃ¹a.");
+      setUploadMessage("Đã cập nhật Mùa.");
       setEditModal(null);
       queryClient.invalidateQueries({
         queryKey: ["creator-dashboard", "seasons", selectedSeries?.id],
@@ -1091,7 +1091,7 @@ function CreatorDashboardContent() {
       return season;
     },
     onSuccess: () => {
-      setUploadMessage("ÄÃ£ xÃ³a MÃ¹a.");
+      setUploadMessage("Đã xóa Mùa.");
       setDeleteModal(null);
       setDashboardRouteState({
         view: "seasons",
@@ -1113,7 +1113,7 @@ function CreatorDashboardContent() {
   const hideSeasonMutation = useMutation({
     mutationFn: (season: SeasonRow) => hideSeason(season.id),
     onSuccess: () => {
-      setUploadMessage("ÄÃ£ áº©n MÃ¹a.");
+      setUploadMessage("Đã ẩn Mùa.");
       queryClient.invalidateQueries({ queryKey: ["creator-dashboard", "seasons", selectedSeries?.id] });
     },
     onError: (error) => {
@@ -1124,7 +1124,7 @@ function CreatorDashboardContent() {
   const unhideSeasonMutation = useMutation({
     mutationFn: (season: SeasonRow) => unhideSeason(season.id),
     onSuccess: () => {
-      setUploadMessage("ÄÃ£ hiá»‡n MÃ¹a.");
+      setUploadMessage("Đã hiện Mùa.");
       queryClient.invalidateQueries({ queryKey: ["creator-dashboard", "seasons", selectedSeries?.id] });
     },
     onError: (error) => {
@@ -1148,7 +1148,7 @@ function CreatorDashboardContent() {
       });
     },
     onSuccess: () => {
-      setUploadMessage("ÄÃ£ cáº­p nháº­t Táº­p.");
+      setUploadMessage("Đã cập nhật Tập.");
       setEditModal(null);
       queryClient.invalidateQueries({
         queryKey: ["creator-dashboard", "episodes", selectedSeason?.id],
@@ -1167,7 +1167,7 @@ function CreatorDashboardContent() {
       return episode;
     },
     onSuccess: () => {
-      setUploadMessage("ÄÃ£ xÃ³a Táº­p.");
+      setUploadMessage("Đã xóa Tập.");
       setDeleteModal(null);
       setDashboardRouteState({
         view: "episodes",
@@ -1189,7 +1189,7 @@ function CreatorDashboardContent() {
   const hideEpisodeMutation = useMutation({
     mutationFn: (episode: EpisodeRow) => hideEpisode(episode.id),
     onSuccess: () => {
-      setUploadMessage("ÄÃ£ áº©n Táº­p.");
+      setUploadMessage("Đã ẩn Tập.");
       queryClient.invalidateQueries({ queryKey: ["creator-dashboard", "episodes", selectedSeason?.id] });
     },
     onError: (error) => {
@@ -1200,7 +1200,7 @@ function CreatorDashboardContent() {
   const unhideEpisodeMutation = useMutation({
     mutationFn: (episode: EpisodeRow) => unhideEpisode(episode.id),
     onSuccess: () => {
-      setUploadMessage("ÄÃ£ hiá»‡n Táº­p.");
+      setUploadMessage("Đã hiện Tập.");
       queryClient.invalidateQueries({ queryKey: ["creator-dashboard", "episodes", selectedSeason?.id] });
     },
     onError: (error) => {
@@ -1219,7 +1219,7 @@ function CreatorDashboardContent() {
       return scheduleEpisodePublish(target.value.id, { scheduledPublishAt });
     },
     onSuccess: () => {
-      setUploadMessage("ÄÃ£ lÆ°u lá»‹ch xuáº¥t báº£n.");
+      setUploadMessage("Đã lưu lịch xuất bản.");
       setScheduleModal(null);
       queryClient.invalidateQueries({
         queryKey: ["creator-dashboard", "episodes", selectedSeason?.id],
@@ -1238,7 +1238,7 @@ function CreatorDashboardContent() {
   const cancelScheduleMutation = useMutation({
     mutationFn: (episodeId: string) => cancelEpisodeSchedulePublish(episodeId),
     onSuccess: () => {
-      setUploadMessage("ÄÃ£ há»§y lá»‹ch.");
+      setUploadMessage("Đã hủy lịch.");
       queryClient.invalidateQueries({
         queryKey: ["creator-dashboard", "episodes", selectedSeason?.id],
       });
@@ -1272,7 +1272,7 @@ function CreatorDashboardContent() {
   const saveComicPagesMutation = useMutation({
     mutationFn: async () => {
       if (!selectedEpisode) {
-        throw new Error("Chá»n má»™t táº­p trÆ°á»›c khi lÆ°u thá»© tá»± hiá»ƒn thá»‹.");
+        throw new Error("Chọn một tập trước khi lưu thứ tự hiển thị.");
       }
 
       const pagesToSave = displayComicPages.map((page, index) => ({
@@ -1285,7 +1285,7 @@ function CreatorDashboardContent() {
       const localPages = pagesToSave.filter((page) => page.file);
 
       if (savedPages.length === 0 && localPages.length === 0) {
-        throw new Error("Chá»n tá»‡p trang truyá»‡n trÆ°á»›c khi lÆ°u.");
+        throw new Error("Chọn tệp trang truyện trước khi lưu.");
       }
 
       if (savedPages.length > 0) {
@@ -1354,7 +1354,7 @@ function CreatorDashboardContent() {
       setUploadMessage(
         createdPages.length > 0
           ? `${createdPages.length} page(s) uploaded and display order saved.`
-          : "ÄÃ£ lÆ°u thá»© tá»± hiá»ƒn thá»‹.",
+          : "Đã lưu thứ tự hiển thị.",
       );
       setComicPages([]);
       queryClient.invalidateQueries({
@@ -1384,7 +1384,7 @@ function CreatorDashboardContent() {
       setDeleteModal(null);
 
       if (isBackendMediaTarget(media) && media.mediaType === "VIDEO") {
-        setUploadMessage("ÄÃ£ xÃ³a Video.");
+        setUploadMessage("Đã xóa Video.");
         queryClient.invalidateQueries({
           queryKey: ["creator-dashboard", "media", selectedEpisode?.id],
         });
@@ -2048,7 +2048,7 @@ function EditEntityModal({
           className="relative w-full max-w-7xl rounded-[24px] border border-creator-border bg-creator-bg shadow-[0_30px_90px_rgba(15,23,42,0.25)]"
         >
           <div className="sticky top-0 z-10 flex justify-between items-center bg-creator-bg p-6 pb-2 border-b border-creator-border rounded-t-[24px]">
-            <h2 className="text-2xl font-bold text-white">Cáº­p nháº­t Series</h2>
+            <h2 className="text-2xl font-bold text-white">Cập nhật Series</h2>
             <button
               onClick={onClose}
               type="button"
@@ -2148,7 +2148,7 @@ function EditEntityModal({
                 defaultValue={modal.value.contentType}
                 className={controlClass}
               >
-                <option value="COMIC">Truyá»‡n tranh</option>
+                <option value="COMIC">Truyện tranh</option>
                 <option value="VIDEO">Video</option>
               </select>
             </Field>
@@ -2539,10 +2539,10 @@ function SeriesManagementView({
 
       <div className="overflow-hidden rounded-[24px] border border-creator-border bg-creator-sidebar shadow-[0_20px_60px_rgba(30,42,68,0.07)]">
         <div className="grid grid-cols-[1.8fr_0.8fr_1fr_1fr_1.15fr] bg-creator-bg border border-creator-border text-creator-muted px-8 py-5 text-xs font-black uppercase tracking-[0.12em] text-creator-muted max-lg:hidden">
-          <span>Chi tiáº¿t Series</span>
-          <span>Loáº¡i</span>
+          <span>Chi tiết Series</span>
+          <span>Loại</span>
           <span>Trạng thái</span>
-          <span>Hiá»‡u suáº¥t</span>
+          <span>Hiệu suất</span>
           <span className="text-right">Thao tác</span>
         </div>
 
@@ -2939,9 +2939,9 @@ function SeasonCard({
           <p className="mt-2 text-xs font-bold text-slate-400">{season.id}</p>
         </div>
 
-        <MetricBox label="Sá»‘ táº­p" value={String(season.episodes)} />
+        <MetricBox label="Số tập" value={String(season.episodes)} />
         <MetricBox
-          label="ÄÃ£ xuáº¥t báº£n"
+          label="Đã xuất bản"
           value={String(season.publishedEpisodes)}
         />
         <div className="flex items-center justify-end gap-2">
@@ -3381,7 +3381,7 @@ function ComicUploadView({
 
                 {editForm.unlockType === "PAID" && (
                   <div>
-                    <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">GiÃ¡ (VNÄ) *</label>
+                    <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Giá (VNĐ) *</label>
                     <input
                       type="number"
                       min={1}
@@ -3751,7 +3751,7 @@ function VideoUploadView({
 
                 {editForm.unlockType === "PAID" && (
                   <div>
-                    <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">GiÃ¡ (VNÄ) *</label>
+                    <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Giá (VNĐ) *</label>
                     <input
                       type="number"
                       min={1}
@@ -3791,7 +3791,7 @@ function VideoUploadView({
             {isLoadingMedia ? (
               <div className="p-6 rounded-xl bg-creator-bg border border-creator-border flex flex-col items-center justify-center text-creator-muted">
                 <div className="w-6 h-6 border-2 border-creator-gold border-t-transparent rounded-full animate-spin mb-3"></div>
-                <span className="text-sm font-bold">Äang táº£i tÃ i nguyÃªn...</span>
+                <span className="text-sm font-bold">Đang tải tài nguyên...</span>
               </div>
             ) : videos.length > 0 && (
               <div className="space-y-4">
@@ -3898,10 +3898,10 @@ function VideoProcessingState({ video, onViewViolation }: { video: MediaResponse
         <Loader2 className="mb-3 h-8 w-8 animate-spin text-creator-gold" />
       )}
       <p className="text-sm font-black text-white">
-        {inactive ? "Nội dung vi phạm chính sách" : pending ? "Ã„Âang kiÃ¡Â»Æ’m duyÃ¡Â»â€¡t nÃ¡Â»â„¢i dung" : failed ? "Video processing failed" : "Video is still processing"}
+        {inactive ? "Nội dung vi phạm chính sách" : pending ? "Đang kiểm duyệt nội dung" : failed ? "Video processing failed" : "Video is still processing"}
       </p>
       <p className="mt-2 max-w-md text-xs font-bold leading-relaxed">
-        {inactive ? "NÃ¡Â»â„¢i dung Ã„â€˜ÃƒÂ£ bÃ¡Â»â€¹ Ã¡ÂºÂ©n do vi phÃ¡ÂºÂ¡m bÃ¡ÂºÂ£n quyÃ¡Â»Ân hoÃ¡ÂºÂ·c kiÃ¡Â»Æ’m duyÃ¡Â»â€¡t." : pending ? "Ã„Âang kiÃ¡Â»Æ’m tra bÃ¡ÂºÂ£n quyÃ¡Â»Ân vÃƒÂ  nÃ¡Â»â„¢i dung..." : failed ? (video.errorMessage || "Không thể xử lý video.") : "Vui lÃƒÂ²ng chÃ¡Â»Â trong giÃƒÂ¢y lÃƒÂ¡t."}
+        {inactive ? "Nội dung đã bị ẩn do vi phạm bản quyền hoặc kiểm duyệt." : pending ? "Đang kiểm tra bản quyền và nội dung..." : failed ? (video.errorMessage || "Không thể xử lý video.") : "Vui lòng chờ trong giây lát."}
       </p>
       <span className={cx("mt-3 rounded-full px-3 py-1 text-[11px] font-black", inactive ? "bg-red-100 text-red-700" : pending ? "bg-amber-100 text-amber-700" : "bg-[#E8F8FF] text-[#075985]")}>
         {formatMediaStatusLabel(video.status)}
@@ -3997,7 +3997,7 @@ function EpisodeUnlockFields({
       </Field>
 
       {unlockType === "PAID" && (
-        <Field label="GiÃ¡ VNÄ" required>
+        <Field label="Giá VNĐ" required>
           <input
             type="number"
             min={1}
