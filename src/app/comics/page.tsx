@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ComicsList } from "@/features/comics/components/comics-list";
 import {
   BookOpen,
   ChevronRight,
@@ -273,21 +274,8 @@ export default function ComicsPage() {
     <main className="min-h-screen bg-[#0B0B0C] pb-24 font-sans text-white">
       <HeroBanner />
 
-      <div className="relative z-10 -mt-20 max-w-[100vw] space-y-14 px-4 md:px-12 xl:px-16">
-        <ContinueReadingSection />
-        <ComicGridSection
-          title="Mới phát hành"
-          href="/comics/new-releases"
-          items={newReleases}
-        />
-        <GenreSection />
-        <ComicGridSection
-          title="Webtoon chuyển thể"
-          href="/comics/webtoon-adaptations"
-          items={webtoonAdaptations}
-        />
-        <EditorPicksSection />
-      </div>
+      {/* Danh sách truyện tranh thực từ hệ thống - chỉ hiện COMIC */}
+      <ComicsList />
     </main>
   );
 }

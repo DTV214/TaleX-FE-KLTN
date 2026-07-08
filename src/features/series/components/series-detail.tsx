@@ -254,10 +254,10 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
             <div className="flex flex-wrap gap-4 items-center">
               {firstEpisodeId ? (
                 <Link
-                  href={`/watch/${firstEpisodeId}`}
+                  href={`/${series.contentType === "COMIC" ? "read" : "watch"}/${firstEpisodeId}`}
                   className="px-8 py-3.5 bg-[#D4AF37] hover:bg-[#E5C158] text-black font-extrabold rounded-2xl flex items-center justify-center gap-2 shadow-[0_6px_25px_rgba(212,175,55,0.3)] transition-all duration-300 hover:scale-[1.02]"
                 >
-                  <Play className="w-5 h-5 fill-current" /> Xem tập đầu tiên
+                  <Play className="w-5 h-5 fill-current" /> {series.contentType === "COMIC" ? "Đọc tập đầu tiên" : "Xem tập đầu tiên"}
                 </Link>
               ) : (
                 <button
@@ -483,10 +483,10 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
                     {/* Nút hành động bên góc phải (Chỉ hiển thị trên md screen) */}
                     <div className="hidden md:flex items-center justify-end pl-4">
                       <Link
-                        href={`/watch/${episode.episodeId}`}
+                        href={`/${series.contentType === "COMIC" ? "read" : "watch"}/${episode.episodeId}`}
                         className="px-5 py-2.5 bg-white/[0.04] group-hover:bg-[#D4AF37] text-white group-hover:text-black font-bold rounded-xl text-sm transition-all duration-300 whitespace-nowrap shadow-md group-hover:shadow-[0_4px_12px_rgba(212,175,55,0.2)]"
                       >
-                        Xem Ngay
+                        {series.contentType === "COMIC" ? "Đọc Ngay" : "Xem Ngay"}
                       </Link>
                     </div>
 

@@ -118,3 +118,20 @@ export async function getPublicEpisodes(seasonId: string) {
   );
 }
 
+export type EpisodeMediaResponse = {
+  mediaId: string;
+  episodeId: string;
+  mediaType: string;
+  mimeType: string;
+  fileUrl: string;
+  status: string;
+  approvalStatus: string;
+  displayOrder: number;
+};
+
+export async function getPublicEpisodeMedia(episodeId: string) {
+  return unwrapBaseResponse<EpisodeMediaResponse[]>(
+    httpClient.get(`/api/v1/public/episodes/${episodeId}/media`)
+  );
+}
+

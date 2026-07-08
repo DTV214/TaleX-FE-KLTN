@@ -21,6 +21,8 @@ const hiddenChromeRoutes = [
   "/creator-dashboard",
   "/admin",
   "/staff",
+  "/watch",
+  "/read",
 ] as const;
 
 function shouldShowPublicSidebar(pathname: string) {
