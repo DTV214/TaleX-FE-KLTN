@@ -83,6 +83,9 @@ export function usePipelineSSE({ enabled = true }: UsePipelineSSEOptions = {}) {
           }
 
           queryClient.invalidateQueries({ queryKey: ["creator-dashboard", "media"] });
+          queryClient.invalidateQueries({
+            queryKey: ["creator-dashboard", "media-violations", data.mediaId],
+          });
           queryClient.invalidateQueries({ queryKey: ["creator-dashboard", "episodes"] });
           queryClient.invalidateQueries({ queryKey: ["media"] });
           queryClient.invalidateQueries({ queryKey: ["episodes"] });

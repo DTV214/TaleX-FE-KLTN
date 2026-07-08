@@ -3,6 +3,12 @@ import { Check, Edit3, MessageSquare, AlertCircle, Eye, Rocket, X, Calendar, Eye
 import { useQuery } from "@tanstack/react-query";
 import { getMediaViolations } from "@/features/creator-dashboard/api/creator-content-api";
 import { AIPolicyAndCopyright } from "@/features/creator-dashboard/components/ai-policy-and-copyright";
+import {
+  getBlockingCopyrightViolations,
+  getRejectedCensorshipResults,
+  isMediaPipelinePending,
+  isMediaReadyForPublish,
+} from "@/features/creator-dashboard/utils/media-violations";
 
 interface FinalReviewComicStepProps {
   pages: any[];
@@ -55,6 +61,19 @@ export function FinalReviewComicStep({
   }, [selectedEpisode]);
 
   const isPublished = selectedEpisode?.status === "PUBLISHED";
+  const persistedPages = pages.filter((page) => !page.id.startsWith("LOCAL-"));
+  const firstPersistedPage = persistedPages[0];
+  const hasRejectedPage = persistedPages.some(
+    (page) => page.approvalStatus === "REJECTED",
+  );
+  const isMediaReady =
+    persistedPages.length > 0 &&
+    persistedPages.every((page) =>
+      isMediaReadyForPublish({
+        status: page.status,
+        approvalStatus: page.approvalStatus,
+      }),
+    );
 
   return (
     <div className="flex flex-col lg:flex-row gap-8 max-w-7xl mx-auto p-6 text-creator-text">
@@ -167,7 +186,11 @@ export function FinalReviewComicStep({
 
       {/* Right - Pipeline & Actions */}
       <div className="w-full lg:w-96 space-y-6">
-        <AIPolicyAndCopyright mediaId={pages.find(p => !p.id.startsWith("LOCAL-"))?.id} />
+        <AIPolicyAndCopyright
+          mediaId={firstPersistedPage?.id}
+          mediaStatus={firstPersistedPage?.status}
+          approvalStatus={firstPersistedPage?.approvalStatus}
+        />
 
         {!isPublished && (
           <div className="bg-creator-sidebar border border-creator-border rounded-xl p-5">
@@ -186,9 +209,16 @@ export function FinalReviewComicStep({
         <div className="flex flex-col gap-3 pt-2">
           {!isPublished ? (
             <>
+              {!isMediaReady && (
+                <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-3 text-xs font-bold leading-relaxed text-amber-300">
+                  {hasRejectedPage
+                    ? "Có trang truyện không đạt kiểm duyệt nên tập chưa thể xuất bản."
+                    : "Vui lòng chờ tất cả trang truyện được xử lý xong và có trạng thái APPROVED trước khi xuất bản."}
+                </div>
+              )}
               <button
                 onClick={onPublish}
-                disabled={!agreedToTerms || isPublishing}
+                disabled={!agreedToTerms || isPublishing || !isMediaReady}
                 className="w-full py-3 rounded-md text-sm font-bold bg-creator-gold text-black hover:bg-creator-gold-hover transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isPublishing ? (
@@ -205,7 +235,7 @@ export function FinalReviewComicStep({
 
               <button
                 onClick={onSchedulePublish}
-                disabled={!agreedToTerms || isPublishing}
+                disabled={!agreedToTerms || isPublishing || !isMediaReady}
                 className="w-full py-3 rounded-md text-sm font-bold bg-[#13110F] border border-creator-gold text-creator-gold hover:bg-creator-gold/10 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Calendar size={18} /> Schedule Publish
@@ -258,11 +288,19 @@ function ComicPagePreview({ page }: { page: any }) {
     queryKey: ["creator-dashboard", "media-violations", page.id],
     queryFn: () => getMediaViolations(page.id),
     enabled: !isLocal,
+    refetchInterval: isMediaPipelinePending({
+      status: page.status,
+      approvalStatus: page.approvalStatus,
+    })
+      ? 5000
+      : false,
   });
 
   const violations = violationsQuery.data;
-  const hasCopyrightViolations = violations?.copyrightViolations && violations.copyrightViolations.length > 0;
-  const hasCensorshipViolations = violations?.censorshipResults && violations.censorshipResults.length > 0;
+  const copyrightViolations = getBlockingCopyrightViolations(violations);
+  const censorshipViolations = getRejectedCensorshipResults(violations);
+  const hasCopyrightViolations = copyrightViolations.length > 0;
+  const hasCensorshipViolations = censorshipViolations.length > 0;
   const hasAnyViolations = hasCopyrightViolations || hasCensorshipViolations;
 
   return (
@@ -288,15 +326,15 @@ function ComicPagePreview({ page }: { page: any }) {
         {hasAnyViolations && (
           <div className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity p-4 flex flex-col justify-center items-center text-center overflow-y-auto backdrop-blur-sm z-10">
             <AlertTriangle className="text-red-500 mb-2" size={24} />
-            <span className="text-red-400 font-bold text-sm mb-2">Vi phạm chính sách</span>
+            <span className="text-red-400 font-bold text-sm mb-2">Nội dung không đạt kiểm duyệt</span>
             {hasCopyrightViolations && (
               <p className="text-xs text-gray-300 mb-1">
-                <span className="font-semibold text-white">Bản quyền:</span> {violations.copyrightViolations.length} vi phạm
+                <span className="font-semibold text-white">Bản quyền:</span> {copyrightViolations.length} vi phạm
               </p>
             )}
             {hasCensorshipViolations && (
               <p className="text-xs text-gray-300">
-                <span className="font-semibold text-white">Nội dung:</span> {violations.censorshipResults.map((c: any) => c.primaryViolationLabel).join(", ")}
+                <span className="font-semibold text-white">Nội dung:</span> {censorshipViolations.map((item) => item.primaryViolationLabel).filter(Boolean).join(", ")}
               </p>
             )}
           </div>

@@ -19,6 +19,7 @@ export type MediaStatus =
   | "HLS_READY"
   | "ACTIVE"
   | "HIDDEN"
+  | "FORCE_HIDDEN"
   | "INACTIVE"
   | "DELETED"
   | "FAILED";
@@ -55,13 +56,13 @@ export type ContentCensorshipResponseDto = {
   checkedAt?: string;
   reviewedBy?: string;
   reviewerNotes?: string;
-  status: string;
+  status: "PENDING" | "APPROVED" | "REJECTED" | "FLAGGED";
   violationDetails?: ViolationDetailResponseDto[];
 };
 
 export type MediaViolationsResponseDto = {
   mediaId: string;
-  contentId: string;
+  contentId?: string;
   copyrightViolations: MediaCopyrightResponseDto[];
   censorshipResults: ContentCensorshipResponseDto[];
 };

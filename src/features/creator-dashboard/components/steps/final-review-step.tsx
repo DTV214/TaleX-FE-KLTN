@@ -1,12 +1,24 @@
 import React, { useState, useEffect } from "react";
 import { Check, Edit3, MessageSquare, AlertCircle, Eye, Rocket, X, Calendar, EyeOff, ShieldAlert, AlertTriangle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { getMediaViolations } from "@/features/creator-dashboard/api/creator-content-api";
+import {
+  getMediaViolations,
+  type ContentApprovalStatus,
+  type MediaStatus,
+} from "@/features/creator-dashboard/api/creator-content-api";
 import { AIPolicyAndCopyright } from "@/features/creator-dashboard/components/ai-policy-and-copyright";
+import {
+  getBlockingCopyrightViolations,
+  getRejectedCensorshipResults,
+  isMediaPipelinePending,
+  isMediaReadyForPublish,
+} from "@/features/creator-dashboard/utils/media-violations";
 
 interface FinalReviewStepProps {
   mediaId?: string;
   mediaUrl?: string;
+  mediaStatus?: MediaStatus;
+  approvalStatus?: ContentApprovalStatus;
   isPublishing?: boolean;
   onPublish: () => void;
   onSchedulePublish: () => void;
@@ -22,7 +34,9 @@ interface FinalReviewStepProps {
 
 export function FinalReviewStep({ 
   mediaId,
-  mediaUrl, 
+  mediaUrl,
+  mediaStatus,
+  approvalStatus,
   isPublishing, 
   onPublish, 
   onSchedulePublish, 
@@ -64,12 +78,24 @@ export function FinalReviewStep({
     queryKey: ["creator-dashboard", "media-violations", mediaId],
     queryFn: () => getMediaViolations(mediaId!),
     enabled: !!mediaId,
+    refetchInterval: isMediaPipelinePending({
+      status: mediaStatus,
+      approvalStatus,
+    })
+      ? 5000
+      : false,
   });
 
   const violations = violationsQuery.data;
-  const hasCopyrightViolations = violations?.copyrightViolations && violations.copyrightViolations.length > 0;
-  const hasCensorshipViolations = violations?.censorshipResults && violations.censorshipResults.length > 0;
+  const copyrightViolations = getBlockingCopyrightViolations(violations);
+  const censorshipViolations = getRejectedCensorshipResults(violations);
+  const hasCopyrightViolations = copyrightViolations.length > 0;
+  const hasCensorshipViolations = censorshipViolations.length > 0;
   const hasAnyViolations = hasCopyrightViolations || hasCensorshipViolations;
+  const isMediaReady = isMediaReadyForPublish({
+    status: mediaStatus,
+    approvalStatus,
+  });
 
   return (
     <div className="flex flex-col lg:flex-row gap-8 max-w-7xl mx-auto p-6 text-creator-text">
@@ -97,19 +123,19 @@ export function FinalReviewStep({
               <div className="absolute top-4 right-4 max-w-sm bg-black/80 backdrop-blur-sm border border-red-500/50 text-white p-4 rounded-xl shadow-lg">
                 <div className="flex items-center gap-2 text-red-400 font-bold mb-2">
                   <ShieldAlert size={18} />
-                  <span>Phát hiện vi phạm chính sách</span>
+                  <span>Phát hiện nội dung không đạt kiểm duyệt</span>
                 </div>
                 <div className="text-xs text-gray-300 space-y-2">
                   {hasCopyrightViolations && (
                     <div>
                       <span className="font-semibold text-white">Bản quyền: </span>
-                      Đã phát hiện {violations.copyrightViolations.length} vi phạm bản quyền. Vui lòng kiểm tra lại nội dung.
+                      Đã phát hiện {copyrightViolations.length} vi phạm bản quyền. Vui lòng kiểm tra lại nội dung.
                     </div>
                   )}
                   {hasCensorshipViolations && (
                     <div>
                       <span className="font-semibold text-white">Nội dung không phù hợp: </span>
-                      {violations.censorshipResults.map(c => c.primaryViolationLabel).join(", ")}
+                      {censorshipViolations.map((item) => item.primaryViolationLabel).filter(Boolean).join(", ")}
                     </div>
                   )}
                 </div>
@@ -202,7 +228,11 @@ export function FinalReviewStep({
 
       {/* Right - Pipeline & Actions */}
       <div className="w-full lg:w-96 space-y-6">
-        <AIPolicyAndCopyright mediaId={mediaId} />
+        <AIPolicyAndCopyright
+          mediaId={mediaId}
+          mediaStatus={mediaStatus}
+          approvalStatus={approvalStatus}
+        />
 
         {!isPublished && (
           <div className="bg-creator-sidebar border border-creator-border rounded-xl p-5">
@@ -221,9 +251,16 @@ export function FinalReviewStep({
         <div className="flex flex-col gap-3 pt-2">
           {!isPublished ? (
             <>
+              {!isMediaReady && (
+                <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-3 text-xs font-bold leading-relaxed text-amber-300">
+                  {approvalStatus === "REJECTED"
+                    ? "Nội dung không đạt kiểm duyệt nên chưa thể xuất bản."
+                    : "Vui lòng chờ media được xử lý xong và có trạng thái APPROVED trước khi xuất bản."}
+                </div>
+              )}
               <button 
                 onClick={onPublish}
-                disabled={!agreedToTerms || isPublishing}
+                disabled={!agreedToTerms || isPublishing || !isMediaReady}
                 className="w-full py-3 rounded-md text-sm font-bold bg-creator-gold text-black hover:bg-creator-gold-hover transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isPublishing ? (
@@ -240,7 +277,7 @@ export function FinalReviewStep({
               
               <button 
                 onClick={onSchedulePublish}
-                disabled={!agreedToTerms || isPublishing}
+                disabled={!agreedToTerms || isPublishing || !isMediaReady}
                 className="w-full py-3 rounded-md text-sm font-bold bg-[#13110F] border border-creator-gold text-creator-gold hover:bg-creator-gold/10 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Calendar size={18} /> Schedule Publish

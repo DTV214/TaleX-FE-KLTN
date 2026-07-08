@@ -11,6 +11,11 @@ import {
   fetchMediaViolations,
   type MediaViolationsResponse,
 } from "../api/pipeline-api";
+import {
+  getBlockingCopyrightViolations,
+  getPermittedCopyrightMatches,
+  getRejectedCensorshipResults,
+} from "@/features/creator-dashboard/utils/media-violations";
 
 interface ViolationDetailDialogProps {
   mediaId: string;
@@ -25,6 +30,9 @@ export function ViolationDetailDialog({
 }: ViolationDetailDialogProps) {
   const [data, setData] = useState<MediaViolationsResponse | null>(null);
   const [loading, setLoading] = useState(false);
+  const blockingCopyright = getBlockingCopyrightViolations(data ?? undefined);
+  const permittedCopyright = getPermittedCopyrightMatches(data ?? undefined);
+  const rejectedCensorship = getRejectedCensorshipResults(data ?? undefined);
 
   useEffect(() => {
     if (!open || !mediaId) return;
@@ -50,14 +58,18 @@ export function ViolationDetailDialog({
           <div className="space-y-6">
             {data.copyrightViolations.length > 0 && (
               <div>
-                <h3 className="text-sm font-semibold text-red-400 mb-3">
-                  Vi phạm bản quyền ({data.copyrightViolations.length})
+                <h3 className="text-sm font-semibold text-white mb-3">
+                  Kết quả đối chiếu bản quyền ({data.copyrightViolations.length})
                 </h3>
                 <div className="space-y-3">
                   {data.copyrightViolations.map((v) => (
                     <div
                       key={v.mediaCopyrightId}
-                      className="rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-sm"
+                      className={`rounded-lg border p-3 text-sm ${
+                        v.isValid
+                          ? "border-green-500/20 bg-green-500/5"
+                          : "border-red-500/20 bg-red-500/5"
+                      }`}
                     >
                       <div className="grid grid-cols-2 gap-2">
                         <div>
@@ -147,7 +159,9 @@ export function ViolationDetailDialog({
               </div>
             )}
 
-            {data.copyrightViolations.length === 0 &&
+            {blockingCopyright.length === 0 &&
+              permittedCopyright.length === 0 &&
+              rejectedCensorship.length === 0 &&
               data.censorshipResults.length === 0 && (
                 <p className="text-muted-foreground py-4">
                   Không có dữ liệu vi phạm.

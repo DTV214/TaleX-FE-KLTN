@@ -108,6 +108,12 @@ import { usePipelineSSE } from "@/features/creator-dashboard/hooks/use-pipeline-
 import { SignedHlsPlayer } from "@/features/playback/components/signed-hls-player";
 import { ComboManagementView } from "@/features/creator-dashboard/components/combo-management";
 import { AIPolicyAndCopyright } from "@/features/creator-dashboard/components/ai-policy-and-copyright";
+import {
+  getBlockingCopyrightViolations,
+  getRejectedCensorshipResults,
+  isMediaPipelinePending,
+  isMediaReadyForPublish,
+} from "@/features/creator-dashboard/utils/media-violations";
 
 type DashboardView =
   | "series"
@@ -135,6 +141,8 @@ const dashboardViews: DashboardView[] = [
   "comic",
   "video",
   "combos",
+  "campaign",
+  "publish",
 ];
 
 const defaultDashboardRouteState: DashboardRouteState = {
@@ -300,6 +308,8 @@ type ComicPage = {
   fileSizeBytes?: number;
   checksum: string;
   displayOrder: number;
+  status?: MediaStatus;
+  approvalStatus?: ContentApprovalStatus;
   file?: File;
 };
 
@@ -626,6 +636,8 @@ function mapMediaResponseToComicPage(media: MediaResponse): ComicPage {
     fileSizeBytes: media.fileSize,
     checksum: media.checksum || "generated",
     displayOrder: media.displayOrder ?? 1,
+    status: media.status,
+    approvalStatus: media.approvalStatus,
   };
 }
 
@@ -776,7 +788,7 @@ function CreatorDashboardContent() {
     queryFn: () => listMediaByEpisode(selectedEpisode!.id),
     enabled:
       Boolean(selectedEpisode?.id) &&
-      (activeView === "comic" || activeView === "video"),
+      (activeView === "comic" || activeView === "video" || activeView === "publish"),
     refetchInterval: (query) => {
       const data = query.state.data as MediaResponse[] | undefined;
       const hasPending = data?.some((m) => m.status === "PENDING" || m.status === "HLS_PROCESSING" || m.status === "PROCESSING");
@@ -834,14 +846,13 @@ function CreatorDashboardContent() {
     comicPages.length > 0 ? comicPages : existingMediaPages;
 
   const hasApprovedComicMedia = useMemo(
-    () =>
-      (mediaQuery.data ?? []).some(
-        (media) =>
-          media.mediaType === "IMAGE" &&
-          !media.isDeleted &&
-          media.status === "ACTIVE" &&
-          media.approvalStatus === "APPROVED",
-      ),
+    () => {
+      const comicMedia = (mediaQuery.data ?? []).filter(
+        (media) => media.mediaType === "IMAGE" && !media.isDeleted,
+      );
+
+      return comicMedia.length > 0 && comicMedia.every(isMediaReadyForPublish);
+    },
     [mediaQuery.data],
   );
 
@@ -1831,6 +1842,8 @@ function CreatorDashboardContent() {
                 <FinalReviewStep
                   mediaId={existingVideoMedia[0]?.mediaId}
                   mediaUrl={existingVideoMedia[0]?.fileUrl || existingVideoMedia[0]?.originalUrl || ""}
+                  mediaStatus={existingVideoMedia[0]?.status}
+                  approvalStatus={existingVideoMedia[0]?.approvalStatus}
                   isPublishing={publishEpisodeMutation.isPending}
                   onPublish={() => publishEpisodeMutation.mutate(selectedEpisodeId)}
                   onSchedulePublish={() => handleSchedulePublish({ kind: "episode", value: selectedEpisode! })}
@@ -3495,7 +3508,11 @@ function ComicUploadView({
         </div>
 
         {/* Right Column: AI Policy Scan */}
-        <AIPolicyAndCopyright mediaId={pages.find(p => !p.id.startsWith("LOCAL-"))?.id} />
+        <AIPolicyAndCopyright
+          mediaId={pages.find((page) => !page.id.startsWith("LOCAL-"))?.id}
+          mediaStatus={pages.find((page) => !page.id.startsWith("LOCAL-"))?.status}
+          approvalStatus={pages.find((page) => !page.id.startsWith("LOCAL-"))?.approvalStatus}
+        />
       </div>
     </div>
   );
@@ -3525,11 +3542,19 @@ function ComicPageCard({
     queryKey: ["creator-dashboard", "media-violations", page.id],
     queryFn: () => getMediaViolations(page.id),
     enabled: !isLocal,
+    refetchInterval: isMediaPipelinePending({
+      status: page.status,
+      approvalStatus: page.approvalStatus,
+    })
+      ? 5000
+      : false,
   });
 
   const violations = violationsQuery.data;
-  const hasCopyrightViolations = violations?.copyrightViolations && violations.copyrightViolations.length > 0;
-  const hasCensorshipViolations = violations?.censorshipResults && violations.censorshipResults.length > 0;
+  const copyrightViolations = getBlockingCopyrightViolations(violations);
+  const censorshipViolations = getRejectedCensorshipResults(violations);
+  const hasCopyrightViolations = copyrightViolations.length > 0;
+  const hasCensorshipViolations = censorshipViolations.length > 0;
   const hasAnyViolations = hasCopyrightViolations || hasCensorshipViolations;
 
   return (
@@ -3575,15 +3600,15 @@ function ComicPageCard({
         {hasAnyViolations && (
           <div className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity p-4 flex flex-col justify-center items-center text-center overflow-y-auto backdrop-blur-sm z-10 cursor-help">
             <AlertTriangle className="text-red-500 mb-2" size={24} />
-            <span className="text-red-400 font-bold text-sm mb-2">Vi phạm chính sách</span>
+            <span className="text-red-400 font-bold text-sm mb-2">Nội dung không đạt kiểm duyệt</span>
             {hasCopyrightViolations && (
               <p className="text-xs text-gray-300 mb-1">
-                <span className="font-semibold text-white">Bản quyền:</span> {violations.copyrightViolations.length} vi phạm
+                <span className="font-semibold text-white">Bản quyền:</span> {copyrightViolations.length} vi phạm
               </p>
             )}
             {hasCensorshipViolations && (
               <p className="text-xs text-gray-300">
-                <span className="font-semibold text-white">Nội dung:</span> {violations.censorshipResults.map((c: any) => c.primaryViolationLabel).join(", ")}
+                <span className="font-semibold text-white">Nội dung:</span> {censorshipViolations.map((item) => item.primaryViolationLabel).filter(Boolean).join(", ")}
               </p>
             )}
           </div>
@@ -3679,7 +3704,7 @@ function VideoUploadView({
 }) {
   const [violationMediaId, setViolationMediaId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ episodeNumber: selectedEpisode.episodeNumber, title: selectedEpisode.title, description: selectedEpisode.description || "", unlockType: selectedEpisode.unlockType || "FREE", priceVnd: selectedEpisode.priceVnd || 0 });
-  const canSchedule = videos.some((video) => video.approvalStatus === "APPROVED");
+  const canSchedule = videos.length > 0 && videos.every(isMediaReadyForPublish);
   return (
     <div className="max-w-6xl mx-auto p-6 text-creator-text space-y-8">
       {/* Header matching mockup */}
@@ -3871,7 +3896,11 @@ function VideoUploadView({
         </div>
 
         {/* Right Column: AI Policy Scan & Copyright Protection */}
-        <AIPolicyAndCopyright mediaId={videos[0]?.mediaId} />
+        <AIPolicyAndCopyright
+          mediaId={videos[0]?.mediaId}
+          mediaStatus={videos[0]?.status}
+          approvalStatus={videos[0]?.approvalStatus}
+        />
       </div>
     </div>
   );
