@@ -7,10 +7,12 @@ export const missionKeys = {
   adminMissions: () => [...missionKeys.all, "admin-missions"] as const,
 };
 
-export function useMyMissions() {
+export function useMyMissions(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: missionKeys.myMissions(),
     queryFn: () => missionApi.getMyDailyMissions(),
+    enabled: options?.enabled ?? true,
+    staleTime: 60 * 1000,
   });
 }
 

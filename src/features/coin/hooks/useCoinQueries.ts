@@ -15,7 +15,7 @@ export function useCoinWallet() {
   return useQuery({
     queryKey: coinKeys.wallet(),
     queryFn: () => coinApi.getWallet(),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 60 * 1000,
   });
 }
 
@@ -31,5 +31,6 @@ export function useDailyCheckInStatus() {
   return useQuery({
     queryKey: coinKeys.checkInStatus(),
     queryFn: () => coinApi.getCheckInStatus(),
+    staleTime: 60 * 1000,
   });
 }
