@@ -5,6 +5,7 @@ import { Ban, BookOpen, Check, Film, HelpCircle, Loader2, Smartphone } from "luc
 import type { LucideIcon } from "lucide-react";
 import { useGetPremiumPackages } from "@/features/premium/api/premium.api";
 import type { Subscription } from "@/features/admin/subscriptions/types/subscriptions.types";
+import { ComboPackages } from "@/features/public/components/combo-packages";
 
 type FeatureItem = {
   title: string;
@@ -267,6 +268,8 @@ export default function PremiumPage() {
           </div>
         )}
       </section>
+
+      <ComboPackages />
 
       <section className="border-y border-white/10 bg-white/[0.03]">
         <div className="mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-20">

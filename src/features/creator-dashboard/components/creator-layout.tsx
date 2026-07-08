@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Film,
@@ -14,8 +14,10 @@ import {
   Clapperboard,
   Tag,
   Zap,
+  Home,
 } from "lucide-react";
-import { useAuthStore } from "@/features/auth/store/auth.store";
+import { logoutAction } from "@/features/auth/api/auth.actions";
+import { isFullProfile, useAuthStore } from "@/features/auth/store/auth.store";
 
 interface CreatorLayoutProps {
   children: React.ReactNode;
@@ -24,8 +26,11 @@ interface CreatorLayoutProps {
 }
 
 export function CreatorLayout({ children, activeView, onNavigate }: CreatorLayoutProps) {
-  const logout = useAuthStore((state) => state.clearAuth);
+  const router = useRouter();
+  const clearAuth = useAuthStore((state) => state.clearAuth);
   const user = useAuthStore((state) => state.user);
+  const profileUser = isFullProfile(user) ? user : null;
+  const displayName = profileUser?.username || user?.accountId || "Creator";
 
   const navItems = [
     { label: "Tổng quan", view: "dashboard", icon: LayoutDashboard },
@@ -36,6 +41,13 @@ export function CreatorLayout({ children, activeView, onNavigate }: CreatorLayou
     { label: "Quản lý Combo", view: "combos", icon: Tag },
     { label: "Tăng tương tác", view: "campaign", icon: Zap },
   ];
+
+  const handleLogout = async () => {
+    await logoutAction();
+    clearAuth();
+    router.push("/login");
+    router.refresh();
+  };
 
   return (
     <div className="flex h-screen bg-creator-bg text-creator-text font-sans overflow-hidden">
@@ -70,12 +82,20 @@ export function CreatorLayout({ children, activeView, onNavigate }: CreatorLayou
         </div>
 
         <div className="p-4 border-t border-creator-border">
+          <Link
+            href="/"
+            className="flex items-center gap-3 px-4 py-3 rounded-md text-creator-muted hover:text-white hover:bg-white/5 transition-colors w-full text-left"
+          >
+            <Home size={18} />
+            Về Trang Chủ
+          </Link>
           <button className="flex items-center gap-3 px-4 py-3 rounded-md text-creator-muted hover:text-white hover:bg-white/5 transition-colors w-full text-left">
             <Settings size={18} />
             Cài đặt
           </button>
           <button 
-            onClick={logout}
+            type="button"
+            onClick={handleLogout}
             className="flex items-center gap-3 px-4 py-3 rounded-md text-creator-muted hover:text-white hover:bg-white/5 transition-colors w-full text-left mt-1"
           >
             <LogOut size={18} />
@@ -104,14 +124,14 @@ export function CreatorLayout({ children, activeView, onNavigate }: CreatorLayou
             </button>
             <div className="flex items-center gap-3 cursor-pointer pl-6 border-l border-creator-border">
               <div className="w-8 h-8 rounded-full bg-creator-gold/20 flex items-center justify-center text-creator-gold overflow-hidden">
-                {(user as any)?.avatarUrl ? (
-                  <img src={(user as any).avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                {profileUser?.avatarUrl ? (
+                  <img src={profileUser.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
                 ) : (
                   <User size={16} />
                 )}
               </div>
               <div className="flex flex-col">
-                <span className="text-sm font-medium">{(user as any)?.username || "Creator"}</span>
+                <span className="text-sm font-medium">{displayName}</span>
                 <span className="text-xs text-creator-muted">Nhà xuất bản Pro</span>
               </div>
             </div>
