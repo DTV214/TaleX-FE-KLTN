@@ -2,7 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2 } from "lucide-react";
+import {
+  Building2,
+  CheckCircle2,
+  ReceiptText,
+  ScrollText,
+  Sparkles,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -396,6 +402,13 @@ export function CreatorMonetizationView() {
     step3FormData.bankCode.trim() &&
     step3FormData.accountNumber.trim() &&
     step3FormData.accountName.trim();
+  const monetizationProgress = paymentStatus
+    ? 100
+    : isStep3Enabled
+      ? 66
+      : isTermsAccepted
+        ? 33
+        : 0;
 
   useEffect(() => {
     console.log("[CreatorMonetization] view mounted", {
@@ -517,7 +530,65 @@ export function CreatorMonetizationView() {
 
         {shouldShowDashboard ? (
           <div className="flex flex-1 flex-col gap-8">
-            <div>
+            <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-r from-[#1A1814] via-[#15120D] to-background p-6 shadow-[0_24px_80px_rgba(212,175,55,0.08)] md:p-8">
+              <div className="pointer-events-none absolute inset-0 opacity-[0.16] [background-image:radial-gradient(circle_at_1px_1px,rgba(212,175,55,0.45)_1px,transparent_0)] [background-size:24px_24px]" />
+              <div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-primary/10 blur-3xl" />
+              <div className="pointer-events-none absolute -bottom-28 left-1/3 h-56 w-56 rounded-full bg-[#D4AF37]/10 blur-3xl" />
+
+              <div className="relative z-10 flex flex-col gap-7">
+                <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="max-w-3xl">
+                    <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-primary">
+                      <Sparkles className="h-3.5 w-3.5" />
+                      TaleX Partner Program
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <h1 className="font-heading text-3xl font-black tracking-tight text-white sm:text-5xl">
+                        Kiếm tiền trên TaleX
+                      </h1>
+                      {isStatusRefreshing ? (
+                        <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-semibold text-white/55">
+                          Đang đồng bộ...
+                        </span>
+                      ) : null}
+                    </div>
+                    <p className="mt-4 max-w-2xl text-sm leading-6 text-white/68 md:text-base">
+                      Hoàn thiện hồ sơ đối tác, xác nhận điều khoản và thiết lập
+                      thanh toán để mở khóa doanh thu Creator với trải nghiệm
+                      cao cấp của TaleX.
+                    </p>
+                  </div>
+
+                  <div className="flex min-w-36 flex-col items-start rounded-xl border border-primary/20 bg-black/20 p-4 shadow-inner shadow-primary/5 lg:items-end">
+                    <span className="text-xs font-semibold uppercase tracking-[0.16em] text-white/45">
+                      Hoàn tất
+                    </span>
+                    <span className="mt-1 font-heading text-4xl font-black text-primary">
+                      {monetizationProgress}%
+                    </span>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-sm">
+                    <span className="font-semibold text-white/76">
+                      Tiến trình hoàn thiện hồ sơ: {monetizationProgress}%
+                    </span>
+                    <span className="text-xs font-medium text-white/45">
+                      Điều khoản - Thuế - Thanh toán
+                    </span>
+                  </div>
+                  <div className="h-3 overflow-hidden rounded-full border border-primary/15 bg-black/35">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-[#8F6B19] via-primary to-[#F4D778] shadow-[0_0_24px_rgba(212,175,55,0.35)] transition-all duration-700"
+                      style={{ width: `${monetizationProgress}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="sr-only">
               <div className="flex flex-wrap items-center gap-3">
                 <h1 className="font-heading text-3xl font-bold tracking-tight text-white sm:text-4xl">
                   Kiếm tiền trên TaleX
@@ -534,16 +605,26 @@ export function CreatorMonetizationView() {
               </p>
             </div>
 
-            <div className="flex flex-col gap-6">
+            <div className="relative ml-4 flex flex-col gap-6 border-l border-primary/22 pl-8">
               <article
                 className={cn(
-                  "flex flex-col gap-5 rounded-lg border p-5 transition sm:flex-row sm:items-center sm:justify-between",
+                  "animate-in fade-in slide-in-from-bottom-4 relative overflow-visible rounded-xl border p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(212,175,55,0.08)] sm:flex sm:items-center sm:justify-between sm:gap-5",
+                  "bg-gradient-to-br from-[#211A0D] via-card to-black/45",
                   isTermsAccepted
-                    ? "border-emerald-400/30 bg-emerald-400/[0.05]"
-                    : "border-primary/35 bg-card",
+                    ? "border-emerald-400/30"
+                    : "border-primary/35 hover:border-primary/55",
                 )}
               >
-                <div className="max-w-3xl">
+                <span
+                  className={cn(
+                    "absolute -left-[42px] top-8 z-20 flex h-5 w-5 items-center justify-center rounded-full border-2 border-background shadow-[0_0_0_6px_rgba(10,10,10,0.92)]",
+                    isTermsAccepted ? "bg-emerald-400" : "bg-primary",
+                  )}
+                >
+                  <span className="h-2 w-2 rounded-full bg-black/70" />
+                </span>
+                <ScrollText className="pointer-events-none absolute -bottom-5 right-5 h-32 w-32 text-primary/[0.06]" />
+                <div className="relative z-10 max-w-3xl">
                   <div className="flex flex-wrap items-center gap-3">
                     <h2 className="font-heading text-xl font-bold leading-7 text-white">
                       Bước 1: Xem xét Điều khoản cơ sở
@@ -567,7 +648,7 @@ export function CreatorMonetizationView() {
                   <Button
                     type="button"
                     onClick={handleOpenStep1Modal}
-                    className="h-10 w-fit shrink-0 bg-primary px-5 font-semibold text-black hover:bg-primary/90"
+                    className="relative z-10 mt-5 h-10 w-fit shrink-0 bg-primary px-5 font-semibold text-black hover:bg-primary/90 sm:mt-0"
                   >
                     Bắt đầu
                   </Button>
@@ -576,11 +657,21 @@ export function CreatorMonetizationView() {
 
               <article
                 className={cn(
-                  "flex flex-col gap-5 rounded-lg border border-white/10 bg-card p-5 transition sm:flex-row sm:items-center sm:justify-between",
+                  "animate-in fade-in slide-in-from-bottom-4 delay-150 relative overflow-visible rounded-xl border border-white/10 p-5 transition-all duration-300 hover:-translate-y-1 hover:border-primary/45 hover:shadow-[0_8px_30px_rgba(212,175,55,0.08)] sm:flex sm:items-center sm:justify-between sm:gap-5",
+                  "bg-gradient-to-br from-[#20180B] via-card to-black/45",
                   !isStep2Enabled && "pointer-events-none opacity-50",
                 )}
               >
-                <div className="max-w-3xl">
+                <span
+                  className={cn(
+                    "absolute -left-[42px] top-8 z-20 flex h-5 w-5 items-center justify-center rounded-full border-2 border-background shadow-[0_0_0_6px_rgba(10,10,10,0.92)]",
+                    isStep2Enabled ? "bg-primary" : "bg-zinc-600",
+                  )}
+                >
+                  <span className="h-2 w-2 rounded-full bg-black/70" />
+                </span>
+                <ReceiptText className="pointer-events-none absolute -bottom-5 right-5 h-32 w-32 text-primary/[0.055]" />
+                <div className="relative z-10 max-w-3xl">
                   <div className="flex flex-wrap items-center gap-3">
                     <h2 className="font-heading text-xl font-bold leading-7 text-white">
                       Bước 2: Cung cấp hồ sơ thuế
@@ -610,7 +701,7 @@ export function CreatorMonetizationView() {
                   ) : null}
                 </div>
 
-                <div className="flex shrink-0 items-center gap-3">
+                <div className="relative z-10 mt-5 flex shrink-0 items-center gap-3 sm:mt-0">
                   {!identityStatus || identityStatus === "AWAITING_FILL" ? (
                     <Button
                       type="button"
@@ -635,11 +726,21 @@ export function CreatorMonetizationView() {
 
               <article
                 className={cn(
-                  "flex flex-col gap-5 rounded-lg border border-white/10 bg-card p-5 transition sm:flex-row sm:items-center sm:justify-between",
+                  "animate-in fade-in slide-in-from-bottom-4 delay-300 relative overflow-visible rounded-xl border border-white/10 p-5 transition-all duration-300 hover:-translate-y-1 hover:border-primary/45 hover:shadow-[0_8px_30px_rgba(212,175,55,0.08)] sm:flex sm:items-center sm:justify-between sm:gap-5",
+                  "bg-gradient-to-br from-[#21180A] via-card to-black/45",
                   !isStep3Enabled && "pointer-events-none opacity-50",
                 )}
               >
-                <div className="max-w-3xl">
+                <span
+                  className={cn(
+                    "absolute -left-[42px] top-8 z-20 flex h-5 w-5 items-center justify-center rounded-full border-2 border-background shadow-[0_0_0_6px_rgba(10,10,10,0.92)]",
+                    isStep3Enabled ? "bg-primary" : "bg-zinc-600",
+                  )}
+                >
+                  <span className="h-2 w-2 rounded-full bg-black/70" />
+                </span>
+                <Building2 className="pointer-events-none absolute -bottom-5 right-5 h-32 w-32 text-primary/[0.055]" />
+                <div className="relative z-10 max-w-3xl">
                   <div className="flex flex-wrap items-center gap-3">
                     <h2 className="font-heading text-xl font-bold leading-7 text-white">
                       Bước 3: Tài khoản thanh toán
@@ -669,7 +770,7 @@ export function CreatorMonetizationView() {
                   ) : null}
                 </div>
 
-                <div className="flex shrink-0 flex-wrap items-center gap-3">
+                <div className="relative z-10 mt-5 flex shrink-0 flex-wrap items-center gap-3 sm:mt-0">
                   {paymentStatus === null ? (
                     <Button
                       type="button"

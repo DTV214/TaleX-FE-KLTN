@@ -1,7 +1,7 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { create } from "zustand";
 import { logoutAction } from "@/features/auth/api/auth.actions";
@@ -48,15 +48,23 @@ const contentNavItems = [
   { name: "Kiểm duyệt", href: "/admin/moderation", icon: ShieldAlert },
 ];
 
+const creatorVerificationNavItems = [
+  {
+    name: "Hồ sơ thuế",
+    href: "/admin/creator-verification?tab=tax",
+    icon: UserCheck,
+  },
+  {
+    name: "Hồ sơ thanh toán",
+    href: "/admin/creator-verification?tab=payment",
+    icon: CreditCard,
+  },
+];
+
 const navItems = [
   { name: "Bảng Điều Khiển", href: "/admin/dashboard", icon: LayoutDashboard },
   { name: "Người Dùng", href: "/admin/users", icon: Users },
   { name: "Người sáng tạo", href: "/admin/creators", icon: Users },
-  {
-    name: "Kiểm duyệt Creator",
-    href: "/admin/creator-verification",
-    icon: UserCheck,
-  },
   {
     name: "Cấp Creator",
     href: "/admin/creator-tiers",
@@ -91,6 +99,19 @@ const navItems = [
 
 function isRouteActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+function isHrefActive(pathname: string, currentHref: string, href: string) {
+  const [hrefPathname, hrefQuery] = href.split("?");
+
+  if (!hrefQuery) {
+    return isRouteActive(pathname, hrefPathname);
+  }
+
+  return (
+    currentHref === href ||
+    (pathname === hrefPathname && !currentHref.includes("?"))
+  );
 }
 
 function AdminNavLink({
@@ -141,14 +162,21 @@ function AdminNavLink({
 export function AdminSidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { clearAuth } = useAuthStore();
   const isSidebarOpen = useAdminSidebarStore((state) => state.isSidebarOpen);
+  const currentSearch = searchParams.toString();
+  const currentHref = `${pathname}${currentSearch ? `?${currentSearch}` : ""}`;
   const isContentRouteActive = contentNavItems.some((item) =>
     isRouteActive(pathname, item.href),
   );
-  const [isContentMenuOpen, setIsContentMenuOpen] = useState(
-    isContentRouteActive,
+  const isCreatorVerificationRouteActive = creatorVerificationNavItems.some(
+    (item) => isHrefActive(pathname, currentHref, item.href),
   );
+  const [isContentMenuOpen, setIsContentMenuOpen] =
+    useState(isContentRouteActive);
+  const [isCreatorVerificationMenuOpen, setIsCreatorVerificationMenuOpen] =
+    useState(isCreatorVerificationRouteActive);
 
   const handleLogout = async () => {
     await logoutAction();
@@ -171,6 +199,97 @@ export function AdminSidebar() {
           name={navItems[0].name}
           pathname={pathname}
         />
+
+        <div>
+          <button
+            type="button"
+            onClick={() => setIsCreatorVerificationMenuOpen((open) => !open)}
+            title="Kiểm duyệt Creator"
+            aria-expanded={isCreatorVerificationMenuOpen}
+            className={`flex w-full items-center rounded-lg py-3 text-sm font-medium transition-all duration-300 ${
+              isSidebarOpen ? "justify-start gap-3 px-4" : "justify-center px-0"
+            } ${
+              isCreatorVerificationRouteActive
+                ? "bg-violet-50 text-violet-600"
+                : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+            }`}
+          >
+            <UserCheck
+              className={`h-5 w-5 shrink-0 ${
+                isCreatorVerificationRouteActive
+                  ? "text-violet-600"
+                  : "text-slate-400"
+              }`}
+            />
+            <span
+              className={`truncate whitespace-nowrap transition-all duration-200 ${
+                isSidebarOpen
+                  ? "max-w-[170px] opacity-100"
+                  : "max-w-0 overflow-hidden opacity-0"
+              }`}
+            >
+              Kiểm duyệt
+            </span>
+            <ChevronRight
+              className={`ml-auto h-4 w-4 shrink-0 transition-transform duration-300 ${
+                isCreatorVerificationMenuOpen ? "rotate-90" : ""
+              } ${isSidebarOpen ? "opacity-100" : "hidden opacity-0"}`}
+            />
+          </button>
+
+          <div
+            className={`grid transition-all duration-300 ease-in-out ${
+              isCreatorVerificationMenuOpen
+                ? "grid-rows-[1fr] opacity-100"
+                : "grid-rows-[0fr] opacity-0"
+            }`}
+          >
+            <div className="overflow-hidden">
+              <div className="mt-1 space-y-1">
+                {creatorVerificationNavItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = isHrefActive(
+                    pathname,
+                    currentHref,
+                    item.href,
+                  );
+
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      title={item.name}
+                      className={`flex items-center rounded-lg py-2.5 text-sm font-medium transition-all duration-300 ${
+                        isSidebarOpen
+                          ? "justify-start gap-3 pl-12 pr-3"
+                          : "justify-center px-0"
+                      } ${
+                        isActive
+                          ? "bg-violet-50 text-violet-600"
+                          : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                      }`}
+                    >
+                      <Icon
+                        className={`h-4 w-4 shrink-0 ${
+                          isActive ? "text-violet-600" : "text-slate-400"
+                        }`}
+                      />
+                      <span
+                        className={`truncate whitespace-nowrap transition-all duration-200 ${
+                          isSidebarOpen
+                            ? "max-w-[150px] opacity-100"
+                            : "max-w-0 overflow-hidden opacity-0"
+                        }`}
+                      >
+                        {item.name}
+                      </span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
 
         <div>
           <button

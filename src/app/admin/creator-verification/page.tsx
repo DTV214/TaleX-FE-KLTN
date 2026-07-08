@@ -1,6 +1,7 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -24,8 +25,6 @@ import {
   DialogTitle,
 } from "@/shared/ui/dialog";
 import { cn } from "@/shared/utils/utils";
-
-type ActiveTab = "tax" | "payment";
 
 const identityStatusLabels: Record<IdentityVerificationStatus, string> = {
   PENDING: "Chờ xử lý",
@@ -69,7 +68,14 @@ type PaymentSubmitInput = {
 
 export default function AdminCreatorVerificationPage() {
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<ActiveTab>("tax");
+  const searchParams = useSearchParams();
+  const requestedTab = searchParams.get("tab") || "tax";
+  const tab: "tax" | "payment" =
+    requestedTab === "payment" ? "payment" : "tax";
+  const pageTitle =
+    tab === "payment"
+      ? "Kiểm duyệt Hồ sơ Thanh toán"
+      : "Kiểm duyệt Hồ sơ Thuế";
   const [selectedIdentity, setSelectedIdentity] =
     useState<CreatorIdentityRecord | null>(null);
   const [selectedPaymentProfile, setSelectedPaymentProfile] =
@@ -208,8 +214,7 @@ export default function AdminCreatorVerificationPage() {
     });
   };
 
-  const activeQuery =
-    activeTab === "tax" ? identitiesQuery : paymentProfilesQuery;
+  const activeQuery = tab === "tax" ? identitiesQuery : paymentProfilesQuery;
   const isIdentitySubmitting =
     lockIdentityMutation.isPending || submitIdentityMutation.isPending;
   const isPaymentSubmitting = submitPaymentMutation.isPending;
@@ -223,39 +228,12 @@ export default function AdminCreatorVerificationPage() {
               Admin Panel
             </p>
             <h1 className="mt-2 font-heading text-3xl font-black tracking-tight text-gray-900">
-              Kiểm duyệt Hồ sơ Creator
+              {pageTitle}
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-gray-500">
               Xử lý hồ sơ thuế và tài khoản thanh toán trước khi Creator được
               bật kiếm tiền trên TaleX.
             </p>
-          </div>
-
-          <div className="inline-flex w-fit rounded-lg border border-gray-200 bg-gray-50 p-1">
-            <button
-              type="button"
-              onClick={() => setActiveTab("tax")}
-              className={cn(
-                "rounded-md px-4 py-2 text-sm font-semibold transition",
-                activeTab === "tax"
-                  ? "bg-[#7B42FF] text-white shadow-sm"
-                  : "text-gray-600 hover:bg-white hover:text-gray-900",
-              )}
-            >
-              Hồ sơ thuế
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("payment")}
-              className={cn(
-                "rounded-md px-4 py-2 text-sm font-semibold transition",
-                activeTab === "payment"
-                  ? "bg-[#7B42FF] text-white shadow-sm"
-                  : "text-gray-600 hover:bg-white hover:text-gray-900",
-              )}
-            >
-              Hồ sơ thanh toán
-            </button>
           </div>
         </div>
 
@@ -285,7 +263,7 @@ export default function AdminCreatorVerificationPage() {
           </div>
         ) : null}
 
-        {!activeQuery.isLoading && !activeQuery.isError && activeTab === "tax" ? (
+        {!activeQuery.isLoading && !activeQuery.isError && tab === "tax" ? (
           <IdentityTable
             records={identitiesQuery.data ?? []}
             onStartVerification={handleStartIdentityVerification}
@@ -295,7 +273,7 @@ export default function AdminCreatorVerificationPage() {
 
         {!activeQuery.isLoading &&
         !activeQuery.isError &&
-        activeTab === "payment" ? (
+        tab === "payment" ? (
           <PaymentProfileTable
             records={paymentProfilesQuery.data ?? []}
             onOpenVerification={handleOpenPaymentVerification}
@@ -601,3 +579,4 @@ function StatusBadge({
     </span>
   );
 }
+
