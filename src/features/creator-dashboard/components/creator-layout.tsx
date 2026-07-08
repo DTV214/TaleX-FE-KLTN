@@ -5,6 +5,7 @@ import {
   LayoutDashboard,
   Film,
   BarChart2,
+  BadgeDollarSign,
   DollarSign,
   Settings,
   Bell,
@@ -37,6 +38,7 @@ export function CreatorLayout({ children, activeView, onNavigate }: CreatorLayou
     { label: "Series của tôi", view: "series", icon: Film },
     { label: "Thống kê", view: "analytics", icon: BarChart2 },
     { label: "Doanh thu", view: "revenue", icon: DollarSign },
+    { label: "Kiếm tiền", view: "monetization", icon: BadgeDollarSign },
     { label: "Quản lý sản xuất", view: "production", icon: Clapperboard },
     { label: "Quản lý Combo", view: "combos", icon: Tag },
     { label: "Tăng tương tác", view: "campaign", icon: Zap },
@@ -66,7 +68,20 @@ export function CreatorLayout({ children, activeView, onNavigate }: CreatorLayou
               return (
                 <button
                   key={item.label}
-                  onClick={() => onNavigate && onNavigate(item.view)}
+                  onClick={() => {
+                    console.log("[CreatorDashboard] sidebar item clicked", {
+                      label: item.label,
+                      targetView: item.view,
+                      activeView,
+                      accountId: user?.accountId,
+                      roleName: user?.roleName,
+                      isAuthenticated: Boolean(user),
+                    });
+
+                    if (item.view && onNavigate) {
+                      onNavigate(item.view);
+                    }
+                  }}
                   className={`flex items-center w-full gap-3 px-4 py-3 rounded-md transition-colors ${
                     isActive 
                       ? "bg-creator-gold/10 text-creator-gold font-medium" 
@@ -125,6 +140,7 @@ export function CreatorLayout({ children, activeView, onNavigate }: CreatorLayou
             <div className="flex items-center gap-3 cursor-pointer pl-6 border-l border-creator-border">
               <div className="w-8 h-8 rounded-full bg-creator-gold/20 flex items-center justify-center text-creator-gold overflow-hidden">
                 {profileUser?.avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img src={profileUser.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
                 ) : (
                   <User size={16} />

@@ -2,9 +2,9 @@ import { Metadata } from "next";
 import { TermsManagementTable } from "@/features/admin/terms/components/terms-management-table";
 
 export const metadata: Metadata = {
-  title: "Terms Management | TaleX Admin",
+  title: "Điều khoản & Điều kiện | TaleX Admin",
   description:
-    "Manage creator and general terms of service versions for the TaleX platform.",
+    "Quản lý các phiên bản điều khoản dịch vụ và điều khoản dành cho nhà sáng tạo trên TaleX.",
 };
 
 export default function AdminTermsPage() {

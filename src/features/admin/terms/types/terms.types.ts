@@ -2,7 +2,11 @@
 // 1. ENUMS & CORE ENTITIES
 // ==========================================
 
-export type TermsType = "CREATOR" | "GENERAL_TOS";
+export type TermsType =
+  | "CREATOR"
+  | "GENERAL_TOS"
+  | "CREATOR_VERIFYING_PROCESS"
+  | "CREATOR_ENABLE_MONETIZATION";
 
 export interface TermsVersion {
   id: string; // UUID

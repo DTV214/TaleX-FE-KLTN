@@ -26,6 +26,7 @@ import {
   ShieldCheck,
   Tag,
   Target,
+  UserCheck,
   Users,
 } from "lucide-react";
 
@@ -51,6 +52,11 @@ const navItems = [
   { name: "Bảng Điều Khiển", href: "/admin/dashboard", icon: LayoutDashboard },
   { name: "Người Dùng", href: "/admin/users", icon: Users },
   { name: "Người sáng tạo", href: "/admin/creators", icon: Users },
+  {
+    name: "Kiểm duyệt Creator",
+    href: "/admin/creator-verification",
+    icon: UserCheck,
+  },
   {
     name: "Cấp Creator",
     href: "/admin/creator-tiers",

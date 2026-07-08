@@ -24,6 +24,13 @@ import {
   TermsVersion,
 } from "../types/terms.types";
 
+const termsTypeLabels: Record<TermsType, string> = {
+  CREATOR: "Điều khoản Creator",
+  GENERAL_TOS: "Điều khoản chung",
+  CREATOR_VERIFYING_PROCESS: "Quá trình xác thực (Creator)",
+  CREATOR_ENABLE_MONETIZATION: "Bật kiếm tiền (Creator)",
+};
+
 export function TermsManagementTable() {
   // 1. Khởi tạo state CHUẨN PHẲNG (Đã xóa bỏ object `criteria`)
   const [filters, setFilters] = useState<TermsFilterParams>({
@@ -127,10 +134,11 @@ export function TermsManagementTable() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-xl font-bold text-gray-900">
-            Terms & Conditions
+            Điều khoản & Điều kiện
           </h2>
           <p className="text-sm text-gray-500">
-            Quản lý các điều khoản dịch vụ và nhà sáng tạo.
+            Quản lý các điều khoản dịch vụ, điều khoản nhà sáng tạo và quy
+            trình bật kiếm tiền.
           </p>
         </div>
         <button
@@ -163,8 +171,14 @@ export function TermsManagementTable() {
               className="bg-transparent border-none outline-none cursor-pointer"
             >
               <option value="">Tất cả phân loại</option>
-              <option value="CREATOR">Creator Terms</option>
-              <option value="GENERAL_TOS">General TOS</option>
+              <option value="CREATOR">Điều khoản Creator</option>
+              <option value="GENERAL_TOS">Điều khoản chung</option>
+              <option value="CREATOR_VERIFYING_PROCESS">
+                Quá trình xác thực (Creator)
+              </option>
+              <option value="CREATOR_ENABLE_MONETIZATION">
+                Bật kiếm tiền (Creator)
+              </option>
             </select>
           </div>
           <div className="flex items-center gap-2 text-sm text-gray-600 bg-[#F8F9FA] border border-gray-200 rounded-lg px-3 py-2">
@@ -249,9 +263,7 @@ export function TermsManagementTable() {
                             : "bg-blue-50 text-blue-600"
                         }`}
                       >
-                        {term.type === "CREATOR"
-                          ? "Creator Terms"
-                          : "General TOS"}
+                        {termsTypeLabels[term.type]}
                       </span>
                     </td>
                     <td className="py-4 px-6">
@@ -321,7 +333,7 @@ export function TermsManagementTable() {
               <span className="font-medium text-gray-900">
                 {termsList.length}
               </span>{" "}
-              kết quả trên trang này
+              / {totalElements} kết quả
             </span>
             <div className="flex items-center gap-2">
               <button

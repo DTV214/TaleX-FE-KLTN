@@ -107,6 +107,7 @@ import { ViolationDetailDialog } from "@/features/creator-dashboard/components/v
 import { usePipelineSSE } from "@/features/creator-dashboard/hooks/use-pipeline-sse";
 import { SignedHlsPlayer } from "@/features/playback/components/signed-hls-player";
 import { ComboManagementView } from "@/features/creator-dashboard/components/combo-management";
+import { CreatorMonetizationView } from "@/features/creator-dashboard/components/views/creator-monetization-view";
 import { AIPolicyAndCopyright } from "@/features/creator-dashboard/components/ai-policy-and-copyright";
 import {
   getBlockingCopyrightViolations,
@@ -123,6 +124,7 @@ type DashboardView =
   | "comic"
   | "video"
   | "combos"
+  | "monetization"
   | "campaign"
   | "publish";
 
@@ -141,6 +143,7 @@ const dashboardViews: DashboardView[] = [
   "comic",
   "video",
   "combos",
+  "monetization",
   "campaign",
   "publish",
 ];
@@ -350,6 +353,10 @@ const viewMeta: Record<
   combos: {
     title: "Quản lý Combo",
     description: "Gom nhiều tập thành một combo với giá ưu đãi riêng.",
+  },
+  monetization: {
+    title: "Kiếm tiền",
+    description: "Hoàn thành các bước điều khoản, thuế và thanh toán để bật doanh thu Creator.",
   },
   publish: {
     title: "Xuất bản",
@@ -708,7 +715,8 @@ function CreatorDashboardContent() {
   usePipelineSSE({ enabled: true });
 
   const queryClient = useQueryClient();
-  const accountId = useAuthStore((state) => state.user?.accountId ?? "");
+  const authUser = useAuthStore((state) => state.user);
+  const accountId = authUser?.accountId ?? "";
   const initialRouteState = useMemo(() => readDashboardRouteState(), []);
   const [activeView, setActiveView] = useState<DashboardView>(
     initialRouteState.view,
@@ -731,6 +739,13 @@ function CreatorDashboardContent() {
   const [scheduleModal, setScheduleModal] = useState<ScheduleModalState>(null);
 
   function setDashboardRouteState(nextState: DashboardRouteState) {
+    console.log("[CreatorDashboard] setDashboardRouteState", {
+      fromView: activeView,
+      nextState,
+      accountId,
+      roleName: authUser?.roleName,
+    });
+
     setActiveView(nextState.view);
     setSelectedSeriesId(nextState.seriesId);
     setSelectedSeasonId(nextState.seasonId);
@@ -738,6 +753,28 @@ function CreatorDashboardContent() {
     writeDashboardRouteState(nextState);
 
   }
+
+  useEffect(() => {
+    console.log("[CreatorDashboard] active route state", {
+      activeView,
+      selectedSeriesId,
+      selectedSeasonId,
+      selectedEpisodeId,
+      accountId,
+      roleName: authUser?.roleName,
+      location:
+        typeof window !== "undefined"
+          ? `${window.location.pathname}${window.location.search}`
+          : "",
+    });
+  }, [
+    activeView,
+    selectedSeriesId,
+    selectedSeasonId,
+    selectedEpisodeId,
+    accountId,
+    authUser?.roleName,
+  ]);
 
   const seriesQuery = useQuery({
     queryKey: ["creator-dashboard", "series"],
@@ -1864,6 +1901,8 @@ function CreatorDashboardContent() {
               )
             ) : activeView === "combos" ? (
               <ComboManagementView />
+            ) : activeView === "monetization" ? (
+              <CreatorMonetizationView />
             ) : activeView === "campaign" ? (
               <CampaignPurchaseView />
             ) : (

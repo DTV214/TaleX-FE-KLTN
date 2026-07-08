@@ -24,24 +24,36 @@ interface TermsFormModalProps {
 
 const initialFormState: CreateTermsPayload = {
   version: "",
-  type: "CREATOR",
+  type: "CREATOR_VERIFYING_PROCESS",
   content: "",
   isActive: false,
 };
 
+const termsTypeLabels: Record<TermsType, string> = {
+  CREATOR: "Điều khoản Creator",
+  GENERAL_TOS: "Điều khoản chung",
+  CREATOR_VERIFYING_PROCESS: "Quá trình xác thực (Creator)",
+  CREATOR_ENABLE_MONETIZATION: "Bật kiếm tiền (Creator)",
+};
+
 function getMutationErrorMessage(error: unknown) {
+  const maybeResponseError = error as {
+    response?: {
+      data?: {
+        message?: unknown;
+      };
+    };
+  };
+
   if (
-    typeof error === "object" &&
-    error !== null &&
-    "response" in error &&
-    typeof (error as any).response?.data?.message === "string"
+    typeof maybeResponseError.response?.data?.message === "string"
   ) {
-    return (error as any).response.data.message;
+    return maybeResponseError.response.data.message;
   }
 
   return error instanceof Error
     ? error.message
-    : "An unexpected error occurred. Please try again.";
+    : "Đã có lỗi xảy ra. Vui lòng thử lại.";
 }
 
 export function TermsFormModal({
@@ -170,7 +182,7 @@ function TermsForm({
     setErrorMsg(null);
 
     if (!formData.version.trim() || !formData.content.trim()) {
-      setErrorMsg("Version and Content are required fields.");
+      setErrorMsg("Mã phiên bản và nội dung là các trường bắt buộc.");
       return;
     }
 
@@ -187,7 +199,7 @@ function TermsForm({
       if (res.code === 200 || res.code === 201) {
         onClose();
       } else {
-        setErrorMsg(res.message || "Action failed due to server logic error.");
+        setErrorMsg(res.message || "Thao tác thất bại do lỗi xử lý máy chủ.");
       }
     } catch (error) {
       setErrorMsg(getMutationErrorMessage(error));
@@ -210,14 +222,14 @@ function TermsForm({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           <div className="space-y-1.5">
             <label className="text-sm font-semibold text-gray-700">
-              Version Code{" "}
+              Mã phiên bản{" "}
               {!isViewMode && <span className="text-red-500">*</span>}
             </label>
             <input
               type="text"
               required={!isViewMode}
               disabled={isViewMode}
-              placeholder="e.g., 1.0 or 2024-V1"
+              placeholder="VD: 1.0 hoặc 2024-V1"
               value={formData.version}
               onChange={(e) =>
                 setFormData({ ...formData, version: e.target.value })
@@ -228,7 +240,7 @@ function TermsForm({
 
           <div className="space-y-1.5">
             <label className="text-sm font-semibold text-gray-700">
-              Term Type
+              Phân loại điều khoản
             </label>
             <select
               value={formData.type}
@@ -241,8 +253,11 @@ function TermsForm({
               disabled={isEditMode || isViewMode}
               className="w-full px-3 py-2 bg-[#F8F9FA] border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#7B42FF]/20 focus:border-[#7B42FF] transition-all disabled:opacity-70 disabled:bg-gray-100 disabled:cursor-not-allowed"
             >
-              <option value="CREATOR">Creator Terms</option>
-              <option value="GENERAL_TOS">General Terms of Service</option>
+              {Object.entries(termsTypeLabels).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
             </select>
           </div>
         </div>
@@ -250,12 +265,12 @@ function TermsForm({
         <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg bg-[#F8F9FA]/50">
           <div>
             <h4 className="text-sm font-semibold text-gray-900">
-              {isViewMode ? "Trạng thái hoạt động" : "Set as Active"}
+              {isViewMode ? "Trạng thái hoạt động" : "Đặt làm bản đang hoạt động"}
             </h4>
             <p className="text-xs text-gray-500 mt-0.5">
               {isViewMode
                 ? "Hiển thị xem phiên bản này có đang được kích hoạt hay không."
-                : "Activating this will automatically apply it as the current official terms."}
+                : "Kích hoạt phiên bản này sẽ áp dụng nó làm điều khoản chính thức hiện tại."}
             </p>
           </div>
           <label
@@ -276,14 +291,14 @@ function TermsForm({
 
         <div className="space-y-1.5 flex-1 flex flex-col">
           <label className="text-sm font-semibold text-gray-700">
-            Content (HTML/Markdown){" "}
+            Nội dung (HTML/Markdown){" "}
             {!isViewMode && <span className="text-red-500">*</span>}
           </label>
           <textarea
             required={!isViewMode}
             disabled={isViewMode}
             rows={10}
-            placeholder="Enter the full terms and conditions here..."
+            placeholder="Nhập toàn bộ nội dung điều khoản tại đây..."
             value={formData.content}
             onChange={(e) =>
               setFormData({ ...formData, content: e.target.value })
@@ -310,7 +325,7 @@ function TermsForm({
               disabled={isSaving}
               className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none transition-colors disabled:opacity-50"
             >
-              Cancel
+              Hủy
             </button>
             <button
               type="submit"
@@ -320,12 +335,12 @@ function TermsForm({
               {isSaving ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Saving...
+                  Đang lưu...
                 </>
               ) : (
                 <>
                   <Save className="w-4 h-4" />
-                  {isEditMode ? "Save Changes" : "Create Term"}
+                  {isEditMode ? "Lưu thay đổi" : "Tạo điều khoản"}
                 </>
               )}
             </button>

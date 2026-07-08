@@ -3,6 +3,7 @@
 import Link from "next/link";
 import {
   BarChart3,
+  BadgeDollarSign,
   Clapperboard,
   Home,
   LayoutDashboard,
@@ -55,6 +56,11 @@ const sidebarItems: SidebarItem[] = [
     icon: WalletCards,
   },
   {
+    label: "Kiếm tiền",
+    view: "monetization",
+    icon: BadgeDollarSign,
+  },
+  {
     label: "Tăng tương tác",
     view: "campaign",
     icon: Rocket,
@@ -66,7 +72,10 @@ const sidebarItems: SidebarItem[] = [
   },
 ];
 
-function isItemActive(item: SidebarItem, activeView: CreatorDashboardLayoutView) {
+function isItemActive(
+  item: SidebarItem,
+  activeView: CreatorDashboardLayoutView,
+) {
   return item.activeViews?.includes(activeView) ?? item.view === activeView;
 }
 
