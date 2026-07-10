@@ -1,6 +1,7 @@
 "use client";
 
 import { Check, HelpCircle, Loader2, Sparkles } from "lucide-react";
+import { useRouter } from "next/navigation";
 import {
   type PublicCombo,
   type PublicComboEpisode,
@@ -63,9 +64,20 @@ function ComboCard({
   combo: PublicCombo;
   isPopular: boolean;
 }) {
+  const router = useRouter();
   const features = getComboFeatures(combo);
   const originalPrice = combo.originalPriceVnd ?? combo.priceVnd;
   const shouldShowOriginalPrice = originalPrice > combo.priceVnd;
+  const isPurchasable = combo.priceVnd > 0;
+
+  function handlePurchase() {
+    const params = new URLSearchParams({
+      itemId: combo.comboId,
+      itemType: "COMBO",
+      title: combo.title,
+    });
+    router.push(`/checkout-content?${params.toString()}`);
+  }
 
   return (
     <article
@@ -123,9 +135,11 @@ function ComboCard({
 
         <button
           type="button"
-          className="mt-8 w-full rounded-lg bg-[#D4AF37] py-3 text-sm font-bold text-black transition hover:bg-[#F3CE5E] active:translate-y-px"
+          disabled={!isPurchasable}
+          onClick={handlePurchase}
+          className="mt-8 w-full rounded-lg bg-[#D4AF37] py-3 text-sm font-bold text-black transition hover:bg-[#F3CE5E] active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-[#D4AF37]"
         >
-          Mua Gói Này
+          {isPurchasable ? "Mua Gói Này" : "Liên hệ để mua"}
         </button>
       </div>
     </article>

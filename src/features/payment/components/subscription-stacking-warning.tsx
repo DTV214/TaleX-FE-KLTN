@@ -1,3 +1,4 @@
+import { parseBackendDate } from "@/shared/utils/backend-date";
 import type { AccountSubscription } from "../types/payment.types";
 
 type SubscriptionStackingWarningProps = {
@@ -9,7 +10,7 @@ function formatDate(dateIso: string) {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
-  }).format(new Date(dateIso));
+  }).format(parseBackendDate(dateIso));
 }
 
 export function SubscriptionStackingWarning({

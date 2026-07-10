@@ -8,6 +8,9 @@ import {
   getCreatorEpisodePlayback,
 } from "@/features/playback/api/playback-api";
 import { HlsVideoPlayer } from "@/features/playback/components/hls-video-player";
+import { ContentPaywallGate } from "@/features/checkout-content/components/content-paywall-gate";
+import { isNotEntitledError } from "@/features/checkout-content/utils/is-not-entitled-error";
+import { useAuthStore } from "@/features/auth/store/auth.store";
 
 type SignedHlsPlayerProps = {
   episodeId: string;
@@ -49,9 +52,15 @@ export function SignedHlsPlayer({
 }: SignedHlsPlayerProps) {
   const retryCountRef = useRef(0);
   const queryClient = useQueryClient();
+  const authUser = useAuthStore((state) => state.user);
+  // Falls back to the logged-in viewer's own accountId so the BE entitlement
+  // check (purchase/subscription/ownership) has someone to check against —
+  // without this every viewer looks anonymous and paid content 403s for everyone.
+  const resolvedViewerId = viewerId ?? authUser?.accountId;
   const queryKey = useMemo(
-    () => ["episode-playback", episodeId, viewerId ?? "anonymous", creatorMode ? "creator" : "public"] as const,
-    [episodeId, viewerId, creatorMode],
+    () =>
+      ["episode-playback", episodeId, resolvedViewerId ?? "anonymous", creatorMode ? "creator" : "public"] as const,
+    [episodeId, resolvedViewerId, creatorMode],
   );
   const storageKey = useMemo(
     () => `talex.watch-position.${episodeId}`,
@@ -64,7 +73,7 @@ export function SignedHlsPlayer({
 
   const playbackQuery = useQuery({
     queryKey,
-    queryFn: () => fetchPlayback(episodeId, viewerId),
+    queryFn: () => fetchPlayback(episodeId, resolvedViewerId),
     staleTime: 15_000,
     refetchOnWindowFocus: false,
     retry: false,
@@ -108,6 +117,7 @@ export function SignedHlsPlayer({
   const rawErrorMessage =
     playerErrorMessage || queryErrorMessage || emptyManifestError;
   const processingPlaybackError = isProcessingPlaybackError(rawErrorMessage);
+  const notEntitled = isNotEntitledError(rawErrorMessage);
   const errorMessage = getPlaybackErrorMessage(rawErrorMessage);
 
   useEffect(() => {
@@ -135,7 +145,9 @@ export function SignedHlsPlayer({
           : "mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8"
       }
     >
-      {manifestUrl ? (
+      {notEntitled ? (
+        <ContentPaywallGate episodeId={episodeId} contentKind="VIDEO" compact={compact} />
+      ) : manifestUrl ? (
         <HlsVideoPlayer
           manifestUrl={manifestUrl}
           posterUrl={playbackQuery.data?.thumbnailUrl}
@@ -161,7 +173,7 @@ export function SignedHlsPlayer({
         </div>
       )}
 
-      {errorMessage && (
+      {!notEntitled && errorMessage && (
         <div className="mt-4 flex items-start gap-3 rounded-2xl border border-[#FFD8D4] bg-[#FFF7F6] p-4 text-sm font-bold text-[#B42318]">
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
           <div>

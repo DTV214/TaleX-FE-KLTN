@@ -129,9 +129,11 @@ export type EpisodeMediaResponse = {
   displayOrder: number;
 };
 
-export async function getPublicEpisodeMedia(episodeId: string) {
+export async function getPublicEpisodeMedia(episodeId: string, viewerId?: string) {
   return unwrapBaseResponse<EpisodeMediaResponse[]>(
-    httpClient.get(`/api/v1/public/episodes/${episodeId}/media`)
+    httpClient.get(`/api/v1/public/episodes/${episodeId}/media`, {
+      params: { viewerId },
+    })
   );
 }
 

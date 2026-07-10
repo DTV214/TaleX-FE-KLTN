@@ -4,6 +4,7 @@ import {
   type BasePageResponse,
   type BaseResponse,
 } from "@/shared/api/http-client";
+import { parseBackendDate } from "@/shared/utils/backend-date";
 import type {
   AccountSubscription,
   CreateOrderRequest,
@@ -33,6 +34,27 @@ export function useCreateOrder() {
       );
       return response.data.data;
     },
+  });
+}
+
+/**
+ * Creating an Order is idempotent server-side (returns the same order while it's
+ * still AWAITING_PAYMENT), so it's modeled as a query rather than a manually
+ * fired mutation — avoids fragile effect+ref bookkeeping to fire it exactly once.
+ */
+export function useEnsureOrder(subscriptionId: string | undefined) {
+  return useQuery({
+    queryKey: ["payment", "create-order", subscriptionId],
+    queryFn: async (): Promise<OrderResponse> => {
+      const response = await httpClient.post<CreateOrderResponse>(ORDERS_ENDPOINT, {
+        subscriptionId,
+      });
+      return response.data.data;
+    },
+    enabled: Boolean(subscriptionId),
+    staleTime: 0,
+    refetchOnMount: "always",
+    retry: false,
   });
 }
 
@@ -72,7 +94,7 @@ export function useActiveSubscription() {
       if (!latest || latest.isCancelled) {
         return null;
       }
-      return new Date(latest.endTime) > new Date() ? latest : null;
+      return parseBackendDate(latest.endTime) > new Date() ? latest : null;
     },
     staleTime: 30 * 1000,
   });

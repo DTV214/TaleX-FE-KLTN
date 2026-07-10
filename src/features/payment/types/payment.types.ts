@@ -6,11 +6,21 @@ export type CreateOrderRequest = {
   subscriptionId: string;
 };
 
+export type ContentOrderItemType = "EPISODE" | "COMBO";
+
+export type CreateContentOrderRequest = {
+  itemId: string;
+  itemType: ContentOrderItemType;
+  coinAmountToUse?: number;
+};
+
 export type OrderResponse = {
   orderId: string;
   paymentCode: string;
-  qrUrl: string;
+  qrUrl: string | null;
   totalAmount: number;
+  coinAmountUsed: number;
+  fiatAmount: number;
   status: OrderStatus;
   expiresAt: string;
 };

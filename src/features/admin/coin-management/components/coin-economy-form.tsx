@@ -25,6 +25,9 @@ const coinEconomySchema = z
     milestone30Reward: z
       .number()
       .positive("Thưởng mốc 30 ngày phải lớn hơn 0"),
+    vndPerCoin: z
+      .number()
+      .positive("Tỉ giá quy đổi (VNĐ/Coin) phải lớn hơn 0"),
   })
   .refine((values) => values.dailyCheckInBase < values.milestone7Reward, {
     path: ["milestone7Reward"],
@@ -44,6 +47,7 @@ const DEFAULT_VALUES: CoinEconomyConfigRequest = {
   milestone7Reward: 2,
   milestone14Reward: 3,
   milestone30Reward: 4,
+  vndPerCoin: 100,
 };
 
 const FIELDS: Array<{
@@ -70,6 +74,12 @@ const FIELDS: Array<{
     name: "milestone30Reward",
     label: "Thưởng mốc 30 ngày",
     description: "Phần thưởng cao nhất cho chuỗi điểm danh 30 ngày.",
+  },
+  {
+    name: "vndPerCoin",
+    label: "Tỉ giá quy đổi (VNĐ / 1 Coin)",
+    description:
+      "Số VNĐ tương ứng 1 Coin khi thanh toán nội dung, ví dụ 100 = 1 Coin ⇒ 100 VNĐ.",
   },
 ];
 
@@ -123,6 +133,7 @@ export function CoinEconomyForm() {
         milestone7Reward: configQuery.data.milestone7Reward,
         milestone14Reward: configQuery.data.milestone14Reward,
         milestone30Reward: configQuery.data.milestone30Reward,
+        vndPerCoin: configQuery.data.vndPerCoin ?? 100,
       });
     }
   }, [configQuery.data, reset]);

@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Check, Loader2, ShieldCheck, Ticket, X } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -10,11 +10,12 @@ import { QRCodeDisplay } from "@/features/checkout/components/QRCodeDisplay";
 import { useGetSubscription } from "@/features/admin/subscriptions/hooks/use-subscriptions";
 import {
   useActiveSubscription,
-  useCreateOrder,
+  useEnsureOrder,
   useOrderStatus,
 } from "@/features/payment/api/payment.api";
 import { SubscriptionStackingWarning } from "@/features/payment/components/subscription-stacking-warning";
 import { getApiErrorMessage } from "@/shared/api/http-client";
+import { parseBackendDate } from "@/shared/utils/backend-date";
 
 const SEPAY_BANK_NAME = "Ngân Hàng VietinBank";
 const SEPAY_ACCOUNT_NUMBER = "100881945065";
@@ -40,36 +41,28 @@ function CheckoutPageContent() {
 
   const [isAgreed, setIsAgreed] = useState(false);
   const [remainingSeconds, setRemainingSeconds] = useState(0);
-  const hasCreatedOrderRef = useRef(false);
 
   const subscriptionQuery = useGetSubscription(subscriptionId);
   const subscription = subscriptionQuery.data?.data;
 
   const activeSubscriptionQuery = useActiveSubscription();
-  const createOrderMutation = useCreateOrder();
-  const orderId = createOrderMutation.data?.orderId;
+  const createOrderQuery = useEnsureOrder(subscriptionId || undefined);
+  const orderId = createOrderQuery.data?.orderId;
   const orderStatusQuery = useOrderStatus(orderId);
-  const order = orderStatusQuery.data ?? createOrderMutation.data;
+  const order = orderStatusQuery.data ?? createOrderQuery.data;
 
   useEffect(() => {
     if (!subscriptionId) {
       router.replace("/premium");
-      return;
     }
-    if (hasCreatedOrderRef.current) {
-      return;
-    }
-    hasCreatedOrderRef.current = true;
-    createOrderMutation.mutate({ subscriptionId });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [subscriptionId]);
+  }, [subscriptionId, router]);
 
   useEffect(() => {
     if (!order?.expiresAt) {
       return;
     }
     const tick = () => {
-      const diffMs = new Date(order.expiresAt).getTime() - Date.now();
+      const diffMs = parseBackendDate(order.expiresAt).getTime() - Date.now();
       setRemainingSeconds(Math.max(0, Math.floor(diffMs / 1000)));
     };
     tick();
@@ -165,10 +158,10 @@ function CheckoutPageContent() {
                 <PaymentWarningBanner message="Vui lòng chuyển khoản đúng nội dung để hệ thống tự động xử lý trong vài giây." />
               </motion.div>
 
-              {createOrderMutation.isError && (
+              {createOrderQuery.isError && (
                 <PaymentWarningBanner
                   type="info"
-                  message={getApiErrorMessage(createOrderMutation.error)}
+                  message={getApiErrorMessage(createOrderQuery.error)}
                 />
               )}
 
@@ -262,7 +255,21 @@ function CheckoutPageContent() {
                   </h2>
                 </div>
 
-                {isPreparing ? (
+                {createOrderQuery.isError ? (
+                  <div className="flex aspect-square w-full max-w-[280px] mx-auto flex-col items-center justify-center gap-3 rounded-[28px] bg-[#121214] p-4 text-center text-white/60">
+                    <X className="h-8 w-8 text-red-400" />
+                    <span className="text-sm font-medium">
+                      {getApiErrorMessage(createOrderQuery.error)}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => createOrderQuery.refetch()}
+                      className="mt-2 rounded-lg border border-[#D4AF37]/40 bg-[#D4AF37]/10 px-4 py-2 text-xs font-semibold text-[#D4AF37] transition hover:bg-[#D4AF37]/20"
+                    >
+                      Thử tạo lại đơn hàng
+                    </button>
+                  </div>
+                ) : isPreparing || !order.qrUrl ? (
                   <div className="flex aspect-square w-full max-w-[280px] mx-auto flex-col items-center justify-center gap-3 rounded-[28px] bg-[#121214] p-4 text-white/60">
                     <Loader2 className="h-8 w-8 animate-spin text-[#D4AF37]" />
                     <span className="text-sm font-medium">Đang tạo đơn hàng...</span>

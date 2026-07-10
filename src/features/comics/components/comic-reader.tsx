@@ -20,6 +20,9 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { getPublicEpisodeMedia, getPublicEpisodes, getPublicSeasons } from "@/features/series/api/series-api";
+import { ContentPaywallGate } from "@/features/checkout-content/components/content-paywall-gate";
+import { isNotEntitledError } from "@/features/checkout-content/utils/is-not-entitled-error";
+import { useAuthStore } from "@/features/auth/store/auth.store";
 import { cn } from "@/shared/utils/utils";
 
 interface ComicReaderProps {
@@ -38,15 +41,23 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Falls back to the logged-in viewer's own accountId so the BE entitlement
+  // check (purchase/subscription/ownership) has someone to check against —
+  // without this every viewer looks anonymous and paid content 403s for everyone.
+  const authUser = useAuthStore((state) => state.user);
+  const viewerId = authUser?.accountId;
+
   // Fetch danh sách trang truyện (media pages) từ API
   const {
     data: mediaPages,
     isLoading: isPagesLoading,
     isError: isPagesError,
+    error: pagesError,
   } = useQuery({
-    queryKey: ["publicEpisodeMedia", episodeId],
-    queryFn: () => getPublicEpisodeMedia(episodeId),
+    queryKey: ["publicEpisodeMedia", episodeId, viewerId ?? "anonymous"],
+    queryFn: () => getPublicEpisodeMedia(episodeId, viewerId),
     staleTime: 5 * 60 * 1000,
+    retry: false,
   });
 
   // Sắp xếp các trang theo displayOrder
@@ -112,6 +123,15 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
       <div className="flex min-h-screen flex-col items-center justify-center bg-[#0B0B0C] text-white">
         <Loader2 className="h-10 w-10 animate-spin text-[#D4AF37] mb-4" />
         <p className="text-sm text-gray-400 animate-pulse">Đang tải các trang truyện...</p>
+      </div>
+    );
+  }
+
+  // ─── Not Entitled (Paywall) State ───
+  if (isNotEntitledError(pagesError instanceof Error ? pagesError.message : null)) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-[#0B0B0C] px-6">
+        <ContentPaywallGate episodeId={episodeId} contentKind="COMIC" />
       </div>
     );
   }

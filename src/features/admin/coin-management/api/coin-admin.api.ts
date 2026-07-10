@@ -8,6 +8,7 @@ export type CoinEconomyConfigRequest = {
   milestone7Reward: number;
   milestone14Reward: number;
   milestone30Reward: number;
+  vndPerCoin: number;
 };
 
 export type CoinEconomyConfigResponse = CoinEconomyConfigRequest & {
