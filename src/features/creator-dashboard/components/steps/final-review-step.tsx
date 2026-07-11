@@ -115,7 +115,7 @@ export function FinalReviewStep({
   return (
     <div className="flex flex-col lg:flex-row gap-8 max-w-7xl mx-auto p-6 text-creator-text">
       {/* Left - Video Preview & Episode Details */}
-      <div className="flex-1 space-y-6">
+      <div className="flex flex-1 flex-col gap-6">
         <div>
           <h2 className="text-2xl font-bold text-white mb-1">{isPublished ? "Published Episode" : "Final Review & Publishing Decision"}</h2>
           <p className="text-sm text-creator-muted">
@@ -123,7 +123,7 @@ export function FinalReviewStep({
           </p>
         </div>
 
-        <div className="bg-creator-sidebar border border-creator-border rounded-xl p-5 mt-8">
+        <div className="order-2 bg-creator-sidebar border border-creator-border rounded-xl p-5">
           <h3 className="font-semibold text-white mb-4">Bản xem trước trước khi phát hành</h3>
           
           <div className="w-full aspect-video bg-black rounded-lg overflow-hidden border border-creator-border mb-6 relative">
@@ -191,7 +191,7 @@ export function FinalReviewStep({
         </div>
 
         {/* Episode Details Edit Form */}
-        <div className="bg-creator-sidebar border border-creator-border rounded-xl p-6 shadow-xl mb-6">
+        <div className="order-1 bg-creator-sidebar border border-creator-border rounded-xl p-6 shadow-xl">
           <h3 className="text-lg font-bold text-white mb-6">Chi tiết Tập</h3>
           <div className="grid gap-6 md:grid-cols-[1fr_240px] mb-4">
             <div className="space-y-5">
@@ -226,6 +226,33 @@ export function FinalReviewStep({
                   onChange={(e) => setEditForm({...editForm, description: e.target.value})}
                   className="w-full resize-none rounded-md border border-creator-border bg-creator-bg p-3 text-sm text-white outline-none focus:border-creator-gold"
                 />
+              </div>
+
+              <div className="grid gap-5 md:grid-cols-2 mt-4 pt-4 border-t border-creator-border">
+                <div>
+                  <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Kiểu mở khóa</label>
+                  <select
+                    value={editForm.unlockType}
+                    onChange={(e) => setEditForm({ ...editForm, unlockType: e.target.value })}
+                    className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
+                  >
+                    <option value="FREE">Miễn phí</option>
+                    <option value="PAID">Trả phí</option>
+                  </select>
+                </div>
+
+                {editForm.unlockType === "PAID" && (
+                  <div>
+                    <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Giá (VNĐ) *</label>
+                    <input
+                      type="number"
+                      min={1}
+                      value={editForm.priceVnd}
+                      onChange={(e) => setEditForm({ ...editForm, priceVnd: Number(e.target.value) })}
+                      className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
+                    />
+                  </div>
+                )}
               </div>
             </div>
 
