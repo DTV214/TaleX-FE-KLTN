@@ -3404,7 +3404,9 @@ function ComicUploadView({
         <div className="space-y-6">
 
           <div className="bg-creator-sidebar border border-creator-border rounded-xl p-8 shadow-xl mb-6">
-            <h3 className="text-lg font-bold text-white mb-6">Chi tiết Tập</h3>
+            <div className="mb-6 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-white">Chi tiết Tập</h3>
+            </div>
             <div className="grid gap-6 md:grid-cols-[1fr_240px]">
               <div className="space-y-5">
                 <div className="grid gap-5 md:grid-cols-2">
@@ -3503,10 +3505,19 @@ function ComicUploadView({
                 </div>
               </div>
             </div>
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => onSaveEpisode({ ...selectedEpisode, ...editForm, thumbnailFile })}
+                disabled={isSavingEpisode}
+                className="inline-flex h-10 items-center justify-center rounded bg-creator-bg px-5 text-sm font-bold text-white border border-creator-border hover:bg-white/10 disabled:opacity-50"
+              >
+                {isSavingEpisode ? "Saving..." : "Save Details"}
+              </button>
+            </div>
           </div>
           <div className="bg-creator-sidebar border border-creator-border rounded-xl p-8 shadow-xl">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-lg font-bold text-white">Khu vực làm việc</h3>
+              <h3 className="text-lg font-bold text-white">Upload Truyện và Chỉnh sửa vị trí</h3>
               <span className="text-xs font-bold px-3 py-1.5 bg-creator-bg border border-creator-border rounded text-creator-muted uppercase tracking-wider">
                 JPG, PNG accepted
               </span>
@@ -3548,7 +3559,7 @@ function ComicUploadView({
                     disabled={isSavingOrder}
                     className="text-xs font-bold px-4 py-2 bg-creator-bg border border-creator-border text-white rounded hover:bg-white/10 transition-colors disabled:opacity-50"
                   >
-                    {isSavingOrder ? "Saving..." : "Save Order"}
+                    {isSavingOrder ? "Saving..." : "Save"}
                   </button>
                 </div>
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
@@ -3584,23 +3595,14 @@ function ComicUploadView({
                 Scans typically take 2-5 minutes.
               </p>
             </div>
-            <div className="flex items-center gap-3">
+            {canSchedulePublish && (
               <button
-                onClick={() => onSaveEpisode({ ...selectedEpisode, ...editForm, thumbnailFile })}
-                disabled={isSavingEpisode}
-                className="px-6 py-2.5 bg-creator-bg border border-creator-border text-white text-sm font-bold rounded hover:bg-white/10 shrink-0 disabled:opacity-50"
+                onClick={onGoToPublishing}
+                className="px-6 py-2.5 bg-creator-gold text-black text-sm font-bold rounded hover:bg-creator-gold-hover shrink-0"
               >
-                {isSavingEpisode ? "Saving..." : "Save Details"}
+                Continue to Publishing
               </button>
-              {canSchedulePublish && (
-                <button
-                  onClick={onGoToPublishing}
-                  className="px-6 py-2.5 bg-creator-gold text-black text-sm font-bold rounded hover:bg-creator-gold-hover shrink-0"
-                >
-                  Continue to Publishing
-                </button>
-              )}
-            </div>
+            )}
           </div>
         </div>
 
@@ -3837,7 +3839,9 @@ function VideoUploadView({
         {/* Left Column: Upload Workspace */}
         <div className="space-y-6">
           <div className="bg-creator-sidebar border border-creator-border rounded-xl p-8 shadow-xl mb-6">
-            <h3 className="text-lg font-bold text-white mb-6">Chi tiết Tập</h3>
+            <div className="mb-6 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-white">Chi tiết Tập</h3>
+            </div>
             <div className="grid gap-6 md:grid-cols-[1fr_240px]">
               <div className="space-y-5">
                 <div className="grid gap-5 md:grid-cols-2">
@@ -3936,10 +3940,19 @@ function VideoUploadView({
                 </div>
               </div>
             </div>
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => onSaveEpisode({ ...selectedEpisode, ...editForm })}
+                disabled={isSavingEpisode}
+                className="inline-flex h-10 items-center justify-center rounded bg-creator-bg px-5 text-sm font-bold text-white border border-creator-border hover:bg-white/10 disabled:opacity-50"
+              >
+                {isSavingEpisode ? "Saving..." : "Save Details"}
+              </button>
+            </div>
           </div>
           <div className="bg-creator-sidebar border border-creator-border rounded-xl p-8 shadow-xl">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-lg font-bold text-white">Khu vực làm việc</h3>
+              <h3 className="text-lg font-bold text-white">Upload Video</h3>
               <span className="text-xs font-bold px-3 py-1.5 bg-creator-bg border border-creator-border rounded text-creator-muted uppercase tracking-wider">
                 MP4, MOV, CBR accepted
               </span>
@@ -4023,23 +4036,14 @@ function VideoUploadView({
                 Scans typically take 2-5 minutes.
               </p>
             </div>
-            <div className="flex items-center gap-3">
+            {canSchedule && (
               <button
-                onClick={() => onSaveEpisode({ ...selectedEpisode, ...editForm })}
-                disabled={isSavingEpisode}
-                className="px-6 py-2.5 bg-creator-bg border border-creator-border text-white text-sm font-bold rounded hover:bg-white/10 shrink-0 disabled:opacity-50"
+                onClick={onGoToPublishing}
+                className="px-6 py-2.5 bg-creator-gold text-black text-sm font-bold rounded hover:bg-creator-gold-hover shrink-0"
               >
-                {isSavingEpisode ? "Saving..." : "Save Details"}
+                Continue to Publishing
               </button>
-              {canSchedule && (
-                <button
-                  onClick={onGoToPublishing}
-                  className="px-6 py-2.5 bg-creator-gold text-black text-sm font-bold rounded hover:bg-creator-gold-hover shrink-0"
-                >
-                  Continue to Publishing
-                </button>
-              )}
-            </div>
+            )}
           </div>
         </div>
 
