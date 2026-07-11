@@ -299,6 +299,7 @@ type EpisodeRow = {
   mediaCount: number;
   totalPage?: number;
   views: string;
+  thumbnail?: string;
   updatedAt: string;
 };
 
@@ -627,6 +628,7 @@ function mapEpisodeResponse(episode: EpisodeResponse): EpisodeRow {
     mediaCount: episode.totalPage ?? 0,
     totalPage: episode.totalPage,
     views: formatNumber(episode.views),
+    thumbnail: episode.thumbnail ? normalizeAssetUrl(episode.thumbnail) : undefined,
     updatedAt: episode.updatedAt || episode.createdAt || "-",
   };
 }
@@ -1181,7 +1183,11 @@ function CreatorDashboardContent() {
   });
 
   const updateEpisodeMutation = useMutation({
-    mutationFn: async (episode: EpisodeRow) => {
+    mutationFn: async (episode: EpisodeRow & { thumbnailFile?: File }) => {
+      const uploadedThumbnailUrl = episode.thumbnailFile
+        ? await uploadSeriesArtwork(episode.thumbnailFile, "Thumbnail", "cover")
+        : undefined;
+
       const normalizedPriceVnd =
         episode.unlockType === "PAID" ? episode.priceVnd : 0;
 
@@ -1193,6 +1199,7 @@ function CreatorDashboardContent() {
         unlockType: episode.unlockType,
         priceVnd: normalizedPriceVnd,
         totalPage: episode.totalPage,
+        thumbnail: uploadedThumbnailUrl || episode.thumbnail,
       });
     },
     onSuccess: () => {
@@ -3346,7 +3353,7 @@ function ComicUploadView({
   onDeletePage: (page: ComicPage) => void;
   isLoadingMedia: boolean;
   uploadMessage: string | null;
-  onSaveEpisode: (episode: EpisodeRow) => void;
+  onSaveEpisode: (episode: EpisodeRow & { thumbnailFile?: File }) => void;
   isSavingEpisode: boolean;
   canSchedulePublish: boolean;
   onSchedulePublish: (episode: EpisodeRow) => void;
@@ -3360,6 +3367,19 @@ function ComicUploadView({
   onGoToPublishing: () => void;
   onBack: () => void;
 }) {
+  const thumbnailInputRef = useRef<HTMLInputElement>(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(selectedEpisode.thumbnail || null);
+  const [thumbnailFile, setThumbnailFile] = useState<File | undefined>(undefined);
+
+  const handleThumbnailUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setThumbnailFile(file);
+      const objectUrl = URL.createObjectURL(file);
+      setThumbnailPreview(objectUrl);
+    }
+  };
+
   const [editForm, setEditForm] = useState({ episodeNumber: selectedEpisode.episodeNumber, title: selectedEpisode.title, description: selectedEpisode.description || "", unlockType: selectedEpisode.unlockType || "FREE", priceVnd: selectedEpisode.priceVnd || 0 });
   return (
     <div className="max-w-6xl mx-auto p-6 text-creator-text space-y-8">
@@ -3385,64 +3405,102 @@ function ComicUploadView({
 
           <div className="bg-creator-sidebar border border-creator-border rounded-xl p-8 shadow-xl mb-6">
             <h3 className="text-lg font-bold text-white mb-6">Chi tiết Tập</h3>
-            <div className="space-y-5">
-              <div className="grid gap-5 md:grid-cols-2">
-                <div>
-                  <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Số thứ tự Tập</label>
-                  <input
-                    type="number"
-                    min={1}
-                    value={editForm.episodeNumber}
-                    onChange={(e) => setEditForm({ ...editForm, episodeNumber: Number(e.target.value) })}
-                    className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Tiêu đề Tập *</label>
-                  <input
-                    type="text"
-                    required
-                    value={editForm.title}
-                    onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-                    className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Mô tả</label>
-                <textarea
-                  rows={3}
-                  value={editForm.description}
-                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                  className="w-full resize-none rounded-md border border-creator-border bg-creator-bg p-3 text-sm text-white outline-none focus:border-creator-gold"
-                />
-              </div>
-              <div className="grid gap-5 md:grid-cols-2 mt-4 pt-4 border-t border-creator-border">
-                <div>
-                  <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Kiểu mở khóa</label>
-                  <select
-                    value={editForm.unlockType}
-                    onChange={(e) => setEditForm({ ...editForm, unlockType: e.target.value as EpisodeUnlockType })}
-                    className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
-                  >
-                    <option value="FREE">Miễn phí</option>
-                    <option value="PAID">Trả phí</option>
-                  </select>
-                </div>
-
-                {editForm.unlockType === "PAID" && (
+            <div className="grid gap-6 md:grid-cols-[1fr_240px]">
+              <div className="space-y-5">
+                <div className="grid gap-5 md:grid-cols-2">
                   <div>
-                    <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Giá (VNĐ) *</label>
+                    <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Số thứ tự Tập</label>
                     <input
                       type="number"
                       min={1}
-                      value={editForm.priceVnd}
-                      onChange={(e) => setEditForm({ ...editForm, priceVnd: Number(e.target.value) })}
+                      value={editForm.episodeNumber}
+                      onChange={(e) => setEditForm({ ...editForm, episodeNumber: Number(e.target.value) })}
                       className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
                     />
                   </div>
-                )}
+                  <div>
+                    <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Tiêu đề Tập *</label>
+                    <input
+                      type="text"
+                      required
+                      value={editForm.title}
+                      onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                      className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Mô tả</label>
+                  <textarea
+                    rows={3}
+                    value={editForm.description}
+                    onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                    className="w-full resize-none rounded-md border border-creator-border bg-creator-bg p-3 text-sm text-white outline-none focus:border-creator-gold"
+                  />
+                </div>
+
+                <div className="grid gap-5 md:grid-cols-2 mt-4 pt-4 border-t border-creator-border">
+                  <div>
+                    <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Kiểu mở khóa</label>
+                    <select
+                      value={editForm.unlockType}
+                      onChange={(e) => setEditForm({ ...editForm, unlockType: e.target.value as EpisodeUnlockType })}
+                      className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
+                    >
+                      <option value="FREE">Miễn phí</option>
+                      <option value="PAID">Trả phí</option>
+                    </select>
+                  </div>
+
+                  {editForm.unlockType === "PAID" && (
+                    <div>
+                      <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Giá (VNĐ) *</label>
+                      <input
+                        type="number"
+                        min={1}
+                        value={editForm.priceVnd}
+                        onChange={(e) => setEditForm({ ...editForm, priceVnd: Number(e.target.value) })}
+                        className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Right: Thumbnail upload */}
+              <div className="flex flex-col">
+                <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Ảnh Thumbnail Tập *</label>
+                <div 
+                  onClick={() => thumbnailInputRef.current?.click()}
+                  className={`relative w-full aspect-video rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors overflow-hidden group ${
+                    thumbnailPreview ? "border-creator-gold" : "border-creator-border hover:border-creator-gold/50"
+                  }`}
+                >
+                  {thumbnailPreview ? (
+                    <>
+                      <img src={thumbnailPreview} alt="Thumbnail Preview" className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <UploadCloud size={20} className="text-white mb-1" />
+                        <span className="text-xs font-medium text-white">Đổi Thumbnail</span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-10 h-10 bg-creator-border rounded-full flex items-center justify-center mb-2">
+                        <ImageIcon size={18} className="text-creator-muted" />
+                      </div>
+                      <span className="text-xs text-creator-muted px-4 text-center">Tải Thumbnail</span>
+                    </>
+                  )}
+                  <input 
+                    type="file" 
+                    ref={thumbnailInputRef} 
+                    onChange={handleThumbnailUpload} 
+                    accept="image/*" 
+                    className="hidden" 
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -3528,7 +3586,7 @@ function ComicUploadView({
             </div>
             <div className="flex items-center gap-3">
               <button
-                onClick={() => onSaveEpisode({ ...selectedEpisode, ...editForm })}
+                onClick={() => onSaveEpisode({ ...selectedEpisode, ...editForm, thumbnailFile })}
                 disabled={isSavingEpisode}
                 className="px-6 py-2.5 bg-creator-bg border border-creator-border text-white text-sm font-bold rounded hover:bg-white/10 shrink-0 disabled:opacity-50"
               >
@@ -3727,7 +3785,7 @@ function VideoUploadView({
   uploadMessage: string | null;
   onUploadCompleted: (media: MediaResponse) => void;
   onDeleteVideo: (media: MediaResponse) => void;
-  onSaveEpisode: (episode: EpisodeRow) => void;
+  onSaveEpisode: (episode: EpisodeRow & { thumbnailFile?: File }) => void;
   isSavingEpisode: boolean;
   accountId: string;
   onSchedulePublish: (episode: EpisodeRow) => void;
@@ -3741,6 +3799,19 @@ function VideoUploadView({
   onGoToPublishing: () => void;
   onBack: () => void;
 }) {
+  const thumbnailInputRef = useRef<HTMLInputElement>(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(selectedEpisode.thumbnail || null);
+  const [thumbnailFile, setThumbnailFile] = useState<File | undefined>(undefined);
+
+  const handleThumbnailUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setThumbnailFile(file);
+      const objectUrl = URL.createObjectURL(file);
+      setThumbnailPreview(objectUrl);
+    }
+  };
+
   const [violationMediaId, setViolationMediaId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ episodeNumber: selectedEpisode.episodeNumber, title: selectedEpisode.title, description: selectedEpisode.description || "", unlockType: selectedEpisode.unlockType || "FREE", priceVnd: selectedEpisode.priceVnd || 0 });
   const canSchedule = videos.length > 0 && videos.every(isMediaReadyForPublish);
@@ -3767,64 +3838,102 @@ function VideoUploadView({
         <div className="space-y-6">
           <div className="bg-creator-sidebar border border-creator-border rounded-xl p-8 shadow-xl mb-6">
             <h3 className="text-lg font-bold text-white mb-6">Chi tiết Tập</h3>
-            <div className="space-y-5">
-              <div className="grid gap-5 md:grid-cols-2">
-                <div>
-                  <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Số thứ tự Tập</label>
-                  <input
-                    type="number"
-                    min={1}
-                    value={editForm.episodeNumber}
-                    onChange={(e) => setEditForm({ ...editForm, episodeNumber: Number(e.target.value) })}
-                    className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Tiêu đề Tập *</label>
-                  <input
-                    type="text"
-                    required
-                    value={editForm.title}
-                    onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-                    className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Mô tả</label>
-                <textarea
-                  rows={3}
-                  value={editForm.description}
-                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                  className="w-full resize-none rounded-md border border-creator-border bg-creator-bg p-3 text-sm text-white outline-none focus:border-creator-gold"
-                />
-              </div>
-              <div className="grid gap-5 md:grid-cols-2 mt-4 pt-4 border-t border-creator-border">
-                <div>
-                  <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Kiểu mở khóa</label>
-                  <select
-                    value={editForm.unlockType}
-                    onChange={(e) => setEditForm({ ...editForm, unlockType: e.target.value as EpisodeUnlockType })}
-                    className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
-                  >
-                    <option value="FREE">Miễn phí</option>
-                    <option value="PAID">Trả phí</option>
-                  </select>
-                </div>
-
-                {editForm.unlockType === "PAID" && (
+            <div className="grid gap-6 md:grid-cols-[1fr_240px]">
+              <div className="space-y-5">
+                <div className="grid gap-5 md:grid-cols-2">
                   <div>
-                    <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Giá (VNĐ) *</label>
+                    <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Số thứ tự Tập</label>
                     <input
                       type="number"
                       min={1}
-                      value={editForm.priceVnd}
-                      onChange={(e) => setEditForm({ ...editForm, priceVnd: Number(e.target.value) })}
+                      value={editForm.episodeNumber}
+                      onChange={(e) => setEditForm({ ...editForm, episodeNumber: Number(e.target.value) })}
                       className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
                     />
                   </div>
-                )}
+                  <div>
+                    <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Tiêu đề Tập *</label>
+                    <input
+                      type="text"
+                      required
+                      value={editForm.title}
+                      onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                      className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Mô tả</label>
+                  <textarea
+                    rows={3}
+                    value={editForm.description}
+                    onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                    className="w-full resize-none rounded-md border border-creator-border bg-creator-bg p-3 text-sm text-white outline-none focus:border-creator-gold"
+                  />
+                </div>
+
+                <div className="grid gap-5 md:grid-cols-2 mt-4 pt-4 border-t border-creator-border">
+                  <div>
+                    <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Kiểu mở khóa</label>
+                    <select
+                      value={editForm.unlockType}
+                      onChange={(e) => setEditForm({ ...editForm, unlockType: e.target.value as EpisodeUnlockType })}
+                      className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
+                    >
+                      <option value="FREE">Miễn phí</option>
+                      <option value="PAID">Trả phí</option>
+                    </select>
+                  </div>
+
+                  {editForm.unlockType === "PAID" && (
+                    <div>
+                      <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Giá (VNĐ) *</label>
+                      <input
+                        type="number"
+                        min={1}
+                        value={editForm.priceVnd}
+                        onChange={(e) => setEditForm({ ...editForm, priceVnd: Number(e.target.value) })}
+                        className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Right: Thumbnail upload */}
+              <div className="flex flex-col">
+                <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Ảnh Thumbnail Tập *</label>
+                <div 
+                  onClick={() => thumbnailInputRef.current?.click()}
+                  className={`relative w-full aspect-video rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors overflow-hidden group ${
+                    thumbnailPreview ? "border-creator-gold" : "border-creator-border hover:border-creator-gold/50"
+                  }`}
+                >
+                  {thumbnailPreview ? (
+                    <>
+                      <img src={thumbnailPreview} alt="Thumbnail Preview" className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <UploadCloud size={20} className="text-white mb-1" />
+                        <span className="text-xs font-medium text-white">Đổi Thumbnail</span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-10 h-10 bg-creator-border rounded-full flex items-center justify-center mb-2">
+                        <ImageIcon size={18} className="text-creator-muted" />
+                      </div>
+                      <span className="text-xs text-creator-muted px-4 text-center">Tải Thumbnail</span>
+                    </>
+                  )}
+                  <input 
+                    type="file" 
+                    ref={thumbnailInputRef} 
+                    onChange={handleThumbnailUpload} 
+                    accept="image/*" 
+                    className="hidden" 
+                  />
+                </div>
               </div>
             </div>
           </div>

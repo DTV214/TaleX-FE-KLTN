@@ -131,6 +131,7 @@ export type EpisodeResponse = {
   likes?: number;
   views?: number;
   totalPage?: number;
+  thumbnail?: string;
   createdAt?: string;
   updatedAt?: string;
 };
@@ -209,6 +210,7 @@ export type EpisodeRequest = {
   unlockType?: EpisodeUnlockType;
   priceVnd?: number;
   totalPage?: number;
+  thumbnail?: string;
 };
 
 export type MediaMetadataRequest = {

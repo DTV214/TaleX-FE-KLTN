@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { Check, Edit3, MessageSquare, AlertCircle, Eye, Rocket, X, Calendar, EyeOff, ShieldAlert, AlertTriangle } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { Check, Edit3, MessageSquare, AlertCircle, Eye, Rocket, X, Calendar, EyeOff, ShieldAlert, AlertTriangle, Image as ImageIcon, UploadCloud } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { getMediaViolations } from "@/features/creator-dashboard/api/creator-content-api";
 import { AIPolicyAndCopyright } from "@/features/creator-dashboard/components/ai-policy-and-copyright";
@@ -40,6 +40,19 @@ export function FinalReviewComicStep({
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [reviewerNotes, setReviewerNotes] = useState("");
 
+  const thumbnailInputRef = useRef<HTMLInputElement>(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(selectedEpisode?.thumbnail || null);
+  const [thumbnailFile, setThumbnailFile] = useState<File | undefined>(undefined);
+
+  const handleThumbnailUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setThumbnailFile(file);
+      const objectUrl = URL.createObjectURL(file);
+      setThumbnailPreview(objectUrl);
+    }
+  };
+
   const [editForm, setEditForm] = useState({
     episodeNumber: selectedEpisode?.episodeNumber || 1,
     title: selectedEpisode?.title || "",
@@ -57,6 +70,8 @@ export function FinalReviewComicStep({
         unlockType: selectedEpisode.unlockType || "FREE",
         priceVnd: selectedEpisode.priceVnd || 0
       });
+      setThumbnailPreview(selectedEpisode.thumbnail || null);
+      setThumbnailFile(undefined);
     }
   }, [selectedEpisode]);
 
@@ -136,50 +151,87 @@ export function FinalReviewComicStep({
         {/* Episode Details Edit Form */}
         <div className="bg-creator-sidebar border border-creator-border rounded-xl p-6 shadow-xl mb-6">
           <h3 className="text-lg font-bold text-white mb-6">Chi tiết Tập</h3>
-          <div className="space-y-5">
-            <div className="grid gap-5 md:grid-cols-2">
-              <div>
-                <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Số thứ tự Tập</label>
-                <input
-                  type="number"
-                  min={1}
-                  value={editForm.episodeNumber}
-                  onChange={(e) => setEditForm({ ...editForm, episodeNumber: Number(e.target.value) })}
-                  className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
-                />
+          <div className="grid gap-6 md:grid-cols-[1fr_240px] mb-4">
+            <div className="space-y-5">
+              <div className="grid gap-5 md:grid-cols-2">
+                <div>
+                  <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Số thứ tự Tập</label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={editForm.episodeNumber}
+                    onChange={(e) => setEditForm({ ...editForm, episodeNumber: Number(e.target.value) })}
+                    className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Tiêu đề Tập *</label>
+                  <input
+                    type="text"
+                    required
+                    value={editForm.title}
+                    onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                    className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
+                  />
+                </div>
               </div>
+
               <div>
-                <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Tiêu đề Tập *</label>
-                <input
-                  type="text"
-                  required
-                  value={editForm.title}
-                  onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-                  className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
+                <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Mô tả</label>
+                <textarea
+                  rows={3}
+                  value={editForm.description}
+                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                  className="w-full resize-none rounded-md border border-creator-border bg-creator-bg p-3 text-sm text-white outline-none focus:border-creator-gold"
                 />
               </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Mô tả</label>
-              <textarea
-                rows={3}
-                value={editForm.description}
-                onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                className="w-full resize-none rounded-md border border-creator-border bg-creator-bg p-3 text-sm text-white outline-none focus:border-creator-gold"
-              />
-            </div>
-
-            <div className="flex justify-end pt-2">
-              <button
-                type="button"
-                onClick={() => onSaveEpisode({ ...selectedEpisode, ...editForm })}
-                disabled={isSavingEpisode}
-                className="px-6 py-2.5 bg-creator-bg border border-creator-border text-white text-sm font-bold rounded hover:bg-white/10 shrink-0 disabled:opacity-50"
+            {/* Right: Thumbnail upload */}
+            <div className="flex flex-col">
+              <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Ảnh Thumbnail Tập *</label>
+              <div 
+                onClick={() => thumbnailInputRef.current?.click()}
+                className={`relative w-full aspect-video rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors overflow-hidden group ${
+                  thumbnailPreview ? "border-creator-gold" : "border-creator-border hover:border-creator-gold/50"
+                }`}
               >
-                {isSavingEpisode ? "Saving..." : "Save Details"}
-              </button>
+                {thumbnailPreview ? (
+                  <>
+                    <img src={thumbnailPreview} alt="Thumbnail Preview" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <UploadCloud size={20} className="text-white mb-1" />
+                      <span className="text-xs font-medium text-white">Đổi Thumbnail</span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-10 h-10 bg-creator-border rounded-full flex items-center justify-center mb-2">
+                      <ImageIcon size={18} className="text-creator-muted" />
+                    </div>
+                    <span className="text-xs text-creator-muted px-4 text-center">Tải Thumbnail</span>
+                  </>
+                )}
+                <input 
+                  type="file" 
+                  ref={thumbnailInputRef} 
+                  onChange={handleThumbnailUpload} 
+                  accept="image/*" 
+                  className="hidden" 
+                />
+              </div>
             </div>
+          </div>
+
+          <div className="flex justify-end pt-2 border-t border-creator-border">
+            <button
+              type="button"
+              onClick={() => onSaveEpisode({ ...selectedEpisode, ...editForm, thumbnailFile })}
+              disabled={isSavingEpisode}
+              className="px-6 py-2.5 bg-creator-bg border border-creator-border text-white text-sm font-bold rounded hover:bg-white/10 shrink-0 disabled:opacity-50"
+            >
+              {isSavingEpisode ? "Saving..." : "Save Details"}
+            </button>
           </div>
         </div>
       </div>
