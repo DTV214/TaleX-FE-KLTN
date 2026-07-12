@@ -1909,7 +1909,16 @@ function CreatorDashboardContent() {
             ) : activeView === "combos" ? (
               <ComboManagementView />
             ) : activeView === "monetization" ? (
-              <CreatorMonetizationView />
+              <CreatorMonetizationView
+                onBack={() =>
+                  setDashboardRouteState({
+                    view: "series",
+                    seriesId: "",
+                    seasonId: "",
+                    episodeId: "",
+                  })
+                }
+              />
             ) : activeView === "campaign" ? (
               <CampaignPurchaseView />
             ) : (

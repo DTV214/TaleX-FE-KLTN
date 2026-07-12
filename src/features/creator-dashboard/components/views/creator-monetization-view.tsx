@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  ArrowLeft,
   Building2,
   CheckCircle2,
   ReceiptText,
@@ -40,6 +41,10 @@ import { cn } from "@/shared/utils/utils";
 type IdentityStatus = "AWAITING_FILL" | "PENDING" | "APPROVED" | "REJECTED";
 type PaymentStatus = "PENDING" | "VERIFIED" | "REJECTED" | "CANCELLED";
 type PaymentFormData = PaymentProfileRequestDto;
+
+type CreatorMonetizationViewProps = {
+  onBack?: () => void;
+};
 
 const identityStatusLabels: Record<IdentityStatus, string> = {
   AWAITING_FILL: "Chưa cung cấp",
@@ -141,7 +146,7 @@ function toPaymentProfileRequest(
 
 const ERROR_MESSAGE = "Đã có lỗi xảy ra. Vui lòng thử lại sau.";
 
-export function CreatorMonetizationView() {
+export function CreatorMonetizationView({ onBack }: CreatorMonetizationViewProps) {
   const queryClient = useQueryClient();
   const authUser = useAuthStore((state) => state.user);
   const [isAgreed, setIsAgreed] = useState(false);
@@ -280,6 +285,11 @@ export function CreatorMonetizationView() {
     }
 
     submitGatewayMutation.mutate(gatewayTermId);
+  };
+
+  const handleBackToCreatorDashboard = () => {
+    setIsAgreed(false);
+    onBack?.();
   };
 
   const handleOpenStep1Modal = () => {
@@ -876,6 +886,20 @@ export function CreatorMonetizationView() {
           onInteractOutside={(event) => event.preventDefault()}
           className="max-h-[calc(100vh-2rem)] gap-5 rounded-lg border border-white/10 bg-card p-5 text-card-foreground shadow-2xl sm:max-w-xl"
         >
+          {onBack ? (
+            <div className="flex justify-start">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={handleBackToCreatorDashboard}
+                className="h-9 gap-2 px-0 text-sm font-semibold text-white/70 hover:bg-transparent hover:text-primary"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Quay lại Creator Studio
+              </Button>
+            </div>
+          ) : null}
+
           <DialogHeader>
             <DialogTitle className="font-heading text-2xl font-bold tracking-tight text-white">
               Xác thực danh tính Creator
@@ -885,7 +909,7 @@ export function CreatorMonetizationView() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="max-h-64 overflow-y-auto rounded-lg border border-white/10 bg-white/[0.04] p-4 text-sm leading-7 text-white/78">
+          <div className="max-h-64 min-w-0 max-w-full overflow-y-auto overflow-x-hidden whitespace-pre-wrap break-words rounded-lg border border-white/10 bg-white/[0.04] p-4 pr-3 text-sm leading-7 text-white/78 [overflow-wrap:anywhere]">
             {gatewayTermQuery.isLoading ? (
               <span>Đang tải điều khoản...</span>
             ) : gatewayTermQuery.isError ? (
@@ -942,7 +966,7 @@ export function CreatorMonetizationView() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="max-h-64 overflow-y-auto rounded-lg border border-white/10 bg-white/[0.04] p-4 text-sm leading-7 text-white/78">
+          <div className="max-h-64 min-w-0 max-w-full overflow-y-auto overflow-x-hidden whitespace-pre-wrap break-words rounded-lg border border-white/10 bg-white/[0.04] p-4 pr-3 text-sm leading-7 text-white/78 [overflow-wrap:anywhere]">
             {step1TermQuery.isLoading ? (
               <span>Đang tải điều khoản...</span>
             ) : step1TermQuery.isError ? (
