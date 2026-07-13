@@ -18,6 +18,7 @@ import { getApiErrorMessage } from "@/shared/api/http-client";
 import { parseBackendDate } from "@/shared/utils/backend-date";
 
 const SEPAY_BANK_NAME = "Ngân Hàng VietinBank";
+const SEPAY_BANK_LOGO_URL = "https://api.vietqr.io/img/ICB.png";
 const SEPAY_ACCOUNT_NUMBER = "100881945065";
 const SEPAY_ACCOUNT_HOLDER = "NGUYEN GIA KHANH";
 
@@ -199,21 +200,23 @@ function CheckoutPageContent() {
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <CopyableField label="Tên tài khoản" value={SEPAY_ACCOUNT_HOLDER} />
-                  <CopyableField label="Tên ngân hàng" value={SEPAY_BANK_NAME} />
+                  <CopyableField
+                    label="Tên ngân hàng"
+                    value={SEPAY_BANK_NAME}
+                    logoUrl={SEPAY_BANK_LOGO_URL}
+                  />
                   <CopyableField label="Số tài khoản" value={SEPAY_ACCOUNT_NUMBER} />
-                  <div>
-                    <CopyableField
-                      label="Nội dung"
-                      value={order?.paymentCode ?? "—"}
-                      isHighlight
-                    />
-                    <p className="mt-2 text-xs font-bold text-red-300">
-                      * Bắt buộc nhập đúng nội dung
-                    </p>
-                  </div>
+                  <CopyableField
+                    label="Nội dung"
+                    value={order?.paymentCode ?? "—"}
+                    isHighlight
+                  />
                 </div>
+                <p className="text-[11px] font-medium text-red-300/80">
+                  * Bắt buộc nhập đúng nội dung
+                </p>
               </motion.section>
 
               <motion.button

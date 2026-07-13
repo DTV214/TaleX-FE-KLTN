@@ -23,6 +23,10 @@ export type OrderResponse = {
   fiatAmount: number;
   status: OrderStatus;
   expiresAt: string;
+  // Chỉ có giá trị khi mua Combo và đã sở hữu 1 phần tập trong combo trước đó
+  comboOriginalPrice: number | null;
+  comboOwnedEpisodeCount: number | null;
+  comboTotalEpisodeCount: number | null;
 };
 
 export type CreateOrderResponse = BaseResponse<OrderResponse>;

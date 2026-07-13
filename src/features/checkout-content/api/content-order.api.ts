@@ -1,5 +1,6 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import { httpClient } from "@/shared/api/http-client";
+import { coinKeys } from "@/features/coin/hooks/useCoinQueries";
 import { paymentKeys } from "@/features/payment/api/payment.api";
 import type {
   ContentOrderItemType,
@@ -39,11 +40,17 @@ export function useEnsureContentOrder(
       // Đồng bộ ngay vào cache của useOrderStatus (poll mỗi 3s) để số tiền/QR cập nhật
       // tức thời sau khi đổi Coin, không phải chờ tới tick poll tiếp theo.
       queryClient.setQueryData(paymentKeys.order(order.orderId), order);
+      // Server có thể vừa debit/credit Coin (áp dụng lựa chọn mới) — làm mới số dư hiển
+      // thị ở header/CoinPaymentSelector ngay, không chờ staleTime 60s của useCoinWallet.
+      queryClient.invalidateQueries({ queryKey: coinKeys.wallet() });
       return order;
     },
     enabled: Boolean(itemId),
     staleTime: 0,
     refetchOnMount: "always",
     retry: false,
+    // Giữ dữ liệu đơn hàng cũ trong lúc đổi Coin đang tính lại — tránh cả khung QR/giá
+    // biến mất rồi hiện spinner toàn màn hình mỗi lần bật/tắt Coin, giật mắt người dùng.
+    placeholderData: keepPreviousData,
   });
 }

@@ -2,7 +2,16 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { CheckCircle2, CircleDollarSign, Loader2, ShieldCheck, Ticket, X } from "lucide-react";
+import {
+  CheckCircle2,
+  CircleDollarSign,
+  Clock3,
+  Loader2,
+  ShieldCheck,
+  Ticket,
+  Trash2,
+  X,
+} from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CopyableField } from "@/features/checkout/components/CopyableField";
 import { PaymentWarningBanner } from "@/features/checkout/components/PaymentWarningBanner";
@@ -20,6 +29,7 @@ import { getApiErrorCode, getApiErrorMessage } from "@/shared/api/http-client";
 import { parseBackendDate } from "@/shared/utils/backend-date";
 
 const SEPAY_BANK_NAME = "Ngân Hàng VietinBank";
+const SEPAY_BANK_LOGO_URL = "https://api.vietqr.io/img/ICB.png";
 const SEPAY_ACCOUNT_NUMBER = "100881945065";
 const SEPAY_ACCOUNT_HOLDER = "NGUYEN GIA KHANH";
 const COIN_DEBOUNCE_MS = 400;
@@ -52,17 +62,24 @@ function CheckoutContentPageBody() {
   const title = searchParams.get("title") ?? "Nội dung TaleX";
   const returnTo = searchParams.get("returnTo") || "/";
 
-  const [coinInput, setCoinInput] = useState(0);
+  const [useCoin, setUseCoin] = useState(false);
   const [debouncedCoin, setDebouncedCoin] = useState(0);
   const [remainingSeconds, setRemainingSeconds] = useState(0);
 
   const walletQuery = useCoinWallet();
+  const walletBalance = walletQuery.data?.balance ?? 0;
   const createOrderQuery = useEnsureContentOrder(itemId || undefined, itemType, debouncedCoin);
   const orderId = createOrderQuery.data?.orderId;
   const orderStatusQuery = useOrderStatus(orderId);
   const order = orderStatusQuery.data ?? createOrderQuery.data;
   const cancelOrderMutation = useCancelOrder();
   const confirmCoinPaymentMutation = useConfirmCoinPayment();
+
+  // Số dư ví dao động lên/xuống theo chính đơn này (bị trừ khi áp Coin, hoàn khi bỏ chọn).
+  // Cộng lại phần đã áp cho đơn hiện tại để có 1 giá trị ỔN ĐỊNH — nếu dùng thẳng
+  // walletBalance đang biến động làm target thì effect bên dưới sẽ tự kích hoạt lại
+  // liên tục theo mỗi lần trừ/hoàn Coin (vòng lặp vô hạn).
+  const maxUsableCoin = walletBalance + (order?.coinAmountUsed ?? 0);
 
   useEffect(() => {
     if (!itemId) {
@@ -71,9 +88,10 @@ function CheckoutContentPageBody() {
   }, [itemId, router]);
 
   useEffect(() => {
-    const timerId = window.setTimeout(() => setDebouncedCoin(coinInput), COIN_DEBOUNCE_MS);
+    const targetCoin = useCoin ? maxUsableCoin : 0;
+    const timerId = window.setTimeout(() => setDebouncedCoin(targetCoin), COIN_DEBOUNCE_MS);
     return () => window.clearTimeout(timerId);
-  }, [coinInput]);
+  }, [useCoin, maxUsableCoin]);
 
   useEffect(() => {
     if (order?.status !== "COMPLETED") {
@@ -98,7 +116,10 @@ function CheckoutContentPageBody() {
     return () => window.clearInterval(intervalId);
   }, [order?.expiresAt]);
 
-  const isPreparing = !order || createOrderQuery.isFetching;
+  // Chỉ hiện spinner toàn khung lúc CHƯA có đơn nào (lần đầu vào trang). Từ lần sau, đổi
+  // Coin chỉ cần cập nhật số liệu tại chỗ (nhờ keepPreviousData) — không che hết QR/giá.
+  const isPreparing = !order;
+  const isSyncingCoin = createOrderQuery.isFetching && Boolean(order);
   const isCompleted = order?.status === "COMPLETED";
   const isExpired = order?.status === "OUT_OF_TIME" || order?.status === "CANCELLED";
   const needsOnlinePayment = Boolean(order?.qrUrl) && !isCompleted && !isExpired;
@@ -175,51 +196,100 @@ function CheckoutContentPageBody() {
 
               {!walletQuery.isLoading && !createOrderQuery.isError && (
                 <CoinPaymentSelector
-                  walletBalance={walletQuery.data?.balance ?? 0}
-                  value={coinInput}
-                  onChange={setCoinInput}
+                  walletBalance={walletBalance}
+                  maxUsableCoin={maxUsableCoin}
+                  useCoin={useCoin}
+                  onToggle={setUseCoin}
                   coinAmountUsed={order?.coinAmountUsed ?? 0}
-                  isLoading={createOrderQuery.isFetching}
+                  isLoading={isSyncingCoin}
                 />
               )}
 
               {order && (
-                <div className="rounded-2xl border border-white/8 bg-[#121214]/88 p-5 shadow-[0_18px_46px_rgba(0,0,0,0.38)] sm:p-6">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/40">
+                <div
+                  className={`rounded-2xl border border-white/8 bg-[#121214]/88 p-5 shadow-[0_18px_46px_rgba(0,0,0,0.38)] transition-opacity sm:p-6 ${
+                    isSyncingCoin ? "opacity-60" : "opacity-100"
+                  }`}
+                >
+                  <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-white/40">
                     Số tiền cần thanh toán
-                  </p>
-                  <div className="mt-2 flex flex-wrap items-center gap-3">
-                    <p className="font-heading text-4xl font-bold tracking-tight text-[#D4AF37] md:text-5xl">
-                      {formatCurrency(order.fiatAmount)}
-                    </p>
-                    {order.coinAmountUsed > 0 && (
-                      <span className="text-xs font-medium text-white/45">
-                        (đã giảm {order.coinAmountUsed} Coin, tổng gốc{" "}
-                        {formatCurrency(order.totalAmount)})
-                      </span>
+                    {isSyncingCoin && (
+                      <Loader2 className="h-3 w-3 animate-spin text-[#D4AF37]" />
                     )}
-                  </div>
+                  </p>
+
+                  {(Boolean(order.comboOwnedEpisodeCount) || order.coinAmountUsed > 0) && (
+                    <div className="mt-4 space-y-2 border-b border-white/8 pb-4 text-sm">
+                      {Boolean(order.comboOwnedEpisodeCount) && (
+                        <>
+                          <div className="flex items-center justify-between">
+                            <span className="text-white/55">
+                              Giá combo ({order.comboTotalEpisodeCount} tập)
+                            </span>
+                            <span className="text-white/45">
+                              {formatCurrency(order.comboOriginalPrice ?? 0)}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-white/55">
+                              Ưu đãi đã sở hữu {order.comboOwnedEpisodeCount}/
+                              {order.comboTotalEpisodeCount} tập
+                            </span>
+                            <span className="font-semibold text-emerald-300">
+                              −
+                              {formatCurrency(
+                                (order.comboOriginalPrice ?? 0) - order.totalAmount,
+                              )}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between border-t border-white/5 pt-2">
+                            <span className="text-white/70">Tạm tính</span>
+                            <span className="font-semibold text-white">
+                              {formatCurrency(order.totalAmount)}
+                            </span>
+                          </div>
+                        </>
+                      )}
+
+                      {order.coinAmountUsed > 0 && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-white/55">
+                            Giảm giá Coin ({order.coinAmountUsed} Coin)
+                          </span>
+                          <span className="font-semibold text-emerald-300">
+                            −{formatCurrency(order.totalAmount - order.fiatAmount)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <p className="font-heading mt-4 text-4xl font-bold tracking-tight text-[#D4AF37] md:text-5xl">
+                    {formatCurrency(order.fiatAmount)}
+                  </p>
                 </div>
               )}
 
               {needsOnlinePayment && (
                 <>
                   <PaymentWarningBanner message="Vui lòng chuyển khoản đúng nội dung để hệ thống tự động xử lý trong vài giây." />
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <CopyableField label="Tên tài khoản" value={SEPAY_ACCOUNT_HOLDER} />
-                    <CopyableField label="Tên ngân hàng" value={SEPAY_BANK_NAME} />
+                    <CopyableField
+                      label="Tên ngân hàng"
+                      value={SEPAY_BANK_NAME}
+                      logoUrl={SEPAY_BANK_LOGO_URL}
+                    />
                     <CopyableField label="Số tài khoản" value={SEPAY_ACCOUNT_NUMBER} />
-                    <div>
-                      <CopyableField
-                        label="Nội dung"
-                        value={order?.paymentCode ?? "—"}
-                        isHighlight
-                      />
-                      <p className="mt-2 text-xs font-bold text-red-300">
-                        * Bắt buộc nhập đúng nội dung
-                      </p>
-                    </div>
+                    <CopyableField
+                      label="Nội dung"
+                      value={order?.paymentCode ?? "—"}
+                      isHighlight
+                    />
                   </div>
+                  <p className="text-[11px] font-medium text-red-300/80">
+                    * Bắt buộc nhập đúng nội dung
+                  </p>
                 </>
               )}
             </motion.div>
@@ -280,23 +350,28 @@ function CheckoutContentPageBody() {
                     <span className="text-sm font-medium">Đang tạo đơn hàng...</span>
                   </div>
                 ) : isFullyCoveredByCoin ? (
-                  <div className="flex aspect-square w-full max-w-[280px] mx-auto flex-col items-center justify-center gap-4 rounded-[28px] bg-[#121214] p-4 text-center text-white/60">
-                    <CircleDollarSign className="h-10 w-10 text-[#D4AF37]" />
-                    <span className="text-sm font-medium">
-                      Coin đã đủ trả hết đơn hàng này.
-                      <br />
-                      Bấm xác nhận để hoàn tất thanh toán.
+                  <div className="flex aspect-square w-full max-w-[280px] mx-auto flex-col items-center justify-center gap-5 rounded-[28px] border border-[#D4AF37]/20 bg-gradient-to-b from-[#D4AF37]/[0.07] to-transparent p-6 text-center">
+                    <span className="flex h-16 w-16 items-center justify-center rounded-full border border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37] shadow-[0_0_34px_rgba(212,175,55,0.3)]">
+                      <CircleDollarSign className="h-8 w-8" />
                     </span>
+                    <div className="space-y-1.5">
+                      <p className="text-sm font-bold text-white">
+                        Coin đã đủ trả hết đơn này
+                      </p>
+                      <p className="text-xs font-medium text-white/50">
+                        Xác nhận để dùng Coin mở khóa ngay
+                      </p>
+                    </div>
                     <button
                       type="button"
                       onClick={handleConfirmCoinPayment}
                       disabled={confirmCoinPaymentMutation.isPending}
-                      className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#D4AF37] px-6 text-sm font-bold text-black transition hover:bg-[#E5C158] disabled:cursor-not-allowed disabled:opacity-50"
+                      className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#D4AF37] px-4 text-sm font-bold text-black transition hover:bg-[#E5C158] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {confirmCoinPaymentMutation.isPending && (
                         <Loader2 className="h-4 w-4 animate-spin" />
                       )}
-                      Thanh toán
+                      Xác nhận &amp; mở khóa
                     </button>
                   </div>
                 ) : order?.qrUrl ? (
@@ -319,30 +394,31 @@ function CheckoutContentPageBody() {
                   Thanh toán an toàn qua SePay & Ví Coin TaleX
                 </div>
 
-                <div className="mt-7 grid grid-cols-1 gap-3">
+                <div className="mt-7 space-y-3">
+                  <button
+                    type="button"
+                    onClick={() => router.back()}
+                    className="group inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-white/12 bg-white/[0.04] px-5 text-sm font-semibold text-white/80 transition hover:border-[#D4AF37]/40 hover:bg-white/[0.07] hover:text-white active:translate-y-px"
+                  >
+                    <Clock3 className="h-4 w-4 text-white/45 transition group-hover:text-[#D4AF37]" />
+                    Thoát, thanh toán sau
+                  </button>
+
                   {canCancel && (
                     <button
                       type="button"
                       onClick={handleCancelOrder}
                       disabled={cancelOrderMutation.isPending}
-                      className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-red-400/30 bg-red-500/10 px-5 text-sm font-semibold text-red-300 transition hover:border-red-400/50 hover:bg-red-500/15 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50"
+                      className="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg text-xs font-semibold text-white/35 transition hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {cancelOrderMutation.isPending ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
                       ) : (
-                        <X className="h-4 w-4" />
+                        <Trash2 className="h-3.5 w-3.5" />
                       )}
-                      Hủy đơn hàng
+                      Hủy đơn hàng này
                     </button>
                   )}
-                  <button
-                    type="button"
-                    onClick={() => router.back()}
-                    className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-white/12 bg-white/[0.04] px-5 text-sm font-semibold text-white/72 transition hover:border-white/22 hover:bg-white/[0.08] hover:text-white active:translate-y-px"
-                  >
-                    <X className="h-4 w-4" />
-                    Thoát, thanh toán sau
-                  </button>
                 </div>
               </div>
             </motion.aside>
