@@ -317,7 +317,7 @@ export function AdminSidebar() {
                   : "max-w-0 overflow-hidden opacity-0"
               }`}
             >
-              Quản lý Nội dung
+              Nội dung
             </span>
             <ChevronRight
               className={`ml-auto h-4 w-4 shrink-0 transition-transform duration-300 ${

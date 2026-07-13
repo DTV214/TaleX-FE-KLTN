@@ -30,15 +30,15 @@ export function CopyableField({
   }
 
   return (
-    <div className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-[#121214] px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+    <div className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-[#121214] px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
       <div className="min-w-0">
-        <p className="mb-1 text-[11px] font-black uppercase tracking-[0.2em] text-white/38">
+        <p className="mb-1 text-xs font-medium text-slate-500">
           {label}
         </p>
         <p
           className={cn(
-            "truncate font-heading text-base font-black tracking-normal text-white sm:text-lg",
-            isHighlight && "text-xl text-[#D4AF37] sm:text-2xl",
+            "truncate text-sm font-semibold tracking-normal text-slate-100 sm:text-base",
+            isHighlight && "text-base text-[#D4AF37] sm:text-lg",
           )}
           title={value}
         >
@@ -49,7 +49,7 @@ export function CopyableField({
       <button
         type="button"
         onClick={handleCopy}
-        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#D4AF37]/28 bg-[#D4AF37]/10 text-[#D4AF37] transition hover:border-[#D4AF37]/55 hover:bg-[#D4AF37] hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37]/70 active:translate-y-px"
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#D4AF37]/28 bg-[#D4AF37]/10 text-[#D4AF37] transition hover:border-[#D4AF37]/55 hover:bg-[#D4AF37] hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37]/70 active:translate-y-px"
         aria-label={`Copy ${label}`}
       >
         {hasCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}

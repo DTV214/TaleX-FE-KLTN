@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Montserrat, DM_Sans } from "next/font/google";
+import { Be_Vietnam_Pro, Montserrat } from "next/font/google";
 import "./globals.css";
 import { AppProviders } from "@/core/providers/app-providers";
 // Thêm đường dẫn import cho AuthProvider vừa tạo ở bước trước
@@ -13,9 +13,10 @@ const montserrat = Montserrat({
   display: "swap",
 });
 
-// Font cho Văn bản (Body/Labels) - Đã sửa lỗi TypeScript
-const dmSans = DM_Sans({
-  subsets: ["latin", "latin-ext"],
+// Font cho Văn bản (Body/Labels)
+const beVietnamPro = Be_Vietnam_Pro({
+  subsets: ["latin", "vietnamese"],
+  weight: ["300", "400", "500", "600", "700", "800", "900"],
   variable: "--font-sans",
   display: "swap",
 });
@@ -33,7 +34,7 @@ export default function RootLayout({
   return (
     <html lang="vi" className="dark" suppressHydrationWarning>
       <body
-        className={`${dmSans.variable} ${montserrat.variable} font-sans antialiased bg-background text-foreground flex min-h-screen flex-col relative`}
+        className={`${beVietnamPro.variable} ${montserrat.variable} font-sans antialiased bg-background text-foreground flex min-h-screen flex-col relative`}
         suppressHydrationWarning
       >
         <AppProviders>
