@@ -10,6 +10,23 @@ import {
   isMediaReadyForPublish,
 } from "@/features/creator-dashboard/utils/media-violations";
 
+function formatScheduledPublishAt(value?: string) {
+  if (!value) {
+    return "-";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat("en", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+}
+
 interface FinalReviewComicStepProps {
   pages: any[];
   isPublishing?: boolean;
@@ -20,8 +37,13 @@ interface FinalReviewComicStepProps {
   selectedEpisode: any;
   onSaveEpisode: (episode: any) => void;
   isSavingEpisode: boolean;
+  onSaveUnlockSettings: (episode: any) => void;
+  isSavingUnlockSettings: boolean;
+  canManageUnlockSettings: boolean;
   onHideEpisode: (episode: any) => void;
   isHidingEpisode: boolean;
+  onCancelSchedule: (episode: any) => void;
+  isCancelingSchedule: boolean;
 }
 
 export function FinalReviewComicStep({
@@ -34,8 +56,13 @@ export function FinalReviewComicStep({
   selectedEpisode,
   onSaveEpisode,
   isSavingEpisode,
+  onSaveUnlockSettings,
+  isSavingUnlockSettings,
+  canManageUnlockSettings,
   onHideEpisode,
-  isHidingEpisode
+  isHidingEpisode,
+  onCancelSchedule,
+  isCancelingSchedule
 }: FinalReviewComicStepProps) {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [reviewerNotes, setReviewerNotes] = useState("");
@@ -76,6 +103,7 @@ export function FinalReviewComicStep({
   }, [selectedEpisode]);
 
   const isPublished = selectedEpisode?.status === "PUBLISHED";
+  const isScheduled = selectedEpisode?.status === "SCHEDULED";
   const persistedPages = pages.filter((page) => !page.id.startsWith("LOCAL-"));
   const firstPersistedPage = persistedPages[0];
   const hasRejectedPage = persistedPages.some(
@@ -192,6 +220,7 @@ export function FinalReviewComicStep({
                   <select
                     value={editForm.unlockType}
                     onChange={(e) => setEditForm({ ...editForm, unlockType: e.target.value })}
+                    disabled={!canManageUnlockSettings}
                     className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
                   >
                     <option value="FREE">Miễn phí</option>
@@ -205,8 +234,10 @@ export function FinalReviewComicStep({
                     <input
                       type="number"
                       min={1}
+                      max={99999}
                       value={editForm.priceVnd}
                       onChange={(e) => setEditForm({ ...editForm, priceVnd: Number(e.target.value) })}
+                      disabled={!canManageUnlockSettings}
                       className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
                     />
                   </div>
@@ -250,7 +281,7 @@ export function FinalReviewComicStep({
             </div>
           </div>
 
-          <div className="flex justify-end pt-2 border-t border-creator-border">
+          <div className="flex flex-wrap justify-end gap-3 pt-2 border-t border-creator-border">
             <button
               type="button"
               onClick={() => onSaveEpisode({ ...selectedEpisode, ...editForm, thumbnailFile })}
@@ -258,6 +289,14 @@ export function FinalReviewComicStep({
               className="px-6 py-2.5 bg-creator-bg border border-creator-border text-white text-sm font-bold rounded hover:bg-white/10 shrink-0 disabled:opacity-50"
             >
               {isSavingEpisode ? "Saving..." : "Save Details"}
+            </button>
+            <button
+              type="button"
+              onClick={() => onSaveUnlockSettings({ ...selectedEpisode, unlockType: editForm.unlockType, priceVnd: editForm.unlockType === "PAID" ? editForm.priceVnd : 0 })}
+              disabled={!canManageUnlockSettings || isSavingUnlockSettings}
+              className="px-6 py-2.5 bg-creator-gold text-black text-sm font-bold rounded hover:bg-creator-gold-hover shrink-0 disabled:opacity-50"
+            >
+              {isSavingUnlockSettings ? "Saving Price..." : "Save Price"}
             </button>
           </div>
         </div>
@@ -286,7 +325,37 @@ export function FinalReviewComicStep({
         )}
 
         <div className="flex flex-col gap-3 pt-2">
-          {!isPublished ? (
+          {isScheduled ? (
+            <>
+              <div className="rounded-xl border border-creator-gold/40 bg-creator-gold/10 p-4 text-sm">
+                <div className="flex items-center gap-2 font-bold text-creator-gold">
+                  <Calendar size={18} />
+                  Scheduled Publish
+                </div>
+                <p className="mt-2 text-xs font-semibold text-creator-muted">
+                  This episode is scheduled to go live at:
+                </p>
+                <p className="mt-1 text-base font-black text-white">
+                  {formatScheduledPublishAt(selectedEpisode?.scheduledPublishAt)}
+                </p>
+              </div>
+
+              <button
+                onClick={() => onCancelSchedule(selectedEpisode)}
+                disabled={isCancelingSchedule}
+                className="w-full py-3 rounded-md text-sm font-bold bg-[#13110F] border border-red-500/50 text-red-400 hover:bg-red-500/10 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isCancelingSchedule ? "Canceling..." : <><X size={18} /> Cancel Schedule</>}
+              </button>
+
+              <button
+                onClick={onBack}
+                className="w-full py-3 rounded-md text-sm font-bold bg-white/5 hover:bg-white/10 border border-creator-border transition-colors flex items-center justify-center gap-2"
+              >
+                Back to Episodes
+              </button>
+            </>
+          ) : !isPublished ? (
             <>
               {!isMediaReady && (
                 <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-3 text-xs font-bold leading-relaxed text-amber-300">
