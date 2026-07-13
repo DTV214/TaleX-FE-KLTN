@@ -1,17 +1,82 @@
 "use client";
 
-import { Camera, Mail, User } from "lucide-react";
+import axios from "axios";
+import { useRef, useState } from "react";
+import { toast } from "sonner";
+import { Camera, Loader2, Mail, User } from "lucide-react";
+import { updateMyProfile } from "../api/auth.api";
 import { isFullProfile, useAuthStore } from "../store/auth.store";
+import { getImagePresignedUpload } from "@/features/creator-dashboard/api/s3-upload-api";
+
+const MAX_AVATAR_SIZE = 5 * 1024 * 1024;
 
 export function ProfileView() {
-  const { user } = useAuthStore();
+  const { user, setUser } = useAuthStore();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
   if (!isFullProfile(user)) return null;
+
+  async function handleAvatarChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Vui lòng chọn đúng file ảnh.");
+      return;
+    }
+
+    if (file.size > MAX_AVATAR_SIZE) {
+      toast.error("Ảnh đại diện không được vượt quá 5MB.");
+      return;
+    }
+
+    try {
+      setIsUploadingAvatar(true);
+
+      const presigned = await getImagePresignedUpload({
+        fileName: file.name,
+        mimeType: file.type || "image/jpeg",
+        fileSize: file.size,
+        imageContext: "avatar",
+      });
+
+      await axios.put(presigned.uploadUrl, file, {
+        headers: {
+          "Content-Type": file.type || "application/octet-stream",
+        },
+      });
+
+      const updatedProfile = await updateMyProfile({
+        avatarUrl: presigned.publicUrl,
+      });
+
+      setUser(updatedProfile);
+      toast.success("Cập nhật ảnh đại diện thành công.");
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Không thể cập nhật ảnh đại diện.";
+
+      toast.error(message);
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  }
 
   return (
     <div className="w-full space-y-6">
       <section className="rounded-2xl border border-white/5 bg-[#161618] p-6 text-center shadow-[0_18px_50px_rgba(0,0,0,0.24)] sm:p-8">
-        <label className="group relative mx-auto block h-28 w-28 cursor-pointer overflow-hidden rounded-full border border-[#D4AF37]/35 bg-[#0B0B0C] p-1 shadow-[0_0_28px_rgba(212,175,55,0.18)]">
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={isUploadingAvatar}
+          className="group relative mx-auto block h-28 w-28 cursor-pointer overflow-hidden rounded-full border border-[#D4AF37]/35 bg-[#0B0B0C] p-1 shadow-[0_0_28px_rgba(212,175,55,0.18)] outline-none transition focus-visible:ring-2 focus-visible:ring-[#D4AF37]/70 disabled:cursor-wait"
+          aria-label="Cập nhật ảnh đại diện"
+        >
           <span className="relative block h-full w-full overflow-hidden rounded-full bg-[#121214]">
             {user.avatarUrl ? (
               <span
@@ -26,9 +91,20 @@ export function ProfileView() {
             <span className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
               <Camera className="h-7 w-7 text-white" />
             </span>
+            {isUploadingAvatar && (
+              <span className="absolute inset-0 flex items-center justify-center bg-black/70">
+                <Loader2 className="h-7 w-7 animate-spin text-white" />
+              </span>
+            )}
           </span>
-          <input type="file" accept="image/*" className="hidden" />
-        </label>
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleAvatarChange}
+        />
 
         <h2 className="mt-5 font-heading text-2xl font-bold tracking-tight text-white">
           {user.fullName || "TaleX User"}
