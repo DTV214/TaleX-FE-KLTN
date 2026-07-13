@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { CheckCircle2, Loader2, ShieldCheck, Ticket, X } from "lucide-react";
+import { CheckCircle2, CircleDollarSign, Loader2, ShieldCheck, Ticket, X } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CopyableField } from "@/features/checkout/components/CopyableField";
 import { PaymentWarningBanner } from "@/features/checkout/components/PaymentWarningBanner";
@@ -10,15 +10,21 @@ import { QRCodeDisplay } from "@/features/checkout/components/QRCodeDisplay";
 import { CoinPaymentSelector } from "@/features/checkout-content/components/coin-payment-selector";
 import { useEnsureContentOrder } from "@/features/checkout-content/api/content-order.api";
 import { useCoinWallet } from "@/features/coin/hooks/useCoinQueries";
-import { useOrderStatus } from "@/features/payment/api/payment.api";
+import {
+  useCancelOrder,
+  useConfirmCoinPayment,
+  useOrderStatus,
+} from "@/features/payment/api/payment.api";
 import type { ContentOrderItemType } from "@/features/payment/types/payment.types";
-import { getApiErrorMessage } from "@/shared/api/http-client";
+import { getApiErrorCode, getApiErrorMessage } from "@/shared/api/http-client";
 import { parseBackendDate } from "@/shared/utils/backend-date";
 
 const SEPAY_BANK_NAME = "Ngân Hàng VietinBank";
 const SEPAY_ACCOUNT_NUMBER = "100881945065";
 const SEPAY_ACCOUNT_HOLDER = "NGUYEN GIA KHANH";
 const COIN_DEBOUNCE_MS = 400;
+// Khớp PaymentErrorCode.CONTENT_ALREADY_OWNED ở BE
+const CONTENT_ALREADY_OWNED_CODE = 4003;
 
 const backgroundImageUrl =
   "https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=2025&auto=format&fit=crop";
@@ -44,6 +50,7 @@ function CheckoutContentPageBody() {
   const rawItemType = searchParams.get("itemType");
   const itemType: ContentOrderItemType = isValidItemType(rawItemType) ? rawItemType : "EPISODE";
   const title = searchParams.get("title") ?? "Nội dung TaleX";
+  const returnTo = searchParams.get("returnTo") || "/";
 
   const [coinInput, setCoinInput] = useState(0);
   const [debouncedCoin, setDebouncedCoin] = useState(0);
@@ -54,6 +61,8 @@ function CheckoutContentPageBody() {
   const orderId = createOrderQuery.data?.orderId;
   const orderStatusQuery = useOrderStatus(orderId);
   const order = orderStatusQuery.data ?? createOrderQuery.data;
+  const cancelOrderMutation = useCancelOrder();
+  const confirmCoinPaymentMutation = useConfirmCoinPayment();
 
   useEffect(() => {
     if (!itemId) {
@@ -65,6 +74,16 @@ function CheckoutContentPageBody() {
     const timerId = window.setTimeout(() => setDebouncedCoin(coinInput), COIN_DEBOUNCE_MS);
     return () => window.clearTimeout(timerId);
   }, [coinInput]);
+
+  useEffect(() => {
+    if (order?.status !== "COMPLETED") {
+      return;
+    }
+    const redirectTimerId = window.setTimeout(() => {
+      router.push(returnTo);
+    }, 1500);
+    return () => window.clearTimeout(redirectTimerId);
+  }, [order?.status, returnTo, router]);
 
   useEffect(() => {
     if (!order?.expiresAt) {
@@ -83,6 +102,25 @@ function CheckoutContentPageBody() {
   const isCompleted = order?.status === "COMPLETED";
   const isExpired = order?.status === "OUT_OF_TIME" || order?.status === "CANCELLED";
   const needsOnlinePayment = Boolean(order?.qrUrl) && !isCompleted && !isExpired;
+  const canCancel = Boolean(order) && !isCompleted && !isExpired;
+  const isContentAlreadyOwnedError =
+    createOrderQuery.isError && getApiErrorCode(createOrderQuery.error) === CONTENT_ALREADY_OWNED_CODE;
+  const isFullyCoveredByCoin =
+    Boolean(order) && !isCompleted && !isExpired && order.fiatAmount === 0;
+
+  function handleConfirmCoinPayment() {
+    if (!orderId) {
+      return;
+    }
+    confirmCoinPaymentMutation.mutate(orderId);
+  }
+
+  function handleCancelOrder() {
+    if (!orderId) {
+      return;
+    }
+    cancelOrderMutation.mutate(orderId);
+  }
 
   const displayStatus: "PENDING" | "SUCCESS" | "OUT_OF_TIME" = isCompleted
     ? "SUCCESS"
@@ -193,19 +231,35 @@ function CheckoutContentPageBody() {
             >
               <div className="sticky top-24 rounded-[28px] border border-white/8 bg-[#121214]/92 p-5 shadow-[0_20px_60px_rgba(0,0,0,0.48)] sm:p-7">
                 {createOrderQuery.isError ? (
-                  <div className="flex aspect-square w-full max-w-[280px] mx-auto flex-col items-center justify-center gap-3 rounded-[28px] bg-[#121214] p-4 text-center text-white/60">
-                    <X className="h-8 w-8 text-red-400" />
-                    <span className="text-sm font-medium">
-                      {getApiErrorMessage(createOrderQuery.error)}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => createOrderQuery.refetch()}
-                      className="mt-2 rounded-lg border border-[#D4AF37]/40 bg-[#D4AF37]/10 px-4 py-2 text-xs font-semibold text-[#D4AF37] transition hover:bg-[#D4AF37]/20"
-                    >
-                      Thử tạo lại đơn hàng
-                    </button>
-                  </div>
+                  isContentAlreadyOwnedError ? (
+                    <div className="flex aspect-square w-full max-w-[280px] mx-auto flex-col items-center justify-center gap-3 rounded-[28px] bg-[#121214] p-4 text-center text-white/60">
+                      <CheckCircle2 className="h-8 w-8 text-emerald-300" />
+                      <span className="text-sm font-medium">
+                        {getApiErrorMessage(createOrderQuery.error)}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => router.push(returnTo)}
+                        className="mt-2 rounded-lg bg-[#D4AF37] px-4 py-2 text-xs font-bold text-black transition hover:bg-[#E5C158]"
+                      >
+                        Xem ngay
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex aspect-square w-full max-w-[280px] mx-auto flex-col items-center justify-center gap-3 rounded-[28px] bg-[#121214] p-4 text-center text-white/60">
+                      <X className="h-8 w-8 text-red-400" />
+                      <span className="text-sm font-medium">
+                        {getApiErrorMessage(createOrderQuery.error)}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => createOrderQuery.refetch()}
+                        className="mt-2 rounded-lg border border-[#D4AF37]/40 bg-[#D4AF37]/10 px-4 py-2 text-xs font-semibold text-[#D4AF37] transition hover:bg-[#D4AF37]/20"
+                      >
+                        Thử tạo lại đơn hàng
+                      </button>
+                    </div>
+                  )
                 ) : isCompleted ? (
                   <div className="flex aspect-square w-full max-w-[280px] mx-auto flex-col items-center justify-center gap-3 rounded-[28px] bg-emerald-950/40 p-4 text-center">
                     <CheckCircle2 className="h-12 w-12 text-emerald-300" />
@@ -214,7 +268,7 @@ function CheckoutContentPageBody() {
                     </span>
                     <button
                       type="button"
-                      onClick={() => router.push("/")}
+                      onClick={() => router.push(returnTo)}
                       className="mt-2 rounded-lg bg-[#D4AF37] px-4 py-2 text-xs font-bold text-black transition hover:bg-[#E5C158]"
                     >
                       Xem ngay
@@ -224,6 +278,26 @@ function CheckoutContentPageBody() {
                   <div className="flex aspect-square w-full max-w-[280px] mx-auto flex-col items-center justify-center gap-3 rounded-[28px] bg-[#121214] p-4 text-white/60">
                     <Loader2 className="h-8 w-8 animate-spin text-[#D4AF37]" />
                     <span className="text-sm font-medium">Đang tạo đơn hàng...</span>
+                  </div>
+                ) : isFullyCoveredByCoin ? (
+                  <div className="flex aspect-square w-full max-w-[280px] mx-auto flex-col items-center justify-center gap-4 rounded-[28px] bg-[#121214] p-4 text-center text-white/60">
+                    <CircleDollarSign className="h-10 w-10 text-[#D4AF37]" />
+                    <span className="text-sm font-medium">
+                      Coin đã đủ trả hết đơn hàng này.
+                      <br />
+                      Bấm xác nhận để hoàn tất thanh toán.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleConfirmCoinPayment}
+                      disabled={confirmCoinPaymentMutation.isPending}
+                      className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#D4AF37] px-6 text-sm font-bold text-black transition hover:bg-[#E5C158] disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {confirmCoinPaymentMutation.isPending && (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      )}
+                      Thanh toán
+                    </button>
                   </div>
                 ) : order?.qrUrl ? (
                   <QRCodeDisplay
@@ -246,13 +320,28 @@ function CheckoutContentPageBody() {
                 </div>
 
                 <div className="mt-7 grid grid-cols-1 gap-3">
+                  {canCancel && (
+                    <button
+                      type="button"
+                      onClick={handleCancelOrder}
+                      disabled={cancelOrderMutation.isPending}
+                      className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-red-400/30 bg-red-500/10 px-5 text-sm font-semibold text-red-300 transition hover:border-red-400/50 hover:bg-red-500/15 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {cancelOrderMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <X className="h-4 w-4" />
+                      )}
+                      Hủy đơn hàng
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => router.back()}
                     className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-white/12 bg-white/[0.04] px-5 text-sm font-semibold text-white/72 transition hover:border-white/22 hover:bg-white/[0.08] hover:text-white active:translate-y-px"
                   >
                     <X className="h-4 w-4" />
-                    Quay lại
+                    Thoát, thanh toán sau
                   </button>
                 </div>
               </div>

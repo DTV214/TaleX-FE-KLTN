@@ -56,7 +56,9 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
   } = useQuery({
     queryKey: ["publicEpisodeMedia", episodeId, viewerId ?? "anonymous"],
     queryFn: () => getPublicEpisodeMedia(episodeId, viewerId),
-    staleTime: 5 * 60 * 1000,
+    // Entitlement can change externally (just purchased) — never serve a stale 403 from cache.
+    staleTime: 0,
+    refetchOnMount: "always",
     retry: false,
   });
 

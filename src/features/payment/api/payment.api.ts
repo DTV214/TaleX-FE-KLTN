@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   httpClient,
   type BasePageResponse,
@@ -71,6 +71,36 @@ export function useOrderStatus(orderId: string | undefined) {
     refetchInterval: (query) => {
       const status = query.state.data?.status;
       return status && TERMINAL_STATUSES.includes(status) ? false : POLL_INTERVAL_MS;
+    },
+  });
+}
+
+export function useCancelOrder() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (orderId: string): Promise<OrderResponse> => {
+      const response = await httpClient.post<GetOrderResponse>(
+        `${ORDERS_ENDPOINT}/${orderId}/cancel`,
+      );
+      return response.data.data;
+    },
+    onSuccess: (data, orderId) => {
+      queryClient.setQueryData(paymentKeys.order(orderId), data);
+    },
+  });
+}
+
+export function useConfirmCoinPayment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (orderId: string): Promise<OrderResponse> => {
+      const response = await httpClient.post<GetOrderResponse>(
+        `${ORDERS_ENDPOINT}/${orderId}/confirm-coin-payment`,
+      );
+      return response.data.data;
+    },
+    onSuccess: (data, orderId) => {
+      queryClient.setQueryData(paymentKeys.order(orderId), data);
     },
   });
 }

@@ -130,6 +130,13 @@ export function getApiErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Request failed.";
 }
 
+export function getApiErrorCode(error: unknown): number | undefined {
+  if (axios.isAxiosError<BaseResponse<unknown>>(error)) {
+    return error.response?.data?.code;
+  }
+  return undefined;
+}
+
 export async function unwrapBaseResponse<T>(
   promise: Promise<{ data: BaseResponse<T> }>,
 ) {

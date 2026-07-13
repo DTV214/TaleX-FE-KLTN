@@ -1,5 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { httpClient } from "@/shared/api/http-client";
+import { paymentKeys } from "@/features/payment/api/payment.api";
 import type {
   ContentOrderItemType,
   CreateContentOrderRequest,
@@ -20,6 +21,8 @@ export function useEnsureContentOrder(
   itemType: ContentOrderItemType,
   coinAmountToUse: number,
 ) {
+  const queryClient = useQueryClient();
+
   return useQuery({
     queryKey: ["payment", "create-content-order", itemId, itemType, coinAmountToUse],
     queryFn: async (): Promise<OrderResponse> => {
@@ -32,7 +35,11 @@ export function useEnsureContentOrder(
         CONTENT_ORDERS_ENDPOINT,
         request,
       );
-      return response.data.data;
+      const order = response.data.data;
+      // Đồng bộ ngay vào cache của useOrderStatus (poll mỗi 3s) để số tiền/QR cập nhật
+      // tức thời sau khi đổi Coin, không phải chờ tới tick poll tiếp theo.
+      queryClient.setQueryData(paymentKeys.order(order.orderId), order);
+      return order;
     },
     enabled: Boolean(itemId),
     staleTime: 0,

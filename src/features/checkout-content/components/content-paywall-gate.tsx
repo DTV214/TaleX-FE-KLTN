@@ -38,11 +38,15 @@ export function ContentPaywallGate({
 
       <button
         type="button"
-        onClick={() =>
-          router.push(
-            `/checkout-content?itemId=${encodeURIComponent(episodeId)}&itemType=EPISODE`,
-          )
-        }
+        onClick={() => {
+          const returnTo = contentKind === "COMIC" ? `/read/${episodeId}` : `/watch/${episodeId}`;
+          const params = new URLSearchParams({
+            itemId: episodeId,
+            itemType: "EPISODE",
+            returnTo,
+          });
+          router.push(`/checkout-content?${params.toString()}`);
+        }}
         className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#D4AF37] px-5 text-sm font-bold text-black transition hover:bg-[#E5C158]"
       >
         <ShoppingCart className="h-4 w-4" />

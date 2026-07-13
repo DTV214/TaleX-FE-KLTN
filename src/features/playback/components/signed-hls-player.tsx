@@ -74,7 +74,9 @@ export function SignedHlsPlayer({
   const playbackQuery = useQuery({
     queryKey,
     queryFn: () => fetchPlayback(episodeId, resolvedViewerId),
-    staleTime: 15_000,
+    // Entitlement can change externally (just purchased) — never serve a stale 403 from cache.
+    staleTime: 0,
+    refetchOnMount: "always",
     refetchOnWindowFocus: false,
     retry: false,
   });
