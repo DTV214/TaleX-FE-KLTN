@@ -87,6 +87,7 @@ import {
   cancelEpisodeSchedulePublish,
   publishEpisode,
   updateEpisode,
+  updateEpisodeUnlockSettings,
   updateSeason,
   updateSeries,
   type ContentApprovalStatus as ApiContentApprovalStatus,
@@ -303,6 +304,12 @@ type EpisodeRow = {
   updatedAt: string;
 };
 
+type EpisodeUnlockSettingsUpdate = {
+  id: string;
+  unlockType: EpisodeUnlockType;
+  priceVnd: number;
+};
+
 type ComicPage = {
   id: string;
   image: string;
@@ -500,6 +507,26 @@ function toDateTimeLocalValue(value?: string) {
   const pad = (part: number) => String(part).padStart(2, "0");
 
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function splitDateTimeLocalValue(value?: string) {
+  const [date, time = ""] = toDateTimeLocalValue(value).split("T");
+
+  return { date, time };
+}
+
+function combineDateAndTimeLocalValue(date: string, time: string) {
+  return `${date}T${time}`;
+}
+
+function isPastDateTimeLocalValue(dateTime: string) {
+  const selectedDate = new Date(dateTime);
+
+  return Number.isNaN(selectedDate.getTime()) || selectedDate.getTime() <= Date.now();
+}
+
+function openNativePicker(input: HTMLInputElement) {
+  input.showPicker?.();
 }
 
 function formatMediaStatusLabel(status: MediaStatus) {
@@ -719,6 +746,7 @@ function CreatorDashboardContent() {
   const queryClient = useQueryClient();
   const authUser = useAuthStore((state) => state.user);
   const accountId = authUser?.accountId ?? "";
+  const canManageEpisodePricing = authUser?.roleName === "CREATOR";
   const initialRouteState = useMemo(() => readDashboardRouteState(), []);
   const [activeView, setActiveView] = useState<DashboardView>(
     initialRouteState.view,
@@ -979,8 +1007,6 @@ function CreatorDashboardContent() {
             : "Tập video mới",
         description: "Tập nháp được tạo từ bảng điều khiển.",
         contentType: selectedSeries.contentType,
-        unlockType: "FREE",
-        priceVnd: 0,
       });
 
       return mapEpisodeResponse(created);
@@ -1188,16 +1214,11 @@ function CreatorDashboardContent() {
         ? await uploadSeriesArtwork(episode.thumbnailFile, "Thumbnail", "cover")
         : undefined;
 
-      const normalizedPriceVnd =
-        episode.unlockType === "PAID" ? episode.priceVnd : 0;
-
       return updateEpisode(episode.id, {
         title: episode.title,
         episodeNumber: episode.episodeNumber,
         description: episode.description,
         contentType: episode.contentType,
-        unlockType: episode.unlockType,
-        priceVnd: normalizedPriceVnd,
         totalPage: episode.totalPage,
         thumbnail: uploadedThumbnailUrl || episode.thumbnail,
       });
@@ -1212,6 +1233,39 @@ function CreatorDashboardContent() {
     onError: (error) => {
       setUploadMessage(
         error instanceof Error ? error.message : "Không thể cập nhật tập.",
+      );
+    },
+  });
+
+  const updateEpisodeUnlockSettingsMutation = useMutation({
+    mutationFn: async (settings: EpisodeUnlockSettingsUpdate) => {
+      const normalizedPriceVnd =
+        settings.unlockType === "PAID" ? settings.priceVnd : 0;
+
+      if (
+        settings.unlockType === "PAID" &&
+        (!Number.isFinite(normalizedPriceVnd) || normalizedPriceVnd <= 0)
+      ) {
+        throw new Error("Paid episode price must be greater than 0.");
+      }
+
+      return updateEpisodeUnlockSettings(settings.id, {
+        unlockType: settings.unlockType,
+        priceVnd: normalizedPriceVnd,
+      });
+    },
+    onSuccess: () => {
+      setUploadMessage("Da cap nhat gia Tap.");
+      queryClient.invalidateQueries({
+        queryKey: ["creator-dashboard", "episodes", selectedSeason?.id],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["creator-dashboard", "media", selectedEpisode?.id],
+      });
+    },
+    onError: (error) => {
+      setUploadMessage(
+        error instanceof Error ? error.message : "Khong the cap nhat gia tap.",
       );
     },
   });
@@ -1640,6 +1694,14 @@ function CreatorDashboardContent() {
     setScheduleModal(target);
   }
 
+  function handleSaveEpisodeUnlockSettings(episode: EpisodeRow) {
+    updateEpisodeUnlockSettingsMutation.mutate({
+      id: episode.id,
+      unlockType: episode.unlockType,
+      priceVnd: episode.priceVnd,
+    });
+  }
+
   function handleDeleteComicPage(page: ComicPage) {
     setUploadMessage(null);
     setDeleteModal({ kind: "media", value: page });
@@ -1814,6 +1876,9 @@ function CreatorDashboardContent() {
                   uploadMessage={uploadMessage}
                   onSaveEpisode={(episode) => updateEpisodeMutation.mutate(episode)}
                   isSavingEpisode={updateEpisodeMutation.isPending}
+                  onSaveUnlockSettings={handleSaveEpisodeUnlockSettings}
+                  isSavingUnlockSettings={updateEpisodeUnlockSettingsMutation.isPending}
+                  canManageUnlockSettings={canManageEpisodePricing}
                   onGoToPublishing={() => setDashboardRouteState({ view: "publish", seriesId: selectedSeries.id, seasonId: selectedSeason.id, episodeId: selectedEpisode.id })}
                   canSchedulePublish={hasApprovedComicMedia}
                   onSchedulePublish={(episode) => handleSchedulePublish({ kind: "episode", value: episode })}
@@ -1844,6 +1909,9 @@ function CreatorDashboardContent() {
                   onDeleteVideo={handleDeleteVideo}
                   onSaveEpisode={(episode) => updateEpisodeMutation.mutate(episode)}
                   isSavingEpisode={updateEpisodeMutation.isPending}
+                  onSaveUnlockSettings={handleSaveEpisodeUnlockSettings}
+                  isSavingUnlockSettings={updateEpisodeUnlockSettingsMutation.isPending}
+                  canManageUnlockSettings={canManageEpisodePricing}
                   onGoToPublishing={() => setDashboardRouteState({ view: "publish", seriesId: selectedSeries.id, seasonId: selectedSeason.id, episodeId: selectedEpisode.id })}
                   accountId={accountId}
                   onSchedulePublish={(episode) => handleSchedulePublish({ kind: "episode", value: episode })}
@@ -1879,8 +1947,13 @@ function CreatorDashboardContent() {
                   selectedEpisode={selectedEpisode}
                   onSaveEpisode={(episode) => updateEpisodeMutation.mutate(episode)}
                   isSavingEpisode={updateEpisodeMutation.isPending}
+                  onSaveUnlockSettings={handleSaveEpisodeUnlockSettings}
+                  isSavingUnlockSettings={updateEpisodeUnlockSettingsMutation.isPending}
+                  canManageUnlockSettings={canManageEpisodePricing}
                   onHideEpisode={(episode) => hideEpisodeMutation.mutate(episode)}
                   isHidingEpisode={hideEpisodeMutation.isPending}
+                  onCancelSchedule={(episode) => cancelScheduleMutation.mutate(episode.id)}
+                  isCancelingSchedule={cancelScheduleMutation.isPending}
                 />
               ) : (
                 <FinalReviewStep
@@ -1902,8 +1975,13 @@ function CreatorDashboardContent() {
                   selectedEpisode={selectedEpisode}
                   onSaveEpisode={(episode) => updateEpisodeMutation.mutate(episode)}
                   isSavingEpisode={updateEpisodeMutation.isPending}
+                  onSaveUnlockSettings={handleSaveEpisodeUnlockSettings}
+                  isSavingUnlockSettings={updateEpisodeUnlockSettingsMutation.isPending}
+                  canManageUnlockSettings={canManageEpisodePricing}
                   onHideEpisode={(episode) => hideEpisodeMutation.mutate(episode)}
                   isHidingEpisode={hideEpisodeMutation.isPending}
+                  onCancelSchedule={(episode) => cancelScheduleMutation.mutate(episode.id)}
+                  isCancelingSchedule={cancelScheduleMutation.isPending}
                 />
               )
             ) : activeView === "combos" ? (
@@ -2070,15 +2148,6 @@ function EditEntityModal({
 
     const episode = modal!.value as EpisodeRow;
     const totalPage = readFormNumber(form, "totalPage", episode.totalPage);
-    const unlockType = readFormString(form, "unlockType") as EpisodeUnlockType;
-    const priceVnd =
-      unlockType === "PAID"
-        ? readFormNumber(form, "priceVnd", episode.priceVnd) ?? 0
-        : 0;
-
-    if (unlockType === "PAID" && priceVnd <= 0) {
-      return;
-    }
 
     onSubmit({
       kind: "episode",
@@ -2092,8 +2161,6 @@ function EditEntityModal({
         title,
         description: readFormString(form, "description"),
         contentType: readFormString(form, "contentType") as ContentType,
-        unlockType,
-        priceVnd,
         totalPage,
       },
     });
@@ -2254,11 +2321,6 @@ function EditEntityModal({
               />
             </Field>
           </div>
-          <EpisodeUnlockFields
-            defaultUnlockType={modal.value.unlockType}
-            defaultPriceVnd={modal.value.priceVnd}
-            controlClass={controlClass}
-          />
           <ModalActions isSaving={isSaving} onClose={onClose} />
         </form>
       )}
@@ -2277,21 +2339,35 @@ function SchedulePublishModal({
   onClose: () => void;
   onSubmit: (scheduledPublishAt: string) => void;
 }) {
+  const [scheduleError, setScheduleError] = useState<string | null>(null);
+
   if (!modal) {
     return null;
   }
 
   const title = modal.value.title;
+  const defaultSchedule = splitDateTimeLocalValue(modal.value.scheduledPublishAt);
+  const minimumSchedule = splitDateTimeLocalValue();
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    const scheduledPublishAt = readFormString(form, "scheduledPublishAt");
+    const publishDate = readFormString(form, "publishDate");
+    const publishTime = readFormString(form, "publishTime");
 
-    if (!scheduledPublishAt) {
+    if (!publishDate || !publishTime) {
+      setScheduleError("Vui long chon du ngay va gio phat hanh.");
       return;
     }
 
+    const scheduledPublishAt = combineDateAndTimeLocalValue(publishDate, publishTime);
+
+    if (isPastDateTimeLocalValue(scheduledPublishAt)) {
+      setScheduleError("Thoi gian phat hanh phai nam trong tuong lai.");
+      return;
+    }
+
+    setScheduleError(null);
     onSubmit(scheduledPublishAt);
   }
 
@@ -2313,16 +2389,35 @@ function SchedulePublishModal({
           </p>
         </div>
 
-        <Field label="Publish At" required>
-          <input
-            name="scheduledPublishAt"
-            type="datetime-local"
-            required
-            min={toDateTimeLocalValue()}
-            defaultValue={toDateTimeLocalValue(modal.value.scheduledPublishAt)}
-            className="h-12 w-full rounded-xl border border-creator-border bg-creator-bg px-4 text-sm font-semibold outline-none focus:border-creator-gold focus:bg-creator-bg text-white"
-          />
-        </Field>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Publish Date" required>
+            <input
+              name="publishDate"
+              type="date"
+              required
+              min={minimumSchedule.date}
+              defaultValue={defaultSchedule.date}
+              onClick={(event) => openNativePicker(event.currentTarget)}
+              className="h-12 w-full cursor-pointer rounded-xl border border-creator-border bg-creator-bg px-4 text-sm font-semibold outline-none focus:border-creator-gold focus:bg-creator-bg text-white"
+            />
+          </Field>
+          <Field label="Publish Time" required>
+            <input
+              name="publishTime"
+              type="time"
+              required
+              defaultValue={defaultSchedule.time}
+              onClick={(event) => openNativePicker(event.currentTarget)}
+              className="h-12 w-full cursor-pointer rounded-xl border border-creator-border bg-creator-bg px-4 text-sm font-semibold outline-none focus:border-creator-gold focus:bg-creator-bg text-white"
+            />
+          </Field>
+        </div>
+
+        {scheduleError && (
+          <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm font-bold text-red-300">
+            {scheduleError}
+          </div>
+        )}
 
         <div className="flex justify-end gap-3">
           <button
@@ -3334,6 +3429,9 @@ function ComicUploadView({
   uploadMessage,
   onSaveEpisode,
   isSavingEpisode,
+  onSaveUnlockSettings,
+  isSavingUnlockSettings,
+  canManageUnlockSettings,
   canSchedulePublish,
   onSchedulePublish,
   onHideEpisode,
@@ -3364,6 +3462,9 @@ function ComicUploadView({
   uploadMessage: string | null;
   onSaveEpisode: (episode: EpisodeRow & { thumbnailFile?: File }) => void;
   isSavingEpisode: boolean;
+  onSaveUnlockSettings: (episode: EpisodeRow) => void;
+  isSavingUnlockSettings: boolean;
+  canManageUnlockSettings: boolean;
   canSchedulePublish: boolean;
   onSchedulePublish: (episode: EpisodeRow) => void;
   onHideEpisode: (episode: EpisodeRow) => void;
@@ -3457,6 +3558,7 @@ function ComicUploadView({
                     <select
                       value={editForm.unlockType}
                       onChange={(e) => setEditForm({ ...editForm, unlockType: e.target.value as EpisodeUnlockType })}
+                      disabled={!canManageUnlockSettings}
                       className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
                     >
                       <option value="FREE">Miễn phí</option>
@@ -3470,8 +3572,10 @@ function ComicUploadView({
                       <input
                         type="number"
                         min={1}
+                        max={99999}
                         value={editForm.priceVnd}
                         onChange={(e) => setEditForm({ ...editForm, priceVnd: Number(e.target.value) })}
+                        disabled={!canManageUnlockSettings}
                         className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
                       />
                     </div>
@@ -3514,13 +3618,20 @@ function ComicUploadView({
                 </div>
               </div>
             </div>
-            <div className="mt-6 flex justify-end">
+            <div className="mt-6 flex flex-wrap justify-end gap-3">
               <button
                 onClick={() => onSaveEpisode({ ...selectedEpisode, ...editForm, thumbnailFile })}
                 disabled={isSavingEpisode}
                 className="inline-flex h-10 items-center justify-center rounded bg-creator-bg px-5 text-sm font-bold text-white border border-creator-border hover:bg-white/10 disabled:opacity-50"
               >
                 {isSavingEpisode ? "Saving..." : "Save Details"}
+              </button>
+              <button
+                onClick={() => onSaveUnlockSettings({ ...selectedEpisode, unlockType: editForm.unlockType, priceVnd: editForm.unlockType === "PAID" ? editForm.priceVnd : 0 })}
+                disabled={!canManageUnlockSettings || isSavingUnlockSettings}
+                className="inline-flex h-10 items-center justify-center rounded bg-creator-gold px-5 text-sm font-bold text-black hover:bg-creator-gold-hover disabled:opacity-50"
+              >
+                {isSavingUnlockSettings ? "Saving Price..." : "Save Price"}
               </button>
             </div>
           </div>
@@ -3776,6 +3887,9 @@ function VideoUploadView({
   onDeleteVideo,
   onSaveEpisode,
   isSavingEpisode,
+  onSaveUnlockSettings,
+  isSavingUnlockSettings,
+  canManageUnlockSettings,
   accountId,
   onSchedulePublish,
   onHideEpisode,
@@ -3798,6 +3912,9 @@ function VideoUploadView({
   onDeleteVideo: (media: MediaResponse) => void;
   onSaveEpisode: (episode: EpisodeRow & { thumbnailFile?: File }) => void;
   isSavingEpisode: boolean;
+  onSaveUnlockSettings: (episode: EpisodeRow) => void;
+  isSavingUnlockSettings: boolean;
+  canManageUnlockSettings: boolean;
   accountId: string;
   onSchedulePublish: (episode: EpisodeRow) => void;
   onHideEpisode: (episode: EpisodeRow) => void;
@@ -3892,6 +4009,7 @@ function VideoUploadView({
                     <select
                       value={editForm.unlockType}
                       onChange={(e) => setEditForm({ ...editForm, unlockType: e.target.value as EpisodeUnlockType })}
+                      disabled={!canManageUnlockSettings}
                       className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
                     >
                       <option value="FREE">Miễn phí</option>
@@ -3905,8 +4023,10 @@ function VideoUploadView({
                       <input
                         type="number"
                         min={1}
+                        max={99999}
                         value={editForm.priceVnd}
                         onChange={(e) => setEditForm({ ...editForm, priceVnd: Number(e.target.value) })}
+                        disabled={!canManageUnlockSettings}
                         className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
                       />
                     </div>
@@ -3949,13 +4069,20 @@ function VideoUploadView({
                 </div>
               </div>
             </div>
-            <div className="mt-6 flex justify-end">
+            <div className="mt-6 flex flex-wrap justify-end gap-3">
               <button
                 onClick={() => onSaveEpisode({ ...selectedEpisode, ...editForm })}
                 disabled={isSavingEpisode}
                 className="inline-flex h-10 items-center justify-center rounded bg-creator-bg px-5 text-sm font-bold text-white border border-creator-border hover:bg-white/10 disabled:opacity-50"
               >
                 {isSavingEpisode ? "Saving..." : "Save Details"}
+              </button>
+              <button
+                onClick={() => onSaveUnlockSettings({ ...selectedEpisode, unlockType: editForm.unlockType, priceVnd: editForm.unlockType === "PAID" ? editForm.priceVnd : 0 })}
+                disabled={!canManageUnlockSettings || isSavingUnlockSettings}
+                className="inline-flex h-10 items-center justify-center rounded bg-creator-gold px-5 text-sm font-bold text-black hover:bg-creator-gold-hover disabled:opacity-50"
+              >
+                {isSavingUnlockSettings ? "Saving Price..." : "Save Price"}
               </button>
             </div>
           </div>

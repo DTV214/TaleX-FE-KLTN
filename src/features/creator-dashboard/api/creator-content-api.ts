@@ -207,8 +207,6 @@ export type EpisodeRequest = {
   description?: string;
   contentType?: ContentType;
   status?: EpisodeStatus;
-  unlockType?: EpisodeUnlockType;
-  priceVnd?: number;
   totalPage?: number;
   thumbnail?: string;
 };
@@ -278,6 +276,11 @@ export type MediaUrlUpdateRequest = {
 
 export type ScheduledPublishRequest = {
   scheduledPublishAt: string;
+};
+
+export type EpisodeUnlockSettingsRequest = {
+  unlockType: EpisodeUnlockType;
+  priceVnd?: number;
 };
 
 export async function listSeriesByCreator(page = 1, pageSize = 20) {
@@ -372,6 +375,15 @@ export async function createEpisode(
 export async function updateEpisode(id: string, request: EpisodeRequest) {
   return unwrapBaseResponse<EpisodeResponse>(
     httpClient.put(`/api/v1/episodes/${id}`, request),
+  );
+}
+
+export async function updateEpisodeUnlockSettings(
+  id: string,
+  request: EpisodeUnlockSettingsRequest,
+) {
+  return unwrapBaseResponse<EpisodeResponse>(
+    httpClient.patch(`/api/v1/episodes/${id}/unlock-settings`, request),
   );
 }
 
