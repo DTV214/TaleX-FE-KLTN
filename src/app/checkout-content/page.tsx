@@ -127,7 +127,7 @@ function CheckoutContentPageBody() {
   const isContentAlreadyOwnedError =
     createOrderQuery.isError && getApiErrorCode(createOrderQuery.error) === CONTENT_ALREADY_OWNED_CODE;
   const isFullyCoveredByCoin =
-    Boolean(order) && !isCompleted && !isExpired && order.fiatAmount === 0;
+    order != null && !isCompleted && !isExpired && order.fiatAmount === 0;
 
   function handleConfirmCoinPayment() {
     if (!orderId) {
