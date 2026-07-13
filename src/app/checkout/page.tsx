@@ -34,6 +34,7 @@ import { getApiErrorMessage } from "@/shared/api/http-client";
 import { parseBackendDate } from "@/shared/utils/backend-date";
 
 const SEPAY_BANK_NAME = "Ngân Hàng VietinBank";
+const SEPAY_BANK_LOGO_URL = "https://api.vietqr.io/img/ICB.png";
 const SEPAY_ACCOUNT_NUMBER = "100881945065";
 const SEPAY_ACCOUNT_HOLDER = "NGUYEN GIA KHANH";
 
@@ -273,7 +274,11 @@ function CheckoutPageContent() {
 
                   <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                     <CopyableField label="Tên tài khoản" value={SEPAY_ACCOUNT_HOLDER} />
-                    <CopyableField label="Tên ngân hàng" value={SEPAY_BANK_NAME} />
+                    <CopyableField
+                      label="Tên ngân hàng"
+                      value={SEPAY_BANK_NAME}
+                      logoUrl={SEPAY_BANK_LOGO_URL}
+                    />
                     <CopyableField label="Số tài khoản" value={SEPAY_ACCOUNT_NUMBER} />
                     <div>
                       <CopyableField

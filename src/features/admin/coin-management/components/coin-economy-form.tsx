@@ -47,7 +47,7 @@ const DEFAULT_VALUES: CoinEconomyConfigRequest = {
   milestone7Reward: 2,
   milestone14Reward: 3,
   milestone30Reward: 4,
-  vndPerCoin: 100,
+  vndPerCoin: 1,
 };
 
 const FIELDS: Array<{
@@ -79,7 +79,7 @@ const FIELDS: Array<{
     name: "vndPerCoin",
     label: "Tỉ giá quy đổi (VNĐ / 1 Coin)",
     description:
-      "Số VNĐ tương ứng 1 Coin khi thanh toán nội dung, ví dụ 100 = 1 Coin ⇒ 100 VNĐ.",
+      "Số VNĐ tương ứng 1 Coin khi thanh toán nội dung, ví dụ 1 = 1 Coin ⇒ 1 VNĐ.",
   },
 ];
 

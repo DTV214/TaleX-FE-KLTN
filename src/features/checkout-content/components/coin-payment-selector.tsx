@@ -3,9 +3,13 @@
 import { CircleDollarSign } from "lucide-react";
 
 type CoinPaymentSelectorProps = {
+  /** Số dư ví THẬT hiện tại — hiển thị cho user, phải khớp với số ở header. */
   walletBalance: number;
-  value: number;
-  onChange: (coinAmountToUse: number) => void;
+  /** walletBalance + số Coin đang áp cho đơn này — chỉ dùng để quyết định có ẩn nút gạt
+   * hay không, tránh nút biến mất khi đã dùng hết Coin cho chính đơn đang xem. */
+  maxUsableCoin: number;
+  useCoin: boolean;
+  onToggle: (useCoin: boolean) => void;
   coinAmountUsed: number;
   isLoading: boolean;
 };
@@ -16,19 +20,13 @@ function formatNumber(value: number) {
 
 export function CoinPaymentSelector({
   walletBalance,
-  value,
-  onChange,
+  maxUsableCoin,
+  useCoin,
+  onToggle,
   coinAmountUsed,
   isLoading,
 }: CoinPaymentSelectorProps) {
-  const hasWallet = walletBalance > 0;
-
-  function clamp(raw: number) {
-    if (Number.isNaN(raw)) {
-      return 0;
-    }
-    return Math.max(0, Math.min(walletBalance, Math.floor(raw)));
-  }
+  const hasWallet = maxUsableCoin > 0;
 
   return (
     <div className="rounded-2xl border border-white/8 bg-white/[0.025] p-4 sm:p-5">
@@ -45,47 +43,31 @@ export function CoinPaymentSelector({
 
       {hasWallet ? (
         <>
-          <input
-            type="range"
-            min={0}
-            max={walletBalance}
-            step={1}
-            value={value}
-            onChange={(event) => onChange(clamp(Number(event.target.value)))}
-            className="mt-4 w-full accent-[#D4AF37]"
-          />
+          <div className="mt-4 flex items-center justify-between gap-3">
+            <p className="text-xs font-medium text-white/60">
+              {isLoading
+                ? "Đang tính toán..."
+                : useCoin
+                  ? `Đang dùng ${formatNumber(coinAmountUsed)} Coin cho đơn hàng này.`
+                  : "Không dùng Coin cho đơn hàng này."}
+            </p>
 
-          <div className="mt-3 flex flex-wrap items-center gap-3">
-            <input
-              type="number"
-              min={0}
-              max={walletBalance}
-              step={1}
-              value={value}
-              onChange={(event) => onChange(clamp(Number(event.target.value)))}
-              className="h-10 w-32 rounded-lg border border-white/10 bg-[#121214] px-3 text-sm font-semibold text-white outline-none focus:border-[#D4AF37]/60"
-            />
             <button
               type="button"
-              onClick={() => onChange(walletBalance)}
-              className="text-xs font-semibold text-[#D4AF37] hover:underline"
+              role="switch"
+              aria-checked={useCoin}
+              onClick={() => onToggle(!useCoin)}
+              className={`inline-flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 transition-colors ${
+                useCoin ? "bg-[#D4AF37]" : "bg-white/15"
+              }`}
             >
-              Dùng tối đa
-            </button>
-            <button
-              type="button"
-              onClick={() => onChange(0)}
-              className="text-xs font-semibold text-white/50 transition hover:text-white"
-            >
-              Bỏ chọn
+              <span
+                className={`h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                  useCoin ? "translate-x-5" : "translate-x-0"
+                }`}
+              />
             </button>
           </div>
-
-          <p className="mt-3 text-xs font-medium text-white/50">
-            {isLoading
-              ? "Đang tính toán..."
-              : `Hệ thống áp dụng ${formatNumber(coinAmountUsed)} Coin cho đơn hàng này.`}
-          </p>
         </>
       ) : (
         <p className="mt-3 text-xs font-medium text-white/50">

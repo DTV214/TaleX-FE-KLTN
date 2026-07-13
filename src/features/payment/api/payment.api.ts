@@ -4,6 +4,7 @@ import {
   type BasePageResponse,
   type BaseResponse,
 } from "@/shared/api/http-client";
+import { coinKeys } from "@/features/coin/hooks/useCoinQueries";
 import { parseBackendDate } from "@/shared/utils/backend-date";
 import type {
   AccountSubscription,
@@ -86,6 +87,8 @@ export function useCancelOrder() {
     },
     onSuccess: (data, orderId) => {
       queryClient.setQueryData(paymentKeys.order(orderId), data);
+      // Hủy đơn có thể hoàn lại Coin đã trừ — làm mới số dư hiển thị ngay.
+      queryClient.invalidateQueries({ queryKey: coinKeys.wallet() });
     },
   });
 }
@@ -101,6 +104,7 @@ export function useConfirmCoinPayment() {
     },
     onSuccess: (data, orderId) => {
       queryClient.setQueryData(paymentKeys.order(orderId), data);
+      queryClient.invalidateQueries({ queryKey: coinKeys.wallet() });
     },
   });
 }

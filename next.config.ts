@@ -12,6 +12,15 @@ const nextConfig = {
       },
     ];
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "api.vietqr.io",
+        pathname: "/img/**",
+      },
+    ],
+  },
 };
 
 export default nextConfig;
