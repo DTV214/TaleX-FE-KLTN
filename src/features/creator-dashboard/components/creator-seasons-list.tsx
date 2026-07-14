@@ -12,7 +12,7 @@ interface CreatorSeasonsListProps {
 
 export function CreatorSeasonsList({ seasons, onSelect, onCreate, onEdit, onDelete, onBack }: CreatorSeasonsListProps) {
   return (
-    <div className="max-w-5xl mx-auto p-6 text-creator-text">
+    <div className="w-full p-6 text-creator-text">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
         <div>
           <button 

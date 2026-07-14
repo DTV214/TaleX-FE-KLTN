@@ -11,7 +11,7 @@ interface ReadyPublishStepProps {
 
 export function ReadyPublishStep({ mediaUrl, title, description, onContinue, onBack }: ReadyPublishStepProps) {
   return (
-    <div className="flex flex-col max-w-7xl mx-auto p-6 text-creator-text">
+    <div className="flex flex-col w-full p-6 text-creator-text">
       <div className="text-center mb-10">
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-500/20 text-green-500 mb-4">
           <CheckCircle2 size={32} />

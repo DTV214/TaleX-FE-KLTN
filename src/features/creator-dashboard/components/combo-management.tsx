@@ -53,7 +53,7 @@ export function ComboManagementView() {
   const combos = combosQuery.data ?? [];
 
   return (
-    <div className="max-w-7xl mx-auto p-6 text-creator-text space-y-8">
+    <div className="w-full p-6 text-creator-text space-y-8">
       <div className="flex justify-between items-end border-b border-creator-border pb-6">
         <div>
           <h2 className="text-3xl font-bold text-white mb-2">Quản lý Combo</h2>
@@ -222,7 +222,7 @@ function ComboForm({
   const isSaving = createMutation.isPending || updateMutation.isPending;
 
   return (
-    <div className="max-w-6xl mx-auto p-6 text-creator-text space-y-8">
+    <div className="w-full p-6 text-creator-text space-y-8">
       <button
         onClick={onBack}
         className="flex items-center gap-2 text-sm font-bold text-creator-muted hover:text-white transition-colors"

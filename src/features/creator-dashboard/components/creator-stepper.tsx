@@ -28,7 +28,7 @@ export function CreatorStepper({ steps }: CreatorStepperProps) {
 
   return (
     <div className="w-full py-6">
-      <div className="flex items-center justify-between max-w-5xl mx-auto relative">
+      <div className="flex items-center justify-between w-full px-6 relative">
         {/* Background connector line */}
         <div className="absolute left-0 top-4 w-full h-[2px] bg-creator-border z-0" />
         

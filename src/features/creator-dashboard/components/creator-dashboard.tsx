@@ -15,6 +15,7 @@ import { MediaUploadStep } from "@/features/creator-dashboard/components/steps/m
 import { ReadyPublishStep } from "@/features/creator-dashboard/components/steps/ready-publish-step";
 import { FinalReviewStep } from "@/features/creator-dashboard/components/steps/final-review-step";
 import { FinalReviewComicStep } from "@/features/creator-dashboard/components/steps/final-review-comic-step";
+import { DashboardOverviewView } from "@/features/creator-dashboard/components/views/dashboard-overview-view";
 
 import {
   useEffect,
@@ -118,6 +119,7 @@ import {
 } from "@/features/creator-dashboard/utils/media-violations";
 
 type DashboardView =
+  | "dashboard"
   | "series"
   | "seasons"
   | "episodes"
@@ -127,7 +129,9 @@ type DashboardView =
   | "combos"
   | "monetization"
   | "campaign"
-  | "publish";
+  | "publish"
+  | "analytics"
+  | "revenue";
 
 type DashboardRouteState = {
   view: DashboardView;
@@ -137,6 +141,7 @@ type DashboardRouteState = {
 };
 
 const dashboardViews: DashboardView[] = [
+  "dashboard",
   "series",
   "seasons",
   "episodes",
@@ -147,10 +152,12 @@ const dashboardViews: DashboardView[] = [
   "monetization",
   "campaign",
   "publish",
+  "analytics",
+  "revenue",
 ];
 
 const defaultDashboardRouteState: DashboardRouteState = {
-  view: "series",
+  view: "dashboard",
   seriesId: "",
   seasonId: "",
   episodeId: "",
@@ -169,7 +176,7 @@ function readDashboardRouteState(): DashboardRouteState {
   const viewParam = params.get("view");
 
   return {
-    view: isDashboardView(viewParam) ? viewParam : "series",
+    view: isDashboardView(viewParam) ? viewParam : "dashboard",
     seriesId: params.get("seriesId") ?? "",
     seasonId: params.get("seasonId") ?? "",
     episodeId: params.get("episodeId") ?? "",
@@ -373,6 +380,18 @@ const viewMeta: Record<
   campaign: {
     title: "Đẩy mạnh tương tác",
     description: "Tiếp cận hàng ngàn độc giả và khán giả mới bằng các gói đẩy xu hướng.",
+  },
+  dashboard: {
+    title: "Tổng quan",
+    description: "Xem số liệu phân tích và hiệu suất tổng thể của kênh.",
+  },
+  analytics: {
+    title: "Thống kê",
+    description: "Phân tích chi tiết số lượt xem và tương tác của độc giả.",
+  },
+  revenue: {
+    title: "Doanh thu",
+    description: "Quản lý ví thu nhập và lịch sử rút tiền thanh toán.",
   },
 };
 
@@ -1984,13 +2003,48 @@ function CreatorDashboardContent() {
                   isCancelingSchedule={cancelScheduleMutation.isPending}
                 />
               )
+            ) : activeView === "dashboard" ? (
+              <DashboardOverviewView
+                onNavigate={(view) =>
+                  setDashboardRouteState({
+                    view: view as any,
+                    seriesId: "",
+                    seasonId: "",
+                    episodeId: "",
+                  })
+                }
+              />
+            ) : activeView === "revenue" ? (
+              <DashboardOverviewView
+                onNavigate={(view) =>
+                  setDashboardRouteState({
+                    view: view as any,
+                    seriesId: "",
+                    seasonId: "",
+                    episodeId: "",
+                  })
+                }
+                initialTab="revenue"
+              />
+            ) : activeView === "analytics" ? (
+              <DashboardOverviewView
+                onNavigate={(view) =>
+                  setDashboardRouteState({
+                    view: view as any,
+                    seriesId: "",
+                    seasonId: "",
+                    episodeId: "",
+                  })
+                }
+                initialTab="overview"
+              />
             ) : activeView === "combos" ? (
               <ComboManagementView />
             ) : activeView === "monetization" ? (
               <CreatorMonetizationView
                 onBack={() =>
                   setDashboardRouteState({
-                    view: "series",
+                    view: "dashboard",
                     seriesId: "",
                     seasonId: "",
                     episodeId: "",
@@ -3185,7 +3239,7 @@ function EpisodeManagementView({
   onDeleteEpisode: (episode: EpisodeRow) => void;
 }) {
   return (
-    <div className="max-w-5xl mx-auto p-6 text-creator-text space-y-6">
+    <div className="w-full p-6 text-creator-text space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-2">
         <div>
@@ -3492,7 +3546,7 @@ function ComicUploadView({
 
   const [editForm, setEditForm] = useState({ episodeNumber: selectedEpisode.episodeNumber, title: selectedEpisode.title, description: selectedEpisode.description || "", unlockType: selectedEpisode.unlockType || "FREE", priceVnd: selectedEpisode.priceVnd || 0 });
   return (
-    <div className="max-w-6xl mx-auto p-6 text-creator-text space-y-8">
+    <div className="w-full p-6 text-creator-text space-y-8">
       {/* Header matching mockup */}
       <div>
         <button
@@ -3944,7 +3998,7 @@ function VideoUploadView({
   const [editForm, setEditForm] = useState({ episodeNumber: selectedEpisode.episodeNumber, title: selectedEpisode.title, description: selectedEpisode.description || "", unlockType: selectedEpisode.unlockType || "FREE", priceVnd: selectedEpisode.priceVnd || 0 });
   const canSchedule = videos.length > 0 && videos.every(isMediaReadyForPublish);
   return (
-    <div className="max-w-6xl mx-auto p-6 text-creator-text space-y-8">
+    <div className="w-full p-6 text-creator-text space-y-8">
       {/* Header matching mockup */}
       <div>
         <button

@@ -54,7 +54,7 @@ export function SeasonStructureStep({
   };
 
   return (
-    <div className="flex flex-col lg:flex-row gap-8 max-w-7xl mx-auto p-6 text-creator-text">
+    <div className="flex flex-col lg:flex-row gap-8 w-full p-6 text-creator-text">
       {/* Left Column - Visual Structure */}
       <div className="flex-1 space-y-6">
         <div>
