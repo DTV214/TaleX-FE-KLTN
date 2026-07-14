@@ -7,23 +7,15 @@ import {
   ArrowRight,
   Ban,
   BookOpen,
-  CalendarDays,
-  Check,
-  CheckCircle2,
-  Clock3,
   Crown,
   Film,
   Gem,
   Headphones,
   HelpCircle,
   Infinity,
-  Layers,
   Loader2,
-  Paperclip,
   PlayCircle,
-  Radio,
   ShieldCheck,
-  Sparkles,
   Star,
   TrendingUp,
   Tv,
@@ -33,11 +25,6 @@ import {
 
 import { useGetPremiumPackages } from "@/features/premium/api/premium.api";
 import type { Subscription } from "@/features/admin/subscriptions/types/subscriptions.types";
-import {
-  type PublicCombo,
-  type PublicComboEpisode,
-} from "@/features/public/api/public-content.api";
-import { useGetPublicCombos } from "@/features/public/hooks/use-public-combos";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import {
@@ -178,24 +165,6 @@ const trendSignals = [
   },
 ];
 
-const comboTimeline = [
-  {
-    title: "Gom tập nổi bật",
-    description: "Các episode cùng universe được đóng gói để dễ mua hơn.",
-    icon: Layers,
-  },
-  {
-    title: "Mở khóa một lần",
-    description: "Thanh toán một lần, tiếp tục xem không phải quay lại từng tập.",
-    icon: CheckCircle2,
-  },
-  {
-    title: "Theo dõi nhịp phát hành",
-    description: "Combo tạo cảm giác sở hữu trọn bộ, hợp với người xem marathon.",
-    icon: CalendarDays,
-  },
-];
-
 function formatCurrency(price: number) {
   return `${new Intl.NumberFormat("vi-VN").format(price)} VNĐ`;
 }
@@ -259,47 +228,6 @@ function getBenefits(subscription: Subscription): BenefitItem[] {
   });
 
   return benefits;
-}
-
-function getEpisodeLabel(episodes?: PublicComboEpisode[]) {
-  const count = episodes?.length ?? 0;
-
-  if (count <= 0) {
-    return "Danh sách tập chọn lọc trong vũ trụ TaleX";
-  }
-
-  return `${count} tập truyện/phim trong cùng một gói`;
-}
-
-function getComboFeatures(combo: PublicCombo) {
-  const features = [
-    getEpisodeLabel(combo.episodes),
-    combo.description || "Mở khóa combo nội dung với mức giá ưu đãi.",
-  ];
-
-  const seriesNames = Array.from(
-    new Set(
-      combo.episodes
-        ?.map((episode) => episode.seriesTitle)
-        .filter((value): value is string => Boolean(value)),
-    ),
-  );
-
-  if (seriesNames.length > 0) {
-    features.push(`Bao gồm: ${seriesNames.slice(0, 2).join(", ")}`);
-  }
-
-  return features;
-}
-
-function getHighlightComboId(combos: PublicCombo[]) {
-  if (combos.length === 0) {
-    return "";
-  }
-
-  return combos.reduce((current, combo) =>
-    combo.priceVnd > current.priceVnd ? combo : current,
-  ).comboId;
 }
 
 function SectionHeading({
@@ -650,120 +578,6 @@ function PricingSection() {
   );
 }
 
-function ComboSkeleton() {
-  return (
-    <div className="mx-auto grid max-w-6xl gap-5 md:grid-cols-2 xl:grid-cols-3">
-      {Array.from({ length: 3 }).map((_, index) => (
-        <div
-          key={index}
-          className="min-h-[340px] animate-pulse rounded-2xl border border-white/10 bg-[#121214] p-5"
-        >
-          <div className="h-11 w-11 rounded-xl bg-[#D4AF37]/15" />
-          <div className="mt-6 h-6 w-44 rounded-full bg-white/10" />
-          <div className="mt-4 h-4 w-full rounded-full bg-white/10" />
-          <div className="mt-3 h-4 w-4/5 rounded-full bg-white/10" />
-          <div className="mt-8 h-9 w-40 rounded-full bg-white/10" />
-          <div className="my-7 border-t border-white/10" />
-          <div className="space-y-4">
-            <div className="h-4 w-full rounded-full bg-white/10" />
-            <div className="h-4 w-5/6 rounded-full bg-white/10" />
-            <div className="h-4 w-3/4 rounded-full bg-white/10" />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function ComboCard({
-  combo,
-  isPopular,
-}: {
-  combo: PublicCombo;
-  isPopular: boolean;
-}) {
-  const router = useRouter();
-  const features = getComboFeatures(combo);
-  const originalPrice = combo.originalPriceVnd ?? combo.priceVnd;
-  const shouldShowOriginalPrice = originalPrice > combo.priceVnd;
-  const isPurchasable = combo.priceVnd > 0;
-
-  function handlePurchase() {
-    const params = new URLSearchParams({
-      itemId: combo.comboId,
-      itemType: "COMBO",
-      title: combo.title,
-    });
-    router.push(`/checkout-content?${params.toString()}`);
-  }
-
-  return (
-    <article
-      className={cn(
-        "group relative flex min-h-[320px] flex-col overflow-hidden rounded-2xl border bg-[#121214] p-4 shadow-[0_14px_36px_rgba(0,0,0,0.28)] transition-all duration-300 hover:-translate-y-1 sm:p-5",
-        isPopular
-          ? "border-[#D4AF37] shadow-[0_0_26px_rgba(212,175,55,0.16)]"
-          : "border-white/10 hover:border-[#D4AF37]/35",
-      )}
-    >
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(212,175,55,0.12),transparent_34%)]" />
-      <div className="relative z-10 flex flex-1 flex-col">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37]">
-            <Sparkles className="h-5 w-5" />
-          </div>
-          {isPopular ? (
-            <Badge variant="premium" className="text-xs font-medium">
-              Nổi bật
-            </Badge>
-          ) : null}
-        </div>
-
-        <h3 className="mt-4 text-lg font-semibold text-white/90">{combo.title}</h3>
-        <p className="mt-2 line-clamp-2 text-sm font-normal leading-6 text-slate-400">
-          {combo.description ||
-            "Combo nội dung điện ảnh được tuyển chọn cho trải nghiệm TaleX trọn vẹn."}
-        </p>
-
-        <div className="mt-5">
-          {shouldShowOriginalPrice && (
-            <p className="text-sm font-medium text-slate-500 line-through">
-              {formatCurrency(originalPrice)}
-            </p>
-          )}
-          <p className="mt-1 text-2xl font-semibold text-white/90">
-            {combo.priceVnd > 0 ? formatCurrency(combo.priceVnd) : "Liên hệ"}
-          </p>
-        </div>
-
-        <div className="my-4 border-t border-white/10" />
-
-        <ul className="flex flex-1 flex-col gap-3">
-          {features.map((feature) => (
-            <li
-              key={feature}
-              className="flex gap-3 text-sm font-medium leading-5 text-slate-300"
-            >
-              <Check className="mt-0.5 h-5 w-5 shrink-0 text-[#D4AF37]" />
-              <span>{feature}</span>
-            </li>
-          ))}
-        </ul>
-
-        <Button
-          type="button"
-          disabled={!isPurchasable}
-          onClick={handlePurchase}
-          className="mt-5 h-10 rounded-xl bg-[#D4AF37] text-sm font-semibold text-black transition hover:bg-[#F3CE5E] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-[#D4AF37]"
-        >
-          {isPurchasable ? "Mua gói này" : "Liên hệ để mua"}
-          <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover/button:translate-x-1" />
-        </Button>
-      </div>
-    </article>
-  );
-}
-
 function AudienceTrendBanner() {
   return (
     <section className="relative overflow-hidden bg-[#080808] py-8">
@@ -810,150 +624,6 @@ function AudienceTrendBanner() {
             </div>
           </div>
         </div>
-      </div>
-    </section>
-  );
-}
-
-function ComboIntroBanner() {
-  return (
-    <div className="mb-8 overflow-hidden rounded-2xl border border-white/10 bg-[#121214] shadow-2xl">
-      <div className="relative grid gap-5 p-5 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_20%,rgba(212,175,55,0.16),transparent_30%),radial-gradient(circle_at_88%_12%,rgba(151,176,255,0.10),transparent_28%)]" />
-        <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[#D4AF37]/45 to-transparent" />
-
-        <div className="relative z-10">
-          <Badge variant="premium" className="mb-3 px-3 py-1 text-xs font-medium">
-            Combo Studio
-          </Badge>
-          <h2 className="text-xl font-semibold tracking-normal text-white/90 sm:text-2xl">
-            Mua trọn bộ, xem liền mạch
-          </h2>
-          <p className="mt-3 max-w-2xl text-sm font-normal leading-6 text-slate-400">
-            Combo giúp gom các tập liên quan thành một hành trình rõ ràng: ít thao tác hơn, cảm giác sở hữu tốt hơn và phù hợp với người xem muốn theo dõi cả universe.
-          </p>
-
-          <div className="mt-5 grid gap-3 sm:grid-cols-3">
-            {[
-              { label: "Tập đã gom", value: "Curated", icon: Paperclip },
-              { label: "Nhịp xem", value: "Marathon", icon: Clock3 },
-              { label: "Tín hiệu", value: "Public", icon: Radio },
-            ].map((item) => {
-              const Icon = item.icon;
-
-              return (
-                <div
-                  key={item.label}
-                  className="rounded-xl border border-white/10 bg-black/25 p-3 transition hover:border-[#D4AF37]/30"
-                >
-                  <Icon className="mb-3 h-5 w-5 text-[#D4AF37]" />
-                  <p className="text-xs font-medium text-slate-500">
-                    {item.label}
-                  </p>
-                  <p className="mt-1 text-base font-semibold text-white/90">
-                    {item.value}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="relative z-10 rounded-2xl border border-white/10 bg-black/30 p-4">
-          <div className="mb-4 flex items-center justify-between">
-            <p className="text-xs font-medium text-[#D4AF37]">
-              Timeline mở khóa
-            </p>
-            <Sparkles className="h-5 w-5 text-[#D4AF37]" />
-          </div>
-          <div className="space-y-4">
-            {comboTimeline.map((item, index) => {
-              const Icon = item.icon;
-
-              return (
-                <div key={item.title} className="relative flex gap-4">
-                  {index < comboTimeline.length - 1 ? (
-                    <div className="absolute left-5 top-10 h-8 w-px bg-white/10" />
-                  ) : null}
-                  <div className="relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#D4AF37]/25 bg-[#D4AF37]/10 text-[#D4AF37]">
-                    <Icon className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="flex h-4 w-4 items-center justify-center rounded border border-[#D4AF37]/40 bg-[#D4AF37]/10">
-                        <Check className="h-3 w-3 text-[#D4AF37]" />
-                      </span>
-                      <h3 className="font-semibold text-white/90">{item.title}</h3>
-                    </div>
-                    <p className="mt-1 text-sm font-normal leading-5 text-slate-400">
-                      {item.description}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.03] p-3">
-            <div className="mb-2 flex items-center justify-between text-xs font-medium text-slate-400">
-              <span>Độ liền mạch</span>
-              <span className="text-[#F5D46E]">76%</span>
-            </div>
-            <Progress value={76} />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ComboSection() {
-  const combosQuery = useGetPublicCombos();
-  const combos = combosQuery.data ?? [];
-  const highlightComboId = getHighlightComboId(combos);
-
-  return (
-    <section className="relative overflow-hidden border-y border-white/10 bg-[#0A0A0A] py-8 lg:py-10">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(212,175,55,0.11),transparent_34%),radial-gradient(circle_at_10%_55%,rgba(151,176,255,0.08),transparent_28%),linear-gradient(180deg,rgba(255,255,255,0.035),transparent_46%)]" />
-      <div className="relative z-10 mx-auto w-full max-w-6xl px-4">
-        <ComboIntroBanner />
-        <SectionHeading
-          eyebrow="Combo độc quyền"
-          title="Các combo đang sẵn sàng mở khóa"
-          description="Các gói combo được gom từ nhiều tập nổi bật, giúp bạn mở khóa nội dung yêu thích với mức giá tốt hơn."
-        />
-
-        {combosQuery.isLoading && <ComboSkeleton />}
-
-        {combosQuery.isError && (
-          <ErrorState
-            title="Không thể tải danh sách Combo"
-            description="Vui lòng kiểm tra API /api/v1/public/combos hoặc thử lại sau."
-          />
-        )}
-
-        {!combosQuery.isLoading && !combosQuery.isError && combos.length === 0 && (
-          <EmptyState
-            title="Chưa có gói Combo public"
-            description="Khi Creator xuất bản combo, các thẻ mua gói sẽ tự động xuất hiện tại đây."
-          />
-        )}
-
-        {!combosQuery.isLoading && !combosQuery.isError && combos.length > 0 && (
-          <div
-            className={cn(
-              "grid gap-4",
-              combos.length === 1 ? "mx-auto max-w-md" : "md:grid-cols-2 xl:grid-cols-3",
-            )}
-          >
-            {combos.map((combo) => (
-              <ComboCard
-                key={combo.comboId}
-                combo={combo}
-                isPopular={combo.comboId === highlightComboId}
-              />
-            ))}
-          </div>
-        )}
       </div>
     </section>
   );
@@ -1076,7 +746,6 @@ export default function PremiumPage() {
       <PremiumHero />
       <PricingSection />
       <AudienceTrendBanner />
-      <ComboSection />
       <TestimonialsSection />
       <BenefitsSection />
       <SupportCta />

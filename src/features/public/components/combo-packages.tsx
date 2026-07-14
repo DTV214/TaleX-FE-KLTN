@@ -57,7 +57,7 @@ function getHighlightComboId(combos: PublicCombo[]) {
   ).comboId;
 }
 
-function ComboCard({
+export function ComboCard({
   combo,
   isPopular,
 }: {

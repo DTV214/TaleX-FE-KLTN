@@ -18,6 +18,7 @@ export type OwnCreatorResponse = {
   avatarUrl?: string;
   bio?: string;
   status?: string;
+  createdAt?: string;
   isAcceptedLatestTerms: boolean;
   termsVersion?: CreatorTermsVersion | null;
 };

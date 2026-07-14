@@ -21,6 +21,7 @@ import {
   Heart,
   Users,
   Film,
+  Flame,
 } from "lucide-react";
 import { isFullProfile, useAuthStore } from "@/features/auth/store/auth.store";
 import {
@@ -30,8 +31,10 @@ import {
   isCreatorNotFoundError,
 } from "@/features/creator-dashboard/api/creator-onboarding-api";
 import { listSeriesByCreator } from "@/features/creator-dashboard/api/creator-content-api";
+import { ComboCard } from "@/features/public/components/combo-packages";
+import { useGetPublicCombos } from "@/features/public/hooks/use-public-combos";
 
-type TabType = "home" | "comics" | "movies" | "about";
+type TabType = "home" | "comics" | "movies" | "about" | "combo";
 
 export default function CreatorChannelPage() {
   const router = useRouter();
@@ -74,6 +77,12 @@ export default function CreatorChannelPage() {
   });
 
   const series = seriesData?.content || [];
+
+  // 3. Fetch this Creator's own Combo packages
+  const combosQuery = useGetPublicCombos();
+  const creatorCombos = (combosQuery.data ?? []).filter(
+    (combo) => combo.creatorId === creator?.creatorId,
+  );
 
   const handleItemPress = (seriesId: string) => {
     router.push(`/series/${seriesId}`);
@@ -174,7 +183,7 @@ export default function CreatorChannelPage() {
             <div className="relative h-[260px] md:h-[320px] w-full rounded-3xl overflow-hidden bg-zinc-950 border border-white/[0.06] shadow-xl">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={creator?.bannerUrl || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80"}
+                src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80"
                 alt="Banner"
                 className="h-full w-full object-cover"
               />
@@ -298,8 +307,42 @@ export default function CreatorChannelPage() {
                 { id: "comics", label: "Truyện tranh" },
                 { id: "movies", label: "Phim ảnh" },
                 { id: "about", label: "Giới thiệu" },
+                { id: "combo", label: "Combo" },
               ] as const).map((tab) => {
                 const isActive = activeTab === tab.id;
+                const isCombo = tab.id === "combo";
+
+                if (isCombo) {
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`py-3.5 px-2 text-sm font-black relative transition-colors cursor-pointer outline-none focus:outline-none flex items-center gap-1.5 ${
+                        isActive ? "text-red-500" : "text-red-500/70 hover:text-red-400"
+                      }`}
+                    >
+                      <Flame
+                        className={`h-4 w-4 ${isActive ? "animate-pulse" : ""}`}
+                        fill="currentColor"
+                      />
+                      {tab.label}
+                      {creatorCombos.length > 0 && (
+                        <span className="ml-0.5 rounded-full bg-red-500 px-1.5 py-0.5 text-[9px] font-black leading-none text-white shadow-[0_0_10px_rgba(239,68,68,0.6)]">
+                          HOT
+                        </span>
+                      )}
+                      {isActive && (
+                        <motion.span
+                          layoutId="activeTabUnderline"
+                          className="absolute bottom-0 left-0 right-0 h-[2px] bg-red-500 rounded-full shadow-[0_0_8px_rgba(239,68,68,0.7)]"
+                          transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                        />
+                      )}
+                    </button>
+                  );
+                }
+
                 return (
                   <button
                     key={tab.id}
@@ -631,6 +674,50 @@ export default function CreatorChannelPage() {
                       </div>
                     </div>
                   </div>
+                </div>
+              )}
+
+              {activeTab === "combo" && (
+                <div className="space-y-6">
+                  <div className="relative overflow-hidden rounded-2xl border border-red-500/25 bg-gradient-to-br from-red-950/40 via-[#17171C] to-[#111114] p-6 shadow-[0_20px_50px_rgba(239,68,68,0.08)]">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-red-500/[0.08] rounded-full blur-[100px] pointer-events-none" />
+                    <div className="relative z-10 flex items-center gap-3">
+                      <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-red-500/30 bg-red-500/10 text-red-500">
+                        <Flame className="h-5.5 w-5.5" fill="currentColor" />
+                      </span>
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-red-500">
+                          Combo độc quyền của kênh
+                        </p>
+                        <h3 className="text-xl font-black text-white mt-0.5">
+                          Mua trọn combo, tiết kiệm hơn mua lẻ
+                        </h3>
+                      </div>
+                    </div>
+                  </div>
+
+                  {combosQuery.isLoading ? (
+                    <div className="flex h-48 items-center justify-center">
+                      <div className="h-8 w-8 animate-spin rounded-full border-2 border-red-500 border-t-transparent" />
+                    </div>
+                  ) : creatorCombos.length === 0 ? (
+                    <div className="flex h-36 flex-col items-center justify-center p-8 text-center border border-dashed border-red-500/20 rounded-2xl bg-[#111114] w-full">
+                      <Flame className="h-8 w-8 text-red-500/60 mb-2" />
+                      <p className="text-xs font-semibold text-zinc-500">
+                        Kênh này chưa có combo nào được xuất bản.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                      {creatorCombos.map((combo, index) => (
+                        <ComboCard
+                          key={combo.comboId}
+                          combo={combo}
+                          isPopular={index === 0}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
