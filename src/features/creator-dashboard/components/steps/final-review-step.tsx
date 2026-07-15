@@ -141,7 +141,7 @@ export function FinalReviewStep({
   });
 
   return (
-    <div className="flex flex-col lg:flex-row gap-8 w-full p-6 text-creator-text">
+    <div className="flex flex-col lg:flex-row gap-8 w-full py-6 text-creator-text">
       {/* Left - Video Preview & Episode Details */}
       <div className="flex flex-1 flex-col gap-6">
         <div>

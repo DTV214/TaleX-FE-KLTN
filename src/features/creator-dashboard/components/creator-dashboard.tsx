@@ -3239,7 +3239,7 @@ function EpisodeManagementView({
   onDeleteEpisode: (episode: EpisodeRow) => void;
 }) {
   return (
-    <div className="w-full p-6 text-creator-text space-y-6">
+    <div className="w-full py-6 text-creator-text space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-2">
         <div>
@@ -3546,7 +3546,7 @@ function ComicUploadView({
 
   const [editForm, setEditForm] = useState({ episodeNumber: selectedEpisode.episodeNumber, title: selectedEpisode.title, description: selectedEpisode.description || "", unlockType: selectedEpisode.unlockType || "FREE", priceVnd: selectedEpisode.priceVnd || 0 });
   return (
-    <div className="w-full p-6 text-creator-text space-y-8">
+    <div className="w-full py-6 text-creator-text space-y-8">
       {/* Header matching mockup */}
       <div>
         <button
@@ -3998,7 +3998,7 @@ function VideoUploadView({
   const [editForm, setEditForm] = useState({ episodeNumber: selectedEpisode.episodeNumber, title: selectedEpisode.title, description: selectedEpisode.description || "", unlockType: selectedEpisode.unlockType || "FREE", priceVnd: selectedEpisode.priceVnd || 0 });
   const canSchedule = videos.length > 0 && videos.every(isMediaReadyForPublish);
   return (
-    <div className="w-full p-6 text-creator-text space-y-8">
+    <div className="w-full py-6 text-creator-text space-y-8">
       {/* Header matching mockup */}
       <div>
         <button

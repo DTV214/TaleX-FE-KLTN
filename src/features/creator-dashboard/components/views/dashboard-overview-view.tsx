@@ -111,7 +111,7 @@ export function DashboardOverviewView({ onNavigate, initialTab = "overview" }: D
   ];
 
   return (
-    <div className="w-full px-8 py-6 space-y-6">
+    <div className="w-full py-6 space-y-6">
       {/* ================= CHANNEL INFO CARD ================= */}
       <div className="relative overflow-hidden rounded-2xl border border-white/5 bg-gradient-to-br from-[#2E1E1E] to-[#1E1E22] p-6 shadow-xl">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_120%,rgba(212,175,55,0.08),transparent_50%)]" />

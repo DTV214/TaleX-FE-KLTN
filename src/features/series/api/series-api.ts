@@ -70,6 +70,7 @@ export type PublicEpisodeItem = {
   episodeNumber: number;
   title: string;
   description?: string;
+  thumbnail?: string;
   contentType: ContentType;
   status: string;
   scheduledPublishAt: string | null;

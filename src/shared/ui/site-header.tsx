@@ -37,9 +37,7 @@ export function SiteHeader() {
   const profileUser = isFullProfile(user) ? user : null;
   const isPremiumMember = Boolean(activeSubscriptionQuery.data);
   const avatarLabel =
-    profileUser?.username.slice(0, 2) ||
-    user?.roleName.slice(0, 2) ||
-    "TX";
+    profileUser?.username.slice(0, 2) || user?.roleName.slice(0, 2) || "TX";
   const isAdminRole = user?.roleName === "ADMIN" || user?.roleName === "STAFF";
   const workspaceMenu = {
     href: isAdminRole ? "/admin/dashboard" : "/creator-dashboard",
@@ -188,6 +186,14 @@ export function SiteHeader() {
                           ? `@${profileUser.username}`
                           : user.roleName}
                       </p>
+                      {user?.roleName !== "ADMIN" && user?.roleName !== "STAFF" && (
+                        <DropdownMenu.Item
+                          onSelect={() => router.push("/creator-channel")}
+                          className="mt-2 block text-left text-xs font-bold text-[#D4AF37] hover:underline cursor-pointer outline-none select-none"
+                        >
+                          Xem kênh của tôi
+                        </DropdownMenu.Item>
+                      )}
                     </div>
 
                     <DropdownMenu.Item

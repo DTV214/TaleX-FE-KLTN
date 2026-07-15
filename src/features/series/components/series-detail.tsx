@@ -27,6 +27,7 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useGetPublicCombos } from "@/features/public/hooks/use-public-combos";
 
 interface SeriesDetailProps {
   seriesId: string;
@@ -36,6 +37,9 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
   const router = useRouter();
   const [selectedSeasonId, setSelectedSeasonId] = useState<string | null>(null);
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const [expandedCombos, setExpandedCombos] = useState<Record<string, boolean>>(
+    {},
+  );
 
   // 1. Fetch thông tin chi tiết Series
   const {
@@ -48,19 +52,21 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
     queryFn: () => getPublicSeriesDetail(seriesId),
   });
 
+  // 1.5 Fetch public combos
+  const combosQuery = useGetPublicCombos();
+  const combos = combosQuery.data ?? [];
+
   // 2. Fetch danh sách Seasons của Series
-  const {
-    data: seasons = [],
-    isLoading: isSeasonsLoading,
-  } = useQuery({
+  const { data: seasons = [], isLoading: isSeasonsLoading } = useQuery({
     queryKey: ["publicSeriesSeasons", seriesId],
     queryFn: () => getPublicSeasons(seriesId),
   });
 
   // Lấy season đầu tiên khi load xong list season để làm mặc định
-  const defaultSeasonId = seasons.length > 0
-    ? [...seasons].sort((a, b) => a.seasonNumber - b.seasonNumber)[0].seasonId
-    : null;
+  const defaultSeasonId =
+    seasons.length > 0
+      ? [...seasons].sort((a, b) => a.seasonNumber - b.seasonNumber)[0].seasonId
+      : null;
 
   const activeSeasonId = selectedSeasonId || defaultSeasonId;
 
@@ -77,10 +83,24 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
   });
 
   // Sắp xếp các episode theo episodeNumber
-  const sortedEpisodes = [...episodes].sort((a, b) => a.episodeNumber - b.episodeNumber);
+  const sortedEpisodes = [...episodes].sort(
+    (a, b) => a.episodeNumber - b.episodeNumber,
+  );
 
   // Lấy tập đầu tiên để làm nút "Xem từ đầu"
   const firstEpisodeId = sortedEpisodes[0]?.episodeId;
+
+  // Lọc các combo thuộc về Series này
+  const seasonIds = new Set(seasons.map((s) => s.seasonId));
+  const seriesCombos = combos.filter((combo) => {
+    if (!combo.episodes || combo.episodes.length === 0) return false;
+    return combo.episodes.some(
+      (ep) =>
+        (ep.seasonId && seasonIds.has(ep.seasonId)) ||
+        (series?.title &&
+          ep.seriesTitle?.toLowerCase() === series.title.toLowerCase()),
+    );
+  });
 
   // Giả lập chức năng đăng ký/theo dõi series
   const handleSubscribeToggle = () => {
@@ -97,7 +117,9 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
     return (
       <div className="w-full min-h-screen bg-[#0B0B0C] text-white flex flex-col items-center justify-center p-6">
         <div className="w-12 h-12 rounded-full border-2 border-t-[#D4AF37] border-r-transparent border-b-transparent border-l-transparent animate-spin mb-4" />
-        <p className="text-gray-400 text-sm animate-pulse">Đang tải thông tin series...</p>
+        <p className="text-gray-400 text-sm animate-pulse">
+          Đang tải thông tin series...
+        </p>
       </div>
     );
   }
@@ -111,7 +133,9 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
         </div>
         <h3 className="text-xl font-bold mb-2">Tải thông tin thất bại</h3>
         <p className="text-gray-400 text-sm mb-6">
-          {seriesError instanceof Error ? seriesError.message : "Series không tồn tại hoặc đã bị ẩn."}
+          {seriesError instanceof Error
+            ? seriesError.message
+            : "Series không tồn tại hoặc đã bị ẩn."}
         </p>
         <button
           onClick={() => router.push("/series")}
@@ -125,7 +149,6 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
 
   return (
     <div className="w-full min-h-screen bg-[#0B0B0C] text-white relative pb-24 overflow-hidden">
-      
       {/* 1. Backdrop Banner với blur và gradient */}
       <div className="absolute top-0 left-0 w-full h-[65vh] min-h-[500px] z-0">
         {series.bannerUrl ? (
@@ -138,23 +161,28 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
         )}
         {/* Lớp phủ gradient chìm vào nền tối */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/60 to-[#0B0B0C]" />
-        <div className="absolute inset-0 bg-radial-gradient" style={{ background: "radial-gradient(circle at 50% 30%, transparent 20%, #0B0B0C 85%)" }} />
+        <div
+          className="absolute inset-0 bg-radial-gradient"
+          style={{
+            background:
+              "radial-gradient(circle at 50% 30%, transparent 20%, #0B0B0C 85%)",
+          }}
+        />
       </div>
 
       {/* 2. Main Content Container */}
       <div className="container mx-auto px-4 md:px-8 relative z-10 pt-8 md:pt-16">
-        
         {/* Quay lại */}
         <Link
           href="/series"
           className="inline-flex items-center text-xs font-bold text-gray-400 hover:text-white transition-colors uppercase tracking-wider mb-8 md:mb-12 group"
         >
-          <ChevronRight className="w-4 h-4 mr-1.5 rotate-180 transition-transform group-hover:-translate-x-1" /> Quay lại thư viện
+          <ChevronRight className="w-4 h-4 mr-1.5 rotate-180 transition-transform group-hover:-translate-x-1" />{" "}
+          Quay lại thư viện
         </Link>
 
         {/* Cụm Header thông tin series */}
         <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-start mb-16">
-          
           {/* Cột Trái: Ảnh bìa đứng */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -176,14 +204,16 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
                 )}
               </div>
             )}
-            
+
             {/* Nhãn loại nội dung ở góc ảnh */}
             <div className="absolute top-4 left-4">
-              <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-md text-[10px] font-bold tracking-wide uppercase backdrop-blur-md border ${
-                series.contentType === "VIDEO"
-                  ? "bg-red-500/10 text-red-400 border-red-500/20"
-                  : "bg-blue-500/10 text-blue-400 border-blue-500/20"
-              }`}>
+              <span
+                className={`inline-flex items-center gap-1 px-3 py-1 rounded-md text-[10px] font-bold tracking-wide uppercase backdrop-blur-md border ${
+                  series.contentType === "VIDEO"
+                    ? "bg-red-500/10 text-red-400 border-red-500/20"
+                    : "bg-blue-500/10 text-blue-400 border-blue-500/20"
+                }`}
+              >
                 {series.contentType === "VIDEO" ? "Phim bộ" : "Truyện tranh"}
               </span>
             </div>
@@ -196,7 +226,6 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="flex-1"
           >
-            
             {/* Cụm Badge thông số nhỏ */}
             <div className="flex flex-wrap items-center gap-3 mb-4 text-xs font-semibold text-gray-400">
               {series.ageRating && (
@@ -206,14 +235,17 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
               )}
               {series.language && (
                 <span className="flex items-center gap-1 bg-white/[0.04] border border-white/5 px-2.5 py-1 rounded">
-                  <Languages className="w-3.5 h-3.5 text-[#D4AF37]" /> {series.language.toUpperCase()}
+                  <Languages className="w-3.5 h-3.5 text-[#D4AF37]" />{" "}
+                  {series.language.toUpperCase()}
                 </span>
               )}
               <span className="flex items-center gap-1 bg-white/[0.04] border border-white/5 px-2.5 py-1 rounded">
-                <Eye className="w-3.5 h-3.5 text-gray-400" /> {series.totalViews.toLocaleString("vi-VN")} lượt xem
+                <Eye className="w-3.5 h-3.5 text-gray-400" />{" "}
+                {series.totalViews.toLocaleString("vi-VN")} lượt xem
               </span>
               <span className="flex items-center gap-1 bg-white/[0.04] border border-white/5 px-2.5 py-1 rounded">
-                <Users className="w-3.5 h-3.5 text-gray-400" /> {series.totalSubscriptions.toLocaleString("vi-VN")} theo dõi
+                <Users className="w-3.5 h-3.5 text-gray-400" />{" "}
+                {series.totalSubscriptions.toLocaleString("vi-VN")} theo dõi
               </span>
             </div>
 
@@ -244,9 +276,12 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
 
             {/* Mô tả dài */}
             <div className="max-w-3xl mb-8">
-              <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-2">Giới thiệu nội dung</h3>
+              <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-2">
+                Giới thiệu nội dung
+              </h3>
               <p className="text-gray-300 text-sm sm:text-base leading-relaxed">
-                {series.description || "Chưa có nội dung giới thiệu chi tiết cho tác phẩm này."}
+                {series.description ||
+                  "Chưa có nội dung giới thiệu chi tiết cho tác phẩm này."}
               </p>
             </div>
 
@@ -257,7 +292,10 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
                   href={`/${series.contentType === "COMIC" ? "read" : "watch"}/${firstEpisodeId}`}
                   className="px-8 py-3.5 bg-[#D4AF37] hover:bg-[#E5C158] text-black font-extrabold rounded-2xl flex items-center justify-center gap-2 shadow-[0_6px_25px_rgba(212,175,55,0.3)] transition-all duration-300 hover:scale-[1.02]"
                 >
-                  <Play className="w-5 h-5 fill-current" /> {series.contentType === "COMIC" ? "Đọc tập đầu tiên" : "Xem tập đầu tiên"}
+                  <Play className="w-5 h-5 fill-current" />{" "}
+                  {series.contentType === "COMIC"
+                    ? "Đọc tập đầu tiên"
+                    : "Xem tập đầu tiên"}
                 </Link>
               ) : (
                 <button
@@ -287,13 +325,155 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
                 )}
               </button>
             </div>
-
           </motion.div>
         </div>
 
+        {/* 2.5. Section: Gói Combo Ưu Đãi (chỉ hiển thị nếu có combo cho series này) */}
+        {!combosQuery.isLoading && seriesCombos.length > 0 && (
+          <section className="w-full bg-[#121214]/40 border border-white/5 rounded-3xl p-6 md:p-8 backdrop-blur-md shadow-2xl relative mb-10 overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37]/5 to-transparent pointer-events-none rounded-3xl" />
+            <div className="relative z-10">
+              <div className="mb-6 flex flex-col gap-2">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black tracking-wider uppercase border border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37] self-start">
+                  <Sparkles className="w-3.5 h-3.5" /> COMBO ƯU ĐÃI ĐỘC QUYỀN
+                </span>
+                <h2 className="text-2xl font-bold text-white tracking-wide">
+                  Mua trọn gói - Tiết kiệm đến 40%
+                </h2>
+                <p className="text-xs text-gray-400">
+                  Mở khóa hàng loạt tập phim/truyện cùng lúc với mức giá tốt
+                  nhất để xem không bị gián đoạn.
+                </p>
+              </div>
+
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {seriesCombos.map((combo) => {
+                  const originalPrice =
+                    combo.originalPriceVnd ?? combo.priceVnd;
+                  const discountPercentage =
+                    originalPrice > combo.priceVnd
+                      ? Math.round(
+                          ((originalPrice - combo.priceVnd) / originalPrice) *
+                            100,
+                        )
+                      : 0;
+                  const isPurchasable = combo.priceVnd > 0;
+                  const episodeCount = combo.episodes?.length ?? 0;
+
+                  return (
+                    <div
+                      key={combo.comboId}
+                      className="relative flex flex-col justify-between rounded-2xl border border-white/10 bg-[#161619] p-6 shadow-xl transition-all duration-300 hover:border-[#D4AF37]/50 hover:shadow-[0_0_24px_rgba(212,175,55,0.08)] group"
+                    >
+                      {discountPercentage > 0 && (
+                        <div className="absolute top-4 right-4 z-10">
+                          <span className="inline-flex items-center rounded-full bg-red-500/10 border border-red-500/20 px-2.5 py-1 text-xs font-black text-red-400">
+                            Tiết kiệm {discountPercentage}%
+                          </span>
+                        </div>
+                      )}
+
+                      <div className="space-y-4">
+                        <div>
+                          <h3 className="font-bold text-lg text-white group-hover:text-[#D4AF37] transition-colors duration-200 line-clamp-1">
+                            {combo.title}
+                          </h3>
+                          <p className="mt-2 text-xs text-gray-400 line-clamp-2 leading-relaxed">
+                            {combo.description ||
+                              "Mở khóa nhiều tập cùng lúc với giá tốt."}
+                          </p>
+                        </div>
+
+                        {combo.episodes && combo.episodes.length > 0 && (
+                          <div className="border-t border-white/5 pt-3">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setExpandedCombos((prev) => ({
+                                  ...prev,
+                                  [combo.comboId]: !prev[combo.comboId],
+                                }));
+                              }}
+                              className="text-xs font-bold text-[#D4AF37] hover:text-[#F3CE5E] flex items-center gap-1 cursor-pointer focus:outline-none"
+                            >
+                              {expandedCombos[combo.comboId]
+                                ? "Ẩn danh sách tập"
+                                : "Xem danh sách tập bao gồm"}
+                              <ChevronRight
+                                className={`w-3.5 h-3.5 transition-transform duration-200 ${expandedCombos[combo.comboId] ? "rotate-90" : ""}`}
+                              />
+                            </button>
+                            {expandedCombos[combo.comboId] && (
+                              <ul className="mt-2 max-h-32 overflow-y-auto space-y-1.5 pl-2 text-xs text-gray-400 no-scrollbar">
+                                {combo.episodes.map((ep) => (
+                                  <li
+                                    key={ep.episodeId}
+                                    className="flex items-center gap-1.5"
+                                  >
+                                    <span className="w-1 h-1 rounded-full bg-[#D4AF37] shrink-0" />
+                                    <span className="truncate">
+                                      {ep.episodeNumber != null
+                                        ? `Tập ${ep.episodeNumber}: `
+                                        : ""}
+                                      {ep.title}
+                                    </span>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </div>
+                        )}
+
+                        <div className="space-y-2 text-xs bg-black/40 rounded-xl border border-white/5 p-4">
+                          <div className="flex justify-between items-center text-gray-300">
+                            <span>Số lượng tập:</span>
+                            <span className="font-bold text-white">
+                              {episodeCount} tập
+                            </span>
+                          </div>
+                          {originalPrice > combo.priceVnd && (
+                            <div className="flex justify-between items-center text-gray-400">
+                              <span>Giá gốc:</span>
+                              <span className="line-through">
+                                {originalPrice.toLocaleString("vi-VN")} đ
+                              </span>
+                            </div>
+                          )}
+                          <div className="flex justify-between items-center pt-1.5 border-t border-white/5">
+                            <span className="font-bold text-gray-300">
+                              Giá combo:
+                            </span>
+                            <span className="text-base font-black text-[#D4AF37]">
+                              {combo.priceVnd.toLocaleString("vi-VN")} đ
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          const params = new URLSearchParams({
+                            itemId: combo.comboId,
+                            itemType: "COMBO",
+                            title: combo.title,
+                          });
+                          router.push(`/checkout-content?${params.toString()}`);
+                        }}
+                        disabled={!isPurchasable}
+                        className="mt-6 w-full rounded-xl bg-[#D4AF37] py-3 text-xs font-bold text-black transition-all hover:bg-[#F3CE5E] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+                      >
+                        {isPurchasable ? "Mua Gói Ngay" : "Liên hệ để mua"}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* 3. Section: Season Selector & Episodes list */}
         <section className="w-full bg-[#121214]/40 border border-white/5 rounded-3xl p-6 md:p-8 backdrop-blur-md shadow-2xl relative">
-          
           {/* Lớp nền mờ */}
           <div className="absolute inset-0 bg-gradient-to-br from-white/[0.01] to-transparent pointer-events-none rounded-3xl" />
 
@@ -301,9 +481,12 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 relative z-10 border-b border-white/5 pb-6">
             <div>
               <h2 className="text-xl md:text-2xl font-bold tracking-wide flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-[#D4AF37]" /> Danh Sách Tập Phim
+                <Sparkles className="w-5 h-5 text-[#D4AF37]" /> Danh Sách Tập
+                Phim
               </h2>
-              <p className="text-xs text-gray-500 mt-1">Chọn phần phim để xem danh sách các tập tương ứng.</p>
+              <p className="text-xs text-gray-500 mt-1">
+                Chọn phần phim để xem danh sách các tập tương ứng.
+              </p>
             </div>
 
             {/* Tabs chọn phần phim (Seasons) */}
@@ -336,7 +519,9 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
           {!isSeasonsLoading && seasons.length === 0 && (
             <div className="py-12 text-center max-w-sm mx-auto text-gray-500">
               <AlertCircle className="w-10 h-10 text-gray-600 mx-auto mb-4" />
-              <p className="text-sm font-medium">Hiện tại chưa có phần phim (Season) nào được công bố.</p>
+              <p className="text-sm font-medium">
+                Hiện tại chưa có phần phim (Season) nào được công bố.
+              </p>
             </div>
           )}
 
@@ -344,7 +529,10 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
           {isEpisodesLoading && (
             <div className="space-y-4 relative z-10">
               {Array.from({ length: 3 }).map((_, idx) => (
-                <div key={idx} className="flex gap-4 p-4 bg-white/[0.01] border border-white/5 rounded-2xl animate-pulse">
+                <div
+                  key={idx}
+                  className="flex gap-4 p-4 bg-white/[0.01] border border-white/5 rounded-2xl animate-pulse"
+                >
                   <div className="w-32 sm:w-44 aspect-video rounded-xl bg-white/[0.04]" />
                   <div className="flex-1 space-y-2.5 py-1">
                     <div className="h-5 bg-white/[0.04] rounded-md w-1/3" />
@@ -360,7 +548,9 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
           {isEpisodesError && !isEpisodesLoading && (
             <div className="py-12 text-center max-w-sm mx-auto relative z-10">
               <AlertCircle className="w-10 h-10 text-red-500 mx-auto mb-4" />
-              <p className="text-sm font-bold text-white mb-4">Lỗi tải danh sách tập phim</p>
+              <p className="text-sm font-bold text-white mb-4">
+                Lỗi tải danh sách tập phim
+              </p>
               <button
                 onClick={() => refetchEpisodes()}
                 className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-semibold"
@@ -371,12 +561,17 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
           )}
 
           {/* TRẠNG THÁI EPISODES HIỂN THỊ RỖNG */}
-          {!isSeasonsLoading && seasons.length > 0 && !isEpisodesLoading && episodes.length === 0 && (
-            <div className="py-12 text-center max-w-sm mx-auto text-gray-500 relative z-10">
-              <AlertCircle className="w-10 h-10 text-gray-600 mx-auto mb-4" />
-              <p className="text-sm font-medium">Không tìm thấy tập phim nào trong phần này.</p>
-            </div>
-          )}
+          {!isSeasonsLoading &&
+            seasons.length > 0 &&
+            !isEpisodesLoading &&
+            episodes.length === 0 && (
+              <div className="py-12 text-center max-w-sm mx-auto text-gray-500 relative z-10">
+                <AlertCircle className="w-10 h-10 text-gray-600 mx-auto mb-4" />
+                <p className="text-sm font-medium">
+                  Không tìm thấy tập phim nào trong phần này.
+                </p>
+              </div>
+            )}
 
           {/* DANH SÁCH TẬP PHIM */}
           {!isEpisodesLoading && !isEpisodesError && episodes.length > 0 && (
@@ -403,10 +598,8 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
                     }}
                     className="group relative flex flex-col sm:flex-row gap-4 p-4 md:p-5 rounded-2xl bg-white/[0.01] hover:bg-white/[0.03] border border-white/5 hover:border-[#D4AF37]/35 shadow-lg transition-all duration-300"
                   >
-                    
                     {/* Ảnh thu nhỏ (Thumbnail/Play button) */}
                     <div className="w-full sm:w-44 md:w-52 flex-none aspect-video rounded-xl overflow-hidden bg-white/[0.02] border border-white/5 relative group-hover:border-[#D4AF37]/50 shadow-md">
-                      
                       {/* Play overlay */}
                       <div className="absolute inset-0 bg-black/30 group-hover:bg-black/40 transition-colors z-10 flex items-center justify-center">
                         <div className="w-10 h-10 rounded-full bg-[#D4AF37]/80 group-hover:bg-[#D4AF37] group-hover:scale-110 flex items-center justify-center text-black shadow-lg transition duration-300">
@@ -416,11 +609,13 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
 
                       {/* Trạng thái khóa / mở */}
                       <div className="absolute top-2.5 right-2.5 z-20">
-                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-bold tracking-wide uppercase ${
-                          isPaid
-                            ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
-                            : "bg-green-500/10 text-green-400 border border-green-500/20"
-                        }`}>
+                        <span
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-bold tracking-wide uppercase ${
+                            isPaid
+                              ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                              : "bg-green-500/10 text-green-400 border border-green-500/20"
+                          }`}
+                        >
                           {isPaid ? (
                             <>
                               <Lock className="w-2.5 h-2.5" /> Trả phí
@@ -438,6 +633,7 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
                         className="w-full h-full bg-cover bg-center"
                         style={{
                           backgroundImage: `url(${
+                            episode.thumbnail ||
                             series.coverUrl ||
                             "https://images.unsplash.com/photo-1478760329108-5c3ed9d495a0?q=80&w=500&auto=format&fit=crop"
                           })`,
@@ -447,20 +643,25 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
 
                     {/* Văn bản nội dung tập phim */}
                     <div className="flex-1 flex flex-col justify-center min-w-0">
-                      
                       {/* Tập và Tiêu đề */}
                       <h3 className="text-white font-bold text-base md:text-lg line-clamp-1 group-hover:text-[#D4AF37] transition-colors duration-200 mb-1.5 flex items-center gap-2">
-                        <span className="text-gray-500 font-medium">Tập {episode.episodeNumber}:</span>
+                        <span className="text-gray-500 font-medium">
+                          Tập {episode.episodeNumber}:
+                        </span>
                         <span>{episode.title}</span>
                       </h3>
 
                       {/* Thông tin phụ: ngày phát hành / lượt xem */}
                       <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500 font-medium mb-3">
                         <span className="flex items-center gap-1">
-                          <Calendar className="w-3.5 h-3.5 text-gray-600" /> {new Date(episode.publishedAt).toLocaleDateString("vi-VN")}
+                          <Calendar className="w-3.5 h-3.5 text-gray-600" />{" "}
+                          {new Date(episode.publishedAt).toLocaleDateString(
+                            "vi-VN",
+                          )}
                         </span>
                         <span className="flex items-center gap-1">
-                          <Eye className="w-3.5 h-3.5 text-gray-600" /> {episode.views.toLocaleString("vi-VN")} lượt xem
+                          <Eye className="w-3.5 h-3.5 text-gray-600" />{" "}
+                          {episode.views.toLocaleString("vi-VN")} lượt xem
                         </span>
                         {isPaid && episode.priceVnd > 0 && (
                           <span className="text-[#D4AF37] font-bold">
@@ -475,9 +676,10 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
                           {episode.description}
                         </p>
                       ) : (
-                        <p className="text-gray-500 text-xs italic">Không có mô tả tập phim.</p>
+                        <p className="text-gray-500 text-xs italic">
+                          Không có mô tả tập phim.
+                        </p>
                       )}
-
                     </div>
 
                     {/* Nút hành động bên góc phải (Chỉ hiển thị trên md screen) */}
@@ -486,18 +688,17 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
                         href={`/${series.contentType === "COMIC" ? "read" : "watch"}/${episode.episodeId}`}
                         className="px-5 py-2.5 bg-white/[0.04] group-hover:bg-[#D4AF37] text-white group-hover:text-black font-bold rounded-xl text-sm transition-all duration-300 whitespace-nowrap shadow-md group-hover:shadow-[0_4px_12px_rgba(212,175,55,0.2)]"
                       >
-                        {series.contentType === "COMIC" ? "Đọc Ngay" : "Xem Ngay"}
+                        {series.contentType === "COMIC"
+                          ? "Đọc Ngay"
+                          : "Xem Ngay"}
                       </Link>
                     </div>
-
                   </motion.div>
                 );
               })}
             </motion.div>
           )}
-
         </section>
-
       </div>
     </div>
   );

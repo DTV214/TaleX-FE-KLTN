@@ -16,11 +16,14 @@ export type OwnCreatorResponse = {
   accountId?: string;
   displayName?: string;
   avatarUrl?: string;
+  bannerUrl?: string;
   bio?: string;
   status?: string;
   createdAt?: string;
   isAcceptedLatestTerms: boolean;
   termsVersion?: CreatorTermsVersion | null;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 export type RegisterCreatorResponse = OwnCreatorResponse;

@@ -16,7 +16,9 @@ import {
   Tag,
   Zap,
   Home,
+  Tv,
 } from "lucide-react";
+import { DropdownMenu } from "radix-ui";
 import { logoutAction } from "@/features/auth/api/auth.actions";
 import { isFullProfile, useAuthStore } from "@/features/auth/store/auth.store";
 
@@ -26,7 +28,11 @@ interface CreatorLayoutProps {
   onNavigate?: (view: string) => void;
 }
 
-export function CreatorLayout({ children, activeView, onNavigate }: CreatorLayoutProps) {
+export function CreatorLayout({
+  children,
+  activeView,
+  onNavigate,
+}: CreatorLayoutProps) {
   const router = useRouter();
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const user = useAuthStore((state) => state.user);
@@ -56,15 +62,19 @@ export function CreatorLayout({ children, activeView, onNavigate }: CreatorLayou
       {/* Sidebar */}
       <aside className="w-64 bg-creator-sidebar flex flex-col border-r border-creator-border flex-shrink-0 z-20">
         <div className="h-16 flex items-center px-6 border-b border-creator-border">
-          <span className="text-xl font-bold tracking-wider text-creator-gold">TaleX <span className="text-white">Studio</span></span>
+          <span className="text-xl font-bold tracking-wider text-creator-gold">
+            TaleX <span className="text-white">Studio</span>
+          </span>
         </div>
-        
+
         <div className="p-4 flex-1 overflow-y-auto">
           <div className="space-y-1">
             {navItems.map((item) => {
               // Basic active state logic
-              const isActive = activeView === item.view || (item.view === 'series' && activeView === 'create');
-              
+              const isActive =
+                activeView === item.view ||
+                (item.view === "series" && activeView === "create");
+
               return (
                 <button
                   key={item.label}
@@ -83,15 +93,20 @@ export function CreatorLayout({ children, activeView, onNavigate }: CreatorLayou
                     }
                   }}
                   className={`flex items-center w-full gap-3 px-4 py-3 rounded-md transition-colors ${
-                    isActive 
-                      ? "bg-creator-gold/10 text-creator-gold font-medium" 
+                    isActive
+                      ? "bg-creator-gold/10 text-creator-gold font-medium"
                       : "text-creator-muted hover:text-white hover:bg-white/5"
                   }`}
                 >
-                  <item.icon size={18} className={isActive ? "text-creator-gold" : "text-creator-muted"} />
+                  <item.icon
+                    size={18}
+                    className={
+                      isActive ? "text-creator-gold" : "text-creator-muted"
+                    }
+                  />
                   {item.label}
                 </button>
-              )
+              );
             })}
           </div>
         </div>
@@ -108,7 +123,7 @@ export function CreatorLayout({ children, activeView, onNavigate }: CreatorLayou
             <Settings size={18} />
             Cài đặt
           </button>
-          <button 
+          <button
             type="button"
             onClick={handleLogout}
             className="flex items-center gap-3 px-4 py-3 rounded-md text-creator-muted hover:text-white hover:bg-white/5 transition-colors w-full text-left mt-1"
@@ -125,9 +140,9 @@ export function CreatorLayout({ children, activeView, onNavigate }: CreatorLayou
         <header className="h-16 border-b border-creator-border bg-creator-bg/95 backdrop-blur-sm flex items-center justify-between px-8 flex-shrink-0 z-10 sticky top-0">
           <div className="flex items-center max-w-md w-full relative">
             <Search className="absolute left-3 text-creator-muted" size={18} />
-            <input 
-              type="text" 
-              placeholder="Tìm kiếm trong studio..." 
+            <input
+              type="text"
+              placeholder="Tìm kiếm trong studio..."
               className="w-full bg-creator-card border border-creator-border rounded-full py-2 pl-10 pr-4 text-sm text-white placeholder:text-creator-muted focus:outline-none focus:border-creator-gold transition-colors"
             />
           </div>
@@ -137,26 +152,64 @@ export function CreatorLayout({ children, activeView, onNavigate }: CreatorLayou
               <Bell size={20} />
               <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border border-creator-bg"></span>
             </button>
-            <div className="flex items-center gap-3 cursor-pointer pl-6 border-l border-creator-border">
-              <div className="w-8 h-8 rounded-full bg-creator-gold/20 flex items-center justify-center text-creator-gold overflow-hidden">
-                {profileUser?.avatarUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={profileUser.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
-                ) : (
-                  <User size={16} />
-                )}
-              </div>
-              <div className="flex flex-col">
-                <span className="text-sm font-medium">{displayName}</span>
-                <span className="text-xs text-creator-muted">Nhà xuất bản Pro</span>
-              </div>
-            </div>
+            <DropdownMenu.Root>
+              <DropdownMenu.Trigger asChild>
+                <button type="button" className="flex items-center gap-3 cursor-pointer pl-6 border-l border-creator-border text-left outline-none hover:opacity-80 transition-opacity">
+                  <div className="w-8 h-8 rounded-full bg-creator-gold/20 flex items-center justify-center text-creator-gold overflow-hidden">
+                    {profileUser?.avatarUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={profileUser.avatarUrl}
+                        alt="Avatar"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <User size={16} />
+                    )}
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium">{displayName}</span>
+                    <span className="text-xs text-creator-muted">
+                      Nhà xuất bản Pro
+                    </span>
+                  </div>
+                </button>
+              </DropdownMenu.Trigger>
+
+              <DropdownMenu.Portal>
+                <DropdownMenu.Content
+                  align="end"
+                  sideOffset={10}
+                  className="z-50 w-48 rounded-xl border border-white/10 bg-[#161619] p-2 text-zinc-300 shadow-2xl outline-none data-[side=bottom]:animate-in data-[side=bottom]:fade-in data-[side=bottom]:slide-in-from-top-2"
+                >
+                  <DropdownMenu.Item
+                    onSelect={() => router.push("/creator-channel")}
+                    className="flex cursor-pointer select-none items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium outline-none transition-colors hover:bg-white/5 hover:text-creator-gold focus:bg-white/5 focus:text-creator-gold"
+                  >
+                    <Tv size={16} className="text-creator-muted" />
+                    Xem kênh của bạn
+                  </DropdownMenu.Item>
+
+                  <DropdownMenu.Separator className="my-1 h-px bg-white/10" />
+
+                  <DropdownMenu.Item
+                    onSelect={handleLogout}
+                    className="flex cursor-pointer select-none items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-red-500 outline-none transition-colors hover:bg-red-500/10 focus:bg-red-500/10"
+                  >
+                    <LogOut size={16} />
+                    Đăng xuất
+                  </DropdownMenu.Item>
+                </DropdownMenu.Content>
+              </DropdownMenu.Portal>
+            </DropdownMenu.Root>
           </div>
         </header>
 
         {/* Page Content */}
         <main className="flex-1 overflow-y-auto bg-[#13110F]">
-          {children}
+          <div className="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8">
+            {children}
+          </div>
         </main>
       </div>
     </div>

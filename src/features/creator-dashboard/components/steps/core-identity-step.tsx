@@ -85,7 +85,7 @@ export function CoreIdentityStep({ initialData, onSave, onCancel, categories, ta
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col lg:flex-row gap-8 w-full p-6 text-creator-text">
+    <form onSubmit={handleSubmit} className="flex flex-col lg:flex-row gap-8 w-full py-6 text-creator-text">
       {/* Left Column - Form Fields */}
       <div className="flex-1 space-y-6">
         <div>

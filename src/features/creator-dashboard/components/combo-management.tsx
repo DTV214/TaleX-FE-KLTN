@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Edit3, Trash2, Plus, ArrowLeft } from "lucide-react";
+import { Edit3, Trash2, Plus, ArrowLeft, ChevronRight } from "lucide-react";
 import {
   listCombos,
   createCombo,
@@ -20,6 +20,7 @@ export function ComboManagementView() {
   const queryClient = useQueryClient();
   const [view, setView] = useState<"list" | "create" | "edit">("list");
   const [editingCombo, setEditingCombo] = useState<ComboEpisodeResponse | null>(null);
+  const [expandedCombos, setExpandedCombos] = useState<Record<string, boolean>>({});
 
   const combosQuery = useQuery({
     queryKey: ["creator-dashboard", "combos"],
@@ -30,6 +31,7 @@ export function ComboManagementView() {
     mutationFn: (id: string) => deleteCombo(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["creator-dashboard", "combos"] });
+      queryClient.invalidateQueries({ queryKey: ["public-combos"] });
     },
   });
 
@@ -45,6 +47,7 @@ export function ComboManagementView() {
           setView("list");
           setEditingCombo(null);
           queryClient.invalidateQueries({ queryKey: ["creator-dashboard", "combos"] });
+          queryClient.invalidateQueries({ queryKey: ["public-combos"] });
         }}
       />
     );
@@ -53,7 +56,7 @@ export function ComboManagementView() {
   const combos = combosQuery.data ?? [];
 
   return (
-    <div className="w-full p-6 text-creator-text space-y-8">
+    <div className="w-full py-6 text-creator-text space-y-8">
       <div className="flex justify-between items-end border-b border-creator-border pb-6">
         <div>
           <h2 className="text-3xl font-bold text-white mb-2">Quản lý Combo</h2>
@@ -110,6 +113,37 @@ export function ComboManagementView() {
                     <span className="font-black text-creator-gold text-lg">{combo.priceVnd.toLocaleString()} đ</span>
                   </div>
                 </div>
+
+                {combo.episodes && combo.episodes.length > 0 && (
+                  <div className="mt-4 border-t border-creator-border/50 pt-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setExpandedCombos((prev) => ({
+                          ...prev,
+                          [combo.comboId]: !prev[combo.comboId],
+                        }));
+                      }}
+                      className="text-xs font-bold text-creator-gold hover:opacity-80 flex items-center gap-1 cursor-pointer focus:outline-none"
+                    >
+                      {expandedCombos[combo.comboId] ? "Ẩn danh sách tập" : "Xem các tập bao gồm"}
+                      <ChevronRight className={`w-3.5 h-3.5 transition-transform duration-200 ${expandedCombos[combo.comboId] ? "rotate-90" : ""}`} />
+                    </button>
+                    {expandedCombos[combo.comboId] && (
+                      <ul className="mt-2 max-h-32 overflow-y-auto space-y-1.5 pl-2 text-xs text-creator-muted no-scrollbar">
+                        {combo.episodes.map((ep) => (
+                          <li key={ep.episodeId} className="flex items-center gap-1.5">
+                            <span className="w-1 h-1 rounded-full bg-creator-gold shrink-0" />
+                            <span className="truncate">
+                              {ep.episodeNumber != null ? `Tập ${ep.episodeNumber}: ` : ""}
+                              {ep.title}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="mt-6 flex items-center justify-end gap-2">
