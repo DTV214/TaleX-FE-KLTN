@@ -2,10 +2,15 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
 import {
   Bell,
+  ChevronDown,
   Clapperboard,
+  CircleDollarSign,
   Crown,
+  History,
+  Layers3,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -17,16 +22,20 @@ import { logoutAction } from "@/features/auth/api/auth.actions";
 import { isFullProfile, useAuthStore } from "@/features/auth/store/auth.store";
 import { CoinWalletWidget } from "@/features/coin";
 import { useMissionHeartbeat } from "@/features/mission/hooks/useMissionHeartbeat";
+import { useActiveSubscription } from "@/features/payment/api/payment.api";
 import { usePublicSidebarStore } from "@/shared/stores/public-sidebar.store";
 
 export function SiteHeader() {
   useMissionHeartbeat();
 
+  const [isTransactionHistoryOpen, setIsTransactionHistoryOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const toggleSidebar = usePublicSidebarStore((state) => state.toggleSidebar);
   const { user, isAuthenticated, clearAuth } = useAuthStore();
+  const activeSubscriptionQuery = useActiveSubscription(isAuthenticated);
   const profileUser = isFullProfile(user) ? user : null;
+  const isPremiumMember = Boolean(activeSubscriptionQuery.data);
   const avatarLabel =
     profileUser?.username.slice(0, 2) ||
     user?.roleName.slice(0, 2) ||
@@ -107,7 +116,7 @@ export function SiteHeader() {
         <div className="flex items-center gap-2 md:gap-3">
           <Link
             href="/premium"
-            className="hidden h-10 items-center justify-center gap-2 rounded-xl border border-[#D4AF37]/50 bg-[#D4AF37]/10 px-4 text-xs font-black text-[#D4AF37] transition-all hover:bg-[#D4AF37] hover:text-black hover:shadow-[0_0_15px_rgba(212,175,55,0.4)] md:flex"
+            className={`hidden h-10 items-center justify-center gap-2 rounded-xl border border-[#D4AF37]/50 bg-[#D4AF37]/10 px-4 text-xs font-semibold text-[#D4AF37] transition-all hover:bg-[#D4AF37] hover:text-black hover:shadow-[0_0_15px_rgba(212,175,55,0.4)] ${isPremiumMember ? "md:hidden" : "md:flex"}`}
           >
             <Crown className="h-4 w-4" />
             Nâng cấp
@@ -135,12 +144,23 @@ export function SiteHeader() {
             <>
               <CoinWalletWidget />
 
-              <DropdownMenu.Root>
+              <DropdownMenu.Root
+                onOpenChange={(open) => {
+                  if (!open) {
+                    setIsTransactionHistoryOpen(false);
+                  }
+                }}
+              >
                 <DropdownMenu.Trigger asChild>
-                  <button className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-primary/35 bg-primary/10 text-primary transition hover:border-primary hover:shadow-[0_0_26px_rgba(212,175,55,0.24)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70">
+                  <button className="relative flex h-10 w-10 items-center justify-center overflow-visible rounded-full border border-primary/35 bg-primary/10 text-primary transition hover:border-primary hover:shadow-[0_0_26px_rgba(212,175,55,0.24)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70">
+                    {isPremiumMember && (
+                      <span className="absolute -right-1 -top-1 z-10 flex h-5 w-5 items-center justify-center rounded-full border border-black bg-[#D4AF37] text-black shadow-[0_0_18px_rgba(212,175,55,0.45)]">
+                        <Crown className="h-3 w-3" />
+                      </span>
+                    )}
                     {profileUser?.avatarUrl ? (
                       <span
-                        className="h-full w-full bg-cover bg-center"
+                        className="h-full w-full overflow-hidden rounded-full bg-cover bg-center"
                         style={{
                           backgroundImage: `url(${profileUser.avatarUrl})`,
                         }}
@@ -187,6 +207,52 @@ export function SiteHeader() {
                         Hồ sơ cá nhân
                       </Link>
                     </DropdownMenu.Item>
+
+                    <DropdownMenu.Item
+                      onSelect={(event) => {
+                        event.preventDefault();
+                        setIsTransactionHistoryOpen((current) => !current);
+                      }}
+                      className="flex cursor-pointer select-none items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium outline-none transition-colors hover:bg-white/5 hover:text-primary focus:bg-white/5 focus:text-primary"
+                    >
+                        <History className="h-4 w-4" />
+                        <span className="flex-1">Lịch sử giao dịch</span>
+                        <ChevronDown
+                          className={`h-4 w-4 text-gray-500 transition ${isTransactionHistoryOpen ? "rotate-180 text-primary" : ""}`}
+                        />
+                    </DropdownMenu.Item>
+
+                    {isTransactionHistoryOpen && (
+                      <div className="mx-1 mb-1 mt-1 rounded-xl border border-white/10 bg-black/20 p-1">
+                          <DropdownMenu.Item asChild>
+                            <Link
+                              href="/premium-history"
+                              className="flex cursor-pointer select-none items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium outline-none transition-colors hover:bg-white/5 hover:text-primary focus:bg-white/5 focus:text-primary"
+                            >
+                              <Crown className="h-4 w-4 text-[#D4AF37]" />
+                              Premium
+                            </Link>
+                          </DropdownMenu.Item>
+
+                          <DropdownMenu.Item asChild>
+                            <Link
+                              href="/coin-history"
+                              className="flex cursor-pointer select-none items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium outline-none transition-colors hover:bg-white/5 hover:text-primary focus:bg-white/5 focus:text-primary"
+                            >
+                              <CircleDollarSign className="h-4 w-4 text-cyan-200" />
+                              Coins
+                            </Link>
+                          </DropdownMenu.Item>
+
+                          <DropdownMenu.Item
+                            disabled
+                            className="flex select-none items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-500 outline-none"
+                          >
+                            <Layers3 className="h-4 w-4" />
+                            Gói combo
+                          </DropdownMenu.Item>
+                      </div>
+                    )}
 
                     <DropdownMenu.Separator className="my-1 h-px bg-white/10" />
 

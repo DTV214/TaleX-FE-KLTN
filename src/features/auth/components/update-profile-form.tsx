@@ -48,12 +48,12 @@ export function UpdateProfileForm() {
   }
 
   return (
-    <section className="rounded-2xl border border-white/5 bg-[#161618] p-6 shadow-[0_18px_50px_rgba(0,0,0,0.24)] sm:p-8">
+    <section className="rounded-2xl border border-white/10 bg-[#121214]/88 p-6 shadow-[0_18px_50px_rgba(0,0,0,0.24)] transition hover:border-[#D4AF37]/35 sm:p-7">
       <div className="mb-7">
-        <h2 className="font-heading text-2xl font-bold tracking-tight text-white">
+        <h2 className="text-xl font-semibold tracking-normal text-white/90">
           Thông tin cá nhân
         </h2>
-        <p className="mt-2 text-sm font-medium leading-relaxed text-white/55">
+        <p className="mt-2 text-sm font-normal leading-relaxed text-slate-400">
           Cập nhật thông tin hồ sơ để TaleX cá nhân hóa trải nghiệm của bạn.
         </p>
       </div>
@@ -118,7 +118,7 @@ export function UpdateProfileForm() {
           <button
             type="submit"
             disabled={isLoading}
-            className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-[#D4AF37] px-6 text-sm font-bold text-black shadow-[0_0_24px_rgba(212,175,55,0.22)] transition hover:bg-[#E5C158] hover:shadow-[0_0_34px_rgba(212,175,55,0.34)] active:translate-y-px disabled:cursor-not-allowed disabled:opacity-70"
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#D4AF37] px-6 text-sm font-semibold text-black shadow-[0_0_18px_rgba(212,175,55,0.18)] transition hover:bg-[#E5C158] active:translate-y-px disabled:cursor-not-allowed disabled:opacity-70"
           >
             {isLoading ? (
               <>
@@ -136,7 +136,7 @@ export function UpdateProfileForm() {
 }
 
 const inputClassName =
-  "w-full rounded-xl border border-white/10 bg-[#0B0B0C] px-4 py-3.5 text-sm text-white outline-none transition placeholder:text-white/25 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37]/50";
+  "w-full rounded-xl border border-white/10 bg-[#0B0B0C] px-4 py-3.5 text-sm text-white/90 outline-none transition placeholder:text-white/25 hover:border-white/20 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37]/50";
 
 function FormField({
   label,
@@ -147,7 +147,7 @@ function FormField({
 }) {
   return (
     <label className="block space-y-2">
-      <span className="text-xs font-bold uppercase tracking-[0.16em] text-white/50">
+      <span className="text-xs font-medium text-slate-500">
         {label}
       </span>
       {children}

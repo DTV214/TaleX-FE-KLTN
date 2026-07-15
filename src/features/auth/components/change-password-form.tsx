@@ -79,16 +79,16 @@ export function ChangePasswordForm() {
   }
 
   return (
-    <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-6 sm:p-8 shadow-xl backdrop-blur-xl mt-8">
+    <div className="rounded-2xl border border-white/10 bg-[#121214]/88 p-6 shadow-xl backdrop-blur-xl transition hover:border-[#D4AF37]/35 sm:p-7">
       <div className="mb-6 flex items-center gap-3">
         <div className="p-2 bg-[#D4AF37]/10 rounded-lg">
           <KeyRound className="w-5 h-5 text-[#D4AF37]" />
         </div>
         <div>
-          <h2 className="text-xl font-semibold text-gray-200">
+          <h2 className="text-xl font-semibold text-white/90">
             {requiresCurrentPassword ? "Đổi Mật Khẩu" : "Thiết lập Mật Khẩu"}
           </h2>
-          <p className="text-sm text-gray-400 mt-1">
+          <p className="mt-1 text-sm text-slate-400">
             {requiresCurrentPassword
               ? "Bảo mật tài khoản của bạn"
               : "Thêm mật khẩu để đăng nhập bằng email"}

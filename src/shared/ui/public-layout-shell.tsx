@@ -12,7 +12,16 @@ type PublicLayoutShellProps = {
   children: ReactNode;
 };
 
-const sidebarRoutes = ["/", "/series", "/comics", "/intro"] as const;
+const sidebarRoutes = [
+  "/",
+  "/series",
+  "/comics",
+  "/intro",
+  "/missions",
+  "/profile",
+  "/coin-history",
+  "/premium-history",
+] as const;
 const hiddenChromeRoutes = [
   "/login",
   "/register",

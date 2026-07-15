@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import Link from "next/link";
 import {
   BookOpen,
   CalendarDays,
   CheckCircle2,
+  ChevronRight,
   CircleDollarSign,
   Clock3,
   Film,
@@ -13,17 +15,26 @@ import {
   PlayCircle,
   PlaySquare,
   ShieldCheck,
-  Sparkles,
   Target,
+  Trophy,
   UserRoundCheck,
+  WalletCards,
 } from "lucide-react";
 import { useDailyCheckInMutation } from "@/features/coin/hooks/useCoinMutations";
-import { useDailyCheckInStatus } from "@/features/coin/hooks/useCoinQueries";
+import {
+  useCoinWallet,
+  useDailyCheckInStatus,
+} from "@/features/coin/hooks/useCoinQueries";
+import { Badge } from "@/shared/ui/badge";
+import { Button } from "@/shared/ui/button";
+import { Progress } from "@/shared/ui/progress";
+import { cn } from "@/shared/utils/utils";
 import { useMyMissions } from "../hooks/useMissionQueries";
+import type { MissionProgressResponseDto } from "../api/mission.dto";
 import { AdRewardModal } from "./ad-reward-modal";
 
-function formatCoin(value: number) {
-  return new Intl.NumberFormat("vi-VN").format(value);
+function formatCoin(value?: number) {
+  return new Intl.NumberFormat("vi-VN").format(value ?? 0);
 }
 
 function getProgressPercentage(currentValue: number, targetValue: number) {
@@ -34,51 +45,234 @@ function getProgressPercentage(currentValue: number, targetValue: number) {
   return Math.min(100, Math.max(0, (currentValue / targetValue) * 100));
 }
 
-function getMissionIcon(code: string) {
+function MissionIconView({
+  code,
+  className,
+}: {
+  code: string;
+  className?: string;
+}) {
   if (code.startsWith("WATCH_AD_")) {
-    return PlaySquare;
+    return <PlaySquare className={className} />;
   }
 
   switch (code) {
     case "ONLINE_DAILY":
-      return Clock3;
+      return <Clock3 className={className} />;
     case "WATCH_AD_DAILY":
-      return PlaySquare;
+      return <PlaySquare className={className} />;
     case "READ_COMIC_DAILY":
-      return BookOpen;
+      return <BookOpen className={className} />;
     case "WATCH_VIDEO_DAILY":
-      return Film;
+      return <Film className={className} />;
     case "COMPLETE_PROFILE":
-      return UserRoundCheck;
+      return <UserRoundCheck className={className} />;
     default:
-      return Target;
+      return <Target className={className} />;
   }
 }
 
-function MissionCardSkeleton() {
+function MissionListSkeleton() {
   return (
-    <div className="h-full animate-pulse rounded-2xl border border-white/5 bg-[#171923]/60 p-6 backdrop-blur-xl">
-      <div className="mb-8 flex items-start justify-between gap-6">
-        <div className="h-14 w-14 rounded-xl bg-white/10" />
-        <div className="space-y-2 text-right">
-          <div className="ml-auto h-2 w-14 rounded-full bg-white/10" />
-          <div className="h-6 w-24 rounded-full bg-white/10" />
+    <div className="space-y-3">
+      {[0, 1, 2, 3].map((item) => (
+        <div
+          key={item}
+          className="h-20 animate-pulse rounded-2xl border border-white/10 bg-white/[0.04]"
+        />
+      ))}
+    </div>
+  );
+}
+
+function MissionRewardTimeline({ currentStreak }: { currentStreak: number }) {
+  const milestones = [1, 3, 7, 16, 30];
+
+  return (
+    <div className="rounded-2xl border border-white/10 bg-[#121214]/80 p-4 shadow-[0_18px_48px_rgba(0,0,0,0.24)]">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-medium text-[#D4AF37]">Chuỗi nhiệm vụ</p>
+          <p className="mt-1 text-xs text-slate-400">
+            Giữ nhịp điểm danh để mở các mốc thưởng dài ngày.
+          </p>
+        </div>
+        <Trophy className="h-5 w-5 text-[#D4AF37]" />
+      </div>
+
+      <div className="relative">
+        <div className="absolute left-5 right-5 top-5 h-px bg-white/10" />
+        <div className="relative grid grid-cols-5 gap-2">
+          {milestones.map((day) => {
+            const isReached = currentStreak >= day;
+
+            return (
+              <div key={day} className="flex flex-col items-center gap-2 text-center">
+                <span
+                  className={cn(
+                    "flex h-10 w-10 items-center justify-center rounded-full border text-xs font-semibold transition",
+                    isReached
+                      ? "border-[#D4AF37] bg-[#D4AF37] text-black shadow-[0_0_18px_rgba(212,175,55,0.28)]"
+                      : "border-white/10 bg-black/30 text-slate-500",
+                  )}
+                >
+                  {day}
+                </span>
+                <span className="text-[11px] font-medium text-slate-400">
+                  ngày
+                </span>
+                <Gift
+                  className={cn(
+                    "h-4 w-4",
+                    isReached ? "text-[#D4AF37]" : "text-slate-600",
+                  )}
+                />
+              </div>
+            );
+          })}
         </div>
       </div>
-      <div className="h-5 w-3/4 rounded-full bg-white/10" />
-      <div className="mt-4 h-3 w-full rounded-full bg-white/[0.07]" />
-      <div className="mt-2 h-3 w-2/3 rounded-full bg-white/[0.07]" />
-      <div className="mt-8 h-1.5 w-full rounded-full bg-white/[0.07]" />
-      <div className="mt-8 h-11 w-full rounded-lg bg-white/[0.07]" />
     </div>
+  );
+}
+
+function MissionDetail({
+  mission,
+  onStartAd,
+}: {
+  mission: MissionProgressResponseDto | undefined;
+  onStartAd: (missionCode: string) => void;
+}) {
+  if (!mission) {
+    return (
+      <div className="flex min-h-[360px] flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 bg-[#121214]/70 p-6 text-center">
+        <Target className="h-10 w-10 text-[#D4AF37]" />
+        <p className="mt-4 text-lg font-semibold text-white/90">
+          Chọn một nhiệm vụ
+        </p>
+        <p className="mt-2 max-w-sm text-sm leading-6 text-slate-400">
+          Danh sách bên trái sẽ hiển thị chi tiết, tiến độ và phần thưởng tại đây.
+        </p>
+      </div>
+    );
+  }
+
+  const isAdMission = mission.code.startsWith("WATCH_AD_");
+  const progressPercentage = getProgressPercentage(
+    mission.currentValue,
+    mission.targetValue,
+  );
+  const passiveStatusText =
+    mission.currentValue > 0 ? "Đang tiến hành" : "Lắng nghe hệ thống";
+
+  return (
+    <article className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#121214]/88 p-5 shadow-[0_20px_58px_rgba(0,0,0,0.28)]">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,rgba(212,175,55,0.14),transparent_36%),radial-gradient(circle_at_92%_10%,rgba(125,211,252,0.08),transparent_30%)]" />
+      <div className="relative z-10">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <span className="flex h-12 w-12 items-center justify-center rounded-xl border border-[#D4AF37]/25 bg-[#D4AF37]/10 text-[#D4AF37]">
+              <MissionIconView code={mission.code} className="h-6 w-6" />
+            </span>
+            <div>
+              <Badge variant="premium" className="px-3 py-1 text-xs font-medium">
+                Nhiệm vụ đang chọn
+              </Badge>
+              <h3 className="mt-2 text-xl font-semibold text-white/90">
+                {mission.title}
+              </h3>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-[#D4AF37]/25 bg-[#D4AF37]/10 px-3 py-2 text-right">
+            <p className="text-[11px] font-medium text-[#F5D46E]/75">
+              Thưởng
+            </p>
+            <p className="mt-1 flex items-center gap-1.5 text-lg font-semibold text-[#F5D46E]">
+              <CircleDollarSign className="h-4 w-4" />
+              + {formatCoin(mission.rewardAmount)}
+            </p>
+          </div>
+        </div>
+
+        <p className="mt-4 text-sm leading-6 text-slate-400">
+          {mission.description}
+        </p>
+
+        <div className="mt-5 rounded-2xl border border-white/10 bg-black/25 p-4">
+          <div className="mb-3 flex items-center justify-between text-xs font-medium text-slate-400">
+            <span>Tiến độ</span>
+            <span className="tabular-nums text-[#F5D46E]">
+              {mission.currentValue}/{mission.targetValue}
+            </span>
+          </div>
+          <Progress value={progressPercentage} />
+        </div>
+
+        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          <div className="rounded-xl border border-white/10 bg-white/[0.04] p-3">
+            <p className="text-xs text-slate-500">Trạng thái</p>
+            <p className="mt-1 text-sm font-medium text-slate-200">
+              {mission.isCompleted ? "Đã hoàn thành" : passiveStatusText}
+            </p>
+          </div>
+          <div className="rounded-xl border border-white/10 bg-white/[0.04] p-3">
+            <p className="text-xs text-slate-500">Mục tiêu</p>
+            <p className="mt-1 text-sm font-medium text-slate-200">
+              {mission.targetValue} lần
+            </p>
+          </div>
+          <div className="rounded-xl border border-white/10 bg-white/[0.04] p-3">
+            <p className="text-xs text-slate-500">Phần thưởng</p>
+            <p className="mt-1 text-sm font-medium text-[#F5D46E]">
+              {formatCoin(mission.rewardAmount)} Coin
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-5">
+          {mission.isCompleted ? (
+            <div className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-[#D4AF37]/20 bg-[#D4AF37]/10 text-sm font-medium text-[#D4AF37]">
+              <CheckCircle2 className="h-4 w-4" />
+              Đã nhận thưởng
+            </div>
+          ) : isAdMission ? (
+            <Button
+              type="button"
+              onClick={() => onStartAd(mission.code)}
+              className="h-11 w-full rounded-xl bg-[#D4AF37] text-sm font-semibold text-black hover:bg-[#F3CE5E]"
+            >
+              <PlayCircle className="mr-2 h-4 w-4" />
+              Làm nhiệm vụ
+            </Button>
+          ) : (
+            <div className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.05] text-sm font-medium text-slate-400">
+              <ShieldCheck className="h-4 w-4 text-[#D4AF37]" />
+              {passiveStatusText}
+            </div>
+          )}
+        </div>
+      </div>
+    </article>
   );
 }
 
 export function MissionCenter() {
   const [activeAdMission, setActiveAdMission] = useState<string | null>(null);
+  const [selectedMissionId, setSelectedMissionId] = useState<string | null>(null);
   const missionsQuery = useMyMissions();
+  const walletQuery = useCoinWallet();
   const checkInStatusQuery = useDailyCheckInStatus();
   const checkInMutation = useDailyCheckInMutation();
+
+  const missions = useMemo(() => missionsQuery.data ?? [], [missionsQuery.data]);
+  const selectedMission = useMemo(() => {
+    if (missions.length === 0) return undefined;
+    return (
+      missions.find((mission) => mission.missionId === selectedMissionId) ??
+      missions[0]
+    );
+  }, [missions, selectedMissionId]);
 
   const isCheckedInToday =
     Boolean(checkInStatusQuery.data?.isCheckedInToday) ||
@@ -89,212 +283,211 @@ export function MissionCenter() {
     0;
   const isCheckingIn =
     checkInStatusQuery.isLoading || checkInMutation.isPending;
+  const walletBalance = walletQuery.isLoading
+    ? "..."
+    : formatCoin(walletQuery.data?.balance);
 
   return (
     <>
-      <section className="mb-16 grid grid-cols-1 items-center gap-10 lg:grid-cols-12">
-        <div className="lg:col-span-7">
-          <h1 className="font-heading font-display-lg mb-4 bg-gradient-to-r from-[#f2ca50] to-[#d4af37] bg-clip-text text-4xl font-black text-transparent md:text-5xl">
-            Thử Thách Hằng Ngày
-          </h1>
-          <p className="max-w-xl text-lg leading-8 text-white/60">
-            Chinh phục nhiệm vụ mỗi ngày, duy trì chuỗi điểm danh và tích lũy
-            Coin để mở khóa thêm nhiều trải nghiệm trong TaleX Universe.
-          </p>
-          <div className="mt-8 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#d4af37]">
-            <Sparkles className="h-4 w-4" />
-            Premium Rewards Available
-          </div>
-        </div>
+      <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-[#101012] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.35)] sm:p-6 lg:p-8">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_8%,rgba(212,175,55,0.18),transparent_32%),radial-gradient(circle_at_88%_12%,rgba(125,211,252,0.08),transparent_30%),linear-gradient(135deg,rgba(212,175,55,0.06),transparent_38%)]" />
+        <div className="relative z-10 grid gap-6 lg:grid-cols-[minmax(0,1fr)_390px] lg:items-center">
+          <div>
+            <Badge variant="premium" className="mb-4 px-3 py-1 text-xs font-medium">
+              TaleX Reward Hub
+            </Badge>
+            <h1 className="text-3xl font-semibold tracking-normal text-white/92 md:text-4xl">
+              Thử thách hằng ngày
+            </h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400 md:text-base">
+              Hoàn thành nhiệm vụ, giữ chuỗi điểm danh và tích lũy Coin để mở
+              khóa thêm nội dung trong TaleX Universe.
+            </p>
 
-        <div className="lg:col-span-5">
-          <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-[#171923]/60 p-8 text-center backdrop-blur-xl transition-all hover:-translate-y-1 hover:border-[#d4af37]/30 hover:shadow-[0_20px_40px_rgba(0,0,0,0.4)]">
-            <div className="absolute -right-24 -top-24 h-48 w-48 rounded-full bg-[#d4af37]/10 blur-3xl transition-all group-hover:bg-[#d4af37]/20" />
-            <div className="absolute -bottom-24 -left-24 h-48 w-48 rounded-full bg-[#8f191d]/10 blur-3xl" />
+            <div className="mt-5 grid gap-3 sm:grid-cols-3">
+              {[
+                { label: "Nhiệm vụ", value: missions.length || 0, icon: Target },
+                { label: "Chuỗi ngày", value: currentStreak, icon: CalendarDays },
+                { label: "Số dư", value: walletBalance, icon: WalletCards },
+              ].map((item) => {
+                const Icon = item.icon;
 
-            <div className="relative">
-              <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full border border-[#d4af37]/30 bg-[#d4af37]/10 text-[#d4af37] shadow-[0_0_28px_rgba(212,175,55,0.16)] transition-transform group-hover:scale-105">
-                <CalendarDays className="h-12 w-12" strokeWidth={1.7} />
-              </div>
-
-              <p className="text-xs font-bold uppercase tracking-[0.28em] text-white/35">
-                Daily Check-in
-              </p>
-              <h2 className="mt-3 text-2xl font-black text-white">
-                Check-in Ngày {currentStreak + (isCheckedInToday ? 0 : 1)}
-              </h2>
-              <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-white/50">
-                Chuỗi hiện tại:{" "}
-                <span className="font-bold text-[#d4af37]">
-                  {currentStreak} ngày
-                </span>
-                . Điểm danh để nhận Coin và giữ nhịp phần thưởng hằng ngày.
-              </p>
-
-              <button
-                type="button"
-                disabled={isCheckingIn || isCheckedInToday}
-                onClick={() => checkInMutation.mutate()}
-                className={
-                  isCheckedInToday
-                    ? "mt-8 flex w-full items-center justify-center gap-3 rounded-lg border border-white/10 bg-white/5 py-4 text-sm font-black uppercase tracking-widest text-white/40 transition disabled:cursor-not-allowed"
-                    : "mt-8 flex w-full items-center justify-center gap-3 rounded-lg bg-[#d4af37] py-4 text-sm font-black uppercase tracking-widest text-black shadow-lg shadow-[#d4af37]/10 transition hover:bg-[#f2ca50] active:scale-[0.98] disabled:cursor-wait disabled:opacity-75"
-                }
-              >
-                {isCheckingIn && !isCheckedInToday ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : isCheckedInToday ? (
-                  <CheckCircle2 className="h-5 w-5 text-[#d4af37]" />
-                ) : (
-                  <Gift className="h-5 w-5" />
-                )}
-                {isCheckedInToday
-                  ? "Đã Điểm Danh"
-                  : checkInMutation.isPending
-                    ? "Đang Nhận Quà..."
-                    : checkInStatusQuery.isLoading
-                      ? "Đang Kiểm Tra..."
-                      : "Điểm Danh"}
-              </button>
+                return (
+                  <div
+                    key={item.label}
+                    className="rounded-2xl border border-white/10 bg-black/25 p-4 transition hover:border-[#D4AF37]/35"
+                  >
+                    <Icon className="mb-3 h-5 w-5 text-[#D4AF37]" />
+                    <p className="text-xs font-medium text-slate-500">
+                      {item.label}
+                    </p>
+                    <p className="mt-1 text-lg font-semibold text-white/90">
+                      {item.value}
+                    </p>
+                  </div>
+                );
+              })}
             </div>
+          </div>
+
+          <div className="rounded-2xl border border-white/10 bg-[#121214]/86 p-5 text-center shadow-[0_18px_50px_rgba(0,0,0,0.28)]">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-[#D4AF37]/25 bg-[#D4AF37]/10 text-[#D4AF37]">
+              <CalendarDays className="h-8 w-8" />
+            </div>
+            <h2 className="mt-4 text-xl font-semibold text-white/90">
+              Điểm danh ngày {currentStreak + (isCheckedInToday ? 0 : 1)}
+            </h2>
+            <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-400">
+              Chuỗi hiện tại:{" "}
+              <span className="font-semibold text-[#D4AF37]">
+                {currentStreak} ngày
+              </span>
+              .
+            </p>
+
+            <Button
+              type="button"
+              disabled={isCheckingIn || isCheckedInToday}
+              onClick={() => checkInMutation.mutate()}
+              className={cn(
+                "mt-5 h-12 w-full rounded-xl text-sm font-semibold",
+                isCheckedInToday
+                  ? "border border-white/10 bg-white/[0.05] text-slate-400 hover:bg-white/[0.05]"
+                  : "bg-[#D4AF37] text-black hover:bg-[#F3CE5E]",
+              )}
+            >
+              {isCheckingIn && !isCheckedInToday ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : isCheckedInToday ? (
+                <CheckCircle2 className="mr-2 h-4 w-4 text-[#D4AF37]" />
+              ) : (
+                <Gift className="mr-2 h-4 w-4" />
+              )}
+              {isCheckedInToday
+                ? "Đã điểm danh"
+                : checkInMutation.isPending
+                  ? "Đang nhận quà..."
+                  : checkInStatusQuery.isLoading
+                    ? "Đang kiểm tra..."
+                    : "Điểm danh"}
+            </Button>
+
+            <Link
+              href="/coin-history"
+              className="mt-3 flex h-10 items-center justify-between rounded-xl border border-cyan-300/20 bg-cyan-300/[0.07] px-4 text-sm text-cyan-100 transition hover:border-cyan-200/35 hover:bg-cyan-300/[0.11]"
+            >
+              <span className="inline-flex items-center gap-2 font-medium text-cyan-200/85">
+                <WalletCards className="h-4 w-4" />
+                Số dư coin
+              </span>
+              <span className="font-semibold tabular-nums text-white">
+                {walletBalance}
+              </span>
+            </Link>
           </div>
         </div>
       </section>
 
-      <section>
-        <div className="mb-6 flex items-center gap-3">
-          <Target className="h-6 w-6 text-[#d4af37]" />
-          <h2 className="text-xl font-bold uppercase tracking-widest text-white">
-            Nhiệm Vụ Kích Hoạt
-          </h2>
-        </div>
+      <section className="mt-6 grid gap-6 lg:grid-cols-[360px_minmax(0,1fr)]">
+        <div className="space-y-4">
+          <MissionRewardTimeline currentStreak={currentStreak} />
 
-        {missionsQuery.isError && (
-          <div className="rounded-2xl border border-red-400/20 bg-red-400/[0.06] px-6 py-10 text-center text-sm font-semibold text-red-200 backdrop-blur-xl">
-            Không thể tải danh sách nhiệm vụ. Vui lòng thử lại sau.
-          </div>
-        )}
-
-        {!missionsQuery.isLoading &&
-          !missionsQuery.isError &&
-          !missionsQuery.data?.length && (
-            <div className="rounded-2xl border border-dashed border-white/10 bg-[#171923]/60 px-6 py-16 text-center backdrop-blur-xl">
-              <Target className="mx-auto h-12 w-12 text-[#d4af37]/55" />
-              <p className="mt-4 text-lg font-bold text-white">
-                Chưa có nhiệm vụ hôm nay
-              </p>
-              <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-white/45">
-                Các thử thách mới sẽ xuất hiện tại đây khi hệ thống kích hoạt.
-              </p>
+          <div className="rounded-2xl border border-white/10 bg-[#121214]/80 p-4">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Target className="h-5 w-5 text-[#D4AF37]" />
+                <h2 className="text-base font-semibold text-white/90">
+                  Nhiệm vụ hôm nay
+                </h2>
+              </div>
+              <Badge variant="outline" className="text-xs font-medium">
+                {missions.length} mục
+              </Badge>
             </div>
-          )}
 
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {missionsQuery.isLoading &&
-            [0, 1, 2, 3, 4, 5].map((item) => (
-              <MissionCardSkeleton key={item} />
-            ))}
+            {missionsQuery.isLoading && <MissionListSkeleton />}
 
-          {missionsQuery.data?.map((mission) => {
-            const MissionIcon = getMissionIcon(mission.code);
-            const isAdMission = mission.code.startsWith("WATCH_AD_");
-            const progressPercentage = getProgressPercentage(
-              mission.currentValue,
-              mission.targetValue,
-            );
-            const passiveStatusText = mission.currentValue > 0
-              ? "Đang Tiến Hành..."
-              : "Lắng Nghe Hệ Thống...";
+            {missionsQuery.isError && (
+              <div className="rounded-xl border border-red-400/20 bg-red-400/[0.06] px-4 py-5 text-sm font-medium text-red-200">
+                Không thể tải danh sách nhiệm vụ. Vui lòng thử lại sau.
+              </div>
+            )}
 
-            return (
-              <article
-                key={mission.missionId}
-                className="group flex h-full flex-col rounded-2xl border border-white/5 bg-[#171923]/60 p-6 backdrop-blur-xl transition-all hover:-translate-y-1 hover:border-[#d4af37]/40 hover:shadow-[0_20px_40px_rgba(0,0,0,0.3)]"
-              >
-                <div className="mb-7 flex items-start justify-between gap-6">
-                  <div className="rounded-xl border border-[#d4af37]/20 bg-[#d4af37]/10 p-3 text-[#d4af37] shadow-[0_0_18px_rgba(212,175,55,0.08)]">
-                    <MissionIcon className="h-7 w-7" />
-                  </div>
-
-                  <div className="text-right">
-                    <p className="text-[10px] font-black uppercase tracking-[0.22em] text-white/35">
-                      Reward
-                    </p>
-                    <div className="mt-1 flex items-center justify-end gap-1.5 text-[#d4af37]">
-                      <CircleDollarSign className="h-5 w-5" />
-                      <span className="text-xl font-black">
-                        + {formatCoin(mission.rewardAmount)} Coin
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mb-7">
-                  <h4 className="text-xl font-black leading-7 text-white transition-colors group-hover:text-[#d4af37]">
-                    {mission.title}
-                  </h4>
-                  <p className="mt-3 text-sm leading-6 text-white/45">
-                    {mission.description}
+            {!missionsQuery.isLoading &&
+              !missionsQuery.isError &&
+              missions.length === 0 && (
+                <div className="rounded-xl border border-dashed border-white/10 bg-white/[0.03] px-4 py-8 text-center">
+                  <Target className="mx-auto h-8 w-8 text-[#D4AF37]/60" />
+                  <p className="mt-3 text-sm font-medium text-white/80">
+                    Chưa có nhiệm vụ hôm nay
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">
+                    Các thử thách mới sẽ xuất hiện khi hệ thống kích hoạt.
                   </p>
                 </div>
+              )}
 
-                <div className="mb-8">
-                  <div className="flex items-center justify-between gap-3 text-xs font-bold uppercase tracking-widest">
-                    <span className="text-white/35">Tiến độ</span>
-                    <span className="tabular-nums text-[#d4af37]">
-                      {mission.currentValue}/{mission.targetValue}
-                    </span>
-                  </div>
-                  <div
-                    className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/5"
-                    role="progressbar"
-                    aria-label={`Tiến độ nhiệm vụ ${mission.title}`}
-                    aria-valuemin={0}
-                    aria-valuemax={mission.targetValue}
-                    aria-valuenow={Math.min(
-                      mission.currentValue,
-                      mission.targetValue,
+            <div className="space-y-3">
+              {missions.map((mission) => {
+                const progressPercentage = getProgressPercentage(
+                  mission.currentValue,
+                  mission.targetValue,
+                );
+                const isSelected =
+                  selectedMission?.missionId === mission.missionId;
+
+                return (
+                  <button
+                    key={mission.missionId}
+                    type="button"
+                    onClick={() => setSelectedMissionId(mission.missionId)}
+                    className={cn(
+                      "group w-full rounded-2xl border p-3 text-left transition hover:border-[#D4AF37]/35 hover:bg-white/[0.04]",
+                      isSelected
+                        ? "border-[#D4AF37]/40 bg-[#D4AF37]/[0.08]"
+                        : "border-white/10 bg-white/[0.025]",
                     )}
                   >
-                    <div
-                      className="h-full rounded-full bg-[#d4af37] shadow-[0_0_12px_rgba(212,175,55,0.6)] transition-[width] duration-500"
-                      style={{ width: `${progressPercentage}%` }}
-                    />
-                  </div>
-                </div>
-
-                <div className="mt-auto border-t border-white/5 pt-5">
-                  {mission.isCompleted ? (
-                    <div
-                      role="status"
-                      className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#d4af37]/20 bg-[#d4af37]/10 py-3 text-xs font-bold uppercase tracking-widest text-[#d4af37]"
-                    >
-                      <CheckCircle2 className="h-4 w-4" />
-                      Đã Nhận Thưởng
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37]">
+                        <MissionIconView code={mission.code} className="h-5 w-5" />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="truncate text-sm font-semibold text-white/88">
+                            {mission.title}
+                          </p>
+                          <span className="shrink-0 text-xs font-semibold text-[#F5D46E]">
+                            +{formatCoin(mission.rewardAmount)}
+                          </span>
+                        </div>
+                        <div className="mt-2 flex items-center gap-3">
+                          <Progress value={progressPercentage} className="h-1.5" />
+                          <span className="shrink-0 text-xs tabular-nums text-slate-500">
+                            {mission.currentValue}/{mission.targetValue}
+                          </span>
+                        </div>
+                      </div>
+                      <ChevronRight
+                        className={cn(
+                          "h-4 w-4 shrink-0 transition",
+                          isSelected
+                            ? "text-[#D4AF37]"
+                            : "text-slate-600 group-hover:text-[#D4AF37]",
+                        )}
+                      />
                     </div>
-                  ) : isAdMission ? (
-                    <button
-                      type="button"
-                      onClick={() => setActiveAdMission(mission.code)}
-                      className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#d4af37] py-3 text-xs font-black uppercase tracking-widest text-black shadow-[0_0_24px_rgba(212,175,55,0.18)] transition hover:bg-[#f2ca50] hover:shadow-[0_0_34px_rgba(212,175,55,0.28)] active:scale-[0.98]"
-                    >
-                      <PlayCircle className="h-4 w-4" />
-                      LÀM NHIỆM VỤ
-                    </button>
-                  ) : (
-                    <div
-                      aria-disabled="true"
-                      className="flex w-full items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/5 py-3 text-xs font-bold uppercase tracking-widest text-white/40"
-                    >
-                      <ShieldCheck className="h-4 w-4" />
-                      {passiveStatusText}
-                    </div>
-                  )}
-                </div>
-              </article>
-            );
-          })}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
+
+        <MissionDetail
+          mission={selectedMission}
+          onStartAd={(missionCode) => setActiveAdMission(missionCode)}
+        />
       </section>
 
       <AdRewardModal

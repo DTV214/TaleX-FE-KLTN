@@ -6,6 +6,7 @@ export type {
   DailyCheckInStatus,
 } from "./api/coin.dto";
 export { CoinTransactionHistory } from "./components/coin-transaction-history";
+export { CoinBalanceSummary } from "./components/coin-balance-summary";
 export { CoinWalletWidget } from "./components/coin-wallet-widget";
 export { useDailyCheckInMutation } from "./hooks/useCoinMutations";
 export {

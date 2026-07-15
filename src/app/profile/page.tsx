@@ -1,8 +1,8 @@
+import { ChangePasswordForm } from "@/features/auth/components/change-password-form";
 import { ProfileView } from "@/features/auth/components/profile-view";
 import { UpdateProfileForm } from "@/features/auth/components/update-profile-form";
-// 1. Thêm dòng import này:
-import { ChangePasswordForm } from "@/features/auth/components/change-password-form";
-import { CoinTransactionHistory } from "@/features/coin";
+import { CoinBalanceSummary } from "@/features/coin";
+import { Badge } from "@/shared/ui/badge";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -12,26 +12,32 @@ export const metadata: Metadata = {
 
 export default function ProfilePage() {
   return (
-    <div className="mx-auto w-full max-w-6xl flex-1 px-4 py-10">
-      <div className="mb-8">
-        <h1 className="font-heading text-3xl font-bold tracking-tight text-white">
-          Cài Đặt Tài Khoản
-        </h1>
-        <p className="mt-2 text-sm font-medium leading-relaxed text-white/55">
-          Quản lý thông tin cá nhân và bảo mật của bạn.
-        </p>
-      </div>
+    <div className="relative min-h-screen overflow-hidden bg-[#080808]">
+      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_14%_6%,rgba(212,175,55,0.14),transparent_32%),radial-gradient(circle_at_90%_8%,rgba(125,211,252,0.08),transparent_30%),linear-gradient(135deg,#080808_0%,#111114_52%,#080808_100%)]" />
 
-      <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">
-        <div className="lg:col-span-4">
-          <ProfileView />
+      <div className="relative z-10 mx-auto w-full max-w-6xl px-4 py-8 lg:py-10">
+        <div className="mb-6 rounded-2xl border border-white/10 bg-[#121214]/78 p-5 shadow-[0_18px_54px_rgba(0,0,0,0.26)]">
+          <Badge variant="premium" className="mb-3 px-3 py-1 text-xs font-medium">
+            TaleX Account
+          </Badge>
+          <h1 className="text-2xl font-semibold tracking-normal text-white/90 md:text-3xl">
+            Hồ sơ cá nhân
+          </h1>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
+            Quản lý thông tin tài khoản, bảo mật và số dư coin trong một không gian gọn gàng hơn.
+          </p>
         </div>
 
-        <div className="space-y-8 lg:col-span-8">
-          <UpdateProfileForm />
-          {/* 2. Gọi Component ChangePasswordForm ở đây */}
-          <ChangePasswordForm />
-          <CoinTransactionHistory />
+        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[340px_minmax(0,1fr)]">
+          <div className="space-y-6">
+            <ProfileView />
+          </div>
+
+          <div className="space-y-6">
+            <UpdateProfileForm />
+            <CoinBalanceSummary />
+            <ChangePasswordForm />
+          </div>
         </div>
       </div>
     </div>

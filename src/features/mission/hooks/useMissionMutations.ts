@@ -16,6 +16,8 @@ export function useHeartbeatMutation() {
     mutationFn: () => missionApi.processOnlineHeartbeat(),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: missionKeys.myMissions() });
+      queryClient.invalidateQueries({ queryKey: coinKeys.wallet() });
+      queryClient.invalidateQueries({ queryKey: coinKeys.transactions() });
     },
     onError: logMissionError,
   });
@@ -36,6 +38,7 @@ export function useCompleteAdSessionMutation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: missionKeys.myMissions() });
       queryClient.invalidateQueries({ queryKey: coinKeys.wallet() });
+      queryClient.invalidateQueries({ queryKey: coinKeys.transactions() });
     },
     onError: logMissionError,
   });

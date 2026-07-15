@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
   Building2,
@@ -22,6 +23,7 @@ import { PaymentWarningBanner } from "@/features/checkout/components/PaymentWarn
 import { QRCodeDisplay } from "@/features/checkout/components/QRCodeDisplay";
 import { useGetSubscription } from "@/features/admin/subscriptions/hooks/use-subscriptions";
 import {
+  paymentKeys,
   useActiveSubscription,
   useEnsureOrder,
   useOrderStatus,
@@ -77,6 +79,7 @@ function PaymentFrame({
 
 function CheckoutPageContent() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const searchParams = useSearchParams();
   const subscriptionId = searchParams.get("subscriptionId") ?? "";
 
@@ -113,6 +116,13 @@ function CheckoutPageContent() {
 
   useEffect(() => {
     if (order?.status === "COMPLETED") {
+      void queryClient.invalidateQueries({
+        queryKey: paymentKeys.activeSubscription(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: paymentKeys.subscriptionHistory(),
+      });
+
       const redirectTimerId = window.setTimeout(() => {
         router.push(
           `/checkout/success?orderId=${order.orderId}&amount=${order.totalAmount}`,
@@ -127,7 +137,7 @@ function CheckoutPageContent() {
       }, 1200);
       return () => window.clearTimeout(redirectTimerId);
     }
-  }, [order?.status, order?.orderId, order?.totalAmount, router]);
+  }, [order?.status, order?.orderId, order?.totalAmount, queryClient, router]);
 
   const displayStatus: "PENDING" | "SUCCESS" | "OUT_OF_TIME" =
     order?.status === "COMPLETED"

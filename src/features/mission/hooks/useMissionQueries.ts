@@ -12,7 +12,7 @@ export function useMyMissions(options?: { enabled?: boolean }) {
     queryKey: missionKeys.myMissions(),
     queryFn: () => missionApi.getMyDailyMissions(),
     enabled: options?.enabled ?? true,
-    staleTime: 60 * 1000,
+    staleTime: 10 * 1000,
   });
 }
 

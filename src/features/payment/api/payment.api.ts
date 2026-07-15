@@ -24,6 +24,10 @@ export const paymentKeys = {
   all: ["payment"] as const,
   order: (orderId: string) => [...paymentKeys.all, "order", orderId] as const,
   activeSubscription: () => [...paymentKeys.all, "active-subscription"] as const,
+  subscriptionHistory: (page?: number, pageSize?: number) =>
+    page === undefined || pageSize === undefined
+      ? ([...paymentKeys.all, "subscription-history"] as const)
+      : ([...paymentKeys.all, "subscription-history", page, pageSize] as const),
 };
 
 export function useCreateOrder() {
@@ -89,6 +93,7 @@ export function useCancelOrder() {
       queryClient.setQueryData(paymentKeys.order(orderId), data);
       // Hủy đơn có thể hoàn lại Coin đã trừ — làm mới số dư hiển thị ngay.
       queryClient.invalidateQueries({ queryKey: coinKeys.wallet() });
+      queryClient.invalidateQueries({ queryKey: coinKeys.transactions() });
     },
   });
 }
@@ -105,11 +110,12 @@ export function useConfirmCoinPayment() {
     onSuccess: (data, orderId) => {
       queryClient.setQueryData(paymentKeys.order(orderId), data);
       queryClient.invalidateQueries({ queryKey: coinKeys.wallet() });
+      queryClient.invalidateQueries({ queryKey: coinKeys.transactions() });
     },
   });
 }
 
-export function useActiveSubscription() {
+export function useActiveSubscription(enabled = true) {
   return useQuery({
     queryKey: paymentKeys.activeSubscription(),
     queryFn: async (): Promise<AccountSubscription | null> => {
@@ -129,6 +135,28 @@ export function useActiveSubscription() {
         return null;
       }
       return parseBackendDate(latest.endTime) > new Date() ? latest : null;
+    },
+    enabled,
+    staleTime: 30 * 1000,
+  });
+}
+
+export function useSubscriptionHistory(page: number, pageSize: number) {
+  return useQuery({
+    queryKey: paymentKeys.subscriptionHistory(page, pageSize),
+    queryFn: async (): Promise<BasePageResponse<AccountSubscription>> => {
+      const response = await httpClient.get<
+        BaseResponse<BasePageResponse<AccountSubscription>>
+      >(ACCOUNT_SUBSCRIPTIONS_OWN_ENDPOINT, {
+        params: {
+          page,
+          pageSize,
+          sortBy: "endTime",
+          sortDirection: "DESC",
+        },
+      });
+
+      return response.data.data;
     },
     staleTime: 30 * 1000,
   });

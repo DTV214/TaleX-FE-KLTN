@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { CircleDollarSign, Target } from "lucide-react";
+import { CircleDollarSign, Target, WalletCards } from "lucide-react";
 import { useDailyCheckInMutation } from "../hooks/useCoinMutations";
 import {
   useCoinWallet,
@@ -64,7 +64,7 @@ export function CoinWalletWidget() {
             </div>
 
             {isCheckedInToday ? (
-              <div className="flex h-10 items-center justify-center rounded-lg border border-white/10 bg-white/[0.05] text-xs font-black uppercase tracking-wider text-white/40">
+              <div className="flex h-10 items-center justify-center rounded-lg border border-white/10 bg-white/[0.05] text-xs font-semibold text-white/45">
                 Đã điểm danh
               </div>
             ) : (
@@ -72,7 +72,7 @@ export function CoinWalletWidget() {
                 type="button"
                 disabled={checkInMutation.isPending}
                 onClick={() => checkInMutation.mutate()}
-                className="flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-[#D4AF37] text-xs font-black uppercase tracking-wider text-black transition hover:bg-[#E5C158] disabled:cursor-not-allowed disabled:opacity-70"
+                className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-[#D4AF37] text-sm font-semibold text-black transition hover:bg-[#E5C158] disabled:cursor-not-allowed disabled:opacity-70"
               >
                 {checkInMutation.isPending && (
                   <span className="h-4 w-4 animate-spin rounded-full border-2 border-black/30 border-t-black" />
@@ -80,12 +80,24 @@ export function CoinWalletWidget() {
                 Nhận Coin
               </button>
             )}
+            <Link
+              href="/coin-history"
+              className="mt-2 flex h-9 w-full items-center justify-between gap-3 rounded-lg border border-cyan-300/20 bg-cyan-300/[0.07] px-3 text-xs font-medium text-cyan-100 transition hover:border-cyan-200/35 hover:bg-cyan-300/[0.11]"
+            >
+              <span className="inline-flex items-center gap-2 text-cyan-200/85">
+                <WalletCards className="h-3.5 w-3.5" />
+                Số dư coin
+              </span>
+              <span className="font-semibold tabular-nums text-white">
+                {balanceLabel}
+              </span>
+            </Link>
           </div>
 
           <div className="p-4">
             <div className="mb-3 flex items-center gap-2">
               <Target className="h-4 w-4 text-[#D4AF37]" />
-              <p className="text-xs font-black uppercase tracking-wider text-white/65">
+              <p className="text-xs font-medium text-white/65">
                 Nhiệm vụ hôm nay
               </p>
             </div>

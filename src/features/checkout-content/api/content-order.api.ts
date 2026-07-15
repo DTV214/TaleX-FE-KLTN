@@ -43,6 +43,7 @@ export function useEnsureContentOrder(
       // Server có thể vừa debit/credit Coin (áp dụng lựa chọn mới) — làm mới số dư hiển
       // thị ở header/CoinPaymentSelector ngay, không chờ staleTime 60s của useCoinWallet.
       queryClient.invalidateQueries({ queryKey: coinKeys.wallet() });
+      queryClient.invalidateQueries({ queryKey: coinKeys.transactions() });
       return order;
     },
     enabled: Boolean(itemId),
