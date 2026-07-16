@@ -138,3 +138,10 @@ export async function getPublicEpisodeMedia(episodeId: string, viewerId?: string
   );
 }
 
+export async function getPublicEpisodeDetail(episodeId: string) {
+  return unwrapBaseResponse<PublicEpisodeItem>(
+    httpClient.get(`/api/v1/public/episodes/${episodeId}`)
+  );
+}
+
+

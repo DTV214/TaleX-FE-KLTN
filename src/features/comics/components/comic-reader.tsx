@@ -19,11 +19,14 @@ import {
   ZoomOut,
   RotateCcw,
 } from "lucide-react";
-import { getPublicEpisodeMedia, getPublicEpisodes, getPublicSeasons } from "@/features/series/api/series-api";
+import { getPublicEpisodeMedia, getPublicEpisodes, getPublicSeasons, getPublicEpisodeDetail } from "@/features/series/api/series-api";
 import { ContentPaywallGate } from "@/features/checkout-content/components/content-paywall-gate";
 import { isNotEntitledError } from "@/features/checkout-content/utils/is-not-entitled-error";
 import { useAuthStore } from "@/features/auth/store/auth.store";
 import { cn } from "@/shared/utils/utils";
+import { LikeButton } from "@/features/series/components/like-button";
+import { LikedUsersModal } from "@/features/series/components/liked-users-modal";
+import { useEpisodeLikes } from "@/features/series/hooks/use-episode-likes";
 
 interface ComicReaderProps {
   episodeId: string;
@@ -46,6 +49,22 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
   // without this every viewer looks anonymous and paid content 403s for everyone.
   const authUser = useAuthStore((state) => state.user);
   const viewerId = authUser?.accountId;
+
+  // Fetch thông tin chi tiết tập truyện
+  const { data: episodeDetail } = useQuery({
+    queryKey: ["publicEpisodeDetail", episodeId],
+    queryFn: () => getPublicEpisodeDetail(episodeId),
+    enabled: !!episodeId,
+  });
+
+  // Tải trạng thái và lượt thích tập truyện
+  const {
+    totalLikes,
+    isLiked,
+    toggleLike,
+    isMutating,
+    likedUsers,
+  } = useEpisodeLikes(episodeId);
 
   // Fetch danh sách trang truyện (media pages) từ API
   const {
@@ -206,7 +225,11 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
 
           {/* Tiêu đề & chỉ số trang */}
           <div className="flex-1 text-center">
-            <p className="text-white font-bold text-sm line-clamp-1">Tập {episodeId}</p>
+            <p className="text-white font-bold text-sm line-clamp-1">
+              {episodeDetail
+                ? `Tập ${episodeDetail.episodeNumber}: ${episodeDetail.title}`
+                : `Tập ${episodeId}`}
+            </p>
             <p className="text-[#D4AF37] text-xs font-semibold mt-0.5">
               Trang {currentPage + 1} / {totalPages}
             </p>
@@ -345,14 +368,36 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
             ))}
 
             {/* End of chapter message */}
-            <div className="w-full max-w-lg mx-auto px-6 py-12 text-center">
+            <div className="w-full max-w-lg mx-auto px-6 py-12 text-center bg-[#121214]/60 border border-white/5 rounded-3xl p-8 backdrop-blur-md shadow-2xl relative mt-10">
               <div className="w-12 h-12 rounded-full bg-[#D4AF37]/10 flex items-center justify-center mx-auto mb-4">
                 <BookOpen className="w-6 h-6 text-[#D4AF37]" />
               </div>
-              <p className="text-gray-400 text-sm font-medium mb-6">Bạn đã đọc xong tập này!</p>
+              <p className="text-gray-300 text-sm font-bold mb-6">Bạn đã đọc xong tập này!</p>
+
+              {/* Nút Thích & Thống kê */}
+              <div className="flex flex-col items-center gap-3 w-full mb-8 pb-6 border-b border-white/5">
+                <LikeButton
+                  isLiked={isLiked}
+                  likeCount={totalLikes}
+                  onLikeToggle={toggleLike}
+                  isLoading={isMutating}
+                />
+
+                {likedUsers.length > 0 && (
+                  <LikedUsersModal
+                    episodeId={episodeId}
+                    trigger={
+                      <button className="text-xs text-gray-500 hover:text-white cursor-pointer transition-colors mt-2 flex items-center gap-1 font-semibold">
+                        Xem danh sách người thích
+                      </button>
+                    }
+                  />
+                )}
+              </div>
+
               <button
                 onClick={() => router.back()}
-                className="px-6 py-2.5 bg-[#D4AF37] text-black font-bold rounded-xl hover:bg-[#E5C158] transition-colors text-sm"
+                className="w-full max-w-xs py-3 bg-[#D4AF37] hover:bg-[#E5C158] text-black font-extrabold rounded-xl transition-all active:scale-[0.98] text-sm"
               >
                 Quay lại trang Series
               </button>

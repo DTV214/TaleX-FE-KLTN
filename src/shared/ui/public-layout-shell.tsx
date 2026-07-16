@@ -21,6 +21,7 @@ const sidebarRoutes = [
   "/profile",
   "/coin-history",
   "/premium-history",
+  "/liked",
 ] as const;
 const hiddenChromeRoutes = [
   "/login",

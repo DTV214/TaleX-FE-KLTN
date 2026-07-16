@@ -22,7 +22,6 @@ export type OwnCreatorResponse = {
   createdAt?: string;
   isAcceptedLatestTerms: boolean;
   termsVersion?: CreatorTermsVersion | null;
-  createdAt?: string;
   updatedAt?: string;
 };
 

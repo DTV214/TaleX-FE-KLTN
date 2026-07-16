@@ -1,12 +1,16 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, Loader2, Calendar, Eye } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   getEpisodePlayback,
   getCreatorEpisodePlayback,
 } from "@/features/playback/api/playback-api";
+import { getPublicEpisodeDetail } from "@/features/series/api/series-api";
+import { LikeButton } from "@/features/series/components/like-button";
+import { LikedUsersModal } from "@/features/series/components/liked-users-modal";
+import { useEpisodeLikes } from "@/features/series/hooks/use-episode-likes";
 import { HlsVideoPlayer } from "@/features/playback/components/hls-video-player";
 import { ContentPaywallGate } from "@/features/checkout-content/components/content-paywall-gate";
 import { isNotEntitledError } from "@/features/checkout-content/utils/is-not-entitled-error";
@@ -80,6 +84,22 @@ export function SignedHlsPlayer({
     refetchOnWindowFocus: false,
     retry: false,
   });
+
+  // Fetch chi tiết tập phim
+  const { data: episodeDetail } = useQuery({
+    queryKey: ["publicEpisodeDetail", episodeId],
+    queryFn: () => getPublicEpisodeDetail(episodeId),
+    enabled: !!episodeId,
+  });
+
+  // Quản lý trạng thái like của tập phim
+  const {
+    totalLikes,
+    isLiked,
+    toggleLike,
+    isMutating,
+    likedUsers,
+  } = useEpisodeLikes(episodeId);
 
   const manifestUrl =
     playbackQuery.data?.manifestUrl ||
@@ -187,6 +207,92 @@ export function SignedHlsPlayer({
             >
               {processingPlaybackError ? "Check Again" : "Retry Playback"}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Thông tin tập phim dưới player */}
+      {!compact && episodeDetail && (
+        <div className="mt-6 bg-[#121214]/40 border border-white/5 rounded-3xl p-6 md:p-8 backdrop-blur-md shadow-2xl relative overflow-hidden">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-white/5">
+            {/* Tiêu đề & Thông số */}
+            <div className="space-y-2">
+              <h1 className="text-xl md:text-2xl font-black text-white tracking-wide">
+                Tập {episodeDetail.episodeNumber}: {episodeDetail.title}
+              </h1>
+              
+              <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-gray-500">
+                <span className="flex items-center gap-1.5">
+                  <Eye className="w-4 h-4 text-gray-600" />
+                  {episodeDetail.views.toLocaleString("vi-VN")} lượt xem
+                </span>
+                <span className="w-1.5 h-1.5 rounded-full bg-white/10" />
+                <span className="flex items-center gap-1.5">
+                  <Calendar className="w-4 h-4 text-gray-600" />
+                  {new Date(episodeDetail.publishedAt).toLocaleDateString("vi-VN")}
+                </span>
+              </div>
+            </div>
+
+            {/* Cụm Likes Action */}
+            <div className="flex flex-wrap items-center gap-3 shrink-0">
+              <LikeButton
+                isLiked={isLiked}
+                likeCount={totalLikes}
+                onLikeToggle={toggleLike}
+                isLoading={isMutating}
+              />
+
+              {likedUsers.length > 0 && (
+                <div className="flex items-center gap-2">
+                  {/* Overlapping Avatar Group */}
+                  <div className="flex -space-x-2 overflow-hidden">
+                    {likedUsers.slice(0, 3).map((user) => (
+                      <div
+                        key={user.accountId}
+                        className="inline-block h-6 w-6 rounded-full ring-2 ring-[#0B0B0C] overflow-hidden bg-white/5"
+                      >
+                        <img
+                          src={
+                            user.avatarUrl ||
+                            "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=80&auto=format&fit=crop"
+                          }
+                          alt={user.username}
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+                    ))}
+                  </div>
+
+                  <LikedUsersModal
+                    episodeId={episodeId}
+                    trigger={
+                      <button className="text-[10px] md:text-xs font-bold text-gray-400 hover:text-white cursor-pointer transition-colors">
+                        {totalLikes > 3
+                          ? `và ${totalLikes - 3} người khác đã thích`
+                          : `đã thích`}
+                      </button>
+                    }
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Mô tả tập phim */}
+          <div className="mt-6">
+            <h3 className="text-xs font-black text-gray-400 uppercase tracking-wider mb-2">
+              Giới thiệu tập phim
+            </h3>
+            {episodeDetail.description ? (
+              <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-line">
+                {episodeDetail.description}
+              </p>
+            ) : (
+              <p className="text-gray-500 text-xs italic">
+                Tập phim này chưa có mô tả chi tiết.
+              </p>
+            )}
           </div>
         </div>
       )}
