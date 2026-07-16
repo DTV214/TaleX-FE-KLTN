@@ -23,6 +23,7 @@ export type OwnCreatorResponse = {
   isAcceptedLatestTerms: boolean;
   termsVersion?: CreatorTermsVersion | null;
   updatedAt?: string;
+  followerCount?: number;
 };
 
 export type RegisterCreatorResponse = OwnCreatorResponse;

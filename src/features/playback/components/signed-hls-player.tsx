@@ -15,6 +15,9 @@ import { HlsVideoPlayer } from "@/features/playback/components/hls-video-player"
 import { ContentPaywallGate } from "@/features/checkout-content/components/content-paywall-gate";
 import { isNotEntitledError } from "@/features/checkout-content/utils/is-not-entitled-error";
 import { useAuthStore } from "@/features/auth/store/auth.store";
+import { FollowButton } from "@/features/series/components/follow-button";
+import { useCreatorFollow } from "@/features/series/hooks/use-creator-follow";
+import { getCreatorDetail } from "@/features/series/api/creator-follows-api";
 
 type SignedHlsPlayerProps = {
   episodeId: string;
@@ -100,6 +103,23 @@ export function SignedHlsPlayer({
     isMutating,
     likedUsers,
   } = useEpisodeLikes(episodeId);
+
+  // Truy vấn chi tiết thông tin nhà sáng tạo (để lấy accountId nhằm follow)
+  const { data: creatorDetail } = useQuery({
+    queryKey: ["creatorDetailPublic", episodeDetail?.creatorId],
+    queryFn: () => getCreatorDetail(episodeDetail!.creatorId),
+    enabled: !!episodeDetail?.creatorId,
+  });
+
+  const creatorAccountId = creatorDetail?.accountId || creatorDetail?.creatorId || episodeDetail?.creatorId;
+  const creatorName = creatorDetail?.displayName || creatorDetail?.username || episodeDetail?.createdBy || "Nhà sáng tạo";
+  const creatorAvatar = creatorDetail?.avatarUrl;
+
+  const {
+    isFollowing,
+    toggleFollow,
+    isMutating: isFollowMutating,
+  } = useCreatorFollow(creatorAccountId);
 
   const manifestUrl =
     playbackQuery.data?.manifestUrl ||
@@ -277,6 +297,41 @@ export function SignedHlsPlayer({
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Thông tin nhà sáng tạo (Creator Profile & Follow Action) */}
+          <div className="mt-6 pt-5 border-t border-white/5 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {/* Avatar */}
+              <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 overflow-hidden relative flex-none">
+                <img
+                  src={
+                    creatorAvatar ||
+                    "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=80&auto=format&fit=crop"
+                  }
+                  alt={creatorName}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              {/* Tên & Số người theo dõi */}
+              <div className="min-w-0">
+                <h4 className="text-sm font-bold text-gray-200 truncate leading-snug">
+                  {creatorName}
+                </h4>
+                <p className="text-[10px] text-gray-500 font-semibold mt-0.5 animate-pulse">
+                  {creatorDetail?.followerCount != null
+                    ? `${creatorDetail.followerCount.toLocaleString("vi-VN")} người theo dõi`
+                    : "Nhà sáng tạo TaleX"}
+                </p>
+              </div>
+            </div>
+
+            {/* Nút Follow */}
+            <FollowButton
+              isFollowing={isFollowing}
+              onFollowToggle={toggleFollow}
+              isMutating={isFollowMutating}
+            />
           </div>
 
           {/* Mô tả tập phim */}

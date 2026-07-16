@@ -33,8 +33,9 @@ import {
 import { listSeriesByCreator } from "@/features/creator-dashboard/api/creator-content-api";
 import { ComboCard } from "@/features/public/components/combo-packages";
 import { useGetPublicCombos } from "@/features/public/hooks/use-public-combos";
+import { getFollowers } from "@/features/series/api/creator-follows-api";
 
-type TabType = "home" | "comics" | "movies" | "about" | "combo";
+type TabType = "home" | "comics" | "movies" | "about" | "combo" | "followers";
 
 export default function CreatorChannelPage() {
   const router = useRouter();
@@ -83,6 +84,14 @@ export default function CreatorChannelPage() {
   const creatorCombos = (combosQuery.data ?? []).filter(
     (combo) => combo.creatorId === creator?.creatorId,
   );
+
+  // 4. Fetch list of followers (for the followers tab)
+  const { data: followersData, isLoading: isFollowersLoading } = useQuery({
+    queryKey: ["creator-followers", creator?.creatorId],
+    queryFn: () => getFollowers(0, 100),
+    enabled: activeTab === "followers" && !!creator,
+  });
+  const followersList = followersData?.content || [];
 
   const handleItemPress = (seriesId: string) => {
     router.push(`/series/${seriesId}`);
@@ -273,10 +282,14 @@ export default function CreatorChannelPage() {
             {/* Statistics Cards Grid */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-6 sm:px-10 py-2">
               {[
-                { label: "Người theo dõi", value: "12.4K", icon: Users },
+                {
+                  label: "Người theo dõi",
+                  value: creator?.followerCount != null ? creator.followerCount.toLocaleString("vi-VN") : "0",
+                  icon: Users,
+                },
                 { label: "Phim ảnh", value: moviesList.length.toString(), icon: Video },
                 { label: "Truyện tranh", value: comicsList.length.toString(), icon: BookOpen },
-                { label: "Lượt thích", value: "1.8M", icon: Heart },
+                { label: "Lượt thích", value: "0", icon: Heart },
               ].map((stat, i) => {
                 const Icon = stat.icon;
                 return (
@@ -300,7 +313,6 @@ export default function CreatorChannelPage() {
               })}
             </div>
 
-            {/* Navigation Tabs */}
             <div className="border-b border-white/[0.06] bg-transparent flex gap-4 overflow-x-auto scrollbar-none mt-4 px-6 sm:px-10">
               {([
                 { id: "home", label: "Trang chủ" },
@@ -308,6 +320,7 @@ export default function CreatorChannelPage() {
                 { id: "movies", label: "Phim ảnh" },
                 { id: "about", label: "Giới thiệu" },
                 { id: "combo", label: "Combo" },
+                { id: "followers", label: "Người theo dõi" },
               ] as const).map((tab) => {
                 const isActive = activeTab === tab.id;
                 const isCombo = tab.id === "combo";
@@ -715,6 +728,75 @@ export default function CreatorChannelPage() {
                           combo={combo}
                           isPopular={index === 0}
                         />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {activeTab === "followers" && (
+                <div className="space-y-6">
+                  <div className="relative overflow-hidden rounded-2xl border border-[#FACC15]/25 bg-gradient-to-br from-stone-900 via-[#17171C] to-[#111114] p-6 shadow-[0_20px_50px_rgba(250,204,21,0.04)]">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-[#FACC15]/[0.06] rounded-full blur-[100px] pointer-events-none" />
+                    <div className="relative z-10 flex items-center gap-3">
+                      <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#FACC15]/30 bg-[#FACC15]/10 text-[#FACC15]">
+                        <Users className="h-5.5 w-5.5" />
+                      </span>
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-[#FACC15]">
+                          Danh sách người theo dõi
+                        </p>
+                        <h3 className="text-xl font-black text-white mt-0.5">
+                          Khán giả và những người ủng hộ kênh
+                        </h3>
+                      </div>
+                    </div>
+                  </div>
+
+                  {isFollowersLoading ? (
+                    <div className="flex h-48 items-center justify-center">
+                      <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#FACC15] border-t-transparent" />
+                    </div>
+                  ) : followersList.length === 0 ? (
+                    <div className="flex h-36 flex-col items-center justify-center p-8 text-center border border-dashed border-white/[0.06] rounded-2xl bg-[#111114] w-full">
+                      <Users className="h-8 w-8 text-zinc-600 mb-2" />
+                      <p className="text-xs font-semibold text-zinc-500">
+                        Kênh này chưa có người theo dõi nào.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-in fade-in duration-300">
+                      {followersList.map((follower) => (
+                        <div
+                          key={follower.accountId}
+                          className="bg-[#17171C] border border-white/[0.04] rounded-2xl p-4 flex items-center gap-3.5 hover:border-white/10 transition-all duration-300 shadow-lg"
+                        >
+                          {/* Avatar */}
+                          <div className="w-12 h-12 rounded-full bg-zinc-800 border border-white/10 overflow-hidden relative flex-none shadow-md">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={
+                                follower.avatarUrl ||
+                                "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=80&auto=format&fit=crop"
+                              }
+                              alt={follower.username}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          {/* Info */}
+                          <div className="min-w-0 flex-1">
+                            <h4 className="text-sm font-bold text-gray-200 truncate leading-snug">
+                              {follower.username || "Người dùng ẩn danh"}
+                            </h4>
+                            <p className="text-[10px] text-gray-500 font-semibold mt-1">
+                              Theo dõi từ {new Date(follower.followedAt).toLocaleDateString("vi-VN", {
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                              })}
+                            </p>
+                          </div>
+                        </div>
                       ))}
                     </div>
                   )}

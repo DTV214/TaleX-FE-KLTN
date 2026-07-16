@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import {
@@ -28,6 +28,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useGetPublicCombos } from "@/features/public/hooks/use-public-combos";
+import { useCreatorFollow } from "../hooks/use-creator-follow";
+import { FollowButton } from "./follow-button";
 
 interface SeriesDetailProps {
   seriesId: string;
@@ -55,6 +57,35 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
   // 1.5 Fetch public combos
   const combosQuery = useGetPublicCombos();
   const combos = combosQuery.data ?? [];
+
+  const {
+    isFollowing,
+    toggleFollow,
+    isMutating: isFollowMutating,
+    isLoading: isFollowListLoading,
+  } = useCreatorFollow(series?.accountId);
+
+  const [initialIsFollowing, setInitialIsFollowing] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    setInitialIsFollowing(null);
+  }, [series?.seriesId]);
+
+  useEffect(() => {
+    if (!isFollowListLoading && initialIsFollowing === null && series?.accountId) {
+      setInitialIsFollowing(isFollowing);
+    }
+  }, [isFollowListLoading, isFollowing, series?.accountId, initialIsFollowing]);
+
+  const displayFollowersCount = (() => {
+    const baseCount = series?.totalCreatorFollowers ?? 0;
+    if (initialIsFollowing === null) return baseCount;
+    if (initialIsFollowing) {
+      return isFollowing ? baseCount : Math.max(0, baseCount - 1);
+    } else {
+      return isFollowing ? baseCount + 1 : baseCount;
+    }
+  })();
 
   // 2. Fetch danh sách Seasons của Series
   const { data: seasons = [], isLoading: isSeasonsLoading } = useQuery({
@@ -273,6 +304,47 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
                 </span>
               ))}
             </div>
+
+            {/* Thông tin nhà sáng tạo (Creator Profile & Follow Action) */}
+            {series.creatorName && (
+              <div className="flex items-center gap-3 mb-8 bg-white/[0.02] border border-white/5 w-fit rounded-2xl p-4 backdrop-blur-md">
+                {/* Avatar */}
+                <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 overflow-hidden relative flex-none shadow-md">
+                  <img
+                    src={
+                      series.creatorAvatar ||
+                      "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=80&auto=format&fit=crop"
+                    }
+                    alt={series.creatorName}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                {/* Name & Followers */}
+                <div className="min-w-0 pr-2">
+                  <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">
+                    Tác giả
+                  </p>
+                  <h4 className="text-sm font-black text-gray-200 truncate leading-snug">
+                    {series.creatorName}
+                  </h4>
+                  <p className="text-[10px] text-gray-500 font-semibold mt-0.5">
+                    {displayFollowersCount != null
+                      ? `${displayFollowersCount.toLocaleString("vi-VN")} người theo dõi`
+                      : "Nhà sáng tạo TaleX"}
+                  </p>
+                </div>
+                {/* Follow Button */}
+                {series.accountId && (
+                  <div className="ml-4 pl-4 border-l border-white/5 shrink-0">
+                    <FollowButton
+                      isFollowing={isFollowing}
+                      onFollowToggle={toggleFollow}
+                      isMutating={isFollowMutating}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Mô tả dài */}
             <div className="max-w-3xl mb-8">

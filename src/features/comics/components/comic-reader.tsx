@@ -27,6 +27,9 @@ import { cn } from "@/shared/utils/utils";
 import { LikeButton } from "@/features/series/components/like-button";
 import { LikedUsersModal } from "@/features/series/components/liked-users-modal";
 import { useEpisodeLikes } from "@/features/series/hooks/use-episode-likes";
+import { FollowButton } from "@/features/series/components/follow-button";
+import { useCreatorFollow } from "@/features/series/hooks/use-creator-follow";
+import { getCreatorDetail } from "@/features/series/api/creator-follows-api";
 
 interface ComicReaderProps {
   episodeId: string;
@@ -65,6 +68,23 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
     isMutating,
     likedUsers,
   } = useEpisodeLikes(episodeId);
+
+  // Truy vấn thông tin creator
+  const { data: creatorDetail } = useQuery({
+    queryKey: ["creatorDetailPublic", episodeDetail?.creatorId],
+    queryFn: () => getCreatorDetail(episodeDetail!.creatorId),
+    enabled: !!episodeDetail?.creatorId,
+  });
+
+  const creatorAccountId = creatorDetail?.accountId || creatorDetail?.creatorId || episodeDetail?.creatorId;
+  const creatorName = creatorDetail?.displayName || creatorDetail?.username || episodeDetail?.createdBy || "Nhà sáng tạo";
+  const creatorAvatar = creatorDetail?.avatarUrl;
+
+  const {
+    isFollowing,
+    toggleFollow,
+    isMutating: isFollowMutating,
+  } = useCreatorFollow(creatorAccountId);
 
   // Fetch danh sách trang truyện (media pages) từ API
   const {
@@ -393,6 +413,38 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
                     }
                   />
                 )}
+              </div>
+
+              {/* Creator info & Follow action */}
+              <div className="flex items-center justify-between w-full bg-white/[0.02] border border-white/5 rounded-2xl p-4 mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 overflow-hidden relative flex-none">
+                    <img
+                      src={
+                        creatorAvatar ||
+                        "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=80&auto=format&fit=crop"
+                      }
+                      alt={creatorName}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="text-left min-w-0">
+                    <h4 className="text-sm font-bold text-gray-200 truncate leading-snug">
+                      {creatorName}
+                    </h4>
+                    <p className="text-[10px] text-gray-500 font-semibold mt-0.5 animate-pulse">
+                      {creatorDetail?.followerCount != null
+                        ? `${creatorDetail.followerCount.toLocaleString("vi-VN")} người theo dõi`
+                        : "Nhà sáng tạo TaleX"}
+                    </p>
+                  </div>
+                </div>
+
+                <FollowButton
+                  isFollowing={isFollowing}
+                  onFollowToggle={toggleFollow}
+                  isMutating={isFollowMutating}
+                />
               </div>
 
               <button

@@ -24,7 +24,11 @@ export type TagResponse = {
 
 export type PublicSeriesItem = {
   seriesId: string;
+  accountId?: string;
   creatorId: string;
+  creatorName: string;
+  creatorAvatar?: string | null;
+  totalCreatorFollowers?: number;
   title: string;
   description?: string;
   coverUrl?: string;

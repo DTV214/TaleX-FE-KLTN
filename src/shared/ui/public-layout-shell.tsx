@@ -22,6 +22,8 @@ const sidebarRoutes = [
   "/coin-history",
   "/premium-history",
   "/liked",
+  "/subscriptions",
+  "/creator-channel",
 ] as const;
 const hiddenChromeRoutes = [
   "/login",

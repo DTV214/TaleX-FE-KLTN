@@ -204,7 +204,7 @@ export function SeriesList() {
                           </div>
                         </div>
 
-                        {/* Tiêu đề và Mô tả được tối ưu hóa hiển thị */}
+                         {/* Tiêu đề và Mô tả được tối ưu hóa hiển thị */}
                         <div className="px-1.5 transform transition-transform duration-300 group-hover:translate-x-1">
                           <div className="flex items-center gap-2">
                             <Film className="w-3.5 h-3.5 text-gray-500 group-hover:text-[#D4AF37] flex-shrink-0 transition-colors" />
@@ -212,6 +212,11 @@ export function SeriesList() {
                               {movie.title}
                             </h2>
                           </div>
+                          {movie.creatorName && (
+                            <p className="text-[11px] font-bold text-[#D4AF37]/90 mt-1 uppercase tracking-wider">
+                              Tác giả: {movie.creatorName}
+                            </p>
+                          )}
                           <p className="text-gray-400 text-xs md:text-sm mt-1.5 line-clamp-2 leading-relaxed font-normal opacity-80 group-hover:opacity-100 transition-opacity">
                             {movie.description || "Bấm để xem thông tin chi tiết và lịch chiếu của bộ phim này trên hệ thống."}
                           </p>
