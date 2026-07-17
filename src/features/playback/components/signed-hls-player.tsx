@@ -10,6 +10,7 @@ import {
 import { getPublicEpisodeDetail } from "@/features/series/api/series-api";
 import { LikeButton } from "@/features/series/components/like-button";
 import { LikedUsersModal } from "@/features/series/components/liked-users-modal";
+import { EpisodeShareButton } from "@/features/series/components/episode-share-button";
 import { useEpisodeLikes } from "@/features/series/hooks/use-episode-likes";
 import { HlsVideoPlayer } from "@/features/playback/components/hls-video-player";
 import { ContentPaywallGate } from "@/features/checkout-content/components/content-paywall-gate";
@@ -191,6 +192,7 @@ export function SignedHlsPlayer({
         <ContentPaywallGate episodeId={episodeId} contentKind="VIDEO" compact={compact} />
       ) : manifestUrl ? (
         <HlsVideoPlayer
+          episodeId={episodeId}
           manifestUrl={manifestUrl}
           posterUrl={playbackQuery.data?.thumbnailUrl}
           compact={compact}
@@ -254,13 +256,19 @@ export function SignedHlsPlayer({
               </div>
             </div>
 
-            {/* Cụm Likes Action */}
+            {/* Cụm Likes & Action */}
             <div className="flex flex-wrap items-center gap-3 shrink-0">
               <LikeButton
                 isLiked={isLiked}
                 likeCount={totalLikes}
                 onLikeToggle={toggleLike}
                 isLoading={isMutating}
+              />
+
+              <EpisodeShareButton
+                episodeId={episodeId}
+                contentType="VIDEO"
+                variant="pill"
               />
 
               {likedUsers.length > 0 && (

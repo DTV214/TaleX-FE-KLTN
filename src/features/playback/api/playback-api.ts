@@ -60,3 +60,29 @@ export async function getCreatorEpisodePlayback(
     }),
   );
 }
+
+export type WatchProgressPayload = {
+  event: "first_event" | "heartbeat" | "last_event";
+  session_id: string;
+  episode_id: string;
+  current_position: number;
+  heartbeat_value: number;
+};
+
+// 2. POST /api/v1/episodes/{episodeId}/views - Ghi nhận lượt xem
+export async function recordEpisodeView(episodeId: string, sessionId: string) {
+  return unwrapBaseResponse<{ code: number; message: string; data: any }>(
+    httpClient.post(`/api/v1/episodes/${episodeId}/views`, {
+      sessionId,
+      episodeId,
+    })
+  );
+}
+
+// 3. POST /api/v1/episodes/watch-progress - Ghi nhận tiến độ xem
+export async function recordWatchProgress(payload: WatchProgressPayload) {
+  return unwrapBaseResponse<{ code: number; message: string; data: any }>(
+    httpClient.post("/api/v1/episodes/watch-progress", payload)
+  );
+}
+

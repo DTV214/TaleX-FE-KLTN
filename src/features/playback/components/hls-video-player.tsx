@@ -21,6 +21,7 @@ import {
   type CSSProperties,
 } from "react";
 import { cn } from "@/shared/utils/utils";
+import { useHeartbeat } from "../hooks/useHeartbeat";
 
 type QualitySelection = "auto" | number;
 
@@ -37,6 +38,7 @@ type NativeFullscreenVideo = HTMLVideoElement & {
 };
 
 type HlsVideoPlayerProps = {
+  episodeId: string;
   manifestUrl: string;
   posterUrl?: string | null;
   compact?: boolean;
@@ -328,6 +330,7 @@ function getBufferedEnd(video: HTMLVideoElement) {
 }
 
 export function HlsVideoPlayer({
+  episodeId,
   manifestUrl,
   posterUrl,
   compact = false,
@@ -337,6 +340,9 @@ export function HlsVideoPlayer({
 }: HlsVideoPlayerProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  // Hook into video element for views & watch progress tracking
+  useHeartbeat(episodeId, videoRef);
   const hlsRef = useRef<Hls | null>(null);
   const onFatalErrorRef = useRef(onFatalError);
   const selectedQualityRef = useRef<QualitySelection>("auto");

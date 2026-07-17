@@ -22,6 +22,7 @@ const sidebarRoutes = [
   "/coin-history",
   "/premium-history",
   "/liked",
+  "/bookmarks",
   "/subscriptions",
   "/creator-channel",
 ] as const;

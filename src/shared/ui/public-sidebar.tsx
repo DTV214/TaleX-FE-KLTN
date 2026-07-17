@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BookOpen,
+  Bookmark,
   Clock3,
   Flame,
   Heart,
@@ -37,7 +38,8 @@ const libraryMenu: MenuItem[] = [
   { title: "Video đã xem", href: "/history", icon: History },
   { title: "Danh sách phát", href: "/playlists", icon: ListVideo },
   { title: "Xem sau", href: "/watch-later", icon: Clock3 },
-  { title: "Video đã thích", href: "/liked", icon: Heart },
+  { title: "Đã thích", href: "/liked", icon: Heart },
+  { title: "Đã bookmark", href: "/bookmarks", icon: Bookmark },
 ];
 
 const platformMenu: MenuItem[] = [

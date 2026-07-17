@@ -30,6 +30,9 @@ import { toast } from "sonner";
 import { useGetPublicCombos } from "@/features/public/hooks/use-public-combos";
 import { useCreatorFollow } from "../hooks/use-creator-follow";
 import { FollowButton } from "./follow-button";
+import { EpisodeBookmarkButton } from "./episode-bookmark-button";
+import { EpisodeShareButton } from "./episode-share-button";
+
 
 interface SeriesDetailProps {
   seriesId: string;
@@ -752,13 +755,29 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
                           Không có mô tả tập phim.
                         </p>
                       )}
+
+                      {/* Mobile action row */}
+                      <div className="flex md:hidden items-center justify-between mt-4 pt-3 border-t border-white/5 gap-3">
+                        <div className="flex items-center gap-2">
+                          <EpisodeBookmarkButton episodeId={episode.episodeId} contentType={series.contentType} />
+                          <EpisodeShareButton episodeId={episode.episodeId} contentType={series.contentType} />
+                        </div>
+                        <Link
+                          href={`/${series.contentType === "COMIC" ? "read" : "watch"}/${episode.episodeId}`}
+                          className="px-4 py-2 bg-white/[0.04] active:bg-[#D4AF37] active:text-black hover:bg-[#D4AF37] hover:text-black text-white font-bold rounded-xl text-xs transition-all duration-200 shadow-md"
+                        >
+                          {series.contentType === "COMIC" ? "Đọc Ngay" : "Xem Ngay"}
+                        </Link>
+                      </div>
                     </div>
 
                     {/* Nút hành động bên góc phải (Chỉ hiển thị trên md screen) */}
-                    <div className="hidden md:flex items-center justify-end pl-4">
+                    <div className="hidden md:flex items-center gap-3 justify-end pl-4 shrink-0">
+                      <EpisodeBookmarkButton episodeId={episode.episodeId} contentType={series.contentType} />
+                      <EpisodeShareButton episodeId={episode.episodeId} contentType={series.contentType} />
                       <Link
                         href={`/${series.contentType === "COMIC" ? "read" : "watch"}/${episode.episodeId}`}
-                        className="px-5 py-2.5 bg-white/[0.04] group-hover:bg-[#D4AF37] text-white group-hover:text-black font-bold rounded-xl text-sm transition-all duration-300 whitespace-nowrap shadow-md group-hover:shadow-[0_4px_12px_rgba(212,175,55,0.2)]"
+                        className="px-5 py-2.5 bg-white/[0.04] group-hover:bg-[#D4AF37] text-white group-hover:text-black font-bold rounded-xl text-sm transition-all duration-300 whitespace-nowrap shadow-md group-hover:shadow-[0_4px_12px_rgba(212,175,55,0.25)]"
                       >
                         {series.contentType === "COMIC"
                           ? "Đọc Ngay"

@@ -26,10 +26,12 @@ import { useAuthStore } from "@/features/auth/store/auth.store";
 import { cn } from "@/shared/utils/utils";
 import { LikeButton } from "@/features/series/components/like-button";
 import { LikedUsersModal } from "@/features/series/components/liked-users-modal";
+import { EpisodeShareButton } from "@/features/series/components/episode-share-button";
 import { useEpisodeLikes } from "@/features/series/hooks/use-episode-likes";
 import { FollowButton } from "@/features/series/components/follow-button";
 import { useCreatorFollow } from "@/features/series/hooks/use-creator-follow";
 import { getCreatorDetail } from "@/features/series/api/creator-follows-api";
+import { useComicHeartbeat } from "@/features/playback/hooks/useComicHeartbeat";
 
 interface ComicReaderProps {
   episodeId: string;
@@ -107,6 +109,9 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
   );
 
   const totalPages = sortedPages.length;
+
+  // Track reading views and progress updates for comic chapters
+  useComicHeartbeat(episodeId, currentPage, totalPages, readingMode);
 
   // Auto-hide controls sau 3 giây
   const resetHideTimer = useCallback(() => {
@@ -394,14 +399,22 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
               </div>
               <p className="text-gray-300 text-sm font-bold mb-6">Bạn đã đọc xong tập này!</p>
 
-              {/* Nút Thích & Thống kê */}
+              {/* Nút Thích & Chia sẻ & Thống kê */}
               <div className="flex flex-col items-center gap-3 w-full mb-8 pb-6 border-b border-white/5">
-                <LikeButton
-                  isLiked={isLiked}
-                  likeCount={totalLikes}
-                  onLikeToggle={toggleLike}
-                  isLoading={isMutating}
-                />
+                <div className="flex items-center gap-3 flex-wrap justify-center">
+                  <LikeButton
+                    isLiked={isLiked}
+                    likeCount={totalLikes}
+                    onLikeToggle={toggleLike}
+                    isLoading={isMutating}
+                  />
+
+                  <EpisodeShareButton
+                    episodeId={episodeId}
+                    contentType="COMIC"
+                    variant="pill"
+                  />
+                </div>
 
                 {likedUsers.length > 0 && (
                   <LikedUsersModal
