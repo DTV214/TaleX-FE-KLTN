@@ -66,7 +66,7 @@ export function FinalReviewComicStep({
   isCancelingSchedule
 }: FinalReviewComicStepProps) {
   const user = useAuthStore((state) => state.user);
-  const isCreator = user?.roleId === 2;
+  const isCreator = user?.roleName === "CREATOR";
 
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [reviewerNotes, setReviewerNotes] = useState("");
@@ -127,9 +127,9 @@ export function FinalReviewComicStep({
       {/* Left - Comic Preview & Episode Details */}
       <div className="flex flex-1 flex-col gap-6">
         <div>
-          <h2 className="text-2xl font-bold text-white mb-1">{isPublished ? "Published Episode" : "Final Review & Publishing Decision"}</h2>
+          <h2 className="text-2xl font-bold text-white mb-1">{isPublished ? "Published Episode" : "Kiểm duyệt cuối cùng & Quyết định xuất bản"}</h2>
           <p className="text-sm text-creator-muted">
-            {isPublished ? "This episode is currently live on TaleX." : "Review your content before making it public on TaleX."}
+            {isPublished ? "Tập này hiện đang hoạt động trên TaleX." : "Xem lại nội dung của bạn trước khi đưa nó lên công khai trên TaleX."}
           </p>
         </div>
 
@@ -254,11 +254,10 @@ export function FinalReviewComicStep({
             {/* Right: Thumbnail upload */}
             <div className="flex flex-col">
               <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Ảnh Thumbnail Tập *</label>
-              <div 
+              <div
                 onClick={() => thumbnailInputRef.current?.click()}
-                className={`relative w-full aspect-video rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors overflow-hidden group ${
-                  thumbnailPreview ? "border-creator-gold" : "border-creator-border hover:border-creator-gold/50"
-                }`}
+                className={`relative w-full aspect-video rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors overflow-hidden group ${thumbnailPreview ? "border-creator-gold" : "border-creator-border hover:border-creator-gold/50"
+                  }`}
               >
                 {thumbnailPreview ? (
                   <>
@@ -276,12 +275,12 @@ export function FinalReviewComicStep({
                     <span className="text-xs text-creator-muted px-4 text-center">Tải Thumbnail</span>
                   </>
                 )}
-                <input 
-                  type="file" 
-                  ref={thumbnailInputRef} 
-                  onChange={handleThumbnailUpload} 
-                  accept="image/*" 
-                  className="hidden" 
+                <input
+                  type="file"
+                  ref={thumbnailInputRef}
+                  onChange={handleThumbnailUpload}
+                  accept="image/*"
+                  className="hidden"
                 />
               </div>
             </div>
@@ -338,10 +337,10 @@ export function FinalReviewComicStep({
               <div className="rounded-xl border border-creator-gold/40 bg-creator-gold/10 p-4 text-sm">
                 <div className="flex items-center gap-2 font-bold text-creator-gold">
                   <Calendar size={18} />
-                  Scheduled Publish
+                  Đặt Lịch Xuất Bản
                 </div>
                 <p className="mt-2 text-xs font-semibold text-creator-muted">
-                  This episode is scheduled to go live at:
+                  Tập này sẽ được công chiếu vào lúc:
                 </p>
                 <p className="mt-1 text-base font-black text-white">
                   {formatScheduledPublishAt(selectedEpisode?.scheduledPublishAt)}
@@ -353,14 +352,14 @@ export function FinalReviewComicStep({
                 disabled={isCancelingSchedule}
                 className="w-full py-3 rounded-md text-sm font-bold bg-[#13110F] border border-red-500/50 text-red-400 hover:bg-red-500/10 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isCancelingSchedule ? "Canceling..." : <><X size={18} /> Cancel Schedule</>}
+                {isCancelingSchedule ? "Canceling..." : <><X size={18} /> Hủy Đặt Lịch</>}
               </button>
 
               <button
                 onClick={onBack}
                 className="w-full py-3 rounded-md text-sm font-bold bg-white/5 hover:bg-white/10 border border-creator-border transition-colors flex items-center justify-center gap-2"
               >
-                Back to Episodes
+                Quay lại
               </button>
             </>
           ) : !isPublished ? (
@@ -384,7 +383,7 @@ export function FinalReviewComicStep({
                   </span>
                 ) : (
                   <>
-                    <Rocket size={18} /> Publish to TaleX
+                    <Rocket size={18} /> Xuất bản Ngay
                   </>
                 )}
               </button>
@@ -394,7 +393,7 @@ export function FinalReviewComicStep({
                 disabled={!agreedToTerms || isPublishing || !isMediaReady}
                 className="w-full py-3 rounded-md text-sm font-bold bg-[#13110F] border border-creator-gold text-creator-gold hover:bg-creator-gold/10 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Calendar size={18} /> Schedule Publish
+                <Calendar size={18} /> Đặt Lịch Xuất Bản
               </button>
 
               <div className="grid grid-cols-2 gap-3 mt-1">
@@ -402,20 +401,20 @@ export function FinalReviewComicStep({
                   onClick={onSaveDraft}
                   className="py-2.5 rounded-md text-sm font-medium bg-white/5 hover:bg-white/10 border border-creator-border transition-colors flex items-center justify-center gap-2"
                 >
-                  <Edit3 size={16} /> Save Draft
+                  <Edit3 size={16} /> Lưu Nháp
                 </button>
                 <button
                   onClick={onBack}
                   className="py-2.5 rounded-md text-sm font-medium bg-white/5 hover:bg-white/10 border border-creator-border transition-colors flex items-center justify-center gap-2"
                 >
-                  Back
+                  Quay lại
                 </button>
               </div>
             </>
           ) : (
             <>
               <div className="bg-green-500/10 border border-green-500/20 text-green-400 rounded-xl p-4 text-center font-bold text-sm mb-2">
-                This episode is currently published and live.
+                Tập này hiện đang hoạt động trên TaleX.
               </div>
               <button
                 onClick={() => onHideEpisode(selectedEpisode)}
@@ -428,7 +427,7 @@ export function FinalReviewComicStep({
                 onClick={onBack}
                 className="w-full py-3 rounded-md text-sm font-bold bg-white/5 hover:bg-white/10 border border-creator-border transition-colors flex items-center justify-center gap-2"
               >
-                Back to Episodes
+                Quay lại
               </button>
             </>
           )}
@@ -472,13 +471,13 @@ function ComicPagePreview({ page }: { page: any }) {
         <span className="absolute left-2 top-2 flex h-7 w-7 items-center justify-center rounded-lg bg-[#151A23] text-xs font-black text-white shadow-md">
           {page.displayOrder}
         </span>
-        
+
         {hasAnyViolations && (
           <div className="absolute top-2 right-2 bg-red-500 text-white p-1.5 rounded-full shadow-lg">
             <ShieldAlert size={16} />
           </div>
         )}
-        
+
         {hasAnyViolations && (
           <div className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity p-4 flex flex-col justify-center items-center text-center overflow-y-auto backdrop-blur-sm z-10">
             <AlertTriangle className="text-red-500 mb-2" size={24} />

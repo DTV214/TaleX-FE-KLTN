@@ -55,15 +55,15 @@ interface FinalReviewStepProps {
   isCancelingSchedule: boolean;
 }
 
-export function FinalReviewStep({ 
+export function FinalReviewStep({
   mediaId,
   mediaUrl,
   mediaStatus,
   approvalStatus,
-  isPublishing, 
-  onPublish, 
-  onSchedulePublish, 
-  onSaveDraft, 
+  isPublishing,
+  onPublish,
+  onSchedulePublish,
+  onSaveDraft,
   onBack,
   selectedEpisode,
   onSaveEpisode,
@@ -77,11 +77,11 @@ export function FinalReviewStep({
   isCancelingSchedule
 }: FinalReviewStepProps) {
   const user = useAuthStore((state) => state.user);
-  const isCreator = user?.roleId === 2;
+  const isCreator = user?.roleName === "CREATOR";
 
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [reviewerNotes, setReviewerNotes] = useState("");
-  
+
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(selectedEpisode?.thumbnail || null);
   const [thumbnailFile, setThumbnailFile] = useState<File | undefined>(undefined);
@@ -96,12 +96,12 @@ export function FinalReviewStep({
   };
 
   // Episode Details Form State
-  const [editForm, setEditForm] = useState({ 
-    episodeNumber: selectedEpisode?.episodeNumber || 1, 
-    title: selectedEpisode?.title || "", 
-    description: selectedEpisode?.description || "", 
-    unlockType: selectedEpisode?.unlockType || "FREE", 
-    priceVnd: selectedEpisode?.priceVnd || 0 
+  const [editForm, setEditForm] = useState({
+    episodeNumber: selectedEpisode?.episodeNumber || 1,
+    title: selectedEpisode?.title || "",
+    description: selectedEpisode?.description || "",
+    unlockType: selectedEpisode?.unlockType || "FREE",
+    priceVnd: selectedEpisode?.priceVnd || 0
   });
 
   useEffect(() => {
@@ -149,15 +149,15 @@ export function FinalReviewStep({
       {/* Left - Video Preview & Episode Details */}
       <div className="flex flex-1 flex-col gap-6">
         <div>
-          <h2 className="text-2xl font-bold text-white mb-1">{isPublished ? "Published Episode" : "Final Review & Publishing Decision"}</h2>
+          <h2 className="text-2xl font-bold text-white mb-1">{isPublished ? "Published Episode" : "Kiểm duyệt cuối cùng & Quyết định xuất bản"}</h2>
           <p className="text-sm text-creator-muted">
-            {isPublished ? "This episode is currently live on TaleX." : "Review your content before making it public on TaleX."}
+            {isPublished ? "Tập này hiện đang hoạt động trên TaleX." : "Xem lại nội dung của bạn trước khi đưa nó lên công khai trên TaleX."}
           </p>
         </div>
 
         <div className="order-2 bg-creator-sidebar border border-creator-border rounded-xl p-5">
           <h3 className="font-semibold text-white mb-4">Bản xem trước trước khi phát hành</h3>
-          
+
           <div className="w-full aspect-video bg-black rounded-lg overflow-hidden border border-creator-border mb-6 relative">
             {mediaUrl ? (
               <video src={mediaUrl} controls className="w-full h-full object-contain" poster={mediaUrl}></video>
@@ -193,10 +193,10 @@ export function FinalReviewStep({
           {!isPublished && (
             <div className="space-y-4">
               <h4 className="font-medium text-white text-sm">Danh sách kiểm tra thủ công</h4>
-              
+
               <label className="flex items-start gap-3 p-3 border border-creator-border rounded-lg cursor-pointer hover:bg-white/5 transition-colors">
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   className="mt-1 w-4 h-4 rounded border-creator-border text-creator-gold focus:ring-creator-gold bg-creator-bg"
                   checked={agreedToTerms}
                   onChange={(e) => setAgreedToTerms(e.target.checked)}
@@ -208,8 +208,8 @@ export function FinalReviewStep({
               </label>
 
               <label className="flex items-start gap-3 p-3 border border-creator-border rounded-lg cursor-pointer hover:bg-white/5 transition-colors">
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   className="mt-1 w-4 h-4 rounded border-creator-border text-creator-gold focus:ring-creator-gold bg-creator-bg"
                   defaultChecked
                 />
@@ -234,7 +234,7 @@ export function FinalReviewStep({
                     type="number"
                     min={1}
                     value={editForm.episodeNumber}
-                    onChange={(e) => setEditForm({...editForm, episodeNumber: Number(e.target.value)})}
+                    onChange={(e) => setEditForm({ ...editForm, episodeNumber: Number(e.target.value) })}
                     className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
                   />
                 </div>
@@ -244,7 +244,7 @@ export function FinalReviewStep({
                     type="text"
                     required
                     value={editForm.title}
-                    onChange={(e) => setEditForm({...editForm, title: e.target.value})}
+                    onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
                     className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
                   />
                 </div>
@@ -255,7 +255,7 @@ export function FinalReviewStep({
                 <textarea
                   rows={3}
                   value={editForm.description}
-                  onChange={(e) => setEditForm({...editForm, description: e.target.value})}
+                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
                   className="w-full resize-none rounded-md border border-creator-border bg-creator-bg p-3 text-sm text-white outline-none focus:border-creator-gold"
                 />
               </div>
@@ -296,11 +296,10 @@ export function FinalReviewStep({
             {/* Right: Thumbnail upload */}
             <div className="flex flex-col">
               <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Ảnh Thumbnail Tập *</label>
-              <div 
+              <div
                 onClick={() => thumbnailInputRef.current?.click()}
-                className={`relative w-full aspect-video rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors overflow-hidden group ${
-                  thumbnailPreview ? "border-creator-gold" : "border-creator-border hover:border-creator-gold/50"
-                }`}
+                className={`relative w-full aspect-video rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors overflow-hidden group ${thumbnailPreview ? "border-creator-gold" : "border-creator-border hover:border-creator-gold/50"
+                  }`}
               >
                 {thumbnailPreview ? (
                   <>
@@ -318,12 +317,12 @@ export function FinalReviewStep({
                     <span className="text-xs text-creator-muted px-4 text-center">Tải Thumbnail</span>
                   </>
                 )}
-                <input 
-                  type="file" 
-                  ref={thumbnailInputRef} 
-                  onChange={handleThumbnailUpload} 
-                  accept="image/*" 
-                  className="hidden" 
+                <input
+                  type="file"
+                  ref={thumbnailInputRef}
+                  onChange={handleThumbnailUpload}
+                  accept="image/*"
+                  className="hidden"
                 />
               </div>
             </div>
@@ -380,10 +379,10 @@ export function FinalReviewStep({
               <div className="rounded-xl border border-creator-gold/40 bg-creator-gold/10 p-4 text-sm">
                 <div className="flex items-center gap-2 font-bold text-creator-gold">
                   <Calendar size={18} />
-                  Scheduled Publish
+                  Đặt Lịch Xuất Bản
                 </div>
                 <p className="mt-2 text-xs font-semibold text-creator-muted">
-                  This episode is scheduled to go live at:
+                  Tập này sẽ được công chiếu vào lúc:
                 </p>
                 <p className="mt-1 text-base font-black text-white">
                   {formatScheduledPublishAt(selectedEpisode?.scheduledPublishAt)}
@@ -395,7 +394,7 @@ export function FinalReviewStep({
                 disabled={isCancelingSchedule}
                 className="w-full py-3 rounded-md text-sm font-bold bg-[#13110F] border border-red-500/50 text-red-400 hover:bg-red-500/10 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isCancelingSchedule ? "Canceling..." : <><X size={18} /> Cancel Schedule</>}
+                {isCancelingSchedule ? "Canceling..." : <><X size={18} /> Hủy Đặt Lịch</>}
               </button>
 
               <button
@@ -414,7 +413,7 @@ export function FinalReviewStep({
                     : "Vui lòng chờ media được xử lý xong và có trạng thái APPROVED trước khi xuất bản."}
                 </div>
               )}
-              <button 
+              <button
                 onClick={onPublish}
                 disabled={!agreedToTerms || isPublishing || !isMediaReady}
                 className="w-full py-3 rounded-md text-sm font-bold bg-creator-gold text-black hover:bg-creator-gold-hover transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -426,51 +425,51 @@ export function FinalReviewStep({
                   </span>
                 ) : (
                   <>
-                    <Rocket size={18} /> Publish to TaleX
+                    <Rocket size={18} /> Xuất bản Ngay
                   </>
                 )}
               </button>
-              
-              <button 
+
+              <button
                 onClick={onSchedulePublish}
                 disabled={!agreedToTerms || isPublishing || !isMediaReady}
                 className="w-full py-3 rounded-md text-sm font-bold bg-[#13110F] border border-creator-gold text-creator-gold hover:bg-creator-gold/10 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Calendar size={18} /> Schedule Publish
+                <Calendar size={18} /> Đặt Lịch Xuất Bản
               </button>
-              
+
               <div className="grid grid-cols-2 gap-3 mt-1">
-                <button 
+                <button
                   onClick={onSaveDraft}
                   className="py-2.5 rounded-md text-sm font-medium bg-white/5 hover:bg-white/10 border border-creator-border transition-colors flex items-center justify-center gap-2"
                 >
-                  <Edit3 size={16} /> Save Draft
+                  <Edit3 size={16} /> Lưu Nháp
                 </button>
-                <button 
+                <button
                   onClick={onBack}
                   className="py-2.5 rounded-md text-sm font-medium bg-white/5 hover:bg-white/10 border border-creator-border transition-colors flex items-center justify-center gap-2"
                 >
-                  Back
+                  Quay lại
                 </button>
               </div>
             </>
           ) : (
             <>
               <div className="bg-green-500/10 border border-green-500/20 text-green-400 rounded-xl p-4 text-center font-bold text-sm mb-2">
-                This episode is currently published and live.
+                Tập này hiện đang hoạt động trên TaleX.
               </div>
-              <button 
+              <button
                 onClick={() => onHideEpisode(selectedEpisode)}
                 disabled={isHidingEpisode}
                 className="w-full py-3 rounded-md text-sm font-bold bg-[#13110F] border border-red-500/50 text-red-400 hover:bg-red-500/10 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isHidingEpisode ? "Hiding..." : <><EyeOff size={18} /> Hide Episode</>}
+                {isHidingEpisode ? "Hiding..." : <><EyeOff size={18} /> Ẩn Tập</>}
               </button>
-              <button 
+              <button
                 onClick={onBack}
                 className="w-full py-3 rounded-md text-sm font-bold bg-white/5 hover:bg-white/10 border border-creator-border transition-colors flex items-center justify-center gap-2"
               >
-                Back to Episodes
+                Quay lại
               </button>
             </>
           )}

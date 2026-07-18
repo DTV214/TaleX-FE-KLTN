@@ -212,7 +212,7 @@ function writeDashboardRouteState(nextState: DashboardRouteState) {
 }
 
 type ContentType = "COMIC" | "VIDEO";
-type ApiLifecycleStatus = "DRAFT" | "PUBLISHED" | "HIDDEN" | "DELETED" | "SCHEDULED";
+type ApiLifecycleStatus = "DRAFT" | "PUBLISHED" | "HIDDEN" | "DELETED" | "SCHEDULED" | "FORCE_HIDDEN";
 type SeriesStatus = ApiLifecycleStatus | "ACTION_REQUIRED";
 type SeasonStatus = ApiLifecycleStatus;
 type EpisodeStatus = ApiLifecycleStatus | "REVIEW";
@@ -489,6 +489,23 @@ function formatStatusLabel(status: SeriesStatus | SeasonStatus | EpisodeStatus) 
   return status;
 }
 
+function getStatusBadgeStyle(status: string) {
+  switch (status) {
+    case "PUBLISHED":
+      return "border-[#25B67A] bg-[#E9FBF2] text-[#067647]"; // xanh lá
+    case "SCHEDULED":
+      return "border-[#24B5FF] bg-[#E8F8FF] text-[#0074A6]"; // xanh dương
+    case "FORCE_HIDDEN":
+    case "REVIEW":
+      return "border-creator-gold/50 bg-creator-gold/10 text-creator-gold"; // vàng cam
+    case "DELETED":
+      return "border-red-500/50 bg-red-500/10 text-red-400"; // đỏ
+    case "HIDDEN":
+    case "DRAFT":
+    default:
+      return "border-creator-border bg-creator-bg text-creator-muted"; // xám/màu hiện tại
+  }
+}
 
 function getApprovalChipClass(status: ContentApprovalStatus) {
   switch (status) {
@@ -2060,7 +2077,7 @@ function CreatorDashboardContent() {
                   onClick={openSeriesManagement}
                   className="px-6 py-2 bg-creator-gold text-black rounded"
                 >
-                  Back to Dashboard
+                  Quay lại
                 </button>
               </div>
             )}
@@ -2931,21 +2948,10 @@ function SeriesTableRow({
       <div className="space-y-2">
         <span
           className={cx(
-            "inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-black",
-            isPublished && "border border-[#24B5FF] bg-[#E8F8FF] text-[#0074A6]",
-            isDraft && "border border-creator-border bg-creator-bg border border-creator-border text-red-400",
-            !isPublished &&
-            !isDraft &&
-            "bg-[#FFD8D4] text-red-400",
+            "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-black",
+            getStatusBadgeStyle(series.status)
           )}
         >
-          {isPublished ? (
-            <span className="h-2 w-2 rounded-full bg-[#24B5FF]" />
-          ) : isDraft ? (
-            <span className="h-2 w-2 rounded-full bg-[#E8BBCB]" />
-          ) : (
-            <CircleAlert className="h-4 w-4" />
-          )}
           {formatStatusLabel(series.status)}
         </span>
       </div>
@@ -3054,7 +3060,7 @@ function SeasonManagementView({
         className="inline-flex items-center gap-2 rounded-md bg-creator-sidebar border border-creator-border px-4 py-2 text-sm font-black text-creator-gold shadow-sm"
       >
         <ChevronLeft className="h-4 w-4" />
-        Back to Series
+        Quay lại
       </button>
 
       <Panel>
@@ -3123,12 +3129,7 @@ function SeasonCard({
   onHide: () => void;
   onUnhide: () => void;
 }) {
-  const statusStyle =
-    season.status === "PUBLISHED"
-      ? "bg-[#E8F8FF] text-[#0074A6] border-[#24B5FF]"
-      : season.status === "DRAFT"
-        ? "bg-creator-bg border border-creator-border text-red-400 border-creator-border"
-        : "bg-creator-bg border border-creator-border text-creator-muted text-slate-500 border-[#D9E2F0]";
+  const statusStyle = getStatusBadgeStyle(season.status);
   const isHidden = season.status === "HIDDEN";
   const isPublished = season.status === "PUBLISHED";
 
@@ -3249,7 +3250,7 @@ function EpisodeManagementView({
             className="inline-flex items-center gap-2 text-sm font-bold text-creator-muted hover:text-white transition-colors mb-4"
           >
             <ChevronLeft className="h-4 w-4" />
-            Back to Seasons
+            Quay lại
           </button>
           <h2 className="text-3xl font-bold text-white mb-2">
             {selectedSeason.title}
@@ -3314,10 +3315,8 @@ function EpisodeManagementView({
                         </span>
                         <span>•</span>
                         <span className={cx(
-                          "px-2 py-0.5 rounded border",
-                          episode.status === "PUBLISHED" ? "border-green-500/30 text-green-400 bg-green-500/10" :
-                            episode.status === "REVIEW" ? "border-creator-gold/30 text-creator-gold bg-creator-gold/10" :
-                              "border-creator-muted/30 text-creator-muted bg-creator-bg"
+                          "px-2 py-0.5 rounded border text-[10px] uppercase font-bold",
+                          getStatusBadgeStyle(episode.status)
                         )}>
                           {formatStatusLabel(episode.status)}
                         </span>
@@ -3372,12 +3371,7 @@ function EpisodeTableRow({
   onDelete: () => void;
 }) {
   const isComic = episode.contentType === "COMIC";
-  const statusStyle =
-    episode.status === "PUBLISHED"
-      ? "border-[#24B5FF] bg-[#E8F8FF] text-[#0074A6]"
-      : episode.status === "REVIEW"
-        ? "border-[#F4B9CC] bg-[#FFF4F8] text-[#B83268]"
-        : "border-creator-border bg-creator-sidebar text-[#9B536D]";
+  const statusStyle = getStatusBadgeStyle(episode.status);
 
   return (
     <div className="grid min-h-[104px] grid-cols-1 gap-4 px-5 py-5 lg:grid-cols-[1.4fr_0.7fr_0.8fr_0.8fr_1fr] lg:items-center lg:px-8">
@@ -3532,7 +3526,7 @@ function ComicUploadView({
   onBack: () => void;
 }) {
   const user = useAuthStore((state) => state.user);
-  const isCreator = user?.roleId === 2;
+  const isCreator = user?.roleName === "CREATOR";
 
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(selectedEpisode.thumbnail || null);
@@ -3558,11 +3552,11 @@ function ComicUploadView({
           className="inline-flex items-center gap-2 text-sm font-bold text-creator-muted hover:text-white transition-colors mb-6"
         >
           <ChevronLeft className="h-4 w-4" />
-          Back to Season
+          Quay lại
         </button>
         <h2 className="text-4xl font-bold text-white mb-3">Đang kiểm duyệt nội dung cuối cùng</h2>
         <p className="text-creator-muted max-w-2xl text-sm leading-relaxed">
-          Upload your high-fidelity cinematic assets and let TaleX AI ensure policy compliance and original content verification.
+          Tải lên các tài nguyên điện ảnh chất lượng cao của bạn và để TaleX AI đảm bảo việc tuân thủ chính sách cũng như xác thực tính nguyên bản của nội dung.
         </p>
       </div>
 
@@ -3645,11 +3639,10 @@ function ComicUploadView({
               {/* Right: Thumbnail upload */}
               <div className="flex flex-col">
                 <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Ảnh Thumbnail Tập *</label>
-                <div 
+                <div
                   onClick={() => thumbnailInputRef.current?.click()}
-                  className={`relative w-full aspect-video rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors overflow-hidden group ${
-                    thumbnailPreview ? "border-creator-gold" : "border-creator-border hover:border-creator-gold/50"
-                  }`}
+                  className={`relative w-full aspect-video rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors overflow-hidden group ${thumbnailPreview ? "border-creator-gold" : "border-creator-border hover:border-creator-gold/50"
+                    }`}
                 >
                   {thumbnailPreview ? (
                     <>
@@ -3667,12 +3660,12 @@ function ComicUploadView({
                       <span className="text-xs text-creator-muted px-4 text-center">Tải Thumbnail</span>
                     </>
                   )}
-                  <input 
-                    type="file" 
-                    ref={thumbnailInputRef} 
-                    onChange={handleThumbnailUpload} 
-                    accept="image/*" 
-                    className="hidden" 
+                  <input
+                    type="file"
+                    ref={thumbnailInputRef}
+                    onChange={handleThumbnailUpload}
+                    accept="image/*"
+                    className="hidden"
                   />
                 </div>
               </div>
@@ -3773,7 +3766,7 @@ function ComicUploadView({
                 <Info className="h-3 w-3 text-black" />
               </div>
               <p className="text-sm font-medium text-creator-muted max-w-sm">
-                Scans typically take 2-5 minutes.
+                Quá trình quét thường mất từ ​​2 đến 5 phút.
               </p>
             </div>
             {canSchedulePublish && (
@@ -3870,13 +3863,13 @@ function ComicPageCard({
         <span className="absolute right-2 top-2 rounded-lg bg-creator-sidebar/90 p-1.5 text-creator-text shadow z-20">
           <GripVertical className="h-4 w-4" />
         </span>
-        
+
         {hasAnyViolations && (
           <div className="absolute top-2 right-10 bg-red-500 text-white p-1.5 rounded-lg shadow z-20">
             <ShieldAlert size={16} />
           </div>
         )}
-        
+
         {hasAnyViolations && (
           <div className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity p-4 flex flex-col justify-center items-center text-center overflow-y-auto backdrop-blur-sm z-10 cursor-help">
             <AlertTriangle className="text-red-500 mb-2" size={24} />
@@ -3989,7 +3982,7 @@ function VideoUploadView({
   onBack: () => void;
 }) {
   const user = useAuthStore((state) => state.user);
-  const isCreator = user?.roleId === 2;
+  const isCreator = user?.roleName === "CREATOR";
 
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(selectedEpisode.thumbnail || null);
@@ -4017,11 +4010,11 @@ function VideoUploadView({
           className="inline-flex items-center gap-2 text-sm font-bold text-creator-muted hover:text-white transition-colors mb-6"
         >
           <ChevronLeft className="h-4 w-4" />
-          Back to Season
+          Quay lại
         </button>
         <h2 className="text-4xl font-bold text-white mb-3">Đang kiểm duyệt nội dung cuối cùng</h2>
         <p className="text-creator-muted max-w-2xl text-sm leading-relaxed">
-          Upload your high-fidelity cinematic assets and let TaleX AI ensure policy compliance and original content verification.
+          Tải lên các tài nguyên điện ảnh chất lượng cao của bạn và để TaleX AI đảm bảo việc tuân thủ chính sách cũng như xác thực tính nguyên bản của nội dung.
         </p>
       </div>
 
@@ -4103,11 +4096,10 @@ function VideoUploadView({
               {/* Right: Thumbnail upload */}
               <div className="flex flex-col">
                 <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Ảnh Thumbnail Tập *</label>
-                <div 
+                <div
                   onClick={() => thumbnailInputRef.current?.click()}
-                  className={`relative w-full aspect-video rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors overflow-hidden group ${
-                    thumbnailPreview ? "border-creator-gold" : "border-creator-border hover:border-creator-gold/50"
-                  }`}
+                  className={`relative w-full aspect-video rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors overflow-hidden group ${thumbnailPreview ? "border-creator-gold" : "border-creator-border hover:border-creator-gold/50"
+                    }`}
                 >
                   {thumbnailPreview ? (
                     <>
@@ -4125,12 +4117,12 @@ function VideoUploadView({
                       <span className="text-xs text-creator-muted px-4 text-center">Tải Thumbnail</span>
                     </>
                   )}
-                  <input 
-                    type="file" 
-                    ref={thumbnailInputRef} 
-                    onChange={handleThumbnailUpload} 
-                    accept="image/*" 
-                    className="hidden" 
+                  <input
+                    type="file"
+                    ref={thumbnailInputRef}
+                    onChange={handleThumbnailUpload}
+                    accept="image/*"
+                    className="hidden"
                   />
                 </div>
               </div>
@@ -4237,7 +4229,7 @@ function VideoUploadView({
                 <Info className="h-3 w-3 text-black" />
               </div>
               <p className="text-sm font-medium text-creator-muted max-w-sm">
-                Scans typically take 2-5 minutes.
+                Quá trình quét thường mất từ ​​2 đến 5 phút.
               </p>
             </div>
             {canSchedule && (
