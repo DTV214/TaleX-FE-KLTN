@@ -3531,6 +3531,9 @@ function ComicUploadView({
   onGoToPublishing: () => void;
   onBack: () => void;
 }) {
+  const user = useAuthStore((state) => state.user);
+  const isCreator = user?.roleId === 2;
+
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(selectedEpisode.thumbnail || null);
   const [thumbnailFile, setThumbnailFile] = useState<File | undefined>(undefined);
@@ -3606,35 +3609,37 @@ function ComicUploadView({
                   />
                 </div>
 
-                <div className="grid gap-5 md:grid-cols-2 mt-4 pt-4 border-t border-creator-border">
-                  <div>
-                    <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Kiểu mở khóa</label>
-                    <select
-                      value={editForm.unlockType}
-                      onChange={(e) => setEditForm({ ...editForm, unlockType: e.target.value as EpisodeUnlockType })}
-                      disabled={!canManageUnlockSettings}
-                      className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
-                    >
-                      <option value="FREE">Miễn phí</option>
-                      <option value="PAID">Trả phí</option>
-                    </select>
-                  </div>
-
-                  {editForm.unlockType === "PAID" && (
+                {isCreator && (
+                  <div className="grid gap-5 md:grid-cols-2 mt-4 pt-4 border-t border-creator-border">
                     <div>
-                      <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Giá (VNĐ) *</label>
-                      <input
-                        type="number"
-                        min={1}
-                        max={99999}
-                        value={editForm.priceVnd}
-                        onChange={(e) => setEditForm({ ...editForm, priceVnd: Number(e.target.value) })}
+                      <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Kiểu mở khóa</label>
+                      <select
+                        value={editForm.unlockType}
+                        onChange={(e) => setEditForm({ ...editForm, unlockType: e.target.value as EpisodeUnlockType })}
                         disabled={!canManageUnlockSettings}
                         className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
-                      />
+                      >
+                        <option value="FREE">Miễn phí</option>
+                        <option value="PAID">Trả phí</option>
+                      </select>
                     </div>
-                  )}
-                </div>
+
+                    {editForm.unlockType === "PAID" && (
+                      <div>
+                        <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Giá (VNĐ) *</label>
+                        <input
+                          type="number"
+                          min={1}
+                          max={99999}
+                          value={editForm.priceVnd}
+                          onChange={(e) => setEditForm({ ...editForm, priceVnd: Number(e.target.value) })}
+                          disabled={!canManageUnlockSettings}
+                          className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Right: Thumbnail upload */}
@@ -3680,13 +3685,15 @@ function ComicUploadView({
               >
                 {isSavingEpisode ? "Saving..." : "Save Details"}
               </button>
-              <button
-                onClick={() => onSaveUnlockSettings({ ...selectedEpisode, unlockType: editForm.unlockType, priceVnd: editForm.unlockType === "PAID" ? editForm.priceVnd : 0 })}
-                disabled={!canManageUnlockSettings || isSavingUnlockSettings}
-                className="inline-flex h-10 items-center justify-center rounded bg-creator-gold px-5 text-sm font-bold text-black hover:bg-creator-gold-hover disabled:opacity-50"
-              >
-                {isSavingUnlockSettings ? "Saving Price..." : "Save Price"}
-              </button>
+              {isCreator && (
+                <button
+                  onClick={() => onSaveUnlockSettings({ ...selectedEpisode, unlockType: editForm.unlockType, priceVnd: editForm.unlockType === "PAID" ? editForm.priceVnd : 0 })}
+                  disabled={!canManageUnlockSettings || isSavingUnlockSettings}
+                  className="inline-flex h-10 items-center justify-center rounded bg-creator-gold px-5 text-sm font-bold text-black hover:bg-creator-gold-hover disabled:opacity-50"
+                >
+                  {isSavingUnlockSettings ? "Saving Price..." : "Save Price"}
+                </button>
+              )}
             </div>
           </div>
           <div className="bg-creator-sidebar border border-creator-border rounded-xl p-8 shadow-xl">
@@ -3981,6 +3988,9 @@ function VideoUploadView({
   onGoToPublishing: () => void;
   onBack: () => void;
 }) {
+  const user = useAuthStore((state) => state.user);
+  const isCreator = user?.roleId === 2;
+
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(selectedEpisode.thumbnail || null);
   const [thumbnailFile, setThumbnailFile] = useState<File | undefined>(undefined);
@@ -4057,35 +4067,37 @@ function VideoUploadView({
                   />
                 </div>
 
-                <div className="grid gap-5 md:grid-cols-2 mt-4 pt-4 border-t border-creator-border">
-                  <div>
-                    <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Kiểu mở khóa</label>
-                    <select
-                      value={editForm.unlockType}
-                      onChange={(e) => setEditForm({ ...editForm, unlockType: e.target.value as EpisodeUnlockType })}
-                      disabled={!canManageUnlockSettings}
-                      className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
-                    >
-                      <option value="FREE">Miễn phí</option>
-                      <option value="PAID">Trả phí</option>
-                    </select>
-                  </div>
-
-                  {editForm.unlockType === "PAID" && (
+                {isCreator && (
+                  <div className="grid gap-5 md:grid-cols-2 mt-4 pt-4 border-t border-creator-border">
                     <div>
-                      <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Giá (VNĐ) *</label>
-                      <input
-                        type="number"
-                        min={1}
-                        max={99999}
-                        value={editForm.priceVnd}
-                        onChange={(e) => setEditForm({ ...editForm, priceVnd: Number(e.target.value) })}
+                      <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Kiểu mở khóa</label>
+                      <select
+                        value={editForm.unlockType}
+                        onChange={(e) => setEditForm({ ...editForm, unlockType: e.target.value as EpisodeUnlockType })}
                         disabled={!canManageUnlockSettings}
                         className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
-                      />
+                      >
+                        <option value="FREE">Miễn phí</option>
+                        <option value="PAID">Trả phí</option>
+                      </select>
                     </div>
-                  )}
-                </div>
+
+                    {editForm.unlockType === "PAID" && (
+                      <div>
+                        <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Giá (VNĐ) *</label>
+                        <input
+                          type="number"
+                          min={1}
+                          max={99999}
+                          value={editForm.priceVnd}
+                          onChange={(e) => setEditForm({ ...editForm, priceVnd: Number(e.target.value) })}
+                          disabled={!canManageUnlockSettings}
+                          className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Right: Thumbnail upload */}
@@ -4131,13 +4143,15 @@ function VideoUploadView({
               >
                 {isSavingEpisode ? "Saving..." : "Save Details"}
               </button>
-              <button
-                onClick={() => onSaveUnlockSettings({ ...selectedEpisode, unlockType: editForm.unlockType, priceVnd: editForm.unlockType === "PAID" ? editForm.priceVnd : 0 })}
-                disabled={!canManageUnlockSettings || isSavingUnlockSettings}
-                className="inline-flex h-10 items-center justify-center rounded bg-creator-gold px-5 text-sm font-bold text-black hover:bg-creator-gold-hover disabled:opacity-50"
-              >
-                {isSavingUnlockSettings ? "Saving Price..." : "Save Price"}
-              </button>
+              {isCreator && (
+                <button
+                  onClick={() => onSaveUnlockSettings({ ...selectedEpisode, unlockType: editForm.unlockType, priceVnd: editForm.unlockType === "PAID" ? editForm.priceVnd : 0 })}
+                  disabled={!canManageUnlockSettings || isSavingUnlockSettings}
+                  className="inline-flex h-10 items-center justify-center rounded bg-creator-gold px-5 text-sm font-bold text-black hover:bg-creator-gold-hover disabled:opacity-50"
+                >
+                  {isSavingUnlockSettings ? "Saving Price..." : "Save Price"}
+                </button>
+              )}
             </div>
           </div>
           <div className="bg-creator-sidebar border border-creator-border rounded-xl p-8 shadow-xl">

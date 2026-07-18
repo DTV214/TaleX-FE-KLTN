@@ -13,6 +13,7 @@ import {
   isMediaPipelinePending,
   isMediaReadyForPublish,
 } from "@/features/creator-dashboard/utils/media-violations";
+import { useAuthStore } from "@/features/auth/store/auth.store";
 
 function formatScheduledPublishAt(value?: string) {
   if (!value) {
@@ -75,6 +76,9 @@ export function FinalReviewStep({
   onCancelSchedule,
   isCancelingSchedule
 }: FinalReviewStepProps) {
+  const user = useAuthStore((state) => state.user);
+  const isCreator = user?.roleId === 2;
+
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [reviewerNotes, setReviewerNotes] = useState("");
   
@@ -256,35 +260,37 @@ export function FinalReviewStep({
                 />
               </div>
 
-              <div className="grid gap-5 md:grid-cols-2 mt-4 pt-4 border-t border-creator-border">
-                <div>
-                  <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Kiểu mở khóa</label>
-                  <select
-                    value={editForm.unlockType}
-                    onChange={(e) => setEditForm({ ...editForm, unlockType: e.target.value })}
-                    disabled={!canManageUnlockSettings}
-                    className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
-                  >
-                    <option value="FREE">Miễn phí</option>
-                    <option value="PAID">Trả phí</option>
-                  </select>
-                </div>
-
-                {editForm.unlockType === "PAID" && (
+              {isCreator && (
+                <div className="grid gap-5 md:grid-cols-2 mt-4 pt-4 border-t border-creator-border">
                   <div>
-                    <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Giá (VNĐ) *</label>
-                    <input
-                      type="number"
-                      min={1}
-                      max={99999}
-                      value={editForm.priceVnd}
-                      onChange={(e) => setEditForm({ ...editForm, priceVnd: Number(e.target.value) })}
+                    <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Kiểu mở khóa</label>
+                    <select
+                      value={editForm.unlockType}
+                      onChange={(e) => setEditForm({ ...editForm, unlockType: e.target.value })}
                       disabled={!canManageUnlockSettings}
                       className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
-                    />
+                    >
+                      <option value="FREE">Miễn phí</option>
+                      <option value="PAID">Trả phí</option>
+                    </select>
                   </div>
-                )}
-              </div>
+
+                  {editForm.unlockType === "PAID" && (
+                    <div>
+                      <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Giá (VNĐ) *</label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={99999}
+                        value={editForm.priceVnd}
+                        onChange={(e) => setEditForm({ ...editForm, priceVnd: Number(e.target.value) })}
+                        disabled={!canManageUnlockSettings}
+                        className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Right: Thumbnail upload */}
@@ -332,14 +338,16 @@ export function FinalReviewStep({
             >
               {isSavingEpisode ? "Saving..." : "Save Details"}
             </button>
-            <button
-              type="button"
-              onClick={() => onSaveUnlockSettings({ ...selectedEpisode, unlockType: editForm.unlockType, priceVnd: editForm.unlockType === "PAID" ? editForm.priceVnd : 0 })}
-              disabled={!canManageUnlockSettings || isSavingUnlockSettings}
-              className="px-6 py-2.5 bg-creator-gold text-black text-sm font-bold rounded hover:bg-creator-gold-hover shrink-0 disabled:opacity-50"
-            >
-              {isSavingUnlockSettings ? "Saving Price..." : "Save Price"}
-            </button>
+            {isCreator && (
+              <button
+                type="button"
+                onClick={() => onSaveUnlockSettings({ ...selectedEpisode, unlockType: editForm.unlockType, priceVnd: editForm.unlockType === "PAID" ? editForm.priceVnd : 0 })}
+                disabled={!canManageUnlockSettings || isSavingUnlockSettings}
+                className="px-6 py-2.5 bg-creator-gold text-black text-sm font-bold rounded hover:bg-creator-gold-hover shrink-0 disabled:opacity-50"
+              >
+                {isSavingUnlockSettings ? "Saving Price..." : "Save Price"}
+              </button>
+            )}
           </div>
         </div>
       </div>
