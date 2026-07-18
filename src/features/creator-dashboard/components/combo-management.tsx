@@ -187,11 +187,11 @@ function ComboForm({
   const [title, setTitle] = useState(combo?.title || "");
   const [description, setDescription] = useState(combo?.description || "");
   const [priceVnd, setPriceVnd] = useState(combo?.priceVnd?.toString() || "0");
-  const [selectedEpisodes, setSelectedEpisodes] = useState<{id: string, title: string, price: number}[]>(
-    combo?.episodes?.map((e) => ({ id: e.episodeId, title: e.title, price: e.priceVnd })) || []
+  const [selectedEpisodes, setSelectedEpisodes] = useState<{id: string, title: string, price: number, seriesId?: string}[]>(
+    combo?.episodes?.map((e) => ({ id: e.episodeId, title: e.title, price: e.priceVnd, seriesId: e.seriesId })) || []
   );
 
-  const [selectedSeriesId, setSelectedSeriesId] = useState("");
+  const [selectedSeriesId, setSelectedSeriesId] = useState(combo?.episodes?.[0]?.seriesId || "");
   const [selectedSeasonId, setSelectedSeasonId] = useState("");
 
   const seriesQuery = useQuery({
@@ -244,7 +244,7 @@ function ComboForm({
     if (!selectedEpisodes.find((e) => e.id === ep.episodeId)) {
       setSelectedEpisodes([
         ...selectedEpisodes,
-        { id: ep.episodeId, title: ep.title, price: ep.priceVnd || 0 },
+        { id: ep.episodeId, title: ep.title, price: ep.priceVnd || 0, seriesId: selectedSeriesId },
       ]);
     }
   };
@@ -296,18 +296,24 @@ function ComboForm({
               <div>
                 <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Series</label>
                 <select
-                  className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
+                  className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold disabled:opacity-50"
                   value={selectedSeriesId}
                   onChange={(e) => {
                     setSelectedSeriesId(e.target.value);
                     setSelectedSeasonId("");
                   }}
+                  disabled={selectedEpisodes.length > 0}
                 >
                   <option value="">-- Chọn Series --</option>
                   {seriesQuery.data?.content?.map((s: any) => (
                     <option key={s.seriesId} value={s.seriesId}>{s.title}</option>
                   ))}
                 </select>
+                {selectedEpisodes.length > 0 && (
+                  <p className="text-[10px] text-creator-gold mt-1 italic">
+                    Chỉ có thể chọn tập trong cùng 1 series. Bỏ chọn các tập hiện tại để đổi series.
+                  </p>
+                )}
               </div>
 
               <div>

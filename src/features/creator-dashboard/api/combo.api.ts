@@ -16,6 +16,7 @@ export type ComboEpisodeResponse = {
     priceVnd: number;
     seasonId: string;
     seasonTitle: string;
+    seriesId: string;
     seriesTitle: string;
   }[];
   createdAt: string;
