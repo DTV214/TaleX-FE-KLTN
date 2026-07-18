@@ -94,16 +94,6 @@ function CheckoutContentPageBody() {
   }, [useCoin, maxUsableCoin]);
 
   useEffect(() => {
-    if (order?.status !== "COMPLETED") {
-      return;
-    }
-    const redirectTimerId = window.setTimeout(() => {
-      router.push(returnTo);
-    }, 1500);
-    return () => window.clearTimeout(redirectTimerId);
-  }, [order?.status, returnTo, router]);
-
-  useEffect(() => {
     if (!order?.expiresAt) {
       return;
     }
@@ -309,7 +299,7 @@ function CheckoutContentPageBody() {
                       </span>
                       <button
                         type="button"
-                        onClick={() => router.push(returnTo)}
+                        onClick={() => router.replace(returnTo)}
                         className="mt-2 rounded-lg bg-[#D4AF37] px-4 py-2 text-xs font-bold text-black transition hover:bg-[#E5C158]"
                       >
                         Xem ngay
@@ -338,7 +328,7 @@ function CheckoutContentPageBody() {
                     </span>
                     <button
                       type="button"
-                      onClick={() => router.push(returnTo)}
+                      onClick={() => router.replace(returnTo)}
                       className="mt-2 rounded-lg bg-[#D4AF37] px-4 py-2 text-xs font-bold text-black transition hover:bg-[#E5C158]"
                     >
                       Xem ngay

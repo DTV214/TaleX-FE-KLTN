@@ -531,6 +531,7 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
                             itemId: combo.comboId,
                             itemType: "COMBO",
                             title: combo.title,
+                            returnTo: `/series/${seriesId}`,
                           });
                           router.push(`/checkout-content?${params.toString()}`);
                         }}

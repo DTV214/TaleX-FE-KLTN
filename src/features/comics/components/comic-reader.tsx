@@ -110,6 +110,15 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
 
   const totalPages = sortedPages.length;
 
+  // Luôn mở ra đúng trang đầu tiên khi vào đọc tập (VD: vừa mua xong bấm "Xem ngay") —
+  // không được giữ nguyên vị trí cuộn cũ từ trang trước đó (checkout/paywall).
+  useEffect(() => {
+    if (totalPages > 0) {
+      setCurrentPage(0);
+      window.scrollTo({ top: 0, behavior: "auto" });
+    }
+  }, [episodeId, totalPages]);
+
   // Track reading views and progress updates for comic chapters
   useComicHeartbeat(episodeId, currentPage, totalPages, readingMode);
 

@@ -71,10 +71,14 @@ export function ComboCard({
   const isPurchasable = combo.priceVnd > 0;
 
   function handlePurchase() {
+    // Tất cả episode trong 1 combo luôn thuộc cùng 1 series (BE validate khi tạo combo)
+    // — dùng seriesId của tập đầu tiên để sau khi mua xong quay lại đúng trang Series.
+    const seriesId = combo.episodes?.[0]?.seriesId;
     const params = new URLSearchParams({
       itemId: combo.comboId,
       itemType: "COMBO",
       title: combo.title,
+      ...(seriesId ? { returnTo: `/series/${seriesId}` } : {}),
     });
     router.push(`/checkout-content?${params.toString()}`);
   }

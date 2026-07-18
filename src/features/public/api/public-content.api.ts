@@ -11,6 +11,7 @@ export type PublicComboEpisode = {
   priceVnd?: number;
   seasonId?: string;
   seasonTitle?: string;
+  seriesId?: string;
   seriesTitle?: string;
 };
 

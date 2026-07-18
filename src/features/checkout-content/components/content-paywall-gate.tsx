@@ -57,7 +57,10 @@ export function ContentPaywallGate({
               itemType: "EPISODE",
               returnTo,
             });
-            router.push(`/checkout-content?${params.toString()}`);
+            // replace, không push — nếu không trang paywall này (cùng URL /read hoặc
+            // /watch) sẽ chồng thêm 1 entry lịch sử, khiến nút "Quay lại" ở trang đọc/xem
+            // phải bấm 2 lần mới thật sự lùi về trang Series.
+            router.replace(`/checkout-content?${params.toString()}`);
           }}
           className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#D4AF37] px-5 text-sm font-bold text-black transition hover:bg-[#E5C158] cursor-pointer"
         >
@@ -69,12 +72,14 @@ export function ContentPaywallGate({
           <button
             type="button"
             onClick={() => {
+              const seriesId = matchingCombo.episodes?.[0]?.seriesId;
               const params = new URLSearchParams({
                 itemId: matchingCombo.comboId,
                 itemType: "COMBO",
                 title: matchingCombo.title,
+                ...(seriesId ? { returnTo: `/series/${seriesId}` } : {}),
               });
-              router.push(`/checkout-content?${params.toString()}`);
+              router.replace(`/checkout-content?${params.toString()}`);
             }}
             className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[#D4AF37]/30 bg-[#D4AF37]/10 hover:bg-[#D4AF37]/15 px-4 text-xs font-bold text-[#D4AF37] transition cursor-pointer"
           >
