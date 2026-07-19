@@ -37,12 +37,14 @@ export async function POST() {
     const useSecure = process.env.COOKIE_SECURE === "true";
     const newTokens = responseData.data;
 
+    // Phải khớp với jwt.access-token-expiration bên BE (150 phút) — xem giải thích
+    // trong features/auth/api/auth.actions.ts setAuthCookies().
     cookieStore.set("accessToken", newTokens.accessToken, {
       httpOnly: true,
       secure: useSecure,
       sameSite: "lax",
       path: "/",
-      maxAge: 15 * 60,
+      maxAge: 150 * 60,
     });
     cookieStore.set("refreshToken", newTokens.refreshToken, {
       httpOnly: true,

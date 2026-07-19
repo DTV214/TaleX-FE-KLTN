@@ -141,12 +141,15 @@ async function setAuthCookies(tokens: AuthTokens) {
   const cookieStore = await cookies();
   const useSecure = process.env.COOKIE_SECURE === "true";
 
+  // Phải khớp với jwt.access-token-expiration bên BE (150 phút) — nếu cookie hết hạn
+  // sớm hơn JWT thật, browser tự xóa cookie dù access token vẫn còn hợp lệ, gây refresh
+  // dư thừa (và tăng rủi ro race condition với refresh token rotation).
   cookieStore.set("accessToken", tokens.accessToken, {
     httpOnly: true,
     secure: useSecure,
     sameSite: "lax",
     path: "/",
-    maxAge: 15 * 60,
+    maxAge: 150 * 60,
   });
 
   cookieStore.set("refreshToken", tokens.refreshToken, {
