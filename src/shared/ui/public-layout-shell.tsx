@@ -21,6 +21,7 @@ const sidebarRoutes = [
   "/profile",
   "/coin-history",
   "/premium-history",
+  "/purchase-history",
   "/liked",
   "/bookmarks",
   "/subscriptions",

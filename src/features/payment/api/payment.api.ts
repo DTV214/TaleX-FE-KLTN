@@ -11,6 +11,7 @@ import type {
   CreateOrderRequest,
   CreateOrderResponse,
   GetOrderResponse,
+  OrderHistoryItem,
   OrderResponse,
   OrderStatus,
 } from "../types/payment.types";
@@ -28,6 +29,10 @@ export const paymentKeys = {
     page === undefined || pageSize === undefined
       ? ([...paymentKeys.all, "subscription-history"] as const)
       : ([...paymentKeys.all, "subscription-history", page, pageSize] as const),
+  contentOrderHistory: (page?: number, pageSize?: number) =>
+    page === undefined || pageSize === undefined
+      ? ([...paymentKeys.all, "content-order-history"] as const)
+      : ([...paymentKeys.all, "content-order-history", page, pageSize] as const),
 };
 
 export function useCreateOrder() {
@@ -154,6 +159,22 @@ export function useSubscriptionHistory(page: number, pageSize: number) {
           sortBy: "endTime",
           sortDirection: "DESC",
         },
+      });
+
+      return response.data.data;
+    },
+    staleTime: 30 * 1000,
+  });
+}
+
+export function useContentOrderHistory(page: number, pageSize: number) {
+  return useQuery({
+    queryKey: paymentKeys.contentOrderHistory(page, pageSize),
+    queryFn: async (): Promise<BasePageResponse<OrderHistoryItem>> => {
+      const response = await httpClient.get<
+        BaseResponse<BasePageResponse<OrderHistoryItem>>
+      >(`${ORDERS_ENDPOINT}/history`, {
+        params: { page, pageSize },
       });
 
       return response.data.data;

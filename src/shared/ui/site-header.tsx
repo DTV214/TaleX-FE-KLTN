@@ -250,12 +250,14 @@ export function SiteHeader() {
                             </Link>
                           </DropdownMenu.Item>
 
-                          <DropdownMenu.Item
-                            disabled
-                            className="flex select-none items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-500 outline-none"
-                          >
-                            <Layers3 className="h-4 w-4" />
-                            Gói combo
+                          <DropdownMenu.Item asChild>
+                            <Link
+                              href="/purchase-history"
+                              className="flex cursor-pointer select-none items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium outline-none transition-colors hover:bg-white/5 hover:text-primary focus:bg-white/5 focus:text-primary"
+                            >
+                              <Layers3 className="h-4 w-4 text-sky-300" />
+                              Episode &amp; Combo
+                            </Link>
                           </DropdownMenu.Item>
                       </div>
                     )}

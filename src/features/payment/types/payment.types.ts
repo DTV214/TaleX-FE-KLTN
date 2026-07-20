@@ -45,3 +45,18 @@ export type AccountSubscription = {
   isStoryUnlocked: boolean;
   isCancelled: boolean;
 };
+
+export type OrderPaymentMethod = "COIN" | "SEPAY" | "APP_IAP" | "GOOGLE_IAP";
+
+export type OrderHistoryItem = {
+  orderId: string;
+  itemType: ContentOrderItemType;
+  itemTitle: string;
+  totalAmount: number;
+  // null khi đơn chưa hoàn tất (chưa phát sinh Transaction)
+  paymentMethod: OrderPaymentMethod | null;
+  status: OrderStatus;
+  createdAt: string;
+  // null khi thanh toán bằng Coin, hoặc hóa đơn SePay chưa xử lý xong
+  invoiceUrl: string | null;
+};
