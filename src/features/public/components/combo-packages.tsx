@@ -100,11 +100,17 @@ export function ComboCard({
       )}
 
       <div className="relative z-10 flex flex-1 flex-col">
-        <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37]">
-          <Sparkles className="h-5 w-5" />
-        </div>
+        {combo.episodes?.[0]?.thumbnail ? (
+          <div className="mb-5 aspect-video w-full overflow-hidden rounded-xl border border-white/10 bg-black/50">
+            <img src={combo.episodes[0].thumbnail} alt={combo.title} className="h-full w-full object-cover" />
+          </div>
+        ) : (
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37]">
+            <Sparkles className="h-5 w-5" />
+          </div>
+        )}
 
-        <h3 className="mt-5 pr-16 text-xl font-bold text-white">
+        <h3 className="mt-2 pr-4 text-xl font-bold text-white">
           {combo.title}
         </h3>
         <p className="mt-3 line-clamp-2 min-h-12 text-sm font-medium leading-6 text-slate-400">

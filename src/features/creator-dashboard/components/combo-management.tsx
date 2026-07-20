@@ -2,7 +2,8 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Edit3, Trash2, Plus, ArrowLeft, ChevronRight } from "lucide-react";
+import { Edit3, Trash2, Plus, ArrowLeft, ChevronRight, Layers } from "lucide-react";
+import { toast } from "sonner";
 import {
   listCombos,
   createCombo,
@@ -91,12 +92,31 @@ export function ComboManagementView() {
           {combos.map((combo) => (
             <div
               key={combo.comboId}
-              className="flex flex-col justify-between rounded-xl border border-creator-border bg-creator-sidebar p-6 shadow-xl transition-colors hover:bg-white/5 group"
+              className="flex flex-col justify-between rounded-xl border border-creator-border bg-creator-sidebar shadow-xl transition-colors hover:border-creator-gold/50 group"
             >
               <div>
-                <div className="flex items-start justify-between mb-2">
-                  <h3 className="font-bold text-xl text-white line-clamp-1">{combo.title}</h3>
+                <div className="aspect-[3/4] w-full relative bg-creator-bg overflow-hidden border-b border-creator-border rounded-t-xl">
+                  {combo.episodes?.[0]?.thumbnail ? (
+                    <img src={combo.episodes[0].thumbnail} alt={combo.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Layers size={40} className="text-creator-muted/30" />
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+                  <div className="absolute bottom-3 left-3 right-3">
+                    <span className={`inline-block px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider mb-2 ${
+                      combo.status === "PUBLISHED" ? "bg-green-500/20 text-green-500 border border-green-500/20" :
+                      combo.status === "DRAFT" ? "bg-creator-muted/20 text-creator-muted border border-creator-muted/20" :
+                      "bg-creator-gold/20 text-creator-gold border border-creator-gold/20"
+                    }`}>
+                      {combo.status || "PUBLISHED"}
+                    </span>
+                    <h3 className="text-lg font-bold text-white line-clamp-1">{combo.title}</h3>
+                  </div>
                 </div>
+
+              <div className="p-4">
                 <p className="text-sm text-creator-muted line-clamp-2 mb-6">{combo.description}</p>
                 
                 <div className="space-y-2 text-sm bg-creator-bg rounded-lg border border-creator-border p-4">
@@ -146,26 +166,27 @@ export function ComboManagementView() {
                 )}
               </div>
 
-              <div className="mt-6 flex items-center justify-end gap-2">
-                <button
-                  onClick={() => {
-                    setEditingCombo(combo);
-                    setView("edit");
-                  }}
-                  className="flex h-10 w-10 items-center justify-center rounded-md bg-creator-bg border border-creator-border text-creator-muted hover:text-white transition-colors"
-                >
-                  <Edit3 className="h-4 w-4" />
-                </button>
-                <button
-                  onClick={() => {
-                    if (confirm("Are you sure you want to delete this combo?")) {
-                      deleteMutation.mutate(combo.comboId);
-                    }
-                  }}
-                  className="flex h-10 w-10 items-center justify-center rounded-md bg-creator-bg border border-creator-border text-creator-muted hover:text-red-400 transition-colors"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
+                <div className="mt-6 flex items-center justify-end gap-2">
+                  <button
+                    onClick={() => {
+                      setEditingCombo(combo);
+                      setView("edit");
+                    }}
+                    className="flex h-10 w-10 items-center justify-center rounded-md bg-creator-bg border border-creator-border text-creator-muted hover:text-white transition-colors"
+                  >
+                    <Edit3 className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (confirm("Are you sure you want to delete this combo?")) {
+                        deleteMutation.mutate(combo.comboId);
+                      }
+                    }}
+                    className="flex h-10 w-10 items-center justify-center rounded-md bg-creator-bg border border-creator-border text-creator-muted hover:text-red-400 transition-colors"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -228,7 +249,9 @@ function ComboForm({
     const comboPriceNum = parseInt(priceVnd) || 0;
     
     if (comboPriceNum > originalTotalPrice) {
-      alert("Tổng tiền của combo phải bé hơn hoặc bằng với tổng các tập có trong đó");
+      toast.error("Lỗi giá tiền", {
+        description: "Tổng tiền của combo phải bé hơn hoặc bằng với tổng các tập có trong đó"
+      });
       return;
     }
 
@@ -312,7 +335,7 @@ function ComboForm({
                   disabled={selectedEpisodes.length > 0}
                 >
                   <option value="">-- Chọn Series --</option>
-                  {seriesQuery.data?.content?.map((s: any) => (
+                  {seriesQuery.data?.content?.filter((s: any) => s.status === "PUBLISHED").map((s: any) => (
                     <option key={s.seriesId} value={s.seriesId}>{s.title}</option>
                   ))}
                 </select>
@@ -332,7 +355,7 @@ function ComboForm({
                   disabled={!selectedSeriesId}
                 >
                   <option value="">-- Chọn Mùa --</option>
-                  {seasonsQuery.data?.map((s: any) => (
+                  {seasonsQuery.data?.filter((s: any) => s.status === "PUBLISHED").map((s: any) => (
                     <option key={s.seasonId} value={s.seasonId}>{s.title}</option>
                   ))}
                 </select>
@@ -351,7 +374,7 @@ function ComboForm({
                   value=""
                 >
                   <option value="">-- Chọn tập để thêm --</option>
-                  {episodesQuery.data?.filter((ep: any) => ep.unlockType !== "FREE").map((ep: any) => (
+                  {episodesQuery.data?.filter((ep: any) => ep.unlockType !== "FREE" && ep.status === "PUBLISHED").map((ep: any) => (
                     <option key={ep.episodeId} value={ep.episodeId}>{ep.title} ({ep.priceVnd}đ)</option>
                   ))}
                 </select>

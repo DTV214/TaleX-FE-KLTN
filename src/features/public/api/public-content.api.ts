@@ -13,6 +13,7 @@ export type PublicComboEpisode = {
   seasonTitle?: string;
   seriesId?: string;
   seriesTitle?: string;
+  thumbnail?: string;
 };
 
 export type PublicCombo = {
