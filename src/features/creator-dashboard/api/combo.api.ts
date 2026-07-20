@@ -18,6 +18,7 @@ export type ComboEpisodeResponse = {
     seasonTitle: string;
     seriesId: string;
     seriesTitle: string;
+    thumbnail?: string;
   }[];
   createdAt: string;
   updatedAt: string;
