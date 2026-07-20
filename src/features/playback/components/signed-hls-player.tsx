@@ -17,6 +17,7 @@ import { ContentPaywallGate } from "@/features/checkout-content/components/conte
 import { isNotEntitledError } from "@/features/checkout-content/utils/is-not-entitled-error";
 import { useAuthStore } from "@/features/auth/store/auth.store";
 import { FollowButton } from "@/features/series/components/follow-button";
+import { EpisodeCommentsSection } from "@/features/comments";
 import { useCreatorFollow } from "@/features/series/hooks/use-creator-follow";
 import { getCreatorDetail } from "@/features/series/api/creator-follows-api";
 
@@ -121,6 +122,12 @@ export function SignedHlsPlayer({
     toggleFollow,
     isMutating: isFollowMutating,
   } = useCreatorFollow(creatorAccountId);
+
+  const isOwner = Boolean(
+    authUser?.accountId &&
+      creatorAccountId &&
+      authUser.accountId === creatorAccountId
+  );
 
   const manifestUrl =
     playbackQuery.data?.manifestUrl ||
@@ -334,12 +341,14 @@ export function SignedHlsPlayer({
               </div>
             </div>
 
-            {/* Nút Follow */}
-            <FollowButton
-              isFollowing={isFollowing}
-              onFollowToggle={toggleFollow}
-              isMutating={isFollowMutating}
-            />
+            {/* Nút Follow (Ẩn nếu người xem là tác giả) */}
+            {!isOwner && (
+              <FollowButton
+                isFollowing={isFollowing}
+                onFollowToggle={toggleFollow}
+                isMutating={isFollowMutating}
+              />
+            )}
           </div>
 
           {/* Mô tả tập phim */}
@@ -357,6 +366,9 @@ export function SignedHlsPlayer({
               </p>
             )}
           </div>
+
+          {/* Phần bình luận tập phim */}
+          <EpisodeCommentsSection episodeId={episodeId} className="mt-8" />
         </div>
       )}
     </div>

@@ -283,7 +283,7 @@ export type EpisodeUnlockSettingsRequest = {
   priceVnd?: number;
 };
 
-export async function listSeriesByCreator(page = 1, pageSize = 20) {
+export async function listSeriesByCreator(page = 0, pageSize = 50) {
   return unwrapBaseResponse<BasePageResponse<SeriesResponse>>(
     httpClient.get("/api/v1/series/by-creator", {
       params: { page, pageSize },

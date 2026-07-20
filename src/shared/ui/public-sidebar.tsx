@@ -5,12 +5,10 @@ import { usePathname } from "next/navigation";
 import {
   BookOpen,
   Bookmark,
-  Clock3,
   Flame,
   Heart,
   History,
   Home,
-  ListVideo,
   Radio,
   Sparkles,
   Tv,
@@ -36,8 +34,6 @@ const primaryMenu: MenuItem[] = [
 
 const libraryMenu: MenuItem[] = [
   { title: "Video đã xem", href: "/history", icon: History },
-  { title: "Danh sách phát", href: "/playlists", icon: ListVideo },
-  { title: "Xem sau", href: "/watch-later", icon: Clock3 },
   { title: "Đã thích", href: "/liked", icon: Heart },
   { title: "Đã bookmark", href: "/bookmarks", icon: Bookmark },
 ];
@@ -90,9 +86,7 @@ function SidebarGroup({
       {items.map((item) => {
         const Icon = item.icon;
         const isActive =
-          item.href === "/"
-            ? pathname === "/"
-            : pathname.startsWith(item.href);
+          item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
 
         return (
           <Link

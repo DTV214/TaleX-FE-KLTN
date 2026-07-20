@@ -33,7 +33,7 @@ import {
 import { listSeriesByCreator } from "@/features/creator-dashboard/api/creator-content-api";
 import { ComboCard } from "@/features/public/components/combo-packages";
 import { useGetPublicCombos } from "@/features/public/hooks/use-public-combos";
-import { getFollowers } from "@/features/series/api/creator-follows-api";
+import { getFollowers, getFollowedCreators } from "@/features/series/api/creator-follows-api";
 
 type TabType = "home" | "comics" | "movies" | "about" | "combo" | "followers";
 
@@ -72,7 +72,7 @@ export default function CreatorChannelPage() {
   // 2. Fetch Creator's Series
   const { data: seriesData, isLoading: isSeriesLoading } = useQuery({
     queryKey: ["creator-series"],
-    queryFn: () => listSeriesByCreator(1, 100),
+    queryFn: () => listSeriesByCreator(0, 100),
     enabled: isAuthenticated && !!creator,
     staleTime: 30 * 1000,
   });
@@ -85,13 +85,31 @@ export default function CreatorChannelPage() {
     (combo) => combo.creatorId === creator?.creatorId,
   );
 
-  // 4. Fetch list of followers (for the followers tab)
+  // 4. Fetch list of followers
   const { data: followersData, isLoading: isFollowersLoading } = useQuery({
     queryKey: ["creator-followers", creator?.creatorId],
     queryFn: () => getFollowers(0, 100),
-    enabled: activeTab === "followers" && !!creator,
+    enabled: !!creator,
   });
   const followersList = followersData?.content || [];
+
+  // 5. Fetch list of followed creators
+  const { data: followedData } = useQuery({
+    queryKey: ["creator-followed"],
+    queryFn: () => getFollowedCreators(0, 100),
+    enabled: isAuthenticated,
+  });
+
+  const followedCount =
+    (followedData as any)?.numberOfElements || followedData?.content?.length || 0;
+  const followerCount = Math.max(
+    creator?.followerCount || 0,
+    (followersData as any)?.numberOfElements || followersList.length || 0
+  );
+  const totalViews = series.reduce(
+    (acc, item) => acc + (item.totalViews || 0),
+    0
+  );
 
   const handleItemPress = (seriesId: string) => {
     router.push(`/series/${seriesId}`);
@@ -231,13 +249,17 @@ export default function CreatorChannelPage() {
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-semibold text-[#A1A1AA] mt-2.5">
                   <span>@{profileUser?.username || "creator"}</span>
                   <span className="text-zinc-700">&bull;</span>
-                  <span className="text-[#F5F5F5] font-bold">12.4K</span> <span>Người theo dõi</span>
+                  <span className="text-[#F5F5F5] font-bold">{followerCount.toLocaleString("vi-VN")}</span>{" "}
+                  <span>Người theo dõi</span>
                   <span className="text-zinc-700">&bull;</span>
-                  <span className="text-[#F5F5F5] font-bold">286</span> <span>Đang theo dõi</span>
+                  <span className="text-[#F5F5F5] font-bold">{followedCount.toLocaleString("vi-VN")}</span>{" "}
+                  <span>Đang theo dõi</span>
                   <span className="text-zinc-700">&bull;</span>
-                  <span className="text-[#F5F5F5] font-bold">{series.length}</span> <span>Tác phẩm</span>
+                  <span className="text-[#F5F5F5] font-bold">{series.length.toLocaleString("vi-VN")}</span>{" "}
+                  <span>Tác phẩm</span>
                   <span className="text-zinc-700">&bull;</span>
-                  <span className="text-[#F5F5F5] font-bold">1.8M</span> <span>Lượt thích</span>
+                  <span className="text-[#F5F5F5] font-bold">{totalViews.toLocaleString("vi-VN")}</span>{" "}
+                  <span>Lượt xem</span>
                 </div>
 
                 {/* Collapsible Bio */}
@@ -277,40 +299,6 @@ export default function CreatorChannelPage() {
                   Chỉnh sửa hồ sơ
                 </button>
               </div>
-            </div>
-
-            {/* Statistics Cards Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-6 sm:px-10 py-2">
-              {[
-                {
-                  label: "Người theo dõi",
-                  value: creator?.followerCount != null ? creator.followerCount.toLocaleString("vi-VN") : "0",
-                  icon: Users,
-                },
-                { label: "Phim ảnh", value: moviesList.length.toString(), icon: Video },
-                { label: "Truyện tranh", value: comicsList.length.toString(), icon: BookOpen },
-                { label: "Lượt thích", value: "0", icon: Heart },
-              ].map((stat, i) => {
-                const Icon = stat.icon;
-                return (
-                  <motion.div
-                    key={stat.label}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.1, duration: 0.4 }}
-                    whileHover={{ y: -4, scale: 1.02 }}
-                    className="bg-[#17171C] border border-white/[0.06] rounded-2xl p-5 flex items-center justify-between shadow-xl transition-all duration-300 hover:border-white/10"
-                  >
-                    <div>
-                      <p className="text-[10px] font-black uppercase text-[#A1A1AA] tracking-wider">{stat.label}</p>
-                      <p className="text-2xl font-black text-[#F5F5F5] mt-1">{stat.value}</p>
-                    </div>
-                    <div className="w-11 h-11 rounded-xl bg-white/[0.02] flex items-center justify-center border border-white/[0.04]">
-                      <Icon className="h-5.5 w-5.5 text-[#FACC15]" />
-                    </div>
-                  </motion.div>
-                );
-              })}
             </div>
 
             <div className="border-b border-white/[0.06] bg-transparent flex gap-4 overflow-x-auto scrollbar-none mt-4 px-6 sm:px-10">

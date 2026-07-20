@@ -19,7 +19,12 @@ import {
   ZoomOut,
   RotateCcw,
 } from "lucide-react";
-import { getPublicEpisodeMedia, getPublicEpisodes, getPublicSeasons, getPublicEpisodeDetail } from "@/features/series/api/series-api";
+import {
+  getPublicEpisodeMedia,
+  getPublicEpisodes,
+  getPublicSeasons,
+  getPublicEpisodeDetail,
+} from "@/features/series/api/series-api";
 import { ContentPaywallGate } from "@/features/checkout-content/components/content-paywall-gate";
 import { isNotEntitledError } from "@/features/checkout-content/utils/is-not-entitled-error";
 import { useAuthStore } from "@/features/auth/store/auth.store";
@@ -28,6 +33,7 @@ import { LikeButton } from "@/features/series/components/like-button";
 import { LikedUsersModal } from "@/features/series/components/liked-users-modal";
 import { EpisodeShareButton } from "@/features/series/components/episode-share-button";
 import { useEpisodeLikes } from "@/features/series/hooks/use-episode-likes";
+import { EpisodeCommentsSection } from "@/features/comments";
 import { FollowButton } from "@/features/series/components/follow-button";
 import { useCreatorFollow } from "@/features/series/hooks/use-creator-follow";
 import { getCreatorDetail } from "@/features/series/api/creator-follows-api";
@@ -63,13 +69,8 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
   });
 
   // Tải trạng thái và lượt thích tập truyện
-  const {
-    totalLikes,
-    isLiked,
-    toggleLike,
-    isMutating,
-    likedUsers,
-  } = useEpisodeLikes(episodeId);
+  const { totalLikes, isLiked, toggleLike, isMutating, likedUsers } =
+    useEpisodeLikes(episodeId);
 
   // Truy vấn thông tin creator
   const { data: creatorDetail } = useQuery({
@@ -78,8 +79,15 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
     enabled: !!episodeDetail?.creatorId,
   });
 
-  const creatorAccountId = creatorDetail?.accountId || creatorDetail?.creatorId || episodeDetail?.creatorId;
-  const creatorName = creatorDetail?.displayName || creatorDetail?.username || episodeDetail?.createdBy || "Nhà sáng tạo";
+  const creatorAccountId =
+    creatorDetail?.accountId ||
+    creatorDetail?.creatorId ||
+    episodeDetail?.creatorId;
+  const creatorName =
+    creatorDetail?.displayName ||
+    creatorDetail?.username ||
+    episodeDetail?.createdBy ||
+    "Nhà sáng tạo";
   const creatorAvatar = creatorDetail?.avatarUrl;
 
   const {
@@ -87,6 +95,12 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
     toggleFollow,
     isMutating: isFollowMutating,
   } = useCreatorFollow(creatorAccountId);
+
+  const isOwner = Boolean(
+    authUser?.accountId &&
+    creatorAccountId &&
+    authUser.accountId === creatorAccountId,
+  );
 
   // Fetch danh sách trang truyện (media pages) từ API
   const {
@@ -177,13 +191,17 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-[#0B0B0C] text-white">
         <Loader2 className="h-10 w-10 animate-spin text-[#D4AF37] mb-4" />
-        <p className="text-sm text-gray-400 animate-pulse">Đang tải các trang truyện...</p>
+        <p className="text-sm text-gray-400 animate-pulse">
+          Đang tải các trang truyện...
+        </p>
       </div>
     );
   }
 
   // ─── Not Entitled (Paywall) State ───
-  if (isNotEntitledError(pagesError instanceof Error ? pagesError.message : null)) {
+  if (
+    isNotEntitledError(pagesError instanceof Error ? pagesError.message : null)
+  ) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-[#0B0B0C] px-6">
         <ContentPaywallGate episodeId={episodeId} contentKind="COMIC" />
@@ -244,7 +262,9 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
       <div
         className={cn(
           "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
-          showControls ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-full pointer-events-none",
+          showControls
+            ? "opacity-100 translate-y-0"
+            : "opacity-0 -translate-y-full pointer-events-none",
         )}
       >
         <div className="bg-gradient-to-b from-black/90 to-transparent backdrop-blur-sm border-b border-white/5 px-4 py-3 flex items-center justify-between gap-3">
@@ -281,7 +301,9 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
                 >
                   <ZoomOut className="w-3.5 h-3.5" />
                 </button>
-                <span className="text-xs text-gray-300 w-9 text-center font-bold">{zoom}%</span>
+                <span className="text-xs text-gray-300 w-9 text-center font-bold">
+                  {zoom}%
+                </span>
                 <button
                   onClick={handleZoomIn}
                   className="p-1 text-gray-400 hover:text-white transition-colors"
@@ -302,16 +324,24 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
             {/* Chế độ đọc toggle */}
             <button
               onClick={() => {
-                setReadingMode((m) => (m === "vertical" ? "horizontal" : "vertical"));
+                setReadingMode((m) =>
+                  m === "vertical" ? "horizontal" : "vertical",
+                );
                 setCurrentPage(0);
               }}
               className="flex items-center gap-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg px-3 py-1.5 text-xs font-bold text-gray-300 hover:text-white transition-all"
               title="Chuyển chế độ đọc"
             >
               {readingMode === "vertical" ? (
-                <><Columns2 className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Từng trang</span></>
+                <>
+                  <Columns2 className="w-3.5 h-3.5" />{" "}
+                  <span className="hidden sm:inline">Từng trang</span>
+                </>
               ) : (
-                <><AlignJustify className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Cuộn dọc</span></>
+                <>
+                  <AlignJustify className="w-3.5 h-3.5" />{" "}
+                  <span className="hidden sm:inline">Cuộn dọc</span>
+                </>
               )}
             </button>
 
@@ -355,7 +385,10 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
                     } else {
                       // Cuộn dọc: scroll đến phần tử tương ứng
                       const el = document.getElementById(`page-${idx}`);
-                      el?.scrollIntoView({ behavior: "smooth", block: "start" });
+                      el?.scrollIntoView({
+                        behavior: "smooth",
+                        block: "start",
+                      });
                     }
                     setShowChapterMenu(false);
                   }}
@@ -406,7 +439,9 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
               <div className="w-12 h-12 rounded-full bg-[#D4AF37]/10 flex items-center justify-center mx-auto mb-4">
                 <BookOpen className="w-6 h-6 text-[#D4AF37]" />
               </div>
-              <p className="text-gray-300 text-sm font-bold mb-6">Bạn đã đọc xong tập này!</p>
+              <p className="text-gray-300 text-sm font-bold mb-6">
+                Bạn đã đọc xong tập này!
+              </p>
 
               {/* Nút Thích & Chia sẻ & Thống kê */}
               <div className="flex flex-col items-center gap-3 w-full mb-8 pb-6 border-b border-white/5">
@@ -462,11 +497,13 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
                   </div>
                 </div>
 
-                <FollowButton
-                  isFollowing={isFollowing}
-                  onFollowToggle={toggleFollow}
-                  isMutating={isFollowMutating}
-                />
+                {!isOwner && (
+                  <FollowButton
+                    isFollowing={isFollowing}
+                    onFollowToggle={toggleFollow}
+                    isMutating={isFollowMutating}
+                  />
+                )}
               </div>
 
               <button
@@ -527,7 +564,8 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
               disabled={currentPage === totalPages - 1}
               className={cn(
                 "absolute right-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-black/60 border border-white/10 flex items-center justify-center text-white transition-all hover:bg-[#D4AF37]/20 hover:border-[#D4AF37]/40",
-                currentPage === totalPages - 1 && "opacity-30 cursor-not-allowed",
+                currentPage === totalPages - 1 &&
+                  "opacity-30 cursor-not-allowed",
                 showControls ? "opacity-100" : "opacity-0 pointer-events-none",
               )}
             >
@@ -535,6 +573,12 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
             </button>
           </div>
         )}
+
+        {/* Phần Bình luận tập truyện */}
+        <EpisodeCommentsSection
+          episodeId={episodeId}
+          className="max-w-4xl mx-auto my-12"
+        />
       </div>
 
       {/* ─── BOTTOM BAR (chỉ hiển thị ở horizontal mode) ─── */}
@@ -542,20 +586,28 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
         <div
           className={cn(
             "fixed bottom-0 left-0 right-0 z-50 transition-all duration-300",
-            showControls ? "opacity-100 translate-y-0" : "opacity-0 translate-y-full pointer-events-none",
+            showControls
+              ? "opacity-100 translate-y-0"
+              : "opacity-0 translate-y-full pointer-events-none",
           )}
         >
           <div className="bg-gradient-to-t from-black/95 to-transparent backdrop-blur-sm border-t border-white/5 px-6 py-5">
             {/* Progress bar */}
             <div className="flex items-center gap-4 mb-4">
-              <span className="text-xs font-bold text-gray-500 w-8 text-right">1</span>
+              <span className="text-xs font-bold text-gray-500 w-8 text-right">
+                1
+              </span>
               <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-gradient-to-r from-[#D4AF37] to-[#E5C158] rounded-full transition-all duration-300"
-                  style={{ width: `${((currentPage + 1) / totalPages) * 100}%` }}
+                  style={{
+                    width: `${((currentPage + 1) / totalPages) * 100}%`,
+                  }}
                 />
               </div>
-              <span className="text-xs font-bold text-gray-500 w-8">{totalPages}</span>
+              <span className="text-xs font-bold text-gray-500 w-8">
+                {totalPages}
+              </span>
             </div>
 
             {/* Page dots (hiển thị tối đa 15 trang) */}

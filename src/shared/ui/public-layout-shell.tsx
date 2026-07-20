@@ -20,6 +20,7 @@ const sidebarRoutes = [
   "/missions",
   "/profile",
   "/coin-history",
+  "/premium",
   "/premium-history",
   "/purchase-history",
   "/liked",

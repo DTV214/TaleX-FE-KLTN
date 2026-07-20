@@ -32,7 +32,7 @@ import { useCreatorFollow } from "../hooks/use-creator-follow";
 import { FollowButton } from "./follow-button";
 import { EpisodeBookmarkButton } from "./episode-bookmark-button";
 import { EpisodeShareButton } from "./episode-share-button";
-
+import { useAuthStore } from "@/features/auth/store/auth.store";
 
 interface SeriesDetailProps {
   seriesId: string;
@@ -40,6 +40,7 @@ interface SeriesDetailProps {
 
 export function SeriesDetail({ seriesId }: SeriesDetailProps) {
   const router = useRouter();
+  const authUser = useAuthStore((state) => state.user);
   const [selectedSeasonId, setSelectedSeasonId] = useState<string | null>(null);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [expandedCombos, setExpandedCombos] = useState<Record<string, boolean>>(
@@ -89,6 +90,12 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
       return isFollowing ? baseCount + 1 : baseCount;
     }
   })();
+
+  const isOwner = Boolean(
+    authUser?.accountId &&
+      series?.accountId &&
+      authUser.accountId === series.accountId
+  );
 
   // 2. Fetch danh sách Seasons của Series
   const { data: seasons = [], isLoading: isSeasonsLoading } = useQuery({
@@ -336,8 +343,8 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
                       : "Nhà sáng tạo TaleX"}
                   </p>
                 </div>
-                {/* Follow Button */}
-                {series.accountId && (
+                {/* Follow Button (Ẩn nếu người xem là tác giả) */}
+                {series.accountId && !isOwner && (
                   <div className="ml-4 pl-4 border-l border-white/5 shrink-0">
                     <FollowButton
                       isFollowing={isFollowing}
@@ -381,24 +388,27 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
                 </button>
               )}
 
-              <button
-                onClick={handleSubscribeToggle}
-                className={`px-6 py-3.5 rounded-2xl font-bold border transition-all duration-300 flex items-center justify-center gap-2 ${
-                  isSubscribed
-                    ? "bg-transparent border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37]/5"
-                    : "bg-white/[0.04] border-white/10 text-white hover:bg-white/[0.08] hover:border-white/20"
-                }`}
-              >
-                {isSubscribed ? (
-                  <>
-                    <Check className="w-4 h-4" /> Đã đăng ký nhận tin
-                  </>
-                ) : (
-                  <>
-                    <Plus className="w-4 h-4" /> Đăng ký theo dõi
-                  </>
-                )}
-              </button>
+              {/* Ẩn nút đăng ký nhận tin nếu người xem là tác giả */}
+              {!isOwner && (
+                <button
+                  onClick={handleSubscribeToggle}
+                  className={`px-6 py-3.5 rounded-2xl font-bold border transition-all duration-300 flex items-center justify-center gap-2 ${
+                    isSubscribed
+                      ? "bg-transparent border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37]/5"
+                      : "bg-white/[0.04] border-white/10 text-white hover:bg-white/[0.08] hover:border-white/20"
+                  }`}
+                >
+                  {isSubscribed ? (
+                    <>
+                      <Check className="w-4 h-4" /> Đã đăng ký nhận tin
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-4 h-4" /> Đăng ký theo dõi
+                    </>
+                  )}
+                </button>
+              )}
             </div>
           </motion.div>
         </div>
