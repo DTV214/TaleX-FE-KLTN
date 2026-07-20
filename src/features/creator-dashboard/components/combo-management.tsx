@@ -225,11 +225,18 @@ function ComboForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const comboPriceNum = parseInt(priceVnd) || 0;
+    
+    if (comboPriceNum > originalTotalPrice) {
+      alert("Tổng tiền của combo phải bé hơn hoặc bằng với tổng các tập có trong đó");
+      return;
+    }
+
     const payload = {
       title,
       description,
       status: "PUBLISHED" as const,
-      priceVnd: parseInt(priceVnd) || 0,
+      priceVnd: comboPriceNum,
       episodeIds: selectedEpisodes.map((e) => e.id),
     };
 
@@ -344,7 +351,7 @@ function ComboForm({
                   value=""
                 >
                   <option value="">-- Chọn tập để thêm --</option>
-                  {episodesQuery.data?.map((ep: any) => (
+                  {episodesQuery.data?.filter((ep: any) => ep.unlockType !== "FREE").map((ep: any) => (
                     <option key={ep.episodeId} value={ep.episodeId}>{ep.title} ({ep.priceVnd}đ)</option>
                   ))}
                 </select>
