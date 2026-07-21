@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
+import { getPublicSeriesDetail } from "@/features/series/api/series-api";
 import {
   BookOpen,
   Bookmark,
@@ -81,12 +83,40 @@ function SidebarGroup({
 }) {
   const pathname = usePathname();
 
+  const isSeriesRoute = pathname.startsWith("/series/");
+  const seriesId = isSeriesRoute ? pathname.split("/")[2] : null;
+
+  const { data: seriesDetail } = useQuery({
+    queryKey: ["publicSeriesDetail", seriesId],
+    queryFn: () => getPublicSeriesDetail(seriesId!),
+    enabled: !!seriesId,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const isComicSeries = seriesDetail?.contentType
+    ? String(seriesDetail.contentType).toUpperCase() === "COMIC"
+    : false;
+
   return (
     <nav className="space-y-1">
       {items.map((item) => {
         const Icon = item.icon;
-        const isActive =
-          item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+
+        let isActive = false;
+        if (item.href === "/") {
+          isActive = pathname === "/";
+        } else if (item.href === "/comics") {
+          isActive =
+            pathname.startsWith("/comics") ||
+            pathname.startsWith("/read") ||
+            (isSeriesRoute && isComicSeries);
+        } else if (item.href === "/series") {
+          isActive =
+            (pathname.startsWith("/series") && !isComicSeries) ||
+            pathname.startsWith("/watch");
+        } else {
+          isActive = pathname.startsWith(item.href);
+        }
 
         return (
           <Link

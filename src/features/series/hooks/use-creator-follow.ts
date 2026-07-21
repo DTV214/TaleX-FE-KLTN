@@ -1,9 +1,13 @@
+import { useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { followCreator, unfollowCreator, getFollowedCreators } from "../api/creator-follows-api";
 import { useAuthStore } from "@/features/auth/store/auth.store";
 import { toast } from "sonner";
 
-export function useCreatorFollow(creatorAccountId?: string) {
+export function useCreatorFollow(
+  creatorAccountId?: string,
+  additionalIds?: (string | undefined | null)[]
+) {
   const authUser = useAuthStore((state) => state.user);
   const isAuthenticated = !!authUser;
   const queryClient = useQueryClient();
@@ -17,10 +21,34 @@ export function useCreatorFollow(creatorAccountId?: string) {
 
   const followedList = followedQuery.data?.content || [];
 
+  const candidateList = useMemo(() => {
+    const list = [creatorAccountId, ...(additionalIds || [])].filter(
+      (id): id is string => Boolean(id && typeof id === "string")
+    );
+    return Array.from(new Set(list));
+  }, [creatorAccountId, additionalIds]);
+
+  const followedItem = useMemo(() => {
+    if (candidateList.length === 0 || followedList.length === 0) return null;
+    return (
+      followedList.find((item: any) =>
+        candidateList.some((cand) => {
+          const lowerCand = cand.toLowerCase();
+          return (
+            (item.accountId && item.accountId.toLowerCase() === lowerCand) ||
+            (item.creatorId && item.creatorId.toLowerCase() === lowerCand) ||
+            (item.id && item.id.toLowerCase() === lowerCand) ||
+            (item.username && item.username.toLowerCase() === lowerCand)
+          );
+        })
+      ) || null
+    );
+  }, [candidateList, followedList]);
+
   // Xác định trạng thái đã follow chưa
-  const isFollowing = creatorAccountId
-    ? followedList.some((item) => item.accountId === creatorAccountId)
-    : false;
+  const isFollowing = useMemo(() => {
+    return Boolean(followedItem);
+  }, [followedItem]);
 
   // Mutation: Theo dõi
   const followMutation = useMutation({
@@ -51,6 +79,13 @@ export function useCreatorFollow(creatorAccountId?: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["followedCreators"] });
+      queryClient.invalidateQueries({ queryKey: ["publicSeriesDetail"] });
+      queryClient.invalidateQueries({ queryKey: ["publicSeriesListAll"] });
+      queryClient.invalidateQueries({ queryKey: ["creatorDetailPublic"] });
+      queryClient.invalidateQueries({ queryKey: ["creatorDetail"] });
+      queryClient.invalidateQueries({ queryKey: ["publicSeries"] });
+      queryClient.invalidateQueries({ queryKey: ["ownCreatorFollowers"] });
+      queryClient.invalidateQueries({ queryKey: ["creator-followers"] });
       toast.success("Đã theo dõi nhà sáng tạo.");
     },
   });
@@ -81,6 +116,13 @@ export function useCreatorFollow(creatorAccountId?: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["followedCreators"] });
+      queryClient.invalidateQueries({ queryKey: ["publicSeriesDetail"] });
+      queryClient.invalidateQueries({ queryKey: ["publicSeriesListAll"] });
+      queryClient.invalidateQueries({ queryKey: ["creatorDetailPublic"] });
+      queryClient.invalidateQueries({ queryKey: ["creatorDetail"] });
+      queryClient.invalidateQueries({ queryKey: ["publicSeries"] });
+      queryClient.invalidateQueries({ queryKey: ["ownCreatorFollowers"] });
+      queryClient.invalidateQueries({ queryKey: ["creator-followers"] });
       toast.success("Đã hủy theo dõi nhà sáng tạo.");
     },
   });
@@ -101,6 +143,7 @@ export function useCreatorFollow(creatorAccountId?: string) {
 
   return {
     isFollowing,
+    followedItem,
     toggleFollow: handleFollowToggle,
     isLoading: followedQuery.isLoading,
     isMutating: followMutation.isPending || unfollowMutation.isPending,

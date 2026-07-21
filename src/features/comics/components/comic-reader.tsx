@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import Image from "next/image";
@@ -24,19 +24,22 @@ import {
   getPublicEpisodes,
   getPublicSeasons,
   getPublicEpisodeDetail,
+  getPublicSeriesList,
 } from "@/features/series/api/series-api";
 import { ContentPaywallGate } from "@/features/checkout-content/components/content-paywall-gate";
 import { isNotEntitledError } from "@/features/checkout-content/utils/is-not-entitled-error";
 import { useAuthStore } from "@/features/auth/store/auth.store";
 import { cn } from "@/shared/utils/utils";
 import { LikeButton } from "@/features/series/components/like-button";
-import { LikedUsersModal } from "@/features/series/components/liked-users-modal";
 import { EpisodeShareButton } from "@/features/series/components/episode-share-button";
 import { useEpisodeLikes } from "@/features/series/hooks/use-episode-likes";
 import { EpisodeCommentsSection } from "@/features/comments";
 import { FollowButton } from "@/features/series/components/follow-button";
 import { useCreatorFollow } from "@/features/series/hooks/use-creator-follow";
-import { getCreatorDetail } from "@/features/series/api/creator-follows-api";
+import {
+  getCreatorDetail,
+  getFollowers,
+} from "@/features/series/api/creator-follows-api";
 import { useComicHeartbeat } from "@/features/playback/hooks/useComicHeartbeat";
 
 interface ComicReaderProps {
@@ -69,7 +72,7 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
   });
 
   // Tải trạng thái và lượt thích tập truyện
-  const { totalLikes, isLiked, toggleLike, isMutating, likedUsers } =
+  const { totalLikes, isLiked, toggleLike, isMutating } =
     useEpisodeLikes(episodeId);
 
   // Truy vấn thông tin creator
@@ -79,28 +82,103 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
     enabled: !!episodeDetail?.creatorId,
   });
 
+  // Fetch danh sách series public để ghép thông tin creator (accountId, avatar, name, followers)
+  const { data: publicSeriesData } = useQuery({
+    queryKey: ["publicSeriesListAll"],
+    queryFn: () => getPublicSeriesList(1, 100),
+    staleTime: 30 * 1000,
+  });
+
+  const matchedSeries = useMemo(() => {
+    if (!episodeDetail || !publicSeriesData?.content) return null;
+    return (
+      publicSeriesData.content.find(
+        (s) =>
+          s.creatorId === episodeDetail.creatorId ||
+          s.seriesId === (episodeDetail as any).seriesId ||
+          (s.creatorName && s.creatorName === episodeDetail.createdBy),
+      ) || null
+    );
+  }, [episodeDetail, publicSeriesData]);
+
   const creatorAccountId =
     creatorDetail?.accountId ||
-    creatorDetail?.creatorId ||
-    episodeDetail?.creatorId;
+    matchedSeries?.accountId ||
+    (creatorDetail?.creatorId === episodeDetail?.creatorId
+      ? undefined
+      : creatorDetail?.creatorId);
   const creatorName =
     creatorDetail?.displayName ||
     creatorDetail?.username ||
+    matchedSeries?.creatorName ||
     episodeDetail?.createdBy ||
     "Nhà sáng tạo";
-  const creatorAvatar = creatorDetail?.avatarUrl;
+  const creatorAvatar =
+    creatorDetail?.avatarUrl || matchedSeries?.creatorAvatar;
 
   const {
     isFollowing,
     toggleFollow,
     isMutating: isFollowMutating,
+    isLoading: isFollowListLoading,
   } = useCreatorFollow(creatorAccountId);
+
+  const [initialIsFollowing, setInitialIsFollowing] = useState<boolean | null>(
+    null,
+  );
+
+  useEffect(() => {
+    setInitialIsFollowing(null);
+  }, [creatorAccountId]);
+
+  useEffect(() => {
+    if (
+      !isFollowListLoading &&
+      initialIsFollowing === null &&
+      creatorAccountId
+    ) {
+      setInitialIsFollowing(isFollowing);
+    }
+  }, [isFollowListLoading, isFollowing, creatorAccountId, initialIsFollowing]);
 
   const isOwner = Boolean(
     authUser?.accountId &&
     creatorAccountId &&
     authUser.accountId === creatorAccountId,
   );
+
+  const { data: ownFollowersData } = useQuery({
+    queryKey: ["ownCreatorFollowers", creatorAccountId],
+    queryFn: () => getFollowers(0, 100),
+    enabled: !!authUser && isOwner,
+  });
+
+  const ownFollowerCount =
+    (ownFollowersData as any)?.totalElements ??
+    (ownFollowersData as any)?.numberOfElements ??
+    ownFollowersData?.content?.length ??
+    0;
+
+  const rawFollowerCount = Math.max(
+    creatorDetail?.followerCount ?? 0,
+    creatorDetail?.totalCreatorFollowers ?? 0,
+    creatorDetail?.followersCount ?? 0,
+    matchedSeries?.totalCreatorFollowers ?? 0,
+    isOwner ? ownFollowerCount : 0,
+  );
+
+  const displayFollowersCount = useMemo(() => {
+    if (rawFollowerCount == null) return isFollowing ? 1 : 0;
+    const baseCount = Number(rawFollowerCount) || 0;
+    if (initialIsFollowing === null) {
+      return isFollowing ? Math.max(1, baseCount) : baseCount;
+    }
+    if (initialIsFollowing) {
+      return isFollowing ? Math.max(1, baseCount) : Math.max(0, baseCount - 1);
+    } else {
+      return isFollowing ? Math.max(1, baseCount + 1) : baseCount;
+    }
+  }, [rawFollowerCount, initialIsFollowing, isFollowing]);
 
   // Fetch danh sách trang truyện (media pages) từ API
   const {
@@ -459,23 +537,20 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
                     variant="pill"
                   />
                 </div>
-
-                {likedUsers.length > 0 && (
-                  <LikedUsersModal
-                    episodeId={episodeId}
-                    trigger={
-                      <button className="text-xs text-gray-500 hover:text-white cursor-pointer transition-colors mt-2 flex items-center gap-1 font-semibold">
-                        Xem danh sách người thích
-                      </button>
-                    }
-                  />
-                )}
               </div>
 
               {/* Creator info & Follow action */}
               <div className="flex items-center justify-between w-full bg-white/[0.02] border border-white/5 rounded-2xl p-4 mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 overflow-hidden relative flex-none">
+                <Link
+                  href={
+                    authUser?.accountId &&
+                    (creatorAccountId === authUser.accountId || episodeDetail?.creatorId === authUser.accountId)
+                      ? "/creator-channel"
+                      : `/public-channel?creatorId=${creatorAccountId || episodeDetail?.creatorId}`
+                  }
+                  className="flex items-center gap-3 min-w-0 group cursor-pointer hover:opacity-90 transition-opacity"
+                >
+                  <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 overflow-hidden relative flex-none group-hover:border-yellow-500/50 transition-colors">
                     <img
                       src={
                         creatorAvatar ||
@@ -486,16 +561,16 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
                     />
                   </div>
                   <div className="text-left min-w-0">
-                    <h4 className="text-sm font-bold text-gray-200 truncate leading-snug">
+                    <h4 className="text-sm font-bold text-gray-200 group-hover:text-yellow-400 truncate leading-snug transition-colors">
                       {creatorName}
                     </h4>
-                    <p className="text-[10px] text-gray-500 font-semibold mt-0.5 animate-pulse">
-                      {creatorDetail?.followerCount != null
-                        ? `${creatorDetail.followerCount.toLocaleString("vi-VN")} người theo dõi`
+                    <p className="text-[10px] text-gray-500 font-semibold mt-0.5">
+                      {displayFollowersCount != null
+                        ? `${displayFollowersCount.toLocaleString("vi-VN")} người theo dõi`
                         : "Nhà sáng tạo TaleX"}
                     </p>
                   </div>
-                </div>
+                </Link>
 
                 {!isOwner && (
                   <FollowButton

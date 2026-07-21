@@ -28,7 +28,8 @@ import { usePublicSidebarStore } from "@/shared/stores/public-sidebar.store";
 export function SiteHeader() {
   useMissionHeartbeat();
 
-  const [isTransactionHistoryOpen, setIsTransactionHistoryOpen] = useState(false);
+  const [isTransactionHistoryOpen, setIsTransactionHistoryOpen] =
+    useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const toggleSidebar = usePublicSidebarStore((state) => state.toggleSidebar);
@@ -186,14 +187,15 @@ export function SiteHeader() {
                           ? `@${profileUser.username}`
                           : user.roleName}
                       </p>
-                      {user?.roleName !== "ADMIN" && user?.roleName !== "STAFF" && (
-                        <DropdownMenu.Item
-                          onSelect={() => router.push("/creator-channel")}
-                          className="mt-2 block text-left text-xs font-bold text-[#D4AF37] hover:underline cursor-pointer outline-none select-none"
-                        >
-                          Xem kênh của tôi
-                        </DropdownMenu.Item>
-                      )}
+                      {user?.roleName !== "ADMIN" &&
+                        user?.roleName !== "STAFF" && (
+                          <DropdownMenu.Item
+                            onSelect={() => router.push("/creator-channel")}
+                            className="mt-2 block text-left text-xs font-bold text-[#D4AF37] hover:underline cursor-pointer outline-none select-none"
+                          >
+                            Xem kênh của tôi
+                          </DropdownMenu.Item>
+                        )}
                     </div>
 
                     <DropdownMenu.Item
@@ -221,44 +223,44 @@ export function SiteHeader() {
                       }}
                       className="flex cursor-pointer select-none items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium outline-none transition-colors hover:bg-white/5 hover:text-primary focus:bg-white/5 focus:text-primary"
                     >
-                        <History className="h-4 w-4" />
-                        <span className="flex-1">Lịch sử giao dịch</span>
-                        <ChevronDown
-                          className={`h-4 w-4 text-gray-500 transition ${isTransactionHistoryOpen ? "rotate-180 text-primary" : ""}`}
-                        />
+                      <History className="h-4 w-4" />
+                      <span className="flex-1">Lịch sử giao dịch</span>
+                      <ChevronDown
+                        className={`h-4 w-4 text-gray-500 transition ${isTransactionHistoryOpen ? "rotate-180 text-primary" : ""}`}
+                      />
                     </DropdownMenu.Item>
 
                     {isTransactionHistoryOpen && (
                       <div className="mx-1 mb-1 mt-1 rounded-xl border border-white/10 bg-black/20 p-1">
-                          <DropdownMenu.Item asChild>
-                            <Link
-                              href="/premium-history"
-                              className="flex cursor-pointer select-none items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium outline-none transition-colors hover:bg-white/5 hover:text-primary focus:bg-white/5 focus:text-primary"
-                            >
-                              <Crown className="h-4 w-4 text-[#D4AF37]" />
-                              Premium
-                            </Link>
-                          </DropdownMenu.Item>
+                        <DropdownMenu.Item asChild>
+                          <Link
+                            href="/premium-history"
+                            className="flex cursor-pointer select-none items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium outline-none transition-colors hover:bg-white/5 hover:text-primary focus:bg-white/5 focus:text-primary"
+                          >
+                            <Crown className="h-4 w-4 text-[#D4AF37]" />
+                            Premium
+                          </Link>
+                        </DropdownMenu.Item>
 
-                          <DropdownMenu.Item asChild>
-                            <Link
-                              href="/coin-history"
-                              className="flex cursor-pointer select-none items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium outline-none transition-colors hover:bg-white/5 hover:text-primary focus:bg-white/5 focus:text-primary"
-                            >
-                              <CircleDollarSign className="h-4 w-4 text-cyan-200" />
-                              Coins
-                            </Link>
-                          </DropdownMenu.Item>
+                        <DropdownMenu.Item asChild>
+                          <Link
+                            href="/coin-history"
+                            className="flex cursor-pointer select-none items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium outline-none transition-colors hover:bg-white/5 hover:text-primary focus:bg-white/5 focus:text-primary"
+                          >
+                            <CircleDollarSign className="h-4 w-4 text-cyan-200" />
+                            Coins
+                          </Link>
+                        </DropdownMenu.Item>
 
-                          <DropdownMenu.Item asChild>
-                            <Link
-                              href="/purchase-history"
-                              className="flex cursor-pointer select-none items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium outline-none transition-colors hover:bg-white/5 hover:text-primary focus:bg-white/5 focus:text-primary"
-                            >
-                              <Layers3 className="h-4 w-4 text-sky-300" />
-                              Episode &amp; Combo
-                            </Link>
-                          </DropdownMenu.Item>
+                        <DropdownMenu.Item asChild>
+                          <Link
+                            href="/purchase-history"
+                            className="flex cursor-pointer select-none items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium outline-none transition-colors hover:bg-white/5 hover:text-primary focus:bg-white/5 focus:text-primary"
+                          >
+                            <Layers3 className="h-4 w-4 text-sky-300" />
+                            Episode &amp; Combo
+                          </Link>
+                        </DropdownMenu.Item>
                       </div>
                     )}
 

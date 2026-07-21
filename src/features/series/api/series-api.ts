@@ -27,6 +27,7 @@ export type PublicSeriesItem = {
   accountId?: string;
   creatorId: string;
   creatorName: string;
+  username?: string;
   creatorAvatar?: string | null;
   totalCreatorFollowers?: number;
   title: string;

@@ -15,7 +15,10 @@ function FollowedCreatorCard({ creator }: { creator: any }) {
 
   return (
     <div className="group flex items-center justify-between p-4.5 rounded-2xl bg-white/[0.01] hover:bg-white/[0.03] border border-white/5 transition-all duration-300">
-      <div className="flex items-center gap-4">
+      <Link
+        href={`/creator-channel?creatorId=${creator.accountId || creator.creatorId}`}
+        className="flex items-center gap-4 cursor-pointer min-w-0"
+      >
         {/* Avatar */}
         <div className="w-14 h-14 rounded-full bg-white/5 border border-white/10 overflow-hidden relative flex-none shadow-md group-hover:border-[#D4AF37]/30 transition duration-300">
           <img
@@ -28,8 +31,8 @@ function FollowedCreatorCard({ creator }: { creator: any }) {
           />
         </div>
         {/* Metadata */}
-        <div>
-          <h3 className="text-base font-bold text-white leading-snug group-hover:text-[#D4AF37] transition duration-300">
+        <div className="min-w-0">
+          <h3 className="text-base font-bold text-white leading-snug group-hover:text-[#D4AF37] transition duration-300 truncate">
             {creator.username}
           </h3>
           <div className="flex items-center gap-2 text-xs text-gray-500 font-semibold mt-1">
@@ -37,7 +40,7 @@ function FollowedCreatorCard({ creator }: { creator: any }) {
             <span>Theo dõi từ {new Date(creator.followedAt).toLocaleDateString("vi-VN")}</span>
           </div>
         </div>
-      </div>
+      </Link>
 
       <FollowButton
         isFollowing={isFollowing}

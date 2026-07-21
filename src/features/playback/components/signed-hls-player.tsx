@@ -3,11 +3,15 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, Loader2, Calendar, Eye } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import {
   getEpisodePlayback,
   getCreatorEpisodePlayback,
 } from "@/features/playback/api/playback-api";
-import { getPublicEpisodeDetail } from "@/features/series/api/series-api";
+import {
+  getPublicEpisodeDetail,
+  getPublicSeriesList,
+} from "@/features/series/api/series-api";
 import { LikeButton } from "@/features/series/components/like-button";
 import { LikedUsersModal } from "@/features/series/components/liked-users-modal";
 import { EpisodeShareButton } from "@/features/series/components/episode-share-button";
@@ -19,7 +23,10 @@ import { useAuthStore } from "@/features/auth/store/auth.store";
 import { FollowButton } from "@/features/series/components/follow-button";
 import { EpisodeCommentsSection } from "@/features/comments";
 import { useCreatorFollow } from "@/features/series/hooks/use-creator-follow";
-import { getCreatorDetail } from "@/features/series/api/creator-follows-api";
+import {
+  getCreatorDetail,
+  getFollowers,
+} from "@/features/series/api/creator-follows-api";
 
 type SignedHlsPlayerProps = {
   episodeId: string;
@@ -68,7 +75,12 @@ export function SignedHlsPlayer({
   const resolvedViewerId = viewerId ?? authUser?.accountId;
   const queryKey = useMemo(
     () =>
-      ["episode-playback", episodeId, resolvedViewerId ?? "anonymous", creatorMode ? "creator" : "public"] as const,
+      [
+        "episode-playback",
+        episodeId,
+        resolvedViewerId ?? "anonymous",
+        creatorMode ? "creator" : "public",
+      ] as const,
     [episodeId, resolvedViewerId, creatorMode],
   );
   const storageKey = useMemo(
@@ -78,7 +90,9 @@ export function SignedHlsPlayer({
   const [playerError, setPlayerError] = useState<PlayerErrorState | null>(null);
   const [processingRetryCount, setProcessingRetryCount] = useState(0);
 
-  const fetchPlayback = creatorMode ? getCreatorEpisodePlayback : getEpisodePlayback;
+  const fetchPlayback = creatorMode
+    ? getCreatorEpisodePlayback
+    : getEpisodePlayback;
 
   const playbackQuery = useQuery({
     queryKey,
@@ -98,13 +112,8 @@ export function SignedHlsPlayer({
   });
 
   // Quản lý trạng thái like của tập phim
-  const {
-    totalLikes,
-    isLiked,
-    toggleLike,
-    isMutating,
-    likedUsers,
-  } = useEpisodeLikes(episodeId);
+  const { totalLikes, isLiked, toggleLike, isMutating, likedUsers } =
+    useEpisodeLikes(episodeId);
 
   // Truy vấn chi tiết thông tin nhà sáng tạo (để lấy accountId nhằm follow)
   const { data: creatorDetail } = useQuery({
@@ -113,21 +122,103 @@ export function SignedHlsPlayer({
     enabled: !!episodeDetail?.creatorId,
   });
 
-  const creatorAccountId = creatorDetail?.accountId || creatorDetail?.creatorId || episodeDetail?.creatorId;
-  const creatorName = creatorDetail?.displayName || creatorDetail?.username || episodeDetail?.createdBy || "Nhà sáng tạo";
-  const creatorAvatar = creatorDetail?.avatarUrl;
+  // Fetch danh sách series public để ghép thông tin creator (accountId, avatar, name, followers)
+  const { data: publicSeriesData } = useQuery({
+    queryKey: ["publicSeriesListAll"],
+    queryFn: () => getPublicSeriesList(1, 100),
+    staleTime: 30 * 1000,
+  });
+
+  const matchedSeries = useMemo(() => {
+    if (!episodeDetail || !publicSeriesData?.content) return null;
+    return (
+      publicSeriesData.content.find(
+        (s) =>
+          s.creatorId === episodeDetail.creatorId ||
+          s.seriesId === (episodeDetail as any).seriesId ||
+          (s.creatorName && s.creatorName === episodeDetail.createdBy),
+      ) || null
+    );
+  }, [episodeDetail, publicSeriesData]);
+
+  const creatorAccountId =
+    creatorDetail?.accountId ||
+    matchedSeries?.accountId ||
+    (creatorDetail?.creatorId === episodeDetail?.creatorId
+      ? undefined
+      : creatorDetail?.creatorId);
+  const creatorName =
+    creatorDetail?.displayName ||
+    creatorDetail?.username ||
+    matchedSeries?.creatorName ||
+    episodeDetail?.createdBy ||
+    "Nhà sáng tạo";
+  const creatorAvatar =
+    creatorDetail?.avatarUrl || matchedSeries?.creatorAvatar;
 
   const {
     isFollowing,
     toggleFollow,
     isMutating: isFollowMutating,
+    isLoading: isFollowListLoading,
   } = useCreatorFollow(creatorAccountId);
+
+  const [initialIsFollowing, setInitialIsFollowing] = useState<boolean | null>(
+    null,
+  );
+
+  useEffect(() => {
+    setInitialIsFollowing(null);
+  }, [creatorAccountId]);
+
+  useEffect(() => {
+    if (
+      !isFollowListLoading &&
+      initialIsFollowing === null &&
+      creatorAccountId
+    ) {
+      setInitialIsFollowing(isFollowing);
+    }
+  }, [isFollowListLoading, isFollowing, creatorAccountId, initialIsFollowing]);
 
   const isOwner = Boolean(
     authUser?.accountId &&
-      creatorAccountId &&
-      authUser.accountId === creatorAccountId
+    creatorAccountId &&
+    authUser.accountId === creatorAccountId,
   );
+
+  const { data: ownFollowersData } = useQuery({
+    queryKey: ["ownCreatorFollowers", creatorAccountId],
+    queryFn: () => getFollowers(0, 100),
+    enabled: !!authUser && isOwner,
+  });
+
+  const ownFollowerCount =
+    (ownFollowersData as any)?.totalElements ??
+    (ownFollowersData as any)?.numberOfElements ??
+    ownFollowersData?.content?.length ??
+    0;
+
+  const rawFollowerCount = Math.max(
+    creatorDetail?.followerCount ?? 0,
+    creatorDetail?.totalCreatorFollowers ?? 0,
+    creatorDetail?.followersCount ?? 0,
+    matchedSeries?.totalCreatorFollowers ?? 0,
+    isOwner ? ownFollowerCount : 0,
+  );
+
+  const displayFollowersCount = useMemo(() => {
+    if (rawFollowerCount == null) return isFollowing ? 1 : 0;
+    const baseCount = Number(rawFollowerCount) || 0;
+    if (initialIsFollowing === null) {
+      return isFollowing ? Math.max(1, baseCount) : baseCount;
+    }
+    if (initialIsFollowing) {
+      return isFollowing ? Math.max(1, baseCount) : Math.max(0, baseCount - 1);
+    } else {
+      return isFollowing ? Math.max(1, baseCount + 1) : baseCount;
+    }
+  }, [rawFollowerCount, initialIsFollowing, isFollowing]);
 
   const manifestUrl =
     playbackQuery.data?.manifestUrl ||
@@ -196,7 +287,11 @@ export function SignedHlsPlayer({
       }
     >
       {notEntitled ? (
-        <ContentPaywallGate episodeId={episodeId} contentKind="VIDEO" compact={compact} />
+        <ContentPaywallGate
+          episodeId={episodeId}
+          contentKind="VIDEO"
+          compact={compact}
+        />
       ) : manifestUrl ? (
         <HlsVideoPlayer
           episodeId={episodeId}
@@ -249,7 +344,7 @@ export function SignedHlsPlayer({
               <h1 className="text-xl md:text-2xl font-black text-white tracking-wide">
                 Tập {episodeDetail.episodeNumber}: {episodeDetail.title}
               </h1>
-              
+
               <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-gray-500">
                 <span className="flex items-center gap-1.5">
                   <Eye className="w-4 h-4 text-gray-600" />
@@ -258,7 +353,9 @@ export function SignedHlsPlayer({
                 <span className="w-1.5 h-1.5 rounded-full bg-white/10" />
                 <span className="flex items-center gap-1.5">
                   <Calendar className="w-4 h-4 text-gray-600" />
-                  {new Date(episodeDetail.publishedAt).toLocaleDateString("vi-VN")}
+                  {new Date(episodeDetail.publishedAt).toLocaleDateString(
+                    "vi-VN",
+                  )}
                 </span>
               </div>
             </div>
@@ -316,9 +413,17 @@ export function SignedHlsPlayer({
 
           {/* Thông tin nhà sáng tạo (Creator Profile & Follow Action) */}
           <div className="mt-6 pt-5 border-t border-white/5 flex items-center justify-between">
-            <div className="flex items-center gap-3">
+            <Link
+              href={
+                authUser?.accountId &&
+                (creatorAccountId === authUser.accountId || episodeDetail?.creatorId === authUser.accountId)
+                  ? "/creator-channel"
+                  : `/public-channel?creatorId=${creatorAccountId || episodeDetail?.creatorId}`
+              }
+              className="flex items-center gap-3 min-w-0 group cursor-pointer hover:opacity-90 transition-opacity"
+            >
               {/* Avatar */}
-              <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 overflow-hidden relative flex-none">
+              <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 overflow-hidden relative flex-none group-hover:border-yellow-500/50 transition-colors">
                 <img
                   src={
                     creatorAvatar ||
@@ -330,16 +435,16 @@ export function SignedHlsPlayer({
               </div>
               {/* Tên & Số người theo dõi */}
               <div className="min-w-0">
-                <h4 className="text-sm font-bold text-gray-200 truncate leading-snug">
+                <h4 className="text-sm font-bold text-gray-200 group-hover:text-yellow-400 truncate leading-snug transition-colors">
                   {creatorName}
                 </h4>
-                <p className="text-[10px] text-gray-500 font-semibold mt-0.5 animate-pulse">
-                  {creatorDetail?.followerCount != null
-                    ? `${creatorDetail.followerCount.toLocaleString("vi-VN")} người theo dõi`
+                <p className="text-[10px] text-gray-500 font-semibold mt-0.5">
+                  {displayFollowersCount != null
+                    ? `${displayFollowersCount.toLocaleString("vi-VN")} người theo dõi`
                     : "Nhà sáng tạo TaleX"}
                 </p>
               </div>
-            </div>
+            </Link>
 
             {/* Nút Follow (Ẩn nếu người xem là tác giả) */}
             {!isOwner && (

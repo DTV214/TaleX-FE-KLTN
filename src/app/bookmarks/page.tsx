@@ -144,14 +144,14 @@ export default function BookmarksPage() {
     // Nếu đã biết loại nội dung thì bay thẳng
     const type = contentTypes[episodeId];
     if (type) {
-      router.push(`/${type === "COMIC" ? "read" : "watch"}/${episodeId}`);
+      router.push(`/${String(type).toUpperCase() === "COMIC" ? "read" : "watch"}/${episodeId}`);
       return;
     }
 
     try {
       setRedirectingId(episodeId);
       const detail = await getPublicEpisodeDetail(episodeId);
-      router.push(`/${detail.contentType === "COMIC" ? "read" : "watch"}/${episodeId}`);
+      router.push(`/${String(detail.contentType).toUpperCase() === "COMIC" ? "read" : "watch"}/${episodeId}`);
     } catch {
       toast.error("Không thể mở tập này. Vui lòng thử lại sau.");
       setRedirectingId(null);

@@ -27,6 +27,7 @@ const sidebarRoutes = [
   "/bookmarks",
   "/subscriptions",
   "/creator-channel",
+  "/public-channel",
 ] as const;
 const hiddenChromeRoutes = [
   "/login",

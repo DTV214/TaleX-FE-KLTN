@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect, useMemo } from "react";
+import { useQuery, useQueries } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import {
   Play,
@@ -12,23 +12,25 @@ import {
   Lock,
   Unlock,
   Sparkles,
-  Plus,
-  Check,
   AlertCircle,
   Film,
   BookOpen,
   ChevronRight,
+  Heart,
 } from "lucide-react";
 import {
   getPublicSeriesDetail,
   getPublicSeasons,
   getPublicEpisodes,
+  type PublicEpisodeItem,
 } from "../api/series-api";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { getMyLikedEpisodes, getEpisodeLikes } from "../api/episode-likes-api";
 import { useGetPublicCombos } from "@/features/public/hooks/use-public-combos";
 import { useCreatorFollow } from "../hooks/use-creator-follow";
+import { getFollowers } from "../api/creator-follows-api";
 import { FollowButton } from "./follow-button";
 import { EpisodeBookmarkButton } from "./episode-bookmark-button";
 import { EpisodeShareButton } from "./episode-share-button";
@@ -58,6 +60,10 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
     queryFn: () => getPublicSeriesDetail(seriesId),
   });
 
+  const isComic = series?.contentType
+    ? String(series.contentType).toUpperCase() === "COMIC"
+    : false;
+
   // 1.5 Fetch public combos
   const combosQuery = useGetPublicCombos();
   const combos = combosQuery.data ?? [];
@@ -69,33 +75,56 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
     isLoading: isFollowListLoading,
   } = useCreatorFollow(series?.accountId);
 
-  const [initialIsFollowing, setInitialIsFollowing] = useState<boolean | null>(null);
+  const [initialIsFollowing, setInitialIsFollowing] = useState<boolean | null>(
+    null,
+  );
 
   useEffect(() => {
     setInitialIsFollowing(null);
   }, [series?.seriesId]);
 
   useEffect(() => {
-    if (!isFollowListLoading && initialIsFollowing === null && series?.accountId) {
+    if (
+      !isFollowListLoading &&
+      initialIsFollowing === null &&
+      series?.accountId
+    ) {
       setInitialIsFollowing(isFollowing);
     }
   }, [isFollowListLoading, isFollowing, series?.accountId, initialIsFollowing]);
 
-  const displayFollowersCount = (() => {
-    const baseCount = series?.totalCreatorFollowers ?? 0;
-    if (initialIsFollowing === null) return baseCount;
-    if (initialIsFollowing) {
-      return isFollowing ? baseCount : Math.max(0, baseCount - 1);
-    } else {
-      return isFollowing ? baseCount + 1 : baseCount;
-    }
-  })();
-
   const isOwner = Boolean(
     authUser?.accountId &&
-      series?.accountId &&
-      authUser.accountId === series.accountId
+    series?.accountId &&
+    authUser.accountId === series.accountId,
   );
+
+  const { data: ownFollowersData } = useQuery({
+    queryKey: ["ownCreatorFollowers", series?.accountId],
+    queryFn: () => getFollowers(0, 100),
+    enabled: !!authUser && isOwner,
+  });
+
+  const ownFollowerCount =
+    (ownFollowersData as any)?.totalElements ??
+    (ownFollowersData as any)?.numberOfElements ??
+    ownFollowersData?.content?.length ??
+    0;
+
+  const displayFollowersCount = (() => {
+    const baseCount = Math.max(
+      series?.totalCreatorFollowers ?? 0,
+      isOwner ? ownFollowerCount : 0,
+    );
+    if (initialIsFollowing === null) {
+      return isFollowing ? Math.max(1, baseCount) : baseCount;
+    }
+    if (initialIsFollowing) {
+      return isFollowing ? Math.max(1, baseCount) : Math.max(0, baseCount - 1);
+    } else {
+      return isFollowing ? Math.max(1, baseCount + 1) : baseCount;
+    }
+  })();
 
   // 2. Fetch danh sách Seasons của Series
   const { data: seasons = [], isLoading: isSeasonsLoading } = useQuery({
@@ -123,6 +152,25 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
     enabled: !!activeSeasonId, // Chỉ chạy khi có activeSeasonId
   });
 
+  // Fetch episodes cho tất cả các seasons để tính tổng lượt thích & tổng lượt xem toàn bộ Series
+  const seasonQueries = useQueries({
+    queries: seasons.map((season) => ({
+      queryKey: ["publicSeasonEpisodes", season.seasonId],
+      queryFn: () => getPublicEpisodes(season.seasonId),
+      staleTime: 60 * 1000,
+    })),
+  });
+
+  const allEpisodesInSeries = useMemo(() => {
+    const all: PublicEpisodeItem[] = [];
+    seasonQueries.forEach((q) => {
+      if (q.data && Array.isArray(q.data)) {
+        all.push(...q.data);
+      }
+    });
+    return all.length > 0 ? all : episodes;
+  }, [seasonQueries, episodes]);
+
   // Sắp xếp các episode theo episodeNumber
   const sortedEpisodes = [...episodes].sort(
     (a, b) => a.episodeNumber - b.episodeNumber,
@@ -130,6 +178,56 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
 
   // Lấy tập đầu tiên để làm nút "Xem từ đầu"
   const firstEpisodeId = sortedEpisodes[0]?.episodeId;
+
+  // Fetch danh sách các tập đã thích của user hiện tại
+  const { data: myLikesData } = useQuery({
+    queryKey: ["myLikedEpisodes"],
+    queryFn: () => getMyLikedEpisodes(0, 200),
+    enabled: !!authUser,
+  });
+
+  const myLikedEpisodeIds = useMemo(() => {
+    const set = new Set<string>();
+    if (myLikesData?.content) {
+      myLikesData.content.forEach((item) => set.add(item.episodeId));
+    }
+    return set;
+  }, [myLikesData]);
+
+  // Fetch danh sách chi tiết lượt thích của từng tập trong series để có con số chính xác nhất từ DB
+  const episodeLikesQueries = useQueries({
+    queries: allEpisodesInSeries.map((ep) => ({
+      queryKey: ["episodeLikes", ep.episodeId, 0, 100],
+      queryFn: () => getEpisodeLikes(ep.episodeId, 0, 100),
+      staleTime: 30 * 1000,
+    })),
+  });
+
+  // Tính tổng lượt xem và lượt thích thật của series từ danh sách tất cả các tập
+  const totalSeriesViews = useMemo(() => {
+    const epViews = allEpisodesInSeries.reduce(
+      (acc, ep) => acc + (ep.views || 0),
+      0,
+    );
+    return Math.max(series?.totalViews ?? 0, epViews);
+  }, [series, allEpisodesInSeries]);
+
+  const totalSeriesLikes = useMemo(() => {
+    const epLikes = allEpisodesInSeries.reduce((acc, ep, index) => {
+      const likesQueryData = episodeLikesQueries[index]?.data;
+      const listLikesCount =
+        likesQueryData?.numberOfElements ??
+        likesQueryData?.content?.length ??
+        0;
+      const likesForEp = Math.max(
+        ep.likes || 0,
+        listLikesCount,
+        myLikedEpisodeIds.has(ep.episodeId) ? 1 : 0,
+      );
+      return acc + likesForEp;
+    }, 0);
+    return Math.max((series as any)?.likes ?? 0, epLikes);
+  }, [series, allEpisodesInSeries, episodeLikesQueries, myLikedEpisodeIds]);
 
   // Lọc các combo thuộc về Series này
   const seasonIds = new Set(seasons.map((s) => s.seasonId));
@@ -238,7 +336,7 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
               />
             ) : (
               <div className="w-full h-full bg-white/[0.03] flex items-center justify-center">
-                {series.contentType === "VIDEO" ? (
+                {!isComic ? (
                   <Film className="w-16 h-16 text-gray-600" />
                 ) : (
                   <BookOpen className="w-16 h-16 text-gray-600" />
@@ -250,12 +348,12 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
             <div className="absolute top-4 left-4">
               <span
                 className={`inline-flex items-center gap-1 px-3 py-1 rounded-md text-[10px] font-bold tracking-wide uppercase backdrop-blur-md border ${
-                  series.contentType === "VIDEO"
+                  !isComic
                     ? "bg-red-500/10 text-red-400 border-red-500/20"
                     : "bg-blue-500/10 text-blue-400 border-blue-500/20"
                 }`}
               >
-                {series.contentType === "VIDEO" ? "Phim bộ" : "Truyện tranh"}
+                {!isComic ? "Phim bộ" : "Truyện tranh"}
               </span>
             </div>
           </motion.div>
@@ -280,13 +378,19 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
                   {series.language.toUpperCase()}
                 </span>
               )}
-              <span className="flex items-center gap-1 bg-white/[0.04] border border-white/5 px-2.5 py-1 rounded">
+              <span className="flex items-center gap-1 bg-white/[0.04] border border-white/5 px-2.5 py-1 rounded text-gray-300">
                 <Eye className="w-3.5 h-3.5 text-gray-400" />{" "}
-                {series.totalViews.toLocaleString("vi-VN")} lượt xem
+                {totalSeriesViews.toLocaleString("vi-VN")} lượt xem
               </span>
-              <span className="flex items-center gap-1 bg-white/[0.04] border border-white/5 px-2.5 py-1 rounded">
+              <span className="flex items-center gap-1 bg-white/[0.04] border border-white/5 px-2.5 py-1 rounded text-gray-300">
                 <Users className="w-3.5 h-3.5 text-gray-400" />{" "}
-                {series.totalSubscriptions.toLocaleString("vi-VN")} theo dõi
+                {displayFollowersCount != null
+                  ? `${displayFollowersCount.toLocaleString("vi-VN")} người theo dõi`
+                  : "0 người theo dõi"}
+              </span>
+              <span className="flex items-center gap-1 bg-white/[0.04] border border-white/5 px-2.5 py-1 rounded text-red-400 font-bold">
+                <Heart className="w-3.5 h-3.5 text-red-500 fill-current" />{" "}
+                {totalSeriesLikes.toLocaleString("vi-VN")} lượt thích
               </span>
             </div>
 
@@ -318,31 +422,40 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
             {/* Thông tin nhà sáng tạo (Creator Profile & Follow Action) */}
             {series.creatorName && (
               <div className="flex items-center gap-3 mb-8 bg-white/[0.02] border border-white/5 w-fit rounded-2xl p-4 backdrop-blur-md">
-                {/* Avatar */}
-                <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 overflow-hidden relative flex-none shadow-md">
-                  <img
-                    src={
-                      series.creatorAvatar ||
-                      "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=80&auto=format&fit=crop"
-                    }
-                    alt={series.creatorName}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                {/* Name & Followers */}
-                <div className="min-w-0 pr-2">
-                  <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">
-                    Tác giả
-                  </p>
-                  <h4 className="text-sm font-black text-gray-200 truncate leading-snug">
-                    {series.creatorName}
-                  </h4>
-                  <p className="text-[10px] text-gray-500 font-semibold mt-0.5">
-                    {displayFollowersCount != null
-                      ? `${displayFollowersCount.toLocaleString("vi-VN")} người theo dõi`
-                      : "Nhà sáng tạo TaleX"}
-                  </p>
-                </div>
+                <Link
+                  href={
+                    isOwner
+                      ? "/creator-channel"
+                      : `/public-channel?creatorId=${series.creatorId || series.accountId}`
+                  }
+                  className="flex items-center gap-3 min-w-0 pr-2 group cursor-pointer hover:opacity-90 transition-opacity"
+                >
+                  {/* Avatar */}
+                  <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 overflow-hidden relative flex-none shadow-md group-hover:border-yellow-500/50 transition-colors">
+                    <img
+                      src={
+                        series.creatorAvatar ||
+                        "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=80&auto=format&fit=crop"
+                      }
+                      alt={series.creatorName}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  {/* Name & Followers */}
+                  <div className="min-w-0">
+                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider group-hover:text-yellow-500 transition-colors">
+                      Tác giả
+                    </p>
+                    <h4 className="text-sm font-black text-gray-200 truncate leading-snug group-hover:text-yellow-400 transition-colors">
+                      {series.creatorName}
+                    </h4>
+                    <p className="text-[10px] text-gray-500 font-semibold mt-0.5">
+                      {displayFollowersCount != null
+                        ? `${displayFollowersCount.toLocaleString("vi-VN")} người theo dõi`
+                        : "Nhà sáng tạo TaleX"}
+                    </p>
+                  </div>
+                </Link>
                 {/* Follow Button (Ẩn nếu người xem là tác giả) */}
                 {series.accountId && !isOwner && (
                   <div className="ml-4 pl-4 border-l border-white/5 shrink-0">
@@ -371,13 +484,11 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
             <div className="flex flex-wrap gap-4 items-center">
               {firstEpisodeId ? (
                 <Link
-                  href={`/${series.contentType === "COMIC" ? "read" : "watch"}/${firstEpisodeId}`}
+                  href={`/${isComic ? "read" : "watch"}/${firstEpisodeId}`}
                   className="px-8 py-3.5 bg-[#D4AF37] hover:bg-[#E5C158] text-black font-extrabold rounded-2xl flex items-center justify-center gap-2 shadow-[0_6px_25px_rgba(212,175,55,0.3)] transition-all duration-300 hover:scale-[1.02]"
                 >
                   <Play className="w-5 h-5 fill-current" />{" "}
-                  {series.contentType === "COMIC"
-                    ? "Đọc tập đầu tiên"
-                    : "Xem tập đầu tiên"}
+                  {isComic ? "Đọc tập đầu tiên" : "Xem tập đầu tiên"}
                 </Link>
               ) : (
                 <button
@@ -385,28 +496,6 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
                   className="px-8 py-3.5 bg-white/10 text-white/50 font-bold rounded-2xl cursor-not-allowed flex items-center gap-2"
                 >
                   Chưa có tập phim
-                </button>
-              )}
-
-              {/* Ẩn nút đăng ký nhận tin nếu người xem là tác giả */}
-              {!isOwner && (
-                <button
-                  onClick={handleSubscribeToggle}
-                  className={`px-6 py-3.5 rounded-2xl font-bold border transition-all duration-300 flex items-center justify-center gap-2 ${
-                    isSubscribed
-                      ? "bg-transparent border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37]/5"
-                      : "bg-white/[0.04] border-white/10 text-white hover:bg-white/[0.08] hover:border-white/20"
-                  }`}
-                >
-                  {isSubscribed ? (
-                    <>
-                      <Check className="w-4 h-4" /> Đã đăng ký nhận tin
-                    </>
-                  ) : (
-                    <>
-                      <Plus className="w-4 h-4" /> Đăng ký theo dõi
-                    </>
-                  )}
                 </button>
               )}
             </div>
@@ -770,29 +859,39 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
                       {/* Mobile action row */}
                       <div className="flex md:hidden items-center justify-between mt-4 pt-3 border-t border-white/5 gap-3">
                         <div className="flex items-center gap-2">
-                          <EpisodeBookmarkButton episodeId={episode.episodeId} contentType={series.contentType} />
-                          <EpisodeShareButton episodeId={episode.episodeId} contentType={series.contentType} />
+                          <EpisodeBookmarkButton
+                            episodeId={episode.episodeId}
+                            contentType={series.contentType}
+                          />
+                          <EpisodeShareButton
+                            episodeId={episode.episodeId}
+                            contentType={series.contentType}
+                          />
                         </div>
                         <Link
-                          href={`/${series.contentType === "COMIC" ? "read" : "watch"}/${episode.episodeId}`}
+                          href={`/${isComic ? "read" : "watch"}/${episode.episodeId}`}
                           className="px-4 py-2 bg-white/[0.04] active:bg-[#D4AF37] active:text-black hover:bg-[#D4AF37] hover:text-black text-white font-bold rounded-xl text-xs transition-all duration-200 shadow-md"
                         >
-                          {series.contentType === "COMIC" ? "Đọc Ngay" : "Xem Ngay"}
+                          {isComic ? "Đọc Ngay" : "Xem Ngay"}
                         </Link>
                       </div>
                     </div>
 
                     {/* Nút hành động bên góc phải (Chỉ hiển thị trên md screen) */}
                     <div className="hidden md:flex items-center gap-3 justify-end pl-4 shrink-0">
-                      <EpisodeBookmarkButton episodeId={episode.episodeId} contentType={series.contentType} />
-                      <EpisodeShareButton episodeId={episode.episodeId} contentType={series.contentType} />
+                      <EpisodeBookmarkButton
+                        episodeId={episode.episodeId}
+                        contentType={series.contentType}
+                      />
+                      <EpisodeShareButton
+                        episodeId={episode.episodeId}
+                        contentType={series.contentType}
+                      />
                       <Link
-                        href={`/${series.contentType === "COMIC" ? "read" : "watch"}/${episode.episodeId}`}
+                        href={`/${isComic ? "read" : "watch"}/${episode.episodeId}`}
                         className="px-5 py-2.5 bg-white/[0.04] group-hover:bg-[#D4AF37] text-white group-hover:text-black font-bold rounded-xl text-sm transition-all duration-300 whitespace-nowrap shadow-md group-hover:shadow-[0_4px_12px_rgba(212,175,55,0.25)]"
                       >
-                        {series.contentType === "COMIC"
-                          ? "Đọc Ngay"
-                          : "Xem Ngay"}
+                        {isComic ? "Đọc Ngay" : "Xem Ngay"}
                       </Link>
                     </div>
                   </motion.div>
