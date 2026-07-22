@@ -17,6 +17,7 @@ import { useAuthStore } from "@/features/auth/store/auth.store";
 import { cn } from "@/shared/utils/utils";
 import type { CommentDto } from "../api/comments-api";
 import { useCommentReplies, useCommentMutations } from "../hooks/use-comments";
+import { toast } from "sonner";
 
 interface CommentItemProps {
   comment: CommentDto;
@@ -37,6 +38,10 @@ export function CommentItem({
     (Boolean(currentAccountId) &&
       Boolean(comment.accountId) &&
       currentAccountId === comment.accountId);
+
+  // Chỉ ADMIN hoặc STAFF mới có quyền ẩn bình luận (API PATCH /comments/{id})
+  const canHideComment =
+    user?.roleName === "ADMIN" || user?.roleName === "STAFF";
 
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(comment.content);
@@ -102,12 +107,51 @@ export function CommentItem({
     }
   };
 
-  const handleHide = async () => {
-    try {
-      await hideComment(comment.commentId);
-    } catch {
-      // toast handled in hook
-    }
+  const handleHide = () => {
+    toast.custom(
+      (t) => (
+        <div className="flex w-full max-w-sm flex-col gap-3 rounded-2xl border border-white/10 bg-zinc-900 p-4 shadow-2xl shadow-black/60">
+          <div className="flex items-start gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#D4AF37]/10 text-[#D4AF37]">
+              <EyeOff size={18} />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-bold text-white">Ẩn bình luận này?</p>
+              <p className="mt-0.5 text-xs leading-relaxed text-zinc-400">
+                Bình luận sẽ bị ẩn vĩnh viễn và{" "}
+                <span className="font-semibold text-[#D4AF37]">
+                  không thể khôi phục
+                </span>
+                .
+              </p>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={() => toast.dismiss(t)}
+              className="rounded-lg bg-zinc-800 px-3 py-1.5 text-xs font-semibold text-zinc-300 hover:bg-zinc-700 transition-colors"
+            >
+              Hủy
+            </button>
+            <button
+              onClick={async () => {
+                toast.dismiss(t);
+                try {
+                  await hideComment(comment.commentId);
+                } catch {
+                  // toast handled in hook
+                }
+              }}
+              className="flex items-center gap-1.5 rounded-lg bg-[#D4AF37] px-3 py-1.5 text-xs font-bold text-stone-950 hover:bg-yellow-400 transition-colors"
+            >
+              <EyeOff size={12} />
+              Xác nhận ẩn
+            </button>
+          </div>
+        </div>
+      ),
+      { position: "top-center", duration: 10000 }
+    );
   };
 
   const isHidden = comment.status === "HIDDEN";
@@ -239,8 +283,8 @@ export function CommentItem({
                 </button>
               )}
 
-              {/* Hide button */}
-              {!isCommentOwner && (
+              {/* Hide button - chỉ dành cho ADMIN / STAFF */}
+              {canHideComment && !isCommentOwner && (
                 <button
                   type="button"
                   onClick={handleHide}
@@ -293,7 +337,7 @@ export function CommentItem({
           )}
 
           {/* Toggle Replies List */}
-          {((comment.replyCount ?? 0) > 0 || showReplies) && (
+          {((comment.repliesCount ?? comment.replyCount ?? 0) > 0 || showReplies) && (
             <div className="pt-2">
               <button
                 type="button"
@@ -303,7 +347,7 @@ export function CommentItem({
                 <MessageSquare size={12} />
                 {showReplies
                   ? "Ẩn phản hồi"
-                  : `Xem ${comment.replyCount || replies.length || ""} phản hồi`}
+                  : `Xem ${(comment.repliesCount ?? comment.replyCount) || replies.length || ""} phản hồi`}
               </button>
             </div>
           )}

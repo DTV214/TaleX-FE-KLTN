@@ -7,16 +7,22 @@ import type { BaseSliceResponse } from "@/features/series/api/episode-likes-api"
 export type CommentDto = {
   commentId: string;
   episodeId?: string;
+  /** Field returned by API as parentCommentId */
+  parentCommentId?: string | null;
+  /** Alias used internally when creating comments */
   commentParentId?: string | null;
   accountId?: string;
   username?: string;
   displayName?: string;
   avatarUrl?: string | null;
   content: string;
+  /** API returns this as `repliesCount` */
+  repliesCount?: number;
+  /** @deprecated Use repliesCount instead */
   replyCount?: number;
   status?: "ACTIVE" | "HIDDEN" | "DELETED" | string;
-  createdAt?: string;
-  updatedAt?: string;
+  createdAt?: string | null;
+  updatedAt?: string | null;
   isOwner?: boolean;
 };
 
