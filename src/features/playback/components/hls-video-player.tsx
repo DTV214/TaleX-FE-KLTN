@@ -44,6 +44,8 @@ type HlsVideoPlayerProps = {
   compact?: boolean;
   className?: string;
   storageKey?: string;
+  realDuration?: number;
+  isLocked?: boolean;
   onFatalError?: (message: string) => void;
   onEnded?: () => void;
 };
@@ -337,6 +339,8 @@ export function HlsVideoPlayer({
   compact = false,
   className,
   storageKey,
+  realDuration,
+  isLocked,
   onFatalError,
   onEnded,
 }: HlsVideoPlayerProps) {
@@ -592,7 +596,8 @@ export function HlsVideoPlayer({
       return;
     }
 
-    const nextDuration = Number.isFinite(video.duration) ? video.duration : 0;
+    const nativeDuration = Number.isFinite(video.duration) ? video.duration : 0;
+    const nextDuration = realDuration && realDuration > 0 ? realDuration : nativeDuration;
     setDuration(nextDuration);
     syncBufferedState(video);
 

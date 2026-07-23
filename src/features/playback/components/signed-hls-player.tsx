@@ -299,6 +299,8 @@ export function SignedHlsPlayer({
             episodeId={episodeId}
             manifestUrl={manifestUrl}
             posterUrl={playbackQuery.data?.thumbnailUrl}
+            realDuration={playbackQuery.data?.duration}
+            isLocked={playbackQuery.data?.isLocked ?? false}
             compact={compact}
             storageKey={storageKey}
             onFatalError={handleFatalPlayerError}
