@@ -499,7 +499,7 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
                       <img
                         src={page.fileUrl}
                         alt="Locked content"
-                        className="w-full h-full object-cover blur-md opacity-30 select-none"
+                        className="w-full h-full object-cover select-none"
                       />
                     )}
                     <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/40 px-6">
@@ -615,7 +615,7 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
                         key={`locked-${sortedPages[currentPage].mediaId}`}
                         src={sortedPages[currentPage].fileUrl}
                         alt="Locked content"
-                        className="absolute inset-0 w-full h-full object-contain blur-md opacity-30 select-none"
+                        className="absolute inset-0 w-full h-full object-contain select-none"
                       />
                     )}
                     <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/40 px-6">
