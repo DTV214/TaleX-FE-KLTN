@@ -133,6 +133,7 @@ export type EpisodeMediaResponse = {
   status: string;
   approvalStatus: string;
   displayOrder: number;
+  isLocked?: boolean;
 };
 
 export async function getPublicEpisodeMedia(episodeId: string, viewerId?: string) {

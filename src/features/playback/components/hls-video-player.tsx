@@ -45,6 +45,7 @@ type HlsVideoPlayerProps = {
   className?: string;
   storageKey?: string;
   onFatalError?: (message: string) => void;
+  onEnded?: () => void;
 };
 
 /**
@@ -337,6 +338,7 @@ export function HlsVideoPlayer({
   className,
   storageKey,
   onFatalError,
+  onEnded,
 }: HlsVideoPlayerProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -802,6 +804,7 @@ export function HlsVideoPlayer({
         onWaiting={() => setIsBuffering(true)}
         onPlaying={() => setIsBuffering(false)}
         onCanPlay={() => setIsBuffering(false)}
+        onEnded={onEnded}
         onVolumeChange={(event) => {
           setVolume(event.currentTarget.volume);
           setMuted(event.currentTarget.muted);

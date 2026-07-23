@@ -277,15 +277,8 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
   }
 
   // ─── Not Entitled (Paywall) State ───
-  if (
-    isNotEntitledError(pagesError instanceof Error ? pagesError.message : null)
-  ) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-[#0B0B0C] px-6">
-        <ContentPaywallGate episodeId={episodeId} contentKind="COMIC" />
-      </div>
-    );
-  }
+  // We no longer block the entire page on "PLAYBACK_NOT_ENTITLED" because the backend will return partial pages.
+  // We will handle paywall inline where isLocked is true.
 
   // ─── Error State ───
   if (isPagesError || !mediaPages) {
@@ -500,15 +493,32 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
                 className="w-full flex justify-center bg-[#0B0B0C]"
                 style={{ maxWidth: `${zoom}%` }}
               >
-                <img
-                  src={page.fileUrl}
-                  alt={`Trang ${idx + 1}`}
-                  className="w-full h-auto object-contain block"
-                  loading={idx < 3 ? "eager" : "lazy"}
-                  onLoad={() => {
-                    if (idx === 0) setCurrentPage(0);
-                  }}
-                />
+                {page.isLocked ? (
+                  <div className="w-full aspect-[2/3] max-w-lg mx-auto bg-[#0B0B0C] flex flex-col items-center justify-center relative overflow-hidden">
+                    {page.fileUrl && (
+                      <img
+                        src={page.fileUrl}
+                        alt="Locked content"
+                        className="w-full h-full object-cover blur-md opacity-30 select-none"
+                      />
+                    )}
+                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/40 px-6">
+                      {idx === 5 && (
+                        <ContentPaywallGate episodeId={episodeId} contentKind="COMIC" />
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <img
+                    src={page.fileUrl}
+                    alt={`Trang ${idx + 1}`}
+                    className="w-full h-auto object-contain block"
+                    loading={idx < 3 ? "eager" : "lazy"}
+                    onLoad={() => {
+                      if (idx === 0) setCurrentPage(0);
+                    }}
+                  />
+                )}
               </div>
             ))}
 
@@ -598,13 +608,29 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
               onClick={handlePageInteraction}
             >
               {sortedPages[currentPage] && (
-                <img
-                  key={sortedPages[currentPage].mediaId}
-                  src={sortedPages[currentPage].fileUrl}
-                  alt={`Trang ${currentPage + 1}`}
-                  className="max-h-screen max-w-full object-contain"
-                  style={{ userSelect: "none" }}
-                />
+                sortedPages[currentPage].isLocked ? (
+                  <>
+                    {sortedPages[currentPage].fileUrl && (
+                      <img
+                        key={`locked-${sortedPages[currentPage].mediaId}`}
+                        src={sortedPages[currentPage].fileUrl}
+                        alt="Locked content"
+                        className="absolute inset-0 w-full h-full object-contain blur-md opacity-30 select-none"
+                      />
+                    )}
+                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/40 px-6">
+                      <ContentPaywallGate episodeId={episodeId} contentKind="COMIC" />
+                    </div>
+                  </>
+                ) : (
+                  <img
+                    key={sortedPages[currentPage].mediaId}
+                    src={sortedPages[currentPage].fileUrl}
+                    alt={`Trang ${currentPage + 1}`}
+                    className="max-h-screen max-w-full object-contain"
+                    style={{ userSelect: "none" }}
+                  />
+                )
               )}
             </div>
 

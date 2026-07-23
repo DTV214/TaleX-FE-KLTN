@@ -89,6 +89,7 @@ export function SignedHlsPlayer({
   );
   const [playerError, setPlayerError] = useState<PlayerErrorState | null>(null);
   const [processingRetryCount, setProcessingRetryCount] = useState(0);
+  const [previewEnded, setPreviewEnded] = useState(false);
 
   const fetchPlayback = creatorMode
     ? getCreatorEpisodePlayback
@@ -293,14 +294,30 @@ export function SignedHlsPlayer({
           compact={compact}
         />
       ) : manifestUrl ? (
-        <HlsVideoPlayer
-          episodeId={episodeId}
-          manifestUrl={manifestUrl}
-          posterUrl={playbackQuery.data?.thumbnailUrl}
-          compact={compact}
-          storageKey={storageKey}
-          onFatalError={handleFatalPlayerError}
-        />
+        <div className="relative w-full">
+          <HlsVideoPlayer
+            episodeId={episodeId}
+            manifestUrl={manifestUrl}
+            posterUrl={playbackQuery.data?.thumbnailUrl}
+            compact={compact}
+            storageKey={storageKey}
+            onFatalError={handleFatalPlayerError}
+            onEnded={() => {
+              if (playbackQuery.data?.isLocked) {
+                setPreviewEnded(true);
+              }
+            }}
+          />
+          {previewEnded && playbackQuery.data?.isLocked && (
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/80 backdrop-blur-md px-6 rounded-2xl">
+              <ContentPaywallGate
+                episodeId={episodeId}
+                contentKind="VIDEO"
+                compact={compact}
+              />
+            </div>
+          )}
+        </div>
       ) : (
         <div
           className={

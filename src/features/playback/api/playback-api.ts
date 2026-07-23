@@ -33,6 +33,7 @@ export type EpisodePlaybackResponse = {
   expiresAt?: string;
   drm?: DrmPlaybackConfig;
   token?: string;
+  isLocked?: boolean;
 };
 
 export async function getEpisodePlayback(
