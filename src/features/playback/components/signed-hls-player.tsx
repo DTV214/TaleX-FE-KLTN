@@ -301,6 +301,7 @@ export function SignedHlsPlayer({
             posterUrl={playbackQuery.data?.thumbnailUrl}
             realDuration={playbackQuery.data?.duration}
             isLocked={playbackQuery.data?.isLocked ?? false}
+            blurVideo={previewEnded}
             compact={compact}
             storageKey={storageKey}
             onFatalError={handleFatalPlayerError}
@@ -309,14 +310,22 @@ export function SignedHlsPlayer({
                 setPreviewEnded(true);
               }
             }}
+            onTimeUpdate={(time) => {
+              if (previewEnded && time < 9.9) {
+                setPreviewEnded(false);
+              }
+            }}
           />
           {previewEnded && playbackQuery.data?.isLocked && (
-            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/80 backdrop-blur-md px-6 rounded-2xl">
-              <ContentPaywallGate
-                episodeId={episodeId}
-                contentKind="VIDEO"
-                compact={compact}
-              />
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center overflow-hidden rounded-2xl pointer-events-none">
+              <div className="w-full bg-black/80 backdrop-blur-md px-6 py-8 shadow-2xl flex flex-col items-center justify-center pointer-events-auto">
+                <ContentPaywallGate
+                  episodeId={episodeId}
+                  contentKind="VIDEO"
+                  compact={compact}
+                  inline={true}
+                />
+              </div>
             </div>
           )}
         </div>

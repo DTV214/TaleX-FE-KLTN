@@ -46,8 +46,10 @@ type HlsVideoPlayerProps = {
   storageKey?: string;
   realDuration?: number;
   isLocked?: boolean;
+  blurVideo?: boolean;
   onFatalError?: (message: string) => void;
   onEnded?: () => void;
+  onTimeUpdate?: (time: number) => void;
 };
 
 /**
@@ -341,8 +343,10 @@ export function HlsVideoPlayer({
   storageKey,
   realDuration,
   isLocked,
+  blurVideo,
   onFatalError,
   onEnded,
+  onTimeUpdate,
 }: HlsVideoPlayerProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -627,6 +631,9 @@ export function HlsVideoPlayer({
 
     setCurrentTime(video.currentTime);
     syncBufferedState(video);
+    if (onTimeUpdate) {
+      onTimeUpdate(video.currentTime);
+    }
 
     if (!storageKey || !Number.isFinite(video.currentTime)) {
       return;
@@ -666,7 +673,10 @@ export function HlsVideoPlayer({
 
     video.currentTime = nextTime;
     setCurrentTime(nextTime);
-  }, []);
+    if (onTimeUpdate) {
+      onTimeUpdate(nextTime);
+    }
+  }, [onTimeUpdate]);
 
   const handleVolumeChange = useCallback((nextVolume: number) => {
     const video = videoRef.current;
@@ -814,7 +824,10 @@ export function HlsVideoPlayer({
           setVolume(event.currentTarget.volume);
           setMuted(event.currentTarget.muted);
         }}
-        className="aspect-video w-full bg-black object-contain"
+        className={cn(
+          "aspect-video w-full bg-black object-contain transition-all duration-700",
+          blurVideo ? "blur-xl opacity-40 scale-105" : ""
+        )}
       >
         Your browser does not support the video tag.
       </video>
@@ -825,7 +838,7 @@ export function HlsVideoPlayer({
         </div>
       )}
 
-      {!isPlaying && !isBuffering && (
+      {!isPlaying && !isBuffering && !blurVideo && (
         <button
           type="button"
           onClick={togglePlay}

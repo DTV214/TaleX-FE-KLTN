@@ -8,12 +8,14 @@ type ContentPaywallGateProps = {
   episodeId: string;
   contentKind: "VIDEO" | "COMIC";
   compact?: boolean;
+  inline?: boolean;
 };
 
 export function ContentPaywallGate({
   episodeId,
   contentKind,
   compact = false,
+  inline = false,
 }: ContentPaywallGateProps) {
   const router = useRouter();
   const actionLabel = contentKind === "COMIC" ? "đọc" : "xem";
@@ -31,9 +33,11 @@ export function ContentPaywallGate({
   return (
     <div
       className={
-        compact
-          ? "flex aspect-video w-full flex-col items-center justify-center gap-3 rounded-xl bg-[#121214] px-4 text-center text-white"
-          : "flex aspect-video w-full flex-col items-center justify-center gap-4 rounded-2xl bg-[#121214] px-6 text-center text-white shadow-[0_24px_80px_rgba(0,0,0,0.25)]"
+        inline
+          ? "flex w-full flex-col items-center justify-center gap-4 px-4 text-center text-white"
+          : compact
+            ? "flex aspect-video w-full flex-col items-center justify-center gap-3 rounded-xl bg-[#121214] px-4 text-center text-white"
+            : "flex aspect-video w-full flex-col items-center justify-center gap-4 rounded-2xl bg-[#121214] px-6 text-center text-white shadow-[0_24px_80px_rgba(0,0,0,0.25)]"
       }
     >
       <span className="flex h-12 w-12 items-center justify-center rounded-full border border-[#D4AF37]/35 bg-[#D4AF37]/10 text-[#D4AF37] shrink-0">
