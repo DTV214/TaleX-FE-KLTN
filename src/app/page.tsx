@@ -20,6 +20,10 @@ import { EditorialSpotlight } from "@/features/home/components/editorial-spotlig
 import { WebtoonAdaptationsRow } from "@/features/home/components/webtoon-adaptations-row";
 import { TrendingComics } from "@/features/intro/components/trending-comics";
 import { AdSlot } from "@/shared/ui/ad-slot";
+import { useQuery } from "@tanstack/react-query";
+import { adsApi } from "@/features/ads/api/ads-api";
+import useEmblaCarousel from "embla-carousel-react";
+import Autoplay from "embla-carousel-autoplay";
 
 type ShortItem = {
   title: string;
@@ -227,7 +231,6 @@ export default function Home() {
         <ShortsSection />
         <SponsoredRecommendationSection />
         <VideoGrid />
-        <AdSlot slotId="mock-home-wide-1" format="horizontal" className="my-10" />
         <LegacyHomeSections />
       </main>
     </div>
@@ -291,142 +294,46 @@ function ShortCard({ short }: { short: ShortItem }) {
   );
 }
 
-type AdCarouselLayout = "quad" | "trio" | "duo" | "solo";
-
-type AdCarouselGroup = {
-  id: string;
-  layout: AdCarouselLayout;
-  images: string[];
-};
-
-const adCarouselGroups: AdCarouselGroup[] = [
-  {
-    id: "power-fantasy",
-    layout: "quad",
-    images: [
-      "https://images.unsplash.com/photo-1634986666676-ec8fd927c23d?q=80&w=900&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1518709268805-4e9042af2176?q=80&w=900&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=900&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=900&auto=format&fit=crop",
-    ],
-  },
-  {
-    id: "soft-drama",
-    layout: "duo",
-    images: [
-      "https://images.unsplash.com/photo-1612036782180-6f0b6cd846fe?q=80&w=900&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1518791841217-8f162f1e1131?q=80&w=900&auto=format&fit=crop",
-    ],
-  },
-  {
-    id: "neon-solo",
-    layout: "solo",
-    images: [
-      "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=900&auto=format&fit=crop",
-    ],
-  },
-  {
-    id: "adventure-trio",
-    layout: "trio",
-    images: [
-      "https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=900&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=900&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=900&auto=format&fit=crop",
-    ],
-  },
-];
-
 function AdImageCarousel() {
-  const repeatedGroups = [...adCarouselGroups, ...adCarouselGroups];
+  const { data: ads, isLoading } = useQuery({
+    queryKey: ["serve-all-ads", "BANNER_HOME"],
+    queryFn: () => adsApi.serveAllAds("BANNER_HOME"),
+    staleTime: 0,
+    refetchOnWindowFocus: false,
+  });
+
+  if (isLoading || !ads || ads.length === 0) return null;
+
+  // Duplicate ads to fill carousel if there are too few
+  let displayAds = [...ads];
+  if (displayAds.length < 4) {
+    displayAds = [...displayAds, ...displayAds, ...displayAds, ...displayAds].slice(0, 4);
+  }
 
   return (
     <section className="talex-ad-carousel relative mt-5 overflow-hidden rounded-2xl border border-white/5 bg-[#111113] shadow-[0_18px_60px_rgba(0,0,0,0.35)]">
       <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-20 bg-gradient-to-r from-[#111113] to-transparent" />
       <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-20 bg-gradient-to-l from-[#111113] to-transparent" />
-
-      <span className="absolute right-3 top-3 z-20 rounded-md border border-white/10 bg-black/55 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-white/60 backdrop-blur">
-        Quảng cáo
-      </span>
-
-      <div className="h-[230px] overflow-hidden p-2 md:h-[270px] lg:h-[310px]">
-        <div className="talex-ad-carousel-track flex h-full w-max gap-2">
-          {repeatedGroups.map((group, index) => (
-            <AdCarouselCard
-              key={`${group.id}-${index}`}
-              group={group}
-            />
-          ))}
-        </div>
-      </div>
+      <EmblaCarouselWrapper ads={displayAds} />
     </section>
   );
 }
 
-function AdCarouselCard({ group }: { group: AdCarouselGroup }) {
-  if (group.layout === "solo") {
-    return (
-      <div className="relative h-full w-[78vw] shrink-0 overflow-hidden rounded-xl border border-white/5 bg-white/5 md:w-[360px] lg:w-[430px]">
-        <AdCarouselImage src={group.images[0]} />
-      </div>
-    );
-  }
-
-  if (group.layout === "duo") {
-    return (
-      <div className="grid h-full w-[86vw] shrink-0 grid-cols-2 gap-2 overflow-hidden rounded-xl border border-white/5 bg-white/[0.03] p-1 md:w-[520px] lg:w-[620px]">
-        {group.images.slice(0, 2).map((image) => (
-          <AdCarouselImage key={image} src={image} rounded />
-        ))}
-      </div>
-    );
-  }
-
-  if (group.layout === "trio") {
-    return (
-      <div className="grid h-full w-[92vw] shrink-0 grid-cols-[1.25fr_0.9fr] gap-2 overflow-hidden rounded-xl border border-white/5 bg-white/[0.03] p-1 md:w-[650px] lg:w-[760px]">
-        <AdCarouselImage src={group.images[0]} rounded />
-        <div className="grid gap-2">
-          {group.images.slice(1, 3).map((image) => (
-            <AdCarouselImage key={image} src={image} rounded />
-          ))}
-        </div>
-      </div>
-    );
-  }
+function EmblaCarouselWrapper({ ads }: { ads: any[] }) {
+  const [emblaRef] = useEmblaCarousel(
+    { loop: true, align: "start", dragFree: false },
+    [Autoplay({ delay: 3500, stopOnInteraction: false })]
+  );
 
   return (
-    <div className="grid h-full w-[96vw] shrink-0 grid-cols-[1.25fr_1fr] gap-2 overflow-hidden rounded-xl border border-white/5 bg-white/[0.03] p-1 md:w-[740px] lg:w-[880px]">
-      <AdCarouselImage src={group.images[0]} rounded />
-      <div className="grid grid-cols-2 gap-2">
-        {group.images.slice(1, 4).map((image, index) => (
-          <div
-            key={image}
-            className={index === 2 ? "col-span-2 min-h-0" : "min-h-0"}
-          >
-            <AdCarouselImage src={image} rounded />
+    <div className="h-[230px] overflow-hidden p-2 md:h-[270px] lg:h-[310px]" ref={emblaRef}>
+      <div className="talex-ad-carousel-track flex h-full gap-2">
+        {ads.map((ad, index) => (
+          <div key={`${ad.campaignId}-${index}`} className="relative h-full w-[78vw] shrink-0 overflow-hidden rounded-xl border border-white/5 bg-white/5 md:w-[360px] lg:w-[430px] flex-[0_0_auto] ml-2">
+            <AdSlot adData={ad} className="h-full w-full rounded-none border-none bg-transparent" />
           </div>
         ))}
       </div>
-    </div>
-  );
-}
-
-function AdCarouselImage({
-  src,
-  rounded = false,
-}: {
-  src: string;
-  rounded?: boolean;
-}) {
-  return (
-    <div
-      className={`group relative h-full min-h-0 overflow-hidden bg-white/5 ${rounded ? "rounded-lg" : ""}`}
-    >
-      <div
-        className="absolute inset-0 bg-cover bg-center opacity-[0.88] transition duration-500 group-hover:scale-105 group-hover:opacity-100"
-        style={{ backgroundImage: `url(${src})` }}
-      />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-black/10" />
     </div>
   );
 }
@@ -457,8 +364,6 @@ function LegacyHomeSections() {
       <Top10Today />
       <InterestCategories />
       <FeaturedPromo />
-
-      <AdSlot slotId="mock-home-wide-2" format="horizontal" className="my-2" />
 
       <DailyTopVideosRow />
       <ChineseSeriesRow />

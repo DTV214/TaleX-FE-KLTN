@@ -15,6 +15,7 @@ import {
   Sparkles,
   Tv,
   UserRoundCog,
+  Megaphone,
   X,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -44,6 +45,7 @@ const libraryMenu: MenuItem[] = [
 const platformMenu: MenuItem[] = [
   { title: "Giới thiệu", href: "/intro", icon: Sparkles },
   { title: "Creator Studio", href: "/creator-dashboard", icon: UserRoundCog },
+  { title: "Quảng cáo", href: "/ads", icon: Megaphone },
 ];
 
 const legalLinks = [

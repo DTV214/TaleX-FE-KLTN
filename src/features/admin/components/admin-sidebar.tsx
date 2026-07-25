@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -92,6 +92,7 @@ const navItems = [
     href: "/admin/engagement-services",
     icon: Megaphone,
   },
+  { name: "Quảng cáo Direct", href: "/admin/ads", icon: Megaphone },
   { name: "Chiến Dịch", href: "/admin/campaigns", icon: ImageIcon },
   { name: "Điều Khoản", href: "/admin/terms", icon: FileText },
   { name: "Cài Đặt", href: "/admin/settings", icon: Settings },
