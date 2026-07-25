@@ -48,6 +48,7 @@ export function AdminMissionForm({
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<MissionFormValues>({
     resolver: zodResolver(missionSchema),
@@ -65,7 +66,7 @@ export function AdminMissionForm({
           title: "",
           description: "",
           rewardAmount: undefined,
-          targetValue: undefined,
+          targetValue: 1,
           isActive: true,
         },
   });
@@ -99,6 +100,15 @@ export function AdminMissionForm({
   }, [initialData]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
+  useEffect(() => {
+    if (questType !== "ONLINE") return;
+
+    setValue("targetValue", Number(duration), {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+  }, [duration, questType, setValue]);
+
   function onSubmit(data: MissionFormValues) {
     if (questType === "WATCH_AD" && !normalizedAdSuffix) {
       window.alert("Vui lòng nhập hậu tố mã cho nhiệm vụ quảng cáo.");
@@ -111,7 +121,11 @@ export function AdminMissionForm({
         : questType === "WATCH_AD"
           ? `WATCH_AD_${normalizedAdSuffix}`
           : questType;
-    const payload = { ...data, code: finalCode };
+    const payload = {
+      ...data,
+      code: finalCode,
+      targetValue: questType === "ONLINE" ? Number(duration) : data.targetValue,
+    };
 
     if (initialData) {
       updateMutation.mutate(
@@ -303,10 +317,21 @@ export function AdminMissionForm({
               min="1"
               step="1"
               placeholder="0"
+              readOnly={questType === "ONLINE"}
               aria-invalid={Boolean(errors.targetValue)}
               {...register("targetValue", { valueAsNumber: true })}
-              className={fieldClassName}
+              className={`${fieldClassName} ${
+                questType === "ONLINE"
+                  ? "cursor-not-allowed bg-gray-100 text-gray-500"
+                  : ""
+              }`}
             />
+            {questType === "ONLINE" && (
+              <p className="text-xs font-medium text-gray-500">
+                Nhiệm vụ online bắn heartbeat mỗi 60 giây, nên chỉ tiêu được tự
+                động quy đổi theo số phút đã chọn.
+              </p>
+            )}
             {errors.targetValue?.message && (
               <p className="text-xs font-semibold text-red-600">
                 {errors.targetValue.message}

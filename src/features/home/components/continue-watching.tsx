@@ -98,6 +98,7 @@ export function ContinueWatching() {
           </h3>
           <Link
             href="/history"
+            prefetch={false}
             className="group flex items-center text-sm font-semibold text-[#D4AF37] hover:text-[#E5C158] transition-colors"
           >
             Xem tất cả

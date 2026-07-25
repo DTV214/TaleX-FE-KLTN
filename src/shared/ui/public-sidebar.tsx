@@ -53,6 +53,14 @@ const legalLinks = [
   { title: "Câu hỏi thường gặp", href: "/faq" },
 ];
 
+const noPrefetchRoutes = new Set([
+  "/history",
+  "/faq",
+  "/terms",
+  "/privacy",
+  "/contact",
+]);
+
 export function PublicSidebar() {
   const isSidebarOpen = usePublicSidebarStore((state) => state.isSidebarOpen);
   const isMobileSidebarOpen = usePublicSidebarStore(
@@ -197,6 +205,7 @@ function SidebarGroup({
           <Link
             key={item.title}
             href={item.href}
+            prefetch={noPrefetchRoutes.has(item.href) ? false : undefined}
             title={item.title}
             onClick={onNavigate}
             className={cn(
@@ -239,6 +248,7 @@ function SidebarLegalLinks({ isOpen }: { isOpen: boolean }) {
           <Link
             key={link.href}
             href={link.href}
+            prefetch={false}
             className="transition-colors hover:text-[#D4AF37]"
           >
             {link.title}

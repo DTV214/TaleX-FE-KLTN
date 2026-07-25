@@ -39,128 +39,161 @@ export function useMissionHeartbeat(options: UseMissionHeartbeatOptions = {}) {
   const canRunHeartbeat = isEnabled && isAuthenticated;
   const missionsQuery = useMyMissions({ enabled: canRunHeartbeat });
   const heartbeatMutation = useHeartbeatMutation();
-  const activeSegmentStartedAtRef = useRef<number | null>(null);
-  const accumulatedVisibleMsRef = useRef(0);
+  const { mutateAsync } = heartbeatMutation;
   const missions = missionsQuery.data;
-  const { refetch } = missionsQuery;
-  const { isPending, mutateAsync } = heartbeatMutation;
 
-  const serverPendingOnlineMissions = useMemo(
-    () =>
-      Array.isArray(missions)
-        ? missions.filter(
-            (mission) =>
-              !isMissionSatisfied(mission) && isOnlineMission(mission),
-          )
-        : [],
-    [missions],
-  );
+  const hasPendingOnline = useMemo(() => {
+    if (!Array.isArray(missions)) return false;
 
-  const hasServerPendingOnlineMissions = serverPendingOnlineMissions.length > 0;
+    return missions.some(
+      (mission) => !isMissionSatisfied(mission) && isOnlineMission(mission),
+    );
+  }, [missions]);
+
+  const stateRef = useRef({
+    canRun: canRunHeartbeat,
+    hasPending: hasPendingOnline,
+    isTabVisible:
+      typeof document !== "undefined"
+        ? document.visibilityState === "visible"
+        : false,
+  });
+  const actionsRef = useRef({ mutateAsync });
+  const timeoutIdRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const activeStartedAtRef = useRef(0);
+  const accumulatedActiveMsRef = useRef(0);
+  const isHeartbeatInFlightRef = useRef(false);
+  const startSchedulerRef = useRef(() => {});
+  const stopSchedulerRef = useRef(() => {});
 
   useEffect(() => {
-    let timeoutId: number | undefined;
+    actionsRef.current = { mutateAsync };
+  }, [mutateAsync]);
 
-    const clearSchedule = () => {
-      if (timeoutId !== undefined) {
-        window.clearTimeout(timeoutId);
-        timeoutId = undefined;
-      }
+  useEffect(() => {
+    stateRef.current = {
+      canRun: canRunHeartbeat,
+      hasPending: hasPendingOnline,
+      isTabVisible: document.visibilityState === "visible",
     };
 
-    const getVisibleElapsedMs = () => {
-      if (activeSegmentStartedAtRef.current === null) {
-        return accumulatedVisibleMsRef.current;
-      }
-
-      return (
-        accumulatedVisibleMsRef.current +
-        Date.now() -
-        activeSegmentStartedAtRef.current
-      );
-    };
-
-    const resetVisibleTimer = () => {
-      accumulatedVisibleMsRef.current = 0;
-      activeSegmentStartedAtRef.current =
-        document.visibilityState === "visible" ? Date.now() : null;
-    };
-
-    const pauseVisibleTimer = () => {
-      if (activeSegmentStartedAtRef.current === null) return;
-
-      accumulatedVisibleMsRef.current = getVisibleElapsedMs();
-      activeSegmentStartedAtRef.current = null;
-    };
-
-    const resumeVisibleTimer = () => {
-      if (activeSegmentStartedAtRef.current !== null) return;
-
-      activeSegmentStartedAtRef.current = Date.now();
-    };
-
-    if (!canRunHeartbeat || !hasServerPendingOnlineMissions) {
-      clearSchedule();
-      resetVisibleTimer();
+    if (canRunHeartbeat && hasPendingOnline && stateRef.current.isTabVisible) {
+      startSchedulerRef.current();
       return;
     }
 
-    if (
-      document.visibilityState === "visible" &&
-      activeSegmentStartedAtRef.current === null
-    ) {
-      resumeVisibleTimer();
-    }
+    stopSchedulerRef.current();
+  }, [canRunHeartbeat, hasPendingOnline]);
 
-    const scheduleNextHeartbeat = () => {
+  useEffect(() => {
+    const clearSchedule = () => {
+      if (timeoutIdRef.current === null) return;
+
+      clearTimeout(timeoutIdRef.current);
+      timeoutIdRef.current = null;
+    };
+
+    const scheduleHeartbeat = (delayMs: number) => {
       clearSchedule();
-
-      if (document.visibilityState !== "visible") return;
-
-      const elapsedMs = getVisibleElapsedMs();
-      const nextDelayMs = Math.max(0, HEARTBEAT_INTERVAL_MS - elapsedMs);
-
-      timeoutId = window.setTimeout(() => {
+      activeStartedAtRef.current = Date.now();
+      timeoutIdRef.current = setTimeout(() => {
         void triggerHeartbeat();
-      }, nextDelayMs);
+      }, delayMs);
     };
 
-    const triggerHeartbeat = async () => {
-      if (document.visibilityState !== "visible" || isPending) return;
-
-      resetVisibleTimer();
-
-      try {
-        await mutateAsync();
-        await refetch();
-      } finally {
-        scheduleNextHeartbeat();
-      }
-    };
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        resumeVisibleTimer();
-        scheduleNextHeartbeat();
+    const scheduleFromAccumulatedTime = () => {
+      if (
+        !stateRef.current.canRun ||
+        !stateRef.current.hasPending ||
+        !stateRef.current.isTabVisible ||
+        timeoutIdRef.current !== null
+      ) {
         return;
       }
 
-      pauseVisibleTimer();
+      const remainingMs = Math.max(
+        0,
+        HEARTBEAT_INTERVAL_MS - accumulatedActiveMsRef.current,
+      );
+      scheduleHeartbeat(remainingMs);
+    };
+
+    const resetActiveTimer = () => {
+      accumulatedActiveMsRef.current = 0;
+      activeStartedAtRef.current = Date.now();
+    };
+
+    const pauseActiveTimer = () => {
+      if (timeoutIdRef.current !== null) {
+        accumulatedActiveMsRef.current +=
+          Date.now() - activeStartedAtRef.current;
+      }
+
       clearSchedule();
     };
 
-    scheduleNextHeartbeat();
+    const triggerHeartbeat = async () => {
+      clearSchedule();
+
+      if (
+        !stateRef.current.canRun ||
+        !stateRef.current.hasPending ||
+        !stateRef.current.isTabVisible ||
+        isHeartbeatInFlightRef.current
+      ) {
+        return;
+      }
+
+      isHeartbeatInFlightRef.current = true;
+
+      try {
+        console.log("[Heartbeat] Đã đủ 60s active, tiến hành bắn API...");
+        await actionsRef.current.mutateAsync();
+        console.log("[Heartbeat] Bắn API thành công.");
+      } catch (error) {
+        console.error("[Heartbeat] Lỗi API:", error);
+      } finally {
+        isHeartbeatInFlightRef.current = false;
+        resetActiveTimer();
+
+        if (
+          stateRef.current.canRun &&
+          stateRef.current.hasPending &&
+          stateRef.current.isTabVisible
+        ) {
+          scheduleHeartbeat(HEARTBEAT_INTERVAL_MS);
+        }
+      }
+    };
+
+    startSchedulerRef.current = scheduleFromAccumulatedTime;
+
+    stopSchedulerRef.current = () => {
+      clearSchedule();
+      resetActiveTimer();
+    };
+
+    const handleVisibilityChange = () => {
+      stateRef.current.isTabVisible = document.visibilityState === "visible";
+
+      if (document.visibilityState === "visible") {
+        console.log("[Heartbeat] Tab active trở lại, tiếp tục đếm giờ...");
+        scheduleFromAccumulatedTime();
+        return;
+      }
+
+      console.log("[Heartbeat] Tab bị ẩn, tạm dừng timer...");
+      pauseActiveTimer();
+    };
+
     document.addEventListener("visibilitychange", handleVisibilityChange);
+    scheduleFromAccumulatedTime();
 
     return () => {
       clearSchedule();
+      startSchedulerRef.current = () => {};
+      stopSchedulerRef.current = () => {};
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [
-    canRunHeartbeat,
-    hasServerPendingOnlineMissions,
-    refetch,
-    isPending,
-    mutateAsync,
-  ]);
+  }, []);
 }

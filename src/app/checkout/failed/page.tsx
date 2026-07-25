@@ -58,6 +58,7 @@ export default function CheckoutFailedPage() {
             </Link>
             <Link
               href="/contact"
+              prefetch={false}
               className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-white/12 bg-white/[0.04] px-6 text-sm font-semibold text-white/76 transition hover:border-white/22 hover:bg-white/[0.08] hover:text-white active:translate-y-px"
             >
               <Headphones className="h-4 w-4" />

@@ -45,6 +45,10 @@ function getProgressPercentage(currentValue: number, targetValue: number) {
   return Math.min(100, Math.max(0, (currentValue / targetValue) * 100));
 }
 
+function isOnlineMissionCode(code: string) {
+  return code === "ONLINE_DAILY" || code.startsWith("ONLINE_");
+}
+
 function MissionIconView({
   code,
   className,
@@ -158,6 +162,8 @@ function MissionDetail({
   }
 
   const isAdMission = mission.code.startsWith("WATCH_AD_");
+  const isOnlineMission = isOnlineMissionCode(mission.code);
+  const progressUnit = isOnlineMission ? "phút" : "lần";
   const progressPercentage = getProgressPercentage(
     mission.currentValue,
     mission.targetValue,
@@ -203,7 +209,7 @@ function MissionDetail({
           <div className="mb-3 flex items-center justify-between text-xs font-medium text-slate-400">
             <span>Tiến độ</span>
             <span className="tabular-nums text-[#F5D46E]">
-              {mission.currentValue}/{mission.targetValue}
+              {mission.currentValue}/{mission.targetValue} {progressUnit}
             </span>
           </div>
           <Progress value={progressPercentage} />
@@ -219,7 +225,7 @@ function MissionDetail({
           <div className="rounded-xl border border-white/10 bg-white/[0.04] p-3">
             <p className="text-xs text-slate-500">Mục tiêu</p>
             <p className="mt-1 text-sm font-medium text-slate-200">
-              {mission.targetValue} lần
+              {mission.targetValue} {progressUnit}
             </p>
           </div>
           <div className="rounded-xl border border-white/10 bg-white/[0.04] p-3">

@@ -99,6 +99,7 @@ export function SiteFooter() {
                 <li key={item.href}>
                   <Link
                     href={item.href}
+                    prefetch={false}
                     className="group flex items-center transition-colors hover:text-[#D4AF37]"
                   >
                     <ChevronRight className="w-4 h-4 mr-1 opacity-0 -translate-x-3 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 text-[#D4AF37]" />
@@ -122,6 +123,7 @@ export function SiteFooter() {
                 <li key={item.href}>
                   <Link
                     href={item.href}
+                    prefetch={false}
                     className="group flex items-center transition-colors hover:text-[#D4AF37]"
                   >
                     <ChevronRight className="w-4 h-4 mr-1 opacity-0 -translate-x-3 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 text-[#D4AF37]" />
