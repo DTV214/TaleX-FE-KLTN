@@ -154,3 +154,47 @@ export async function approveMedia(id: string) {
 export async function rejectMedia(id: string, reason: string) {
   await httpClient.patch(`${MODERATION_ENDPOINT}/${id}/reject`, { reason });
 }
+
+export type MediaCopyrightViolation = {
+  mediaCopyrightId: string;
+  mediaId: string;
+  sourceMediaId?: string;
+  similarityScore?: number;
+  violationType?: string;
+  isValid?: boolean;
+  note?: string;
+  checkedAt?: string;
+};
+
+export type ViolationDetail = {
+  violationDetailId: string;
+  label: string;
+  confidence?: number;
+  suggestion?: string;
+};
+
+export type CensorshipResult = {
+  censorshipId: string;
+  mediaId: string;
+  primaryViolationLabel?: string;
+  confidenceScore?: number;
+  checkedAt?: string;
+  reviewedBy?: string;
+  reviewerNotes?: string;
+  status: "APPROVED" | "REJECTED";
+  violationDetails: ViolationDetail[];
+};
+
+export type MediaViolations = {
+  mediaId: string;
+  contentId?: string;
+  copyrightViolations: MediaCopyrightViolation[];
+  censorshipResults: CensorshipResult[];
+};
+
+export async function getMediaViolations(mediaId: string) {
+  const response = await httpClient.get<BaseResponse<MediaViolations>>(
+    `${MODERATION_ENDPOINT}/${mediaId}/violations`,
+  );
+  return unwrapPayload<MediaViolations>(response.data);
+}

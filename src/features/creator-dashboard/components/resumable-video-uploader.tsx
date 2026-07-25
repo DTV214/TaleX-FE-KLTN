@@ -25,14 +25,14 @@ type ResumableVideoUploaderProps = {
 };
 
 const statusText: Record<ResumableVideoUploadStatus, string> = {
-  idle: "Ready",
-  ready: "Ready",
-  preparing: "Preparing upload",
-  uploading: "Uploading",
-  paused: "Paused",
-  failed: "Failed",
-  completed: "Completed",
-  cancelled: "Cancelled",
+  idle: "Sẵn sàng",
+  ready: "Sẵn sàng",
+  preparing: "Đang chuẩn bị tải lên",
+  uploading: "Đang tải lên",
+  paused: "Đã tạm dừng",
+  failed: "Thất bại",
+  completed: "Hoàn tất",
+  cancelled: "Đã hủy",
 };
 
 function formatBytes(bytes: number) {
@@ -81,7 +81,7 @@ export function ResumableVideoUploader({
   const primaryAction = useMemo(() => {
     if (upload.status === "failed") {
       return {
-        label: "Retry Upload",
+        label: "Thử tải lại",
         icon: RotateCw,
         action: upload.retryUpload,
       };
@@ -89,14 +89,14 @@ export function ResumableVideoUploader({
 
     if (upload.status === "paused" && upload.selectedFile) {
       return {
-        label: "Resume Upload",
+        label: "Tiếp tục tải lên",
         icon: PlayCircle,
         action: upload.startUpload,
       };
     }
 
     return {
-      label: upload.canResume ? "Resume Upload" : "Start Upload",
+      label: upload.canResume ? "Tiếp tục tải lên" : "Bắt đầu tải lên",
       icon: UploadCloud,
       action: upload.startUpload,
     };
@@ -157,7 +157,7 @@ export function ResumableVideoUploader({
             <p className="text-lg font-bold text-white mb-2">Kéo và thả video của bạn vào đây</p>
             <p className="text-sm text-creator-muted max-w-sm mb-6">Hoặc nhấp để tải lên từ máy tính. Khuyên dùng MP4 và MOV.</p>
             <div className="px-6 py-2.5 bg-white/5 group-hover:bg-white/10 rounded-md text-sm font-medium transition-colors border border-creator-border text-white">
-              Select Video
+              Chọn Video
             </div>
           </>
         )}
@@ -165,13 +165,13 @@ export function ResumableVideoUploader({
 
       {upload.selectedFile && !previewUrl && (
         <p className="text-sm font-bold text-creator-gold text-center">
-          Selected: {upload.selectedFile.name}
+          Đã chọn: {upload.selectedFile.name}
         </p>
       )}
 
       {!upload.selectedFile && upload.persistedUpload && (
         <p className="text-sm font-bold text-creator-gold text-center">
-          Pending upload: {upload.persistedUpload.fileName}
+          Đang chờ tải lên: {upload.persistedUpload.fileName}
         </p>
       )}
 
@@ -213,7 +213,7 @@ export function ResumableVideoUploader({
       {upload.status === "completed" && (
         <div className="flex items-center gap-2 rounded-xl border border-green-500/50 bg-green-500/10 px-4 py-3 text-sm font-bold text-green-400">
           <CheckCircle2 className="h-4 w-4" />
-          Video uploaded. Processing playback now.
+          Tải video thành công. Đang xử lý để phát trực tuyến.
         </div>
       )}
 
@@ -225,7 +225,7 @@ export function ResumableVideoUploader({
           className="flex py-3 items-center justify-center gap-2 rounded-md bg-creator-gold px-4 text-sm font-bold text-black hover:bg-creator-gold-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed sm:col-span-2"
         >
           <PrimaryIcon className="h-4 w-4" />
-          {upload.isUploading ? "Uploading..." : primaryAction.label}
+          {upload.isUploading ? "Đang tải lên..." : primaryAction.label}
         </button>
 
         {upload.isUploading ? (
@@ -235,7 +235,7 @@ export function ResumableVideoUploader({
             className="flex py-3 items-center justify-center gap-2 rounded-md border border-creator-border bg-white/5 hover:bg-white/10 px-4 text-sm font-medium text-white transition-colors"
           >
             <PauseCircle className="h-4 w-4" />
-            Pause
+            Tạm dừng
           </button>
         ) : (
           <button
@@ -245,7 +245,7 @@ export function ResumableVideoUploader({
             className="flex py-3 items-center justify-center gap-2 rounded-md border border-creator-border bg-white/5 hover:bg-white/10 px-4 text-sm font-medium text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <XCircle className="h-4 w-4" />
-            Cancel
+            Hủy
           </button>
         )}
       </div>

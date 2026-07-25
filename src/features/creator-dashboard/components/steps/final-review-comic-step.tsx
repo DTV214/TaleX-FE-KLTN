@@ -313,14 +313,18 @@ export function FinalReviewComicStep({
       <div className="w-full lg:w-96 space-y-6">
         <AIPolicyAndCopyright
           mediaId={firstPersistedPage?.id}
+          mediaType={firstPersistedPage?.mediaType}
           mediaStatus={firstPersistedPage?.status}
           approvalStatus={firstPersistedPage?.approvalStatus}
+          errorMessage={firstPersistedPage?.errorMessage}
+          contentId={firstPersistedPage?.contentId}
+          pages={persistedPages}
         />
 
         {!isPublished && (
           <div className="bg-creator-sidebar border border-creator-border rounded-xl p-5">
             <h3 className="font-semibold text-white mb-3 text-sm flex items-center gap-2">
-              <MessageSquare size={16} /> Reviewer Notes (Optional)
+              <MessageSquare size={16} /> Ghi chú cho người kiểm duyệt (Không bắt buộc)
             </h3>
             <textarea
               value={reviewerNotes}

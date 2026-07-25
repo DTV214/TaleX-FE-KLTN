@@ -15,6 +15,9 @@ export interface PipelineEvent {
   primaryLabel?: string;
   errorMessage?: string;
   failedStep?: string;
+  // "APPROVED" | "REJECTED" | "PENDING_REVIEW" — phân biệt "bị từ chối" thật với
+  // "đang chờ Staff duyệt thủ công" (case series MATURE có nhãn nhạy cảm hợp lệ).
+  approvalStatus?: string;
 }
 
 export async function fetchMediaViolations(

@@ -1,59 +1,195 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
+  AlertTriangle,
   CheckCircle2,
   CircleAlert,
+  Circle,
   Fingerprint,
   Loader2,
-  ScanSearch,
+  RotateCw,
 } from "lucide-react";
+import { toast } from "sonner";
 import {
   getMediaViolations,
+  retryMediaPipeline,
   type ContentApprovalStatus,
   type MediaStatus,
+  type MediaType,
 } from "@/features/creator-dashboard/api/creator-content-api";
 import {
-  getApprovedCensorshipResults,
   getBlockingCopyrightViolations,
   getHighestSimilarityScore,
   getPermittedCopyrightMatches,
   getRejectedCensorshipResults,
   isMediaPipelinePending,
+  translateViolationLabel,
 } from "@/features/creator-dashboard/utils/media-violations";
+import {
+  ComicPipelineAggregateSummary,
+  type ComicPageSummary,
+} from "@/features/creator-dashboard/components/comic-pipeline-aggregate-summary";
 
 interface AIPolicyAndCopyrightProps {
   mediaId?: string;
+  mediaType?: MediaType;
   mediaStatus?: MediaStatus;
   approvalStatus?: ContentApprovalStatus;
+  errorMessage?: string;
+  /** BE chỉ set field này SAU KHI Content ID xử lý xong thật — tín hiệu đáng tin để biết
+   * bước "Kiểm tra bản quyền" đã hoàn tất, không dùng việc violations query trả về hay
+   * chưa (API vẫn trả mảng rỗng hợp lệ ngay cả khi chưa xử lý gì, dễ hiểu nhầm là đã xong). */
+  contentId?: string;
+  /** Truyền khi episode có nhiều trang (comic) — hiển thị tổng hợp thay vì bám 1 trang. */
+  pages?: ComicPageSummary[];
 }
 
-const badgeClass = {
-  idle: "border-gray-500/20 bg-gray-500/10 text-gray-400",
-  pending: "border-creator-gold/20 bg-creator-gold/10 text-creator-gold",
-  passed: "border-green-500/20 bg-green-500/10 text-green-400",
-  failed: "border-red-500/20 bg-red-500/10 text-red-400",
+// "review" = bước đã chạy xong nhưng KHÔNG phải kết luận đạt rõ ràng — đang chờ Staff
+// xác nhận thủ công (khác "done" thật sự đạt, khác "failed" bị từ chối/lỗi hệ thống).
+type StepState = "done" | "active" | "pending" | "review" | "failed";
+
+interface Step {
+  key: string;
+  label: string;
+  state: StepState;
+}
+
+const stepDotClass: Record<StepState, string> = {
+  done: "border-green-500 bg-green-500/20 text-green-400",
+  active: "border-creator-gold bg-creator-gold/20 text-creator-gold",
+  pending: "border-creator-border bg-creator-bg text-creator-muted",
+  review: "border-amber-500 bg-amber-500/20 text-amber-400",
+  failed: "border-red-500 bg-red-500/20 text-red-400",
 };
 
-function StatusBadge({
-  state,
-  children,
-}: {
-  state: keyof typeof badgeClass;
-  children: React.ReactNode;
-}) {
-  return (
-    <span className={`rounded-full border px-2 py-1 text-[10px] font-bold ${badgeClass[state]}`}>
-      {children}
-    </span>
-  );
+const stepLabelClass: Record<StepState, string> = {
+  done: "text-white",
+  active: "text-creator-gold",
+  pending: "text-creator-muted",
+  review: "text-amber-400",
+  failed: "text-red-400",
+};
+
+function StepDot({ state }: { state: StepState }) {
+  if (state === "done") return <CheckCircle2 className="h-4 w-4" />;
+  if (state === "active") return <Loader2 className="h-4 w-4 animate-spin" />;
+  if (state === "review") return <AlertTriangle className="h-4 w-4" />;
+  if (state === "failed") return <CircleAlert className="h-4 w-4" />;
+  return <Circle className="h-3 w-3" />;
 }
 
-export function AIPolicyAndCopyright({
+function buildSteps(params: {
+  mediaId?: string;
+  mediaType?: MediaType;
+  mediaStatus?: MediaStatus;
+  approvalStatus?: ContentApprovalStatus;
+  hasContentId: boolean;
+  hasCensorshipResult: boolean;
+  isFailed: boolean;
+}): Step[] {
+  const { mediaId, mediaType, mediaStatus, approvalStatus, hasContentId, hasCensorshipResult, isFailed } = params;
+  const steps: Step[] = [];
+
+  if (!mediaId) {
+    steps.push({ key: "upload", label: "Tải lên nội dung", state: "pending" });
+    steps.push({ key: "copyright", label: "Kiểm tra bản quyền", state: "pending" });
+    steps.push({ key: "moderation", label: "Kiểm duyệt nội dung", state: "pending" });
+    steps.push({ key: "done", label: "Sẵn sàng xuất bản", state: "pending" });
+    return steps;
+  }
+
+  // "review"/"failed" chỉ có ý nghĩa SAU KHI bước đó đã thật sự chạy xong — chỗ này
+  // trước đây chỉ check "có kết quả hay chưa" (hasContentId/hasCensorshipResult) mà
+  // không phân biệt kết quả là ĐẠT hay KHÔNG ĐẠT, khiến nội dung bị từ chối vẫn hiện
+  // tick xanh "hoàn tất".
+  const isRejected = approvalStatus === "REJECTED";
+  // PENDING_REVIEW là giá trị mặc định của Media trước khi pipeline từng chạy — chỉ coi
+  // là "đang chờ Staff" thật sự khi mediaStatus đã chuyển INACTIVE (BE chỉ set cặp này
+  // khi thật sự flag nội dung, xem ContentPipelineServiceImpl).
+  const isPendingReview = approvalStatus === "PENDING_REVIEW" && mediaStatus === "INACTIVE";
+  // Copyright bị flag chờ Staff thì pipeline dừng lại luôn, KHÔNG dispatch kiểm duyệt —
+  // nên "moderation chưa từng chạy" (hasCensorshipResult=false) là dấu hiệu để biết chính
+  // xác bước nào đang bị treo chờ Staff, thay vì gán nhầm cho cả 2 bước.
+  const copyrightPendingReview = isPendingReview && !hasCensorshipResult;
+  const moderationPendingReview = isPendingReview && hasCensorshipResult;
+
+  if (mediaType === "VIDEO") {
+    const transcodeDone = mediaStatus !== "HLS_PROCESSING";
+    steps.push({
+      key: "transcode",
+      label: "Xử lý video",
+      state: isFailed && !transcodeDone ? "failed" : transcodeDone ? "done" : "active",
+    });
+  }
+
+  const transcodeBlocking = mediaType === "VIDEO" && mediaStatus === "HLS_PROCESSING";
+  steps.push({
+    key: "copyright",
+    label: "Kiểm tra bản quyền",
+    state: !hasContentId
+      ? (isFailed ? "failed" : transcodeBlocking ? "pending" : "active")
+      : copyrightPendingReview
+        ? "review"
+        : "done",
+  });
+
+  steps.push({
+    key: "moderation",
+    label: "Kiểm duyệt nội dung",
+    state: !hasCensorshipResult
+      ? (isFailed ? (hasContentId ? "failed" : "pending") : hasContentId ? "active" : "pending")
+      : isRejected
+        ? "failed"
+        : moderationPendingReview
+          ? "review"
+          : "done",
+  });
+
+  const allPriorDone = steps.every((s) => s.state === "done");
+  steps.push({
+    key: "done",
+    label: "Sẵn sàng xuất bản",
+    state: isFailed || isRejected
+      ? "failed"
+      : isPendingReview
+        ? "review"
+        : allPriorDone
+          ? "done"
+          : "pending",
+  });
+
+  return steps;
+}
+
+export function AIPolicyAndCopyright(props: AIPolicyAndCopyrightProps) {
+  const persistedPages = props.pages?.filter((p) => !p.id.startsWith("LOCAL-"));
+  if (persistedPages && persistedPages.length > 1) {
+    return <ComicPipelineAggregateSummary pages={persistedPages} />;
+  }
+  return <SingleMediaPipelinePanel {...props} />;
+}
+
+function SingleMediaPipelinePanel({
   mediaId,
+  mediaType,
   mediaStatus,
   approvalStatus,
+  errorMessage,
+  contentId,
 }: AIPolicyAndCopyrightProps) {
+  const queryClient = useQueryClient();
   const mediaState = { status: mediaStatus, approvalStatus };
-  const pipelinePending = isMediaPipelinePending(mediaState);
+  const isFailed = mediaStatus === "FAILED";
+  // isMediaPipelinePending() coi MỌI approvalStatus="PENDING_REVIEW" là "đang chạy" (vì
+  // đây cũng là giá trị mặc định trước khi pipeline từng chạy) — nên không dùng
+  // "!pipelinePending" để suy ra "đã bị flag thật sự". Chỉ khi mediaStatus đã chuyển
+  // INACTIVE mới chắc chắn là BE đã chủ động flag (xem ContentPipelineServiceImpl).
+  const isPendingReview = approvalStatus === "PENDING_REVIEW" && mediaStatus === "INACTIVE";
+  const isRejected = approvalStatus === "REJECTED";
+  // Loại trừ 3 trạng thái TERMINAL (đã có kết luận cuối, dù là gì) khỏi "đang pending" —
+  // nếu không, card "Chi tiết bản quyền" sẽ kẹt mãi ở "Đang đối chiếu bản quyền..." dù
+  // copyright/kiểm duyệt đã xong thật, chỉ là kết quả cuối là PENDING_REVIEW/REJECTED.
+  const pipelinePending = isMediaPipelinePending(mediaState) && !isFailed && !isPendingReview && !isRejected;
+
   const violationsQuery = useQuery({
     queryKey: ["creator-dashboard", "media-violations", mediaId],
     queryFn: () => getMediaViolations(mediaId!),
@@ -64,75 +200,135 @@ export function AIPolicyAndCopyright({
   const violations = violationsQuery.data;
   const blockingCopyright = getBlockingCopyrightViolations(violations);
   const permittedCopyright = getPermittedCopyrightMatches(violations);
-  const rejectedCensorship = getRejectedCensorshipResults(violations);
-  const approvedCensorship = getApprovedCensorshipResults(violations);
   const hasBlockingCopyright = blockingCopyright.length > 0;
-  const hasRejectedCensorship = rejectedCensorship.length > 0;
-  const hasApprovedCensorship = approvedCensorship.length > 0;
-  const isFailed = mediaStatus === "FAILED";
-  const isRejected = approvalStatus === "REJECTED";
-  const isInitialLoading = violationsQuery.isLoading && !violations;
-  const isComplete =
-    approvalStatus === "APPROVED" || isRejected || isFailed || Boolean(violations && !pipelinePending);
-  const progress = !mediaId ? 0 : isComplete ? 100 : 50;
   const similarityScore = (getHighestSimilarityScore(violations) * 100).toFixed(1);
-  const rejectionLabels = rejectedCensorship
-    .map((item) => item.primaryViolationLabel)
+  const rejectionLabels = getRejectedCensorshipResults(violations)
+    .map((item) => translateViolationLabel(item.primaryViolationLabel))
     .filter(Boolean)
     .join(", ");
 
-  const moderationBadge = !mediaId ? (
-    <StatusBadge state="idle">Chưa kiểm tra</StatusBadge>
-  ) : isInitialLoading || pipelinePending ? (
-    <StatusBadge state="pending">Đang quét...</StatusBadge>
-  ) : violationsQuery.isError ? (
-    <StatusBadge state="failed">Không tải được</StatusBadge>
-  ) : hasRejectedCensorship ? (
-    <StatusBadge state="failed">Không đạt</StatusBadge>
-  ) : hasApprovedCensorship || approvalStatus === "APPROVED" ? (
-    <StatusBadge state="passed">Đạt</StatusBadge>
-  ) : isRejected && hasBlockingCopyright ? (
-    <StatusBadge state="idle">Không thực hiện</StatusBadge>
-  ) : isFailed ? (
-    <StatusBadge state="failed">Quét thất bại</StatusBadge>
-  ) : (
-    <StatusBadge state="pending">Đang chờ...</StatusBadge>
-  );
+  const retryMutation = useMutation({
+    mutationFn: () => retryMediaPipeline(mediaId!),
+    onSuccess: () => {
+      toast.success("Đã gửi yêu cầu thử lại", {
+        description: "Hệ thống đang xử lý lại nội dung, vui lòng chờ trong giây lát.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["creator-dashboard", "media"] });
+      queryClient.invalidateQueries({ queryKey: ["creator-dashboard", "media-violations", mediaId] });
+      queryClient.invalidateQueries({ queryKey: ["creator-dashboard", "episodes"] });
+      queryClient.invalidateQueries({ queryKey: ["media"] });
+      queryClient.invalidateQueries({ queryKey: ["episodes"] });
+    },
+    onError: () => {
+      toast.error("Thử lại thất bại", {
+        description: "Không thể gửi yêu cầu thử lại, vui lòng thử lại sau.",
+      });
+    },
+  });
+
+  // Dùng contentId (BE chỉ set SAU KHI Content ID xử lý xong thật) làm tín hiệu duy nhất —
+  // KHÔNG dùng Boolean(violations), vì violations query vẫn trả về mảng rỗng hợp lệ ngay
+  // cả khi copyright chưa hề chạy (chưa có record nào), dễ hiểu nhầm "đã xong, không vi
+  // phạm gì" ngay lúc vừa upload xong.
+  const copyrightResolved = Boolean(contentId);
+
+  const steps = buildSteps({
+    mediaId,
+    mediaType,
+    mediaStatus,
+    approvalStatus,
+    hasContentId: copyrightResolved,
+    hasCensorshipResult: (violations?.censorshipResults.length ?? 0) > 0,
+    isFailed,
+  });
+
+  const doneCount = steps.filter((s) => s.state === "done").length;
+  const progress = !mediaId ? 0 : Math.round((doneCount / steps.length) * 100);
 
   return (
     <div className="shrink-0 space-y-6 lg:w-96">
       <div className="rounded-xl border border-creator-border bg-creator-sidebar p-6 shadow-xl">
         <h3 className="mb-6 text-xs font-black uppercase tracking-[0.16em] text-creator-gold">
-          AI kiểm duyệt nội dung
+          Quy trình xử lý nội dung
         </h3>
-        <div className="space-y-5">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3 text-sm font-medium text-white">
-              <ScanSearch className="h-4 w-4 text-creator-muted" />
-              Kết quả kiểm duyệt
-            </div>
-            {moderationBadge}
+
+        <ol className="space-y-4">
+          {steps.map((step) => (
+            <li key={step.key} className="flex items-center gap-3">
+              <span
+                className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${stepDotClass[step.state]}`}
+              >
+                <StepDot state={step.state} />
+              </span>
+              <span className={`text-sm font-medium ${stepLabelClass[step.state]}`}>{step.label}</span>
+            </li>
+          ))}
+        </ol>
+
+        <div className="mt-5 border-t border-creator-border pt-5">
+          <div className="mb-2 flex justify-between text-xs font-bold">
+            <span className="text-creator-muted">Tiến trình</span>
+            <span className="text-creator-gold">{progress}%</span>
           </div>
-
-          {hasRejectedCensorship && rejectionLabels && (
-            <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-xs font-bold text-red-400">
-              Phát hiện: {rejectionLabels}
-            </div>
-          )}
-
-          <div className="mt-5 border-t border-creator-border pt-5">
-            <div className="mb-2 flex justify-between text-xs font-bold">
-              <span className="text-creator-muted">Tiến trình kiểm tra</span>
-              <span className="text-creator-gold">{progress}%</span>
-            </div>
-            <div className="h-1 overflow-hidden rounded-full bg-creator-bg">
-              <div
-                className="h-full bg-creator-gold transition-all duration-500"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
+          <div className="h-1 overflow-hidden rounded-full bg-creator-bg">
+            <div
+              className="h-full bg-creator-gold transition-all duration-500"
+              style={{ width: `${progress}%` }}
+            />
           </div>
         </div>
+
+        {isFailed && (
+          <div className="mt-5 space-y-3 border-t border-creator-border pt-5">
+            <div className="flex items-start gap-2 rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-xs font-bold text-red-400">
+              <CircleAlert className="h-4 w-4 shrink-0" />
+              <span>{errorMessage || "Xử lý nội dung thất bại. Vui lòng thử lại."}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => retryMutation.mutate()}
+              disabled={retryMutation.isPending}
+              className="flex w-full items-center justify-center gap-2 rounded-lg border border-creator-gold/40 bg-creator-gold/10 px-4 py-2 text-xs font-bold text-creator-gold transition-colors hover:bg-creator-gold/20 disabled:opacity-50"
+            >
+              {retryMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RotateCw className="h-4 w-4" />
+              )}
+              Thử lại
+            </button>
+          </div>
+        )}
+
+        {isPendingReview && (
+          <div className="mt-5 flex items-start gap-2 border-t border-creator-border pt-5 text-xs text-amber-400">
+            <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <p className="font-bold">Đang chờ đội kiểm duyệt xác nhận thủ công</p>
+              <p className="leading-relaxed text-amber-400/90">
+                {hasBlockingCopyright
+                  ? `Phát hiện ${blockingCopyright.length} đoạn nội dung tương đồng ${similarityScore}% với nội dung đã có trên hệ thống của creator khác — cần đội kiểm duyệt xác nhận đây có thật sự vi phạm bản quyền hay không trước khi xuất bản.`
+                  : rejectionLabels
+                    ? `Nội dung có yếu tố nhạy cảm (${rejectionLabels}) — cần đội kiểm duyệt xác nhận thủ công trước khi xuất bản.`
+                    : "Cần đội kiểm duyệt xác nhận thủ công trước khi xuất bản."}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {isRejected && (
+          <div className="mt-5 flex items-start gap-2 border-t border-creator-border pt-5 text-xs text-red-400">
+            <CircleAlert className="h-4 w-4 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <p className="font-bold">Nội dung chưa đạt yêu cầu kiểm duyệt</p>
+              <p className="leading-relaxed text-red-400/90">
+                {rejectionLabels
+                  ? `Lý do: phát hiện ${rejectionLabels}. Vui lòng chỉnh sửa hoặc thay thế nội dung trước khi tải lên lại.`
+                  : "Vui lòng chỉnh sửa hoặc thay thế nội dung trước khi tải lên lại."}
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="relative overflow-hidden rounded-xl border border-creator-border bg-creator-sidebar p-6 shadow-xl">
@@ -140,20 +336,9 @@ export function AIPolicyAndCopyright({
           <Fingerprint size={100} />
         </div>
         <div className="relative z-10">
-          <div className="mb-6 flex items-center justify-between">
-            <h3 className="text-xs font-black uppercase tracking-[0.16em] text-creator-gold">
-              Bảo vệ bản quyền
-            </h3>
-            <span className="rounded border border-creator-border bg-creator-bg px-2 py-0.5 text-[10px] font-bold text-creator-muted">
-              Hệ thống MILVUS V2
-            </span>
-          </div>
-
-          <div className="mb-6 flex aspect-video items-center justify-center rounded-lg border border-creator-border bg-[#090807]">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full border border-creator-gold/20 bg-creator-gold/10">
-              <Fingerprint className="h-6 w-6 text-creator-gold" />
-            </div>
-          </div>
+          <h3 className="mb-6 text-xs font-black uppercase tracking-[0.16em] text-creator-gold">
+            Chi tiết bản quyền
+          </h3>
 
           <div className="mb-4 flex items-end justify-between">
             <span className="text-sm font-medium text-creator-muted">Chỉ số tương đồng cao nhất</span>
@@ -166,17 +351,13 @@ export function AIPolicyAndCopyright({
             <CopyrightNotice state="idle" icon={<CircleAlert className="h-5 w-5" />}>
               Chưa kiểm tra tài nguyên
             </CopyrightNotice>
-          ) : isInitialLoading || pipelinePending ? (
+          ) : !copyrightResolved ? (
             <CopyrightNotice state="pending" icon={<Loader2 className="h-5 w-5 animate-spin" />}>
               Đang đối chiếu bản quyền...
             </CopyrightNotice>
-          ) : violationsQuery.isError ? (
-            <CopyrightNotice state="failed" icon={<CircleAlert className="h-5 w-5" />}>
-              Không tải được kết quả bản quyền
-            </CopyrightNotice>
           ) : hasBlockingCopyright ? (
             <CopyrightNotice state="failed" icon={<CircleAlert className="h-5 w-5" />}>
-              Phát hiện {blockingCopyright.length} đoạn trùng không được phép
+              Phát hiện {blockingCopyright.length} đoạn trùng, đang chờ đội kiểm duyệt xác nhận
             </CopyrightNotice>
           ) : permittedCopyright.length > 0 ? (
             <CopyrightNotice state="passed" icon={<CheckCircle2 className="h-5 w-5" />}>
@@ -187,27 +368,30 @@ export function AIPolicyAndCopyright({
               Không phát hiện vi phạm bản quyền
             </CopyrightNotice>
           )}
-
-          <p className="mx-auto max-w-[240px] text-center text-[10px] leading-relaxed text-creator-muted">
-            Kết quả được hiển thị trực tiếp theo quy trình đối chiếu và kiểm duyệt của hệ thống.
-          </p>
         </div>
       </div>
     </div>
   );
 }
 
+const noticeClass: Record<"idle" | "pending" | "passed" | "failed", string> = {
+  idle: "border-gray-500/20 bg-gray-500/10 text-gray-400",
+  pending: "border-creator-gold/20 bg-creator-gold/10 text-creator-gold",
+  passed: "border-green-500/20 bg-green-500/10 text-green-400",
+  failed: "border-red-500/20 bg-red-500/10 text-red-400",
+};
+
 function CopyrightNotice({
   state,
   icon,
   children,
 }: {
-  state: keyof typeof badgeClass;
+  state: keyof typeof noticeClass;
   icon: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
-    <div className={`mb-4 flex items-center gap-3 rounded-lg border p-3 ${badgeClass[state]}`}>
+    <div className={`mb-2 flex items-center gap-3 rounded-lg border p-3 ${noticeClass[state]}`}>
       <span className="shrink-0">{icon}</span>
       <span className="text-xs font-bold">{children}</span>
     </div>

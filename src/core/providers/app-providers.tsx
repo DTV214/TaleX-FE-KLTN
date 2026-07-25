@@ -20,7 +20,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       {children}
-      <Toaster richColors position="top-right" />
+      <Toaster richColors position="top-right" closeButton />
     </QueryClientProvider>
   );
 }

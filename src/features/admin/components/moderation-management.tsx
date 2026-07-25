@@ -4,8 +4,12 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
+  CircleAlert,
+  Eye,
   FileImage,
+  Fingerprint,
   Loader2,
+  ShieldAlert,
   Smile,
   Video,
   X,
@@ -16,8 +20,10 @@ import { type ModerationMedia } from "@/features/admin/api/moderation.api";
 import {
   useApproveMedia,
   useGetPendingMedia,
+  useMediaViolations,
   useRejectMedia,
 } from "@/features/admin/hooks/use-moderation";
+import { translateViolationLabel } from "@/features/creator-dashboard/utils/media-violations";
 
 const PAGE_SIZE = 12;
 
@@ -33,6 +39,20 @@ function formatDate(value?: string) {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(date);
+}
+
+function formatMediaType(mediaType: string) {
+  return mediaType === "VIDEO" ? "Video" : "Ảnh";
+}
+
+const APPROVAL_STATUS_VI: Record<string, string> = {
+  PENDING_REVIEW: "Chờ duyệt",
+  APPROVED: "Đã duyệt",
+  REJECTED: "Đã từ chối",
+};
+
+function formatApprovalStatus(status: string) {
+  return APPROVAL_STATUS_VI[status] || status;
 }
 
 function RejectReasonModal({
@@ -64,7 +84,7 @@ function RejectReasonModal({
   }
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm animate-in fade-in duration-200">
       <form
         onSubmit={handleSubmit}
         className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200"
@@ -91,7 +111,7 @@ function RejectReasonModal({
 
         <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 p-3">
           <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
-            Media ID
+            Mã nội dung
           </p>
           <p className="mt-1 break-all text-sm font-bold text-slate-900">
             {media.id}
@@ -134,23 +154,263 @@ function RejectReasonModal({
   );
 }
 
+function formatPercent(value?: number) {
+  if (typeof value !== "number") return "-";
+  return `${(value * 100).toFixed(1)}%`;
+}
+
+function ModerationDetailModal({
+  isMutating,
+  media,
+  onApprove,
+  onClose,
+  onReject,
+  open,
+}: {
+  isMutating: boolean;
+  media: ModerationMedia | null;
+  onApprove: (media: ModerationMedia) => void;
+  onClose: () => void;
+  onReject: (media: ModerationMedia) => void;
+  open: boolean;
+}) {
+  const violationsQuery = useMediaViolations(open ? media?.id ?? null : null);
+  const violations = violationsQuery.data;
+
+  if (!open || !media) return null;
+
+  const isVideo = media.mediaType === "VIDEO";
+
+  return (
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 px-4 py-8 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="flex max-h-full w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+        <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-4">
+          <div>
+            <h2 className="text-lg font-bold text-slate-950">Chi tiết kiểm duyệt</h2>
+            <p className="mt-1 break-all text-xs font-semibold text-slate-500">
+              Mã nội dung: {media.id}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+            aria-label="Đóng"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="grid flex-1 grid-cols-1 gap-0 overflow-y-auto md:grid-cols-2">
+          <div className="border-b border-slate-200 bg-slate-100 p-4 md:border-b-0 md:border-r">
+            {media.mediaType === "IMAGE" && media.url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={media.url}
+                alt={media.id}
+                className="w-full rounded-xl border border-slate-200 object-contain"
+              />
+            ) : (
+              <div className="flex aspect-video w-full flex-col items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white text-slate-400">
+                <Video className="h-10 w-10" />
+                <span className="text-xs font-bold uppercase tracking-wide">
+                  Xem trước Video
+                </span>
+              </div>
+            )}
+
+            <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl bg-white p-3 text-xs font-semibold text-slate-500 shadow-sm">
+              <div>
+                <p className="text-slate-400">Loại</p>
+                <p className="mt-1 text-slate-700">{formatMediaType(media.mediaType)}</p>
+              </div>
+              <div>
+                <p className="text-slate-400">Trạng thái duyệt</p>
+                <p className="mt-1 text-slate-700">{formatApprovalStatus(media.approvalStatus)}</p>
+              </div>
+              <div>
+                <p className="text-slate-400">Episode</p>
+                <p className="mt-1 truncate text-slate-700">{media.episodeId || "-"}</p>
+              </div>
+              <div>
+                <p className="text-slate-400">Ngày tạo</p>
+                <p className="mt-1 text-slate-700">{formatDate(media.createdAt)}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-5 p-5">
+            {violationsQuery.isLoading && (
+              <div className="flex items-center gap-2 text-sm font-semibold text-slate-500">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Đang tải chi tiết vi phạm...
+              </div>
+            )}
+
+            {violationsQuery.isError && (
+              <p className="text-sm font-semibold text-red-600">
+                Không thể tải chi tiết vi phạm.
+              </p>
+            )}
+
+            {violations && (
+              <>
+                <section>
+                  <h3 className="mb-3 flex items-center gap-2 text-sm font-bold text-slate-900">
+                    <Fingerprint className="h-4 w-4" />
+                    Bản quyền / Trùng lặp nội dung
+                  </h3>
+                  {violations.copyrightViolations.length === 0 ? (
+                    <p className="rounded-lg bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
+                      Không phát hiện trùng lặp nội dung.
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {violations.copyrightViolations.map((item) => (
+                        <div
+                          key={item.mediaCopyrightId}
+                          className={`rounded-lg border p-3 text-xs ${
+                            item.isValid
+                              ? "border-emerald-200 bg-emerald-50"
+                              : "border-red-200 bg-red-50"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between font-bold">
+                            <span className={item.isValid ? "text-emerald-700" : "text-red-700"}>
+                              Tương đồng {formatPercent(item.similarityScore)}
+                            </span>
+                            <span className={item.isValid ? "text-emerald-700" : "text-red-700"}>
+                              {item.isValid ? "Nguồn hợp lệ (CC0)" : "Chưa xác định quyền sử dụng"}
+                            </span>
+                          </div>
+                          <p className="mt-1 break-all text-slate-500">
+                            Trùng với mã nội dung: {item.sourceMediaId || "Không xác định (nội dung gốc có thể đã bị xóa)"}
+                          </p>
+                          <p className="mt-1 text-slate-500">
+                            Loại nội dung: {item.violationType === "VIDEO" ? "Video" : "Ảnh"} · Kiểm tra lúc {formatDate(item.checkedAt)}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </section>
+
+                <section>
+                  <h3 className="mb-3 flex items-center gap-2 text-sm font-bold text-slate-900">
+                    <ShieldAlert className="h-4 w-4" />
+                    Kiểm duyệt nội dung nhạy cảm
+                  </h3>
+                  {violations.censorshipResults.length === 0 ? (
+                    <p className="rounded-lg bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-500">
+                      Chưa có kết quả kiểm duyệt nội dung.
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {violations.censorshipResults.map((item) => (
+                        <div
+                          key={item.censorshipId}
+                          className={`rounded-lg border p-3 text-xs ${
+                            item.status === "APPROVED"
+                              ? "border-emerald-200 bg-emerald-50"
+                              : "border-red-200 bg-red-50"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between font-bold">
+                            <span className={item.status === "APPROVED" ? "text-emerald-700" : "text-red-700"}>
+                              {item.primaryViolationLabel
+                                ? translateViolationLabel(item.primaryViolationLabel)
+                                : "Không phát hiện vi phạm"}
+                            </span>
+                            <span className="text-slate-500">
+                              Độ chính xác phát hiện {formatPercent((item.confidenceScore ?? 0) / 100)}
+                            </span>
+                          </div>
+                          {item.violationDetails.length > 0 && (
+                            <ul className="mt-2 space-y-1">
+                              {item.violationDetails.map((detail) => (
+                                <li key={detail.violationDetailId} className="flex items-start gap-1.5 text-slate-600">
+                                  <CircleAlert className="mt-0.5 h-3 w-3 shrink-0 text-red-500" />
+                                  <span>
+                                    {translateViolationLabel(detail.label)} — độ chính xác phát hiện {formatPercent((detail.confidence ?? 0) / 100)}
+                                  </span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                          {item.reviewerNotes && (
+                            <p className="mt-2 italic text-slate-500">Ghi chú: {item.reviewerNotes}</p>
+                          )}
+                          <p className="mt-1 text-slate-400">Kiểm tra lúc {formatDate(item.checkedAt)}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </section>
+              </>
+            )}
+          </div>
+        </div>
+
+        <div className="flex flex-col-reverse gap-3 border-t border-slate-200 px-6 py-4 sm:flex-row sm:justify-end">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isMutating}
+            className="inline-flex h-11 items-center justify-center rounded-lg border border-slate-200 bg-white px-5 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Đóng
+          </button>
+          <button
+            type="button"
+            onClick={() => onReject(media)}
+            disabled={isMutating}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-red-600 px-5 text-sm font-bold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <X className="h-4 w-4" />
+            Từ chối
+          </button>
+          <button
+            type="button"
+            onClick={() => onApprove(media)}
+            disabled={isMutating}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-5 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <Check className="h-4 w-4" />
+            Duyệt
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ModerationCard({
   isMutating,
   media,
   onApprove,
   onReject,
+  onViewDetail,
 }: {
   isMutating: boolean;
   media: ModerationMedia;
   onApprove: (media: ModerationMedia) => void;
   onReject: (media: ModerationMedia) => void;
+  onViewDetail: (media: ModerationMedia) => void;
 }) {
   const isVideo = media.mediaType === "VIDEO";
   const PreviewIcon = isVideo ? Video : FileImage;
 
   return (
     <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-      <div className="flex aspect-video items-center justify-center border-b border-slate-100 bg-slate-100">
+      <button
+        type="button"
+        onClick={() => onViewDetail(media)}
+        className="group relative flex aspect-video w-full items-center justify-center border-b border-slate-100 bg-slate-100"
+      >
+        <div className="absolute inset-0 z-10 hidden items-center justify-center gap-2 bg-black/50 text-sm font-bold text-white group-hover:flex">
+          <Eye className="h-4 w-4" />
+          Xem chi tiết
+        </div>
         {media.url && media.mediaType === "IMAGE" ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -164,16 +424,16 @@ function ModerationCard({
               <PreviewIcon className="h-7 w-7" />
             </div>
             <span className="text-xs font-bold uppercase tracking-wide">
-              {isVideo ? "Video Preview" : "Image Preview"}
+              {isVideo ? "Xem trước Video" : "Xem trước Ảnh"}
             </span>
           </div>
         )}
-      </div>
+      </button>
 
       <div className="space-y-4 p-5">
         <div>
           <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
-            Media ID
+            Mã nội dung
           </p>
           <p className="mt-1 break-all text-sm font-bold text-slate-950">
             {media.id}
@@ -189,10 +449,10 @@ function ModerationCard({
             }`}
           >
             <PreviewIcon className="h-3.5 w-3.5" />
-            {media.mediaType}
+            {formatMediaType(media.mediaType)}
           </span>
           <span className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">
-            {media.approvalStatus}
+            {formatApprovalStatus(media.approvalStatus)}
           </span>
         </div>
 
@@ -237,6 +497,7 @@ function ModerationCard({
 export function ModerationManagement() {
   const [page, setPage] = useState(0);
   const [rejectTarget, setRejectTarget] = useState<ModerationMedia | null>(null);
+  const [detailTarget, setDetailTarget] = useState<ModerationMedia | null>(null);
   const pendingQuery = useGetPendingMedia(page, PAGE_SIZE);
   const approveMutation = useApproveMedia();
   const rejectMutation = useRejectMedia();
@@ -246,7 +507,10 @@ export function ModerationManagement() {
 
   function handleApprove(media: ModerationMedia) {
     approveMutation.mutate(media.id, {
-      onSuccess: () => toast.success("Đã duyệt nội dung."),
+      onSuccess: () => {
+        toast.success("Đã duyệt nội dung.");
+        setDetailTarget(null);
+      },
       onError: (error) => toast.error(getErrorMessage(error)),
     });
   }
@@ -260,6 +524,7 @@ export function ModerationManagement() {
         onSuccess: () => {
           toast.success("Đã từ chối nội dung.");
           setRejectTarget(null);
+          setDetailTarget(null);
         },
         onError: (error) => toast.error(getErrorMessage(error)),
       },
@@ -318,6 +583,7 @@ export function ModerationManagement() {
                 media={media}
                 onApprove={handleApprove}
                 onReject={setRejectTarget}
+                onViewDetail={setDetailTarget}
               />
             ))}
           </div>
@@ -361,6 +627,15 @@ export function ModerationManagement() {
         }}
         onSubmit={handleReject}
         open={Boolean(rejectTarget)}
+      />
+
+      <ModerationDetailModal
+        isMutating={isMutating}
+        media={detailTarget}
+        onApprove={handleApprove}
+        onClose={() => setDetailTarget(null)}
+        onReject={setRejectTarget}
+        open={Boolean(detailTarget)}
       />
     </div>
   );

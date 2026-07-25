@@ -162,6 +162,7 @@ export type MediaResponse = {
   resolution?: string;
   duration?: number;
   displayOrder?: number;
+  contentId?: string;
   status: MediaStatus;
   approvalStatus?: ContentApprovalStatus;
   approvalReviewedAt?: string;
@@ -493,6 +494,12 @@ export async function approveMedia(id: string) {
 export async function rejectMedia(id: string) {
   return unwrapBaseResponse<MediaResponse>(
     httpClient.patch(`/api/v1/media/${id}/reject`),
+  );
+}
+
+export async function retryMediaPipeline(id: string) {
+  return unwrapBaseResponse<MediaResponse>(
+    httpClient.patch(`/api/v1/media/${id}/retry-pipeline`),
   );
 }
 

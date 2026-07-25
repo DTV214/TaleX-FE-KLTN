@@ -143,7 +143,7 @@ export function ViolationDetailDialog({
                               {d.violationAt != null &&
                                 `Tại ${fmt(d.violationAt / 1000)}`}
                               {d.confidence != null &&
-                                ` — Độ tin cậy: ${d.confidence.toFixed(0)}%`}
+                                ` — Độ chính xác phát hiện: ${d.confidence.toFixed(0)}%`}
                             </div>
                             {d.suggestion && (
                               <div className="text-xs text-muted-foreground mt-1">

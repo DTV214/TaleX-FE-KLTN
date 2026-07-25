@@ -5,6 +5,7 @@ import {
   getMediaViolations,
   type ContentApprovalStatus,
   type MediaStatus,
+  type MediaType,
 } from "@/features/creator-dashboard/api/creator-content-api";
 import { AIPolicyAndCopyright } from "@/features/creator-dashboard/components/ai-policy-and-copyright";
 import {
@@ -35,8 +36,11 @@ function formatScheduledPublishAt(value?: string) {
 interface FinalReviewStepProps {
   mediaId?: string;
   mediaUrl?: string;
+  mediaType?: MediaType;
   mediaStatus?: MediaStatus;
   approvalStatus?: ContentApprovalStatus;
+  errorMessage?: string;
+  contentId?: string;
   isPublishing?: boolean;
   onPublish: () => void;
   onSchedulePublish: () => void;
@@ -58,8 +62,11 @@ interface FinalReviewStepProps {
 export function FinalReviewStep({
   mediaId,
   mediaUrl,
+  mediaType,
   mediaStatus,
   approvalStatus,
+  errorMessage,
+  contentId,
   isPublishing,
   onPublish,
   onSchedulePublish,
@@ -355,14 +362,17 @@ export function FinalReviewStep({
       <div className="w-full lg:w-96 space-y-6">
         <AIPolicyAndCopyright
           mediaId={mediaId}
+          mediaType={mediaType}
           mediaStatus={mediaStatus}
           approvalStatus={approvalStatus}
+          errorMessage={errorMessage}
+          contentId={contentId}
         />
 
         {!isPublished && (
           <div className="bg-creator-sidebar border border-creator-border rounded-xl p-5">
             <h3 className="font-semibold text-white mb-3 text-sm flex items-center gap-2">
-              <MessageSquare size={16} /> Reviewer Notes (Optional)
+              <MessageSquare size={16} /> Ghi chú cho người kiểm duyệt (Không bắt buộc)
             </h3>
             <textarea
               value={reviewerNotes}

@@ -3,7 +3,6 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { PlayCircle, ImagePlus, Video, ShieldAlert, AlertTriangle, Fingerprint } from "lucide-react";
-import { Toaster } from "sonner";
 import { CreatorSeasonsList } from "@/features/creator-dashboard/components/creator-seasons-list";
 import { CreatorEpisodesList } from "@/features/creator-dashboard/components/creator-episodes-list";
 import { CreatorSeriesList } from "@/features/creator-dashboard/components/creator-series-list";
@@ -116,6 +115,7 @@ import {
   getRejectedCensorshipResults,
   isMediaPipelinePending,
   isMediaReadyForPublish,
+  translateViolationLabel,
 } from "@/features/creator-dashboard/utils/media-violations";
 
 type DashboardView =
@@ -328,6 +328,8 @@ type ComicPage = {
   displayOrder: number;
   status?: MediaStatus;
   approvalStatus?: ContentApprovalStatus;
+  errorMessage?: string;
+  contentId?: string;
   file?: File;
 };
 
@@ -710,6 +712,8 @@ function mapMediaResponseToComicPage(media: MediaResponse): ComicPage {
     displayOrder: media.displayOrder ?? 1,
     status: media.status,
     approvalStatus: media.approvalStatus,
+    errorMessage: media.errorMessage,
+    contentId: media.contentId,
   };
 }
 
@@ -777,8 +781,6 @@ function CreatorDashboardContent() {
     },
     staleTime: 5 * 60 * 1000,
   });
-  usePipelineSSE({ enabled: true });
-
   const queryClient = useQueryClient();
   const authUser = useAuthStore((state) => state.user);
   const accountId = authUser?.accountId ?? "";
@@ -787,6 +789,9 @@ function CreatorDashboardContent() {
   const [activeView, setActiveView] = useState<DashboardView>(
     initialRouteState.view,
   );
+  // dismissOnChangeOf: đóng toast pipeline khi Creator chuyển sang view khác (vd rời
+  // màn hình MEDIA để qua SEASON/EPISODE khác), không để tồn tại xuyên suốt dashboard.
+  usePipelineSSE({ enabled: true, dismissOnChangeOf: activeView });
   const [selectedSeriesId, setSelectedSeriesId] = useState(
     initialRouteState.seriesId,
   );
@@ -899,34 +904,53 @@ function CreatorDashboardContent() {
     },
   });
 
-  // Track media status changes → show toast notification
+  // Lớp dự phòng cho toast pipeline: SSE (use-pipeline-sse.ts) là nguồn chính, nhưng SSE
+  // là kiểu "push" — nếu tab bị mất kết nối đúng lúc BE bắn sự kiện (refresh trang, mạng
+  // chập chờn), sự kiện đó mất vĩnh viễn, SSE không phát lại được. Effect này dựa vào
+  // polling `mediaQuery` để bắt lại các trường hợp SSE bỏ lỡ — dùng CHUNG id với SSE nên
+  // Sonner tự gộp thành 1 toast, không bị nhân đôi.
   const prevMediaStatusRef = useRef<Record<string, string>>({});
   useEffect(() => {
     const mediaList = mediaQuery.data ?? [];
     const prev = prevMediaStatusRef.current;
     for (const media of mediaList) {
       const oldStatus = prev[media.mediaId];
+      // Trạng thái "đang xử lý" trước đó khác nhau theo loại media và theo thời điểm poll
+      // bắt được: IMAGE bắt đầu ở PENDING; VIDEO có thể ở HLS_PROCESSING (transcode +
+      // AI check còn chạy) hoặc đã kịp lên HLS_READY (transcode xong trước, AI check vẫn
+      // đang chờ) TRƯỚC KHI bị flag INACTIVE — chỉ so khớp đúng "PENDING" trước đây khiến
+      // toast dự phòng KHÔNG BAO GIỜ fire cho video, chỉ hoạt động đúng với ảnh.
+      const wasPending =
+        oldStatus === "PENDING" ||
+        oldStatus === "PROCESSING" ||
+        oldStatus === "HLS_PROCESSING" ||
+        oldStatus === "HLS_READY";
       if (oldStatus && oldStatus !== media.status) {
-        if (media.status === "ACTIVE" && (oldStatus === "PENDING" || oldStatus === "HLS_READY")) {
-          const type = media.mediaType === "IMAGE" ? "Ảnh" : "Video";
-          toast.success(`${type} đã được xuất bản`, {
-            description: `Nội dung đã qua kiểm duyệt thành công và hiện đang hiển thị trên nền tảng TaleX.`,
-            duration: 10000,
+        if (media.status === "ACTIVE" && wasPending) {
+          toast.success("Nội dung đã qua kiểm duyệt", {
+            id: "pipeline-moderation-ok",
+            description: "Trang đã kiểm duyệt thành công, sẵn sàng để xuất bản. Nhấn Xuất bản ở bước cuối để công khai.",
+            duration: Infinity,
           });
-        } else if (media.status === "INACTIVE" && oldStatus === "PENDING") {
-          toast.error("Nội dung không đạt kiểm duyệt", {
-            description: "Nội dung vi phạm chính sách nền tảng và đã bị tạm ẩn. Vui lòng xem chi tiết vi phạm để chỉnh sửa.",
-            duration: 15000,
-          });
+        } else if (media.status === "INACTIVE" && wasPending) {
+          if (media.approvalStatus === "PENDING_REVIEW") {
+            toast.warning("Nội dung đang chờ đội kiểm duyệt xác nhận", {
+              id: "pipeline-moderation-review",
+              description: "Cần đội kiểm duyệt xác nhận thủ công trước khi xuất bản.",
+              duration: Infinity,
+            });
+          } else {
+            toast.error("Nội dung chưa đạt yêu cầu kiểm duyệt", {
+              id: "pipeline-moderation-rejected",
+              description: "Nội dung đã bị tạm ẩn — vui lòng xem chi tiết vi phạm và chỉnh sửa hoặc thay thế nội dung trước khi tải lên lại.",
+              duration: Infinity,
+            });
+          }
         } else if (media.status === "FAILED") {
           toast.error("Xử lý nội dung thất bại", {
+            id: "pipeline-failed",
             description: media.errorMessage || "Đã xảy ra lỗi trong quá trình xử lý. Vui lòng thử đăng tải lại hoặc liên hệ hỗ trợ.",
-            duration: 10000,
-          });
-        } else if (media.status === "PENDING" && oldStatus === "HLS_PROCESSING") {
-          toast.info("Đang kiểm duyệt nội dung", {
-            description: "Hệ thống đang kiểm tra bản quyền và nội dung. Quá trình này có thể mất vài phút.",
-            duration: 5000,
+            duration: Infinity,
           });
         }
       }
@@ -944,6 +968,38 @@ function CreatorDashboardContent() {
         .map(mapMediaResponseToComicPage),
     [mediaQuery.data],
   );
+
+  // comicPages là state cục bộ dùng lúc đang chỉnh sửa thứ tự/thêm trang mới — nhưng một
+  // khi đã có dữ liệu, displayComicPages luôn ưu tiên nó hơn existingMediaPages (server
+  // mới nhất) suốt phiên làm việc, kể cả khi đã qua bước XUẤT BẢN. Nếu không đồng bộ lại
+  // các field trạng thái pipeline, panel sẽ hiện dữ liệu cũ dù server đã xử lý xong.
+  useEffect(() => {
+    const freshById = new Map((mediaQuery.data ?? []).map((m) => [m.mediaId, m]));
+    setComicPages((prev) => {
+      let changed = false;
+      const next = prev.map((page) => {
+        const fresh = freshById.get(page.id);
+        if (!fresh) return page;
+        if (
+          page.status === fresh.status &&
+          page.approvalStatus === fresh.approvalStatus &&
+          page.errorMessage === fresh.errorMessage &&
+          page.contentId === fresh.contentId
+        ) {
+          return page;
+        }
+        changed = true;
+        return {
+          ...page,
+          status: fresh.status,
+          approvalStatus: fresh.approvalStatus,
+          errorMessage: fresh.errorMessage,
+          contentId: fresh.contentId,
+        };
+      });
+      return changed ? next : prev;
+    });
+  }, [mediaQuery.data]);
 
   const displayComicPages =
     comicPages.length > 0 ? comicPages : existingMediaPages;
@@ -1929,7 +1985,7 @@ function CreatorDashboardContent() {
                 />
               ) : (
                 <div className="p-8 text-white flex flex-col items-center justify-center min-h-[50vh]">
-                  <h2 className="text-xl font-bold mb-4">No episode selected.</h2>
+                  <h2 className="text-xl font-bold mb-4">Chưa chọn episode nào.</h2>
                 </div>
               ))
             ) : activeView === "video" ? (
@@ -1962,7 +2018,7 @@ function CreatorDashboardContent() {
                 />
               ) : (
                 <div className="p-8 text-white flex flex-col items-center justify-center min-h-[50vh]">
-                  <h2 className="text-xl font-bold mb-4">No episode selected.</h2>
+                  <h2 className="text-xl font-bold mb-4">Chưa chọn episode nào.</h2>
                 </div>
               ))
             ) : activeView === "publish" as any ? (
@@ -1995,8 +2051,11 @@ function CreatorDashboardContent() {
                 <FinalReviewStep
                   mediaId={existingVideoMedia[0]?.mediaId}
                   mediaUrl={existingVideoMedia[0]?.fileUrl || existingVideoMedia[0]?.originalUrl || ""}
+                  mediaType={existingVideoMedia[0]?.mediaType}
                   mediaStatus={existingVideoMedia[0]?.status}
                   approvalStatus={existingVideoMedia[0]?.approvalStatus}
+                  errorMessage={existingVideoMedia[0]?.errorMessage}
+                  contentId={existingVideoMedia[0]?.contentId}
                   isPublishing={publishEpisodeMutation.isPending}
                   onPublish={() => publishEpisodeMutation.mutate(selectedEpisodeId)}
                   onSchedulePublish={() => handleSchedulePublish({ kind: "episode", value: selectedEpisode! })}
@@ -2119,7 +2178,6 @@ function CreatorDashboardContent() {
           }
         />
       )}
-      <Toaster position="top-center" />
     </>
   );
 }
@@ -3676,7 +3734,7 @@ function ComicUploadView({
                 disabled={isSavingEpisode}
                 className="inline-flex h-10 items-center justify-center rounded bg-creator-bg px-5 text-sm font-bold text-white border border-creator-border hover:bg-white/10 disabled:opacity-50"
               >
-                {isSavingEpisode ? "Saving..." : "Save Details"}
+                {isSavingEpisode ? "Đang lưu..." : "Lưu chi tiết"}
               </button>
               {isCreator && (
                 <button
@@ -3684,7 +3742,7 @@ function ComicUploadView({
                   disabled={!canManageUnlockSettings || isSavingUnlockSettings}
                   className="inline-flex h-10 items-center justify-center rounded bg-creator-gold px-5 text-sm font-bold text-black hover:bg-creator-gold-hover disabled:opacity-50"
                 >
-                  {isSavingUnlockSettings ? "Saving Price..." : "Save Price"}
+                  {isSavingUnlockSettings ? "Đang lưu giá..." : "Lưu giá"}
                 </button>
               )}
             </div>
@@ -3693,7 +3751,7 @@ function ComicUploadView({
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-lg font-bold text-white">Upload Truyện và Chỉnh sửa vị trí</h3>
               <span className="text-xs font-bold px-3 py-1.5 bg-creator-bg border border-creator-border rounded text-creator-muted uppercase tracking-wider">
-                JPG, PNG accepted
+                Chấp nhận: JPG, PNG, WEBP, BMP, JFIF
               </span>
             </div>
 
@@ -3765,17 +3823,30 @@ function ComicUploadView({
               <div className="w-5 h-5 rounded-full bg-creator-gold flex items-center justify-center shrink-0 mt-0.5">
                 <Info className="h-3 w-3 text-black" />
               </div>
-              <p className="text-sm font-medium text-creator-muted max-w-sm">
-                Quá trình quét thường mất từ ​​2 đến 5 phút.
+              <p className="text-sm font-medium text-creator-muted max-w-md leading-relaxed">
+                Thời gian kiểm duyệt phụ thuộc vào số lượng trang. Bạn có thể rời trang này và quay lại sau, hệ thống sẽ tự động cập nhật tiến trình.
               </p>
             </div>
-            {canSchedulePublish && (
+            {canSchedulePublish ? (
               <button
                 onClick={onGoToPublishing}
                 className="px-6 py-2.5 bg-creator-gold text-black text-sm font-bold rounded hover:bg-creator-gold-hover shrink-0"
               >
-                Continue to Publishing
+                Tiếp tục xuất bản
               </button>
+            ) : (
+              (() => {
+                const persistedPages = pages.filter((p) => !p.id.startsWith("LOCAL-"));
+                if (persistedPages.length === 0) return null;
+                const readyCount = persistedPages.filter(
+                  (p) => p.approvalStatus === "APPROVED" && (p.status === "ACTIVE" || p.status === "HLS_READY"),
+                ).length;
+                return (
+                  <p className="text-xs font-bold text-creator-muted shrink-0">
+                    Đang xử lý {readyCount}/{persistedPages.length} trang — nút xuất bản sẽ hiện khi tất cả trang hoàn tất.
+                  </p>
+                );
+              })()
             )}
           </div>
         </div>
@@ -3783,8 +3854,12 @@ function ComicUploadView({
         {/* Right Column: AI Policy Scan */}
         <AIPolicyAndCopyright
           mediaId={pages.find((page) => !page.id.startsWith("LOCAL-"))?.id}
+          mediaType="IMAGE"
           mediaStatus={pages.find((page) => !page.id.startsWith("LOCAL-"))?.status}
           approvalStatus={pages.find((page) => !page.id.startsWith("LOCAL-"))?.approvalStatus}
+          errorMessage={pages.find((page) => !page.id.startsWith("LOCAL-"))?.errorMessage}
+          contentId={pages.find((page) => !page.id.startsWith("LOCAL-"))?.contentId}
+          pages={pages}
         />
       </div>
     </div>
@@ -3881,7 +3956,7 @@ function ComicPageCard({
             )}
             {hasCensorshipViolations && (
               <p className="text-xs text-gray-300">
-                <span className="font-semibold text-white">Nội dung:</span> {censorshipViolations.map((item) => item.primaryViolationLabel).filter(Boolean).join(", ")}
+                <span className="font-semibold text-white">Nội dung:</span> {censorshipViolations.map((item) => translateViolationLabel(item.primaryViolationLabel)).filter(Boolean).join(", ")}
               </p>
             )}
           </div>
@@ -4133,7 +4208,7 @@ function VideoUploadView({
                 disabled={isSavingEpisode}
                 className="inline-flex h-10 items-center justify-center rounded bg-creator-bg px-5 text-sm font-bold text-white border border-creator-border hover:bg-white/10 disabled:opacity-50"
               >
-                {isSavingEpisode ? "Saving..." : "Save Details"}
+                {isSavingEpisode ? "Đang lưu..." : "Lưu chi tiết"}
               </button>
               {isCreator && (
                 <button
@@ -4141,16 +4216,16 @@ function VideoUploadView({
                   disabled={!canManageUnlockSettings || isSavingUnlockSettings}
                   className="inline-flex h-10 items-center justify-center rounded bg-creator-gold px-5 text-sm font-bold text-black hover:bg-creator-gold-hover disabled:opacity-50"
                 >
-                  {isSavingUnlockSettings ? "Saving Price..." : "Save Price"}
+                  {isSavingUnlockSettings ? "Đang lưu giá..." : "Lưu giá"}
                 </button>
               )}
             </div>
           </div>
           <div className="bg-creator-sidebar border border-creator-border rounded-xl p-8 shadow-xl">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-lg font-bold text-white">Upload Video</h3>
+              <h3 className="text-lg font-bold text-white">Tải lên Video</h3>
               <span className="text-xs font-bold px-3 py-1.5 bg-creator-bg border border-creator-border rounded text-creator-muted uppercase tracking-wider">
-                MP4, MOV, CBR accepted
+                Chấp nhận: MP4, MOV
               </span>
             </div>
 
@@ -4162,7 +4237,7 @@ function VideoUploadView({
                 actorId={accountId}
                 disabledReason={
                   videos.length > 0
-                    ? "Delete the current video before uploading a replacement."
+                    ? "Vui lòng xóa video hiện tại trước khi tải lên video thay thế."
                     : undefined
                 }
                 onCompleted={onUploadCompleted}
@@ -4184,7 +4259,7 @@ function VideoUploadView({
                         <Clapperboard className="h-5 w-5 text-creator-gold" />
                         <div>
                           <p className="text-sm font-bold text-white max-w-[200px] truncate" title={(video as any).fileName || video.fileUrl?.split("/").pop() || video.fileUrl}>
-                            {(video as any).fileName || video.fileUrl?.split("/").pop() || "Video File"}
+                            {(video as any).fileName || video.fileUrl?.split("/").pop() || "Tệp video"}
                           </p>
                           <p className="text-xs font-medium text-creator-muted uppercase tracking-wider">
                             {video.mimeType} • {formatBytes(video.fileSize)}
@@ -4201,7 +4276,7 @@ function VideoUploadView({
                         <button
                           onClick={() => onDeleteVideo(video)}
                           className="w-8 h-8 flex items-center justify-center rounded bg-creator-sidebar text-creator-muted hover:text-red-400 hover:bg-red-400/10 transition-colors border border-creator-border hover:border-red-400/30"
-                          title="Delete Video"
+                          title="Xóa video"
                         >
                           <Trash2 size={14} />
                         </button>
@@ -4237,7 +4312,7 @@ function VideoUploadView({
                 onClick={onGoToPublishing}
                 className="px-6 py-2.5 bg-creator-gold text-black text-sm font-bold rounded hover:bg-creator-gold-hover shrink-0"
               >
-                Continue to Publishing
+                Tiếp tục xuất bản
               </button>
             )}
           </div>
@@ -4246,8 +4321,11 @@ function VideoUploadView({
         {/* Right Column: AI Policy Scan & Copyright Protection */}
         <AIPolicyAndCopyright
           mediaId={videos[0]?.mediaId}
+          mediaType={videos[0]?.mediaType}
           mediaStatus={videos[0]?.status}
           approvalStatus={videos[0]?.approvalStatus}
+          errorMessage={videos[0]?.errorMessage}
+          contentId={videos[0]?.contentId}
         />
       </div>
     </div>
@@ -4275,7 +4353,7 @@ function VideoProcessingState({ video, onViewViolation }: { video: MediaResponse
         <Loader2 className="mb-3 h-8 w-8 animate-spin text-creator-gold" />
       )}
       <p className="text-sm font-black text-white">
-        {inactive ? "Nội dung vi phạm chính sách" : pending ? "Đang kiểm duyệt nội dung" : failed ? "Video processing failed" : "Video is still processing"}
+        {inactive ? "Nội dung vi phạm chính sách" : pending ? "Đang kiểm duyệt nội dung" : failed ? "Xử lý video thất bại" : "Video đang được xử lý"}
       </p>
       <p className="mt-2 max-w-md text-xs font-bold leading-relaxed">
         {inactive ? "Nội dung đã bị ẩn do vi phạm bản quyền hoặc kiểm duyệt." : pending ? "Đang kiểm tra bản quyền và nội dung..." : failed ? (video.errorMessage || "Không thể xử lý video.") : "Vui lòng chờ trong giây lát."}
