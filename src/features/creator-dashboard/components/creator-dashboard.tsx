@@ -704,7 +704,7 @@ function mapMediaResponseToComicPage(media: MediaResponse): ComicPage {
     image: normalizeAssetUrl(
       media.fileUrl || media.originalUrl || media.playbackUrl || "",
     ),
-    title: `Page ${media.displayOrder ?? 1}`,
+    title: `Trang ${media.displayOrder ?? 1}`,
     mimeType: media.mimeType,
     fileSize: formatBytes(media.fileSize),
     fileSizeBytes: media.fileSize,
@@ -2397,7 +2397,7 @@ function EditEntityModal({
       {modal.kind === "episode" && (
         <form onSubmit={handleEpisodeSubmit} className="space-y-5">
           <div className="grid gap-4 md:grid-cols-2">
-            <Field label="Episode Number">
+            <Field label="Số tập">
               <input
                 type="number"
                 min={1}
@@ -2406,7 +2406,7 @@ function EditEntityModal({
                 className={controlClass}
               />
             </Field>
-            <Field label="Content Type">
+            <Field label="Loại nội dung">
               <select
                 name="contentType"
                 defaultValue={modal.value.contentType}
@@ -2417,7 +2417,7 @@ function EditEntityModal({
               </select>
             </Field>
           </div>
-          <Field label="Title" required>
+          <Field label="Tiêu đề" required>
             <input
               name="title"
               required
@@ -2425,7 +2425,7 @@ function EditEntityModal({
               className={controlClass}
             />
           </Field>
-          <Field label="Description">
+          <Field label="Mô tả">
             <textarea
               name="description"
               defaultValue={modal.value.description}
@@ -2433,14 +2433,14 @@ function EditEntityModal({
             />
           </Field>
           <div className="grid gap-4 md:grid-cols-2">
-            <Field label="Lifecycle">
+            <Field label="Vòng đời">
               <input
                 value={formatStatusLabel(modal.value.status)}
                 readOnly
                 className={controlClass}
               />
             </Field>
-            <Field label="Total Page">
+            <Field label="Tổng số trang">
               <input
                 type="number"
                 min={0}
@@ -2593,19 +2593,19 @@ function DeleteEntityModal({
           ? modal.value.title
           : isBackendMediaTarget(modal.value)
             ? `${modal.value.mediaType} media`
-            : `Page ${modal.value.displayOrder}`;
+            : `Trang ${modal.value.displayOrder}`;
 
   return (
     <ModalShell
-      title="Confirm Delete"
-      subtitle="Review the item before removing it from your workspace."
+      title="Xác nhận xóa"
+      subtitle="Kiểm tra lại nội dung trước khi xóa khỏi không gian làm việc của bạn."
       onClose={onClose}
       compact
     >
       <div className="space-y-5">
         <div className="rounded-2xl border border-red-500/50 bg-red-500/10 p-4">
           <p className="text-sm font-bold text-creator-muted">
-            You are deleting:
+            Bạn đang xóa:
           </p>
           <p className="mt-1 text-lg font-black text-red-400">
             {entityLabel}
@@ -2617,7 +2617,7 @@ function DeleteEntityModal({
             onClick={onClose}
             className="rounded-full border border-creator-border bg-creator-bg text-white border border-creator-border px-5 py-3 hover:border-creator-gold transition-colors text-sm font-black text-creator-muted"
           >
-            Cancel
+            Hủy
           </button>
           <button
             type="button"
@@ -2625,7 +2625,7 @@ function DeleteEntityModal({
             disabled={isDeleting}
             className="rounded-full bg-red-500 hover:bg-red-600 transition-colors px-5 py-3 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isDeleting ? "Deleting..." : "Delete"}
+            {isDeleting ? "Đang xóa..." : "Xóa"}
           </button>
         </div>
       </div>
@@ -2691,14 +2691,14 @@ function ModalActions({
         onClick={onClose}
         className="rounded-full border border-creator-border bg-creator-bg text-white border border-creator-border px-5 py-3 hover:border-creator-gold transition-colors text-sm font-black text-creator-muted"
       >
-        Cancel
+        Hủy
       </button>
       <button
         type="submit"
         disabled={isSaving}
         className="rounded-full bg-creator-gold px-5 py-3 text-sm font-black text-black hover:opacity-90 transition-opacity disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {isSaving ? "Saving..." : "Save Changes"}
+        {isSaving ? "Đang lưu..." : "Lưu thay đổi"}
       </button>
     </div>
   );
@@ -3785,13 +3785,13 @@ function ComicUploadView({
             {pages.length > 0 && (
               <div className="space-y-4 pt-6 border-t border-creator-border">
                 <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-sm font-bold text-white">Uploaded Pages ({pages.length})</h4>
+                  <h4 className="text-sm font-bold text-white">Trang đã tải lên ({pages.length})</h4>
                   <button
                     onClick={onSaveOrder}
                     disabled={isSavingOrder}
                     className="text-xs font-bold px-4 py-2 bg-creator-bg border border-creator-border text-white rounded hover:bg-white/10 transition-colors disabled:opacity-50"
                   >
-                    {isSavingOrder ? "Saving..." : "Save"}
+                    {isSavingOrder ? "Đang lưu..." : "Lưu"}
                   </button>
                 </div>
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
