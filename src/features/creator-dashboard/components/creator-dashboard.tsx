@@ -17,6 +17,7 @@ import { FinalReviewComicStep } from "@/features/creator-dashboard/components/st
 import { DashboardOverviewView } from "@/features/creator-dashboard/components/views/dashboard-overview-view";
 
 import {
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -105,7 +106,7 @@ import { uploadImageToS3 } from "@/features/creator-dashboard/api/s3-upload-api"
 import { toast } from "sonner";
 import { ResumableVideoUploader } from "@/features/creator-dashboard/components/resumable-video-uploader";
 import { ViolationDetailDialog } from "@/features/creator-dashboard/components/violation-detail-dialog";
-import { usePipelineSSE } from "@/features/creator-dashboard/hooks/use-pipeline-sse";
+import { usePipelineSSE, pipelineToastId } from "@/features/creator-dashboard/hooks/use-pipeline-sse";
 import { SignedHlsPlayer } from "@/features/playback/components/signed-hls-player";
 import { ComboManagementView } from "@/features/creator-dashboard/components/combo-management";
 import { CreatorMonetizationView } from "@/features/creator-dashboard/components/views/creator-monetization-view";
@@ -789,9 +790,28 @@ function CreatorDashboardContent() {
   const [activeView, setActiveView] = useState<DashboardView>(
     initialRouteState.view,
   );
+  // Danh sách media mới nhất, cập nhật bởi effect polling-fallback bên dưới (khai báo
+  // trước vì usePipelineSSE cần callback này ngay, còn mediaQuery thì khai báo sau).
+  const suppressionMediaListRef = useRef<MediaResponse[]>([]);
+  const shouldSuppressSuccessToast = useCallback((mediaId: string) => {
+    const list = suppressionMediaListRef.current;
+    const target = list.find((m) => m.mediaId === mediaId);
+    if (!target || target.mediaType !== "IMAGE") return false;
+    return list.filter((m) => m.mediaType === "IMAGE" && !m.isDeleted).length > 1;
+  }, []);
   // dismissOnChangeOf: đóng toast pipeline khi Creator chuyển sang view khác (vd rời
   // màn hình MEDIA để qua SEASON/EPISODE khác), không để tồn tại xuyên suốt dashboard.
-  usePipelineSSE({ enabled: true, dismissOnChangeOf: activeView });
+  usePipelineSSE({ enabled: true, dismissOnChangeOf: activeView, shouldSuppressSuccessToast });
+  // Toast tổng kết đợt xử lý (bắn từ effect polling-fallback bên dưới, không đi qua
+  // usePipelineSSE) cần tự dọn dẹp riêng theo cùng quy tắc "đổi view thì đóng toast".
+  // Dùng ref thay vì đọc selectedEpisode trực tiếp trong cleanup — effect chỉ phụ thuộc
+  // activeView nên closure cleanup có thể giữ giá trị selectedEpisode cũ nếu không dùng ref.
+  const lastBatchToastIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    return () => {
+      if (lastBatchToastIdRef.current) toast.dismiss(lastBatchToastIdRef.current);
+    };
+  }, [activeView]);
   const [selectedSeriesId, setSelectedSeriesId] = useState(
     initialRouteState.seriesId,
   );
@@ -910,8 +930,17 @@ function CreatorDashboardContent() {
   // polling `mediaQuery` để bắt lại các trường hợp SSE bỏ lỡ — dùng CHUNG id với SSE nên
   // Sonner tự gộp thành 1 toast, không bị nhân đôi.
   const prevMediaStatusRef = useRef<Record<string, string>>({});
+  // Theo dõi "đợt xử lý còn trang nào đang chạy không" của lần render trước, để phát hiện
+  // đúng thời điểm CẢ ĐỢT (vd 5 trang push cùng lúc) vừa xử lý xong — bắn 1 toast tổng kết
+  // số lượng đạt/chờ duyệt/từ chối/lỗi thay vì im lặng nếu kết quả bị trộn lẫn.
+  const wasBatchPendingRef = useRef(false);
   useEffect(() => {
     const mediaList = mediaQuery.data ?? [];
+    suppressionMediaListRef.current = mediaList;
+    // Tính trước để dùng cả trong vòng lặp per-item (ẩn toast xanh riêng lẻ khi đang ở
+    // đợt nhiều trang) lẫn toast tổng kết cả đợt bên dưới.
+    const imagePages = mediaList.filter((m) => m.mediaType === "IMAGE" && !m.isDeleted);
+    const isMultiPageImageBatch = imagePages.length > 1;
     const prev = prevMediaStatusRef.current;
     for (const media of mediaList) {
       const oldStatus = prev[media.mediaId];
@@ -926,29 +955,37 @@ function CreatorDashboardContent() {
         oldStatus === "HLS_PROCESSING" ||
         oldStatus === "HLS_READY";
       if (oldStatus && oldStatus !== media.status) {
+        // Id theo mediaId (khớp use-pipeline-sse.ts) — id cố định trước đây khiến kết quả
+        // của trang xử lý sau GHI ĐÈ toast của trang xử lý trước trong cùng đợt push nhiều
+        // ảnh, làm mất thông báo thành công/thất bại của các trang khác.
         if (media.status === "ACTIVE" && wasPending) {
-          toast.success("Nội dung đã qua kiểm duyệt", {
-            id: "pipeline-moderation-ok",
-            description: "Trang đã kiểm duyệt thành công, sẵn sàng để xuất bản. Nhấn Xuất bản ở bước cuối để công khai.",
-            duration: Infinity,
-          });
+          // Đợt nhiều trang (>1 ảnh): không show toast xanh riêng lẻ "đã qua kiểm duyệt"
+          // của từng trang — dễ hiểu nhầm "cả episode ổn" trong khi trang khác cùng đợt
+          // còn đang chờ duyệt/bị từ chối. Toast tổng kết cả đợt bên dưới đã đủ thông tin.
+          if (!(media.mediaType === "IMAGE" && isMultiPageImageBatch)) {
+            toast.success("Nội dung đã qua kiểm duyệt", {
+              id: pipelineToastId("moderation-ok", media.mediaId),
+              description: "Trang đã kiểm duyệt thành công, sẵn sàng để xuất bản. Nhấn Xuất bản ở bước cuối để công khai.",
+              duration: Infinity,
+            });
+          }
         } else if (media.status === "INACTIVE" && wasPending) {
           if (media.approvalStatus === "PENDING_REVIEW") {
             toast.warning("Nội dung đang chờ đội kiểm duyệt xác nhận", {
-              id: "pipeline-moderation-review",
+              id: pipelineToastId("moderation-review", media.mediaId),
               description: "Cần đội kiểm duyệt xác nhận thủ công trước khi xuất bản.",
               duration: Infinity,
             });
           } else {
             toast.error("Nội dung chưa đạt yêu cầu kiểm duyệt", {
-              id: "pipeline-moderation-rejected",
+              id: pipelineToastId("moderation-rejected", media.mediaId),
               description: "Nội dung đã bị tạm ẩn — vui lòng xem chi tiết vi phạm và chỉnh sửa hoặc thay thế nội dung trước khi tải lên lại.",
               duration: Infinity,
             });
           }
         } else if (media.status === "FAILED") {
           toast.error("Xử lý nội dung thất bại", {
-            id: "pipeline-failed",
+            id: pipelineToastId("failed", media.mediaId),
             description: media.errorMessage || "Đã xảy ra lỗi trong quá trình xử lý. Vui lòng thử đăng tải lại hoặc liên hệ hỗ trợ.",
             duration: Infinity,
           });
@@ -958,7 +995,36 @@ function CreatorDashboardContent() {
     const next: Record<string, string> = {};
     for (const media of mediaList) next[media.mediaId] = media.status;
     prevMediaStatusRef.current = next;
-  }, [mediaQuery.data]);
+
+    // Toast tổng kết cho đợt xử lý nhiều trang comic (chỉ IMAGE — video chỉ có 1 file/tập
+    // nên toast per-item ở trên đã đủ, không cần tổng kết thêm).
+    const isBatchPending = imagePages.some(
+      (m) => m.status === "PENDING" || m.status === "PROCESSING" || m.status === "HLS_PROCESSING",
+    );
+    if (wasBatchPendingRef.current && !isBatchPending && isMultiPageImageBatch) {
+      const readyCount = imagePages.filter((m) => m.status === "ACTIVE" || m.status === "HLS_READY").length;
+      const pendingReviewCount = imagePages.filter(
+        (m) => m.status === "INACTIVE" && m.approvalStatus === "PENDING_REVIEW",
+      ).length;
+      const rejectedCount = imagePages.filter((m) => m.status === "INACTIVE" && m.approvalStatus === "REJECTED").length;
+      const failedCount = imagePages.filter((m) => m.status === "FAILED").length;
+      const total = imagePages.length;
+      const parts: string[] = [];
+      if (readyCount > 0) parts.push(`${readyCount} đạt`);
+      if (pendingReviewCount > 0) parts.push(`${pendingReviewCount} chờ đội kiểm duyệt`);
+      if (rejectedCount > 0) parts.push(`${rejectedCount} bị từ chối`);
+      if (failedCount > 0) parts.push(`${failedCount} lỗi hệ thống`);
+      const hasIssue = rejectedCount > 0 || failedCount > 0 || pendingReviewCount > 0;
+      const batchToastId = pipelineToastId("batch-summary", selectedEpisode?.id ?? "unknown");
+      lastBatchToastIdRef.current = batchToastId;
+      (hasIssue ? toast.warning : toast.success)(`Đã xử lý xong ${total} trang`, {
+        id: batchToastId,
+        description: parts.join(", "),
+        duration: Infinity,
+      });
+    }
+    wasBatchPendingRef.current = isBatchPending;
+  }, [mediaQuery.data, selectedEpisode?.id]);
 
   const existingMediaPages = useMemo(
     () =>
