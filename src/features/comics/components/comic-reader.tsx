@@ -41,6 +41,7 @@ import {
   getFollowers,
 } from "@/features/series/api/creator-follows-api";
 import { useComicHeartbeat } from "@/features/playback/hooks/useComicHeartbeat";
+import { AdSlot } from "@/shared/ui/ad-slot";
 
 interface ComicReaderProps {
   episodeId: string;
@@ -676,6 +677,8 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
         )}
 
         {/* Phần Bình luận tập truyện */}
+        <AdSlot slotId="mock-read-bottom" format="horizontal" className="my-8" />
+
         <EpisodeCommentsSection
           episodeId={episodeId}
           className="max-w-4xl mx-auto my-12"

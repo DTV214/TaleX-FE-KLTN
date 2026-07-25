@@ -27,6 +27,7 @@ import {
   getCreatorDetail,
   getFollowers,
 } from "@/features/series/api/creator-follows-api";
+import { AdSlot } from "@/shared/ui/ad-slot";
 
 type SignedHlsPlayerProps = {
   episodeId: string;
@@ -499,6 +500,12 @@ export function SignedHlsPlayer({
               </p>
             )}
           </div>
+
+          <AdSlot
+            slotId="mock-watch-bottom"
+            format="horizontal"
+            className="mt-4 mb-8"
+          />
 
           {/* Phần bình luận tập phim */}
           <EpisodeCommentsSection episodeId={episodeId} className="mt-8" />

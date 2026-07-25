@@ -99,3 +99,29 @@
 @utility glass-panel {
   @apply bg-black/40 backdrop-blur-md border border-white/10;
 }
+
+@keyframes talex-ad-carousel-right {
+  from {
+    transform: translateX(-50%);
+  }
+
+  to {
+    transform: translateX(0);
+  }
+}
+
+.talex-ad-carousel-track {
+  animation: talex-ad-carousel-right 42s linear infinite;
+  will-change: transform;
+}
+
+.talex-ad-carousel:hover .talex-ad-carousel-track {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .talex-ad-carousel-track {
+    animation: none;
+    transform: translateX(0);
+  }
+}

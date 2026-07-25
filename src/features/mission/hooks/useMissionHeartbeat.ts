@@ -1,59 +1,65 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useAuthStore } from "@/features/auth/store/auth.store";
 import type { MissionProgressResponseDto } from "../api/mission.dto";
 import { useHeartbeatMutation } from "./useMissionMutations";
 import { useMyMissions } from "./useMissionQueries";
 
-const FALLBACK_ONLINE_DURATION_MS = 60_000;
-const MIN_HEARTBEAT_DELAY_MS = 1_000;
-const MUTATION_THROTTLE_MS = 5_000;
+const HEARTBEAT_INTERVAL_MS = 60_000;
 
-function isOnlineMission(mission: MissionProgressResponseDto) {
-  const source = `${mission.code} ${mission.title} ${mission.description}`.toLowerCase();
-  return source.includes("online") || source.includes("truc tuyen") || source.includes("trực tuyến");
-}
+type UseMissionHeartbeatOptions = {
+  enabled?: boolean;
+};
 
-function getOnlineMissionDurationMs(mission: MissionProgressResponseDto) {
-  const source = `${mission.code} ${mission.title} ${mission.description}`
+function normalizeMissionText(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
     .replace(/[_-]/g, " ")
     .toLowerCase();
-
-  const minuteMatch = source.match(/(\d+)\s*(phut|phút|minute|minutes|min|m)\b/);
-  if (minuteMatch) {
-    return Math.max(Number(minuteMatch[1]) * 60_000, FALLBACK_ONLINE_DURATION_MS);
-  }
-
-  const secondMatch = source.match(/(\d+)\s*(giay|giây|second|seconds|sec|s)\b/);
-  if (secondMatch) {
-    return Math.max(Number(secondMatch[1]) * 1_000, MIN_HEARTBEAT_DELAY_MS);
-  }
-
-  return FALLBACK_ONLINE_DURATION_MS;
 }
 
-export function useMissionHeartbeat() {
+function isOnlineMission(mission: MissionProgressResponseDto) {
+  const source = normalizeMissionText(
+    `${mission.code} ${mission.title} ${mission.description}`,
+  );
+
+  return source.includes("online") || source.includes("truc tuyen");
+}
+
+function isMissionSatisfied(mission: MissionProgressResponseDto) {
+  return (
+    mission.isCompleted ||
+    (mission.targetValue > 0 && mission.currentValue >= mission.targetValue)
+  );
+}
+
+export function useMissionHeartbeat(options: UseMissionHeartbeatOptions = {}) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const missionsQuery = useMyMissions({ enabled: isAuthenticated });
+  const isEnabled = options.enabled ?? true;
+  const canRunHeartbeat = isEnabled && isAuthenticated;
+  const missionsQuery = useMyMissions({ enabled: canRunHeartbeat });
   const heartbeatMutation = useHeartbeatMutation();
-  const onlineStartedAtRef = useRef<number | null>(null);
-  const lastHeartbeatAtRef = useRef(0);
+  const activeSegmentStartedAtRef = useRef<number | null>(null);
+  const accumulatedVisibleMsRef = useRef(0);
   const missions = missionsQuery.data;
-  const pendingOnlineMissions = Array.isArray(missions)
-    ? missions.filter((mission) => !mission.isCompleted && isOnlineMission(mission))
-    : [];
-  const hasPendingOnlineMissions = pendingOnlineMissions.length > 0;
+  const { refetch } = missionsQuery;
+  const { isPending, mutateAsync } = heartbeatMutation;
+
+  const serverPendingOnlineMissions = useMemo(
+    () =>
+      Array.isArray(missions)
+        ? missions.filter(
+            (mission) =>
+              !isMissionSatisfied(mission) && isOnlineMission(mission),
+          )
+        : [],
+    [missions],
+  );
+
+  const hasServerPendingOnlineMissions = serverPendingOnlineMissions.length > 0;
 
   useEffect(() => {
     let timeoutId: number | undefined;
-
-    if (!isAuthenticated || !hasPendingOnlineMissions) {
-      onlineStartedAtRef.current = null;
-      return;
-    }
-
-    if (onlineStartedAtRef.current === null) {
-      onlineStartedAtRef.current = Date.now();
-    }
 
     const clearSchedule = () => {
       if (timeoutId !== undefined) {
@@ -62,49 +68,84 @@ export function useMissionHeartbeat() {
       }
     };
 
-    const triggerHeartbeat = () => {
-      if (
-        document.visibilityState !== "visible" ||
-        heartbeatMutation.isPending ||
-        Date.now() - lastHeartbeatAtRef.current < MUTATION_THROTTLE_MS
-      ) {
-        return;
+    const getVisibleElapsedMs = () => {
+      if (activeSegmentStartedAtRef.current === null) {
+        return accumulatedVisibleMsRef.current;
       }
 
-      lastHeartbeatAtRef.current = Date.now();
-      heartbeatMutation.mutate();
+      return (
+        accumulatedVisibleMsRef.current +
+        Date.now() -
+        activeSegmentStartedAtRef.current
+      );
     };
+
+    const resetVisibleTimer = () => {
+      accumulatedVisibleMsRef.current = 0;
+      activeSegmentStartedAtRef.current =
+        document.visibilityState === "visible" ? Date.now() : null;
+    };
+
+    const pauseVisibleTimer = () => {
+      if (activeSegmentStartedAtRef.current === null) return;
+
+      accumulatedVisibleMsRef.current = getVisibleElapsedMs();
+      activeSegmentStartedAtRef.current = null;
+    };
+
+    const resumeVisibleTimer = () => {
+      if (activeSegmentStartedAtRef.current !== null) return;
+
+      activeSegmentStartedAtRef.current = Date.now();
+    };
+
+    if (!canRunHeartbeat || !hasServerPendingOnlineMissions) {
+      clearSchedule();
+      resetVisibleTimer();
+      return;
+    }
+
+    if (
+      document.visibilityState === "visible" &&
+      activeSegmentStartedAtRef.current === null
+    ) {
+      resumeVisibleTimer();
+    }
 
     const scheduleNextHeartbeat = () => {
       clearSchedule();
 
-      if (document.visibilityState !== "visible") {
-        return;
-      }
+      if (document.visibilityState !== "visible") return;
 
-      const startedAt = onlineStartedAtRef.current ?? Date.now();
-      const elapsedMs = Date.now() - startedAt;
-      const nextDelayMs = Math.min(
-        ...pendingOnlineMissions.map((mission) =>
-          Math.max(
-            MIN_HEARTBEAT_DELAY_MS,
-            getOnlineMissionDurationMs(mission) - elapsedMs,
-          ),
-        ),
-      );
+      const elapsedMs = getVisibleElapsedMs();
+      const nextDelayMs = Math.max(0, HEARTBEAT_INTERVAL_MS - elapsedMs);
 
       timeoutId = window.setTimeout(() => {
-        triggerHeartbeat();
-        scheduleNextHeartbeat();
+        void triggerHeartbeat();
       }, nextDelayMs);
+    };
+
+    const triggerHeartbeat = async () => {
+      if (document.visibilityState !== "visible" || isPending) return;
+
+      resetVisibleTimer();
+
+      try {
+        await mutateAsync();
+        await refetch();
+      } finally {
+        scheduleNextHeartbeat();
+      }
     };
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
+        resumeVisibleTimer();
         scheduleNextHeartbeat();
         return;
       }
 
+      pauseVisibleTimer();
       clearSchedule();
     };
 
@@ -115,14 +156,11 @@ export function useMissionHeartbeat() {
       clearSchedule();
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-    // TanStack Query guarantees a stable mutate callback. Depending on the
-    // entire mutation result would restart this schedule on every render.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    isAuthenticated,
-    hasPendingOnlineMissions,
-    missions,
-    heartbeatMutation.isPending,
-    heartbeatMutation.mutate,
+    canRunHeartbeat,
+    hasServerPendingOnlineMissions,
+    refetch,
+    isPending,
+    mutateAsync,
   ]);
 }

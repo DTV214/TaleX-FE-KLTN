@@ -15,6 +15,7 @@ import {
   Sparkles,
   Tv,
   UserRoundCog,
+  X,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { usePublicSidebarStore } from "@/shared/stores/public-sidebar.store";
@@ -54,32 +55,106 @@ const legalLinks = [
 
 export function PublicSidebar() {
   const isSidebarOpen = usePublicSidebarStore((state) => state.isSidebarOpen);
+  const isMobileSidebarOpen = usePublicSidebarStore(
+    (state) => state.isMobileSidebarOpen,
+  );
+  const closeMobileSidebar = usePublicSidebarStore(
+    (state) => state.closeMobileSidebar,
+  );
 
   return (
-    <aside
-      className={cn(
-        "fixed left-0 top-0 z-40 hidden h-screen flex-col overflow-y-auto border-r border-white/5 bg-[#0f0f0f] pt-16 text-white shadow-[16px_0_40px_rgba(0,0,0,0.28)] transition-all duration-300 ease-in-out md:flex",
-        isSidebarOpen ? "w-64 px-3" : "w-20 px-2",
-      )}
-    >
-      <div className="flex min-h-full flex-col py-4">
-        <SidebarGroup items={primaryMenu} isOpen={isSidebarOpen} />
-        <SidebarDivider />
-        <SidebarGroup items={libraryMenu} isOpen={isSidebarOpen} />
-        <SidebarDivider />
-        <SidebarGroup items={platformMenu} isOpen={isSidebarOpen} />
-        <SidebarLegalLinks isOpen={isSidebarOpen} />
+    <>
+      <aside
+        className={cn(
+          "fixed left-0 top-0 z-40 hidden h-screen flex-col overflow-y-auto border-r border-white/5 bg-[#0f0f0f] pt-16 text-white shadow-[16px_0_40px_rgba(0,0,0,0.28)] transition-all duration-300 ease-in-out md:flex",
+          isSidebarOpen ? "w-64 px-3" : "w-20 px-2",
+        )}
+      >
+        <div className="flex min-h-full flex-col py-4">
+          <SidebarGroup items={primaryMenu} isOpen={isSidebarOpen} />
+          <SidebarDivider />
+          <SidebarGroup items={libraryMenu} isOpen={isSidebarOpen} />
+          <SidebarDivider />
+          <SidebarGroup items={platformMenu} isOpen={isSidebarOpen} />
+          <SidebarLegalLinks isOpen={isSidebarOpen} />
+        </div>
+      </aside>
+
+      <div
+        className={cn(
+          "fixed inset-0 z-[60] md:hidden",
+          isMobileSidebarOpen ? "pointer-events-auto" : "pointer-events-none",
+        )}
+      >
+        <button
+          type="button"
+          aria-label="Đóng menu"
+          className={cn(
+            "absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300",
+            isMobileSidebarOpen ? "opacity-100" : "opacity-0",
+          )}
+          onClick={closeMobileSidebar}
+        />
+
+        <aside
+          className={cn(
+            "absolute left-0 top-0 flex h-full w-[min(82vw,320px)] flex-col overflow-y-auto border-r border-white/10 bg-[#0f0f0f] px-3 pt-4 text-white shadow-[24px_0_70px_rgba(0,0,0,0.55)] transition-transform duration-300 ease-out",
+            isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full",
+          )}
+        >
+          <div className="mb-4 flex items-center justify-between px-2">
+            <Link
+              href="/"
+              onClick={closeMobileSidebar}
+              className="font-heading text-lg font-black tracking-tight text-white"
+            >
+              TaleX
+            </Link>
+            <button
+              type="button"
+              onClick={closeMobileSidebar}
+              aria-label="Đóng menu"
+              title="Đóng menu"
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-white/75 transition hover:bg-white/10 hover:text-white"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className="flex min-h-full flex-col pb-4">
+            <SidebarGroup
+              items={primaryMenu}
+              isOpen
+              onNavigate={closeMobileSidebar}
+            />
+            <SidebarDivider />
+            <SidebarGroup
+              items={libraryMenu}
+              isOpen
+              onNavigate={closeMobileSidebar}
+            />
+            <SidebarDivider />
+            <SidebarGroup
+              items={platformMenu}
+              isOpen
+              onNavigate={closeMobileSidebar}
+            />
+            <SidebarLegalLinks isOpen />
+          </div>
+        </aside>
       </div>
-    </aside>
+    </>
   );
 }
 
 function SidebarGroup({
   items,
   isOpen,
+  onNavigate,
 }: {
   items: MenuItem[];
   isOpen: boolean;
+  onNavigate?: () => void;
 }) {
   const pathname = usePathname();
 
@@ -123,6 +198,7 @@ function SidebarGroup({
             key={item.title}
             href={item.href}
             title={item.title}
+            onClick={onNavigate}
             className={cn(
               "flex w-full items-center rounded-xl py-2.5 text-left text-sm font-bold transition-all duration-300 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37]/60",
               isOpen ? "justify-start gap-3 px-3" : "justify-center px-0",

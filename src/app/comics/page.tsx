@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ComicsList } from "@/features/comics/components/comics-list";
+import { AdSlot } from "@/shared/ui/ad-slot";
 import {
   BookOpen,
   ChevronRight,
@@ -273,6 +274,7 @@ export default function ComicsPage() {
   return (
     <main className="min-h-screen bg-[#0B0B0C] pb-24 font-sans text-white">
       <HeroBanner />
+      <AdSlot slotId="mock-comics-top" format="horizontal" className="my-6" />
 
       {/* Danh sách truyện tranh thực từ hệ thống - chỉ hiện COMIC */}
       <ComicsList />

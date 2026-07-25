@@ -35,6 +35,7 @@ import { FollowButton } from "./follow-button";
 import { EpisodeBookmarkButton } from "./episode-bookmark-button";
 import { EpisodeShareButton } from "./episode-share-button";
 import { useAuthStore } from "@/features/auth/store/auth.store";
+import { AdSlot } from "@/shared/ui/ad-slot";
 
 interface SeriesDetailProps {
   seriesId: string;
@@ -501,6 +502,8 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
             </div>
           </motion.div>
         </div>
+
+        <AdSlot slotId="mock-detail-mid" format="horizontal" className="my-8" />
 
         {/* 2.5. Section: Gói Combo Ưu Đãi (chỉ hiển thị nếu có combo cho series này) */}
         {!combosQuery.isLoading && seriesCombos.length > 0 && (

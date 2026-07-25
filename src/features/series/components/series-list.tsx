@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { getPublicSeriesList } from "../api/series-api";
 import Link from "next/link";
+import { AdSlot } from "@/shared/ui/ad-slot";
 
 export function SeriesList() {
   const [page, setPage] = useState(1);
@@ -83,6 +84,7 @@ export function SeriesList() {
 
       {/* Main Movie Section */}
       <section className="container mx-auto px-4 md:px-8 pb-16 pt-6">
+        <AdSlot slotId="mock-series-top" format="horizontal" className="mb-8" />
         
         {/* TRẠNG THÁI LOADING */}
         {isLoading && (

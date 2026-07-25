@@ -26,13 +26,29 @@ import { useActiveSubscription } from "@/features/payment/api/payment.api";
 import { usePublicSidebarStore } from "@/shared/stores/public-sidebar.store";
 
 export function SiteHeader() {
-  useMissionHeartbeat();
+  const pathname = usePathname();
+  const isAuthOrAdminPage =
+    pathname === "/login" ||
+    pathname === "/register" ||
+    pathname === "/forgot-password" ||
+    pathname.startsWith("/complete-profile") ||
+    pathname.startsWith("/creator-dashboard") ||
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/staff");
+  const isContentConsumptionPage =
+    pathname.startsWith("/watch") || pathname.startsWith("/read");
+
+  useMissionHeartbeat({
+    enabled: !isAuthOrAdminPage && !isContentConsumptionPage,
+  });
 
   const [isTransactionHistoryOpen, setIsTransactionHistoryOpen] =
     useState(false);
-  const pathname = usePathname();
   const router = useRouter();
   const toggleSidebar = usePublicSidebarStore((state) => state.toggleSidebar);
+  const toggleMobileSidebar = usePublicSidebarStore(
+    (state) => state.toggleMobileSidebar,
+  );
   const { user, isAuthenticated, clearAuth } = useAuthStore();
   const activeSubscriptionQuery = useActiveSubscription(isAuthenticated);
   const profileUser = isFullProfile(user) ? user : null;
@@ -47,15 +63,6 @@ export function SiteHeader() {
   };
   const WorkspaceIcon = workspaceMenu.icon;
 
-  const isAuthOrAdminPage =
-    pathname === "/login" ||
-    pathname === "/register" ||
-    pathname === "/forgot-password" ||
-    pathname.startsWith("/complete-profile") ||
-    pathname.startsWith("/creator-dashboard") ||
-    pathname.startsWith("/admin") ||
-    pathname.startsWith("/staff");
-
   if (isAuthOrAdminPage) {
     return null;
   }
@@ -67,6 +74,18 @@ export function SiteHeader() {
     router.refresh();
   };
 
+  const handleSidebarToggle = () => {
+    if (
+      typeof window !== "undefined" &&
+      window.matchMedia("(max-width: 767px)").matches
+    ) {
+      toggleMobileSidebar();
+      return;
+    }
+
+    toggleSidebar();
+  };
+
   return (
     <header className="fixed left-0 top-0 z-50 h-16 w-full border-b border-white/10 bg-black/95 backdrop-blur">
       <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_20%_0%,rgba(212,175,55,0.10),transparent_36%),radial-gradient(circle_at_70%_0%,rgba(255,255,255,0.06),transparent_30%)]" />
@@ -75,7 +94,7 @@ export function SiteHeader() {
         <div className="flex shrink-0 items-center gap-2">
           <button
             type="button"
-            onClick={toggleSidebar}
+            onClick={handleSidebarToggle}
             aria-label="Thu gọn hoặc mở rộng sidebar"
             title="Thu gọn hoặc mở rộng sidebar"
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-foreground/85 transition hover:bg-white/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
