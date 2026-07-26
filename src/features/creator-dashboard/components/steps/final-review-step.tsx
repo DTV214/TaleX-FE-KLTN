@@ -156,7 +156,7 @@ export function FinalReviewStep({
       {/* Left - Video Preview & Episode Details */}
       <div className="flex flex-1 flex-col gap-6">
         <div>
-          <h2 className="text-2xl font-bold text-white mb-1">{isPublished ? "Published Episode" : "Kiểm duyệt cuối cùng & Quyết định xuất bản"}</h2>
+          <h2 className="text-2xl font-bold text-white mb-1">{isPublished ? "Tập đã xuất bản" : "Kiểm duyệt cuối cùng & Quyết định xuất bản"}</h2>
           <p className="text-sm text-creator-muted">
             {isPublished ? "Tập này hiện đang hoạt động trên TaleX." : "Xem lại nội dung của bạn trước khi đưa nó lên công khai trên TaleX."}
           </p>
@@ -170,10 +170,20 @@ export function FinalReviewStep({
               <video src={mediaUrl} controls className="w-full h-full object-contain" poster={mediaUrl}></video>
             ) : (
               <div className="w-full h-full flex items-center justify-center text-creator-muted">
-                Preview not available
+                Không có bản xem trước
               </div>
             )}
-            {hasAnyViolations && (
+            {violationsQuery.isError ? (
+              // Phân biệt "lỗi tải dữ liệu kiểm duyệt" với "đã kiểm tra, sạch" — trước đây
+              // lỗi fetch khiến violations=undefined, hiển thị y hệt trường hợp không có
+              // vi phạm gì, Creator không biết dữ liệu chưa tải được.
+              <div className="absolute top-4 right-4 max-w-sm bg-black/80 backdrop-blur-sm border border-amber-500/50 text-white p-4 rounded-xl shadow-lg">
+                <div className="flex items-center gap-2 text-amber-400 font-bold">
+                  <ShieldAlert size={18} />
+                  <span>Không thể tải dữ liệu kiểm duyệt — vui lòng tải lại trang</span>
+                </div>
+              </div>
+            ) : hasAnyViolations ? (
               <div className="absolute top-4 right-4 max-w-sm bg-black/80 backdrop-blur-sm border border-red-500/50 text-white p-4 rounded-xl shadow-lg">
                 <div className="flex items-center gap-2 text-red-400 font-bold mb-2">
                   <ShieldAlert size={18} />
@@ -194,7 +204,7 @@ export function FinalReviewStep({
                   )}
                 </div>
               </div>
-            )}
+            ) : null}
           </div>
 
           {!isPublished && (
@@ -342,7 +352,7 @@ export function FinalReviewStep({
               disabled={isSavingEpisode}
               className="px-6 py-2.5 bg-creator-bg border border-creator-border text-white text-sm font-bold rounded hover:bg-white/10 shrink-0 disabled:opacity-50"
             >
-              {isSavingEpisode ? "Saving..." : "Save Details"}
+              {isSavingEpisode ? "Đang lưu..." : "Lưu chi tiết"}
             </button>
             {isCreator && (
               <button
@@ -351,7 +361,7 @@ export function FinalReviewStep({
                 disabled={!canManageUnlockSettings || isSavingUnlockSettings}
                 className="px-6 py-2.5 bg-creator-gold text-black text-sm font-bold rounded hover:bg-creator-gold-hover shrink-0 disabled:opacity-50"
               >
-                {isSavingUnlockSettings ? "Saving Price..." : "Save Price"}
+                {isSavingUnlockSettings ? "Đang lưu giá..." : "Lưu giá"}
               </button>
             )}
           </div>
@@ -404,14 +414,14 @@ export function FinalReviewStep({
                 disabled={isCancelingSchedule}
                 className="w-full py-3 rounded-md text-sm font-bold bg-[#13110F] border border-red-500/50 text-red-400 hover:bg-red-500/10 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isCancelingSchedule ? "Canceling..." : <><X size={18} /> Hủy Đặt Lịch</>}
+                {isCancelingSchedule ? "Đang hủy..." : <><X size={18} /> Hủy Đặt Lịch</>}
               </button>
 
               <button
                 onClick={onBack}
                 className="w-full py-3 rounded-md text-sm font-bold bg-white/5 hover:bg-white/10 border border-creator-border transition-colors flex items-center justify-center gap-2"
               >
-                Back to Episodes
+                Quay lại danh sách tập
               </button>
             </>
           ) : !isPublished ? (
@@ -431,7 +441,7 @@ export function FinalReviewStep({
                 {isPublishing ? (
                   <span className="flex items-center gap-2">
                     <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></span>
-                    Publishing...
+                    Đang xuất bản...
                   </span>
                 ) : (
                   <>
@@ -473,7 +483,7 @@ export function FinalReviewStep({
                 disabled={isHidingEpisode}
                 className="w-full py-3 rounded-md text-sm font-bold bg-[#13110F] border border-red-500/50 text-red-400 hover:bg-red-500/10 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isHidingEpisode ? "Hiding..." : <><EyeOff size={18} /> Ẩn Tập</>}
+                {isHidingEpisode ? "Đang ẩn..." : <><EyeOff size={18} /> Ẩn Tập</>}
               </button>
               <button
                 onClick={onBack}

@@ -238,7 +238,12 @@ function SingleMediaPipelinePanel({
     mediaStatus,
     approvalStatus,
     hasContentId: copyrightResolved,
-    hasCensorshipResult: (violations?.censorshipResults.length ?? 0) > 0,
+    // Ưu tiên mediaStatus==="ACTIVE" — BE CHỈ set ACTIVE sau khi kiểm duyệt pass thật
+    // (xem ContentPipelineServiceImpl.handleModerationResult), tín hiệu này cập nhật
+    // nhanh cùng lúc với toast SSE. Không dựa DUY NHẤT vào violations query — nó là 1
+    // query riêng biệt, có thể fetch xong TRƯỚC KHI censorship record kịp lưu vào DB,
+    // khiến panel kẹt ở "active" dù toast đã báo hoàn tất (race giữa 2 nguồn dữ liệu).
+    hasCensorshipResult: (violations?.censorshipResults.length ?? 0) > 0 || mediaStatus === "ACTIVE",
     isFailed,
   });
 
@@ -351,6 +356,14 @@ function SingleMediaPipelinePanel({
             <CopyrightNotice state="idle" icon={<CircleAlert className="h-5 w-5" />}>
               Chưa kiểm tra tài nguyên
             </CopyrightNotice>
+          ) : violationsQuery.isError ? (
+            // Phân biệt rõ "lỗi tải dữ liệu" với "sạch, không vi phạm" — trước đây lỗi
+            // fetch khiến violations=undefined, các hàm lọc mặc định trả mảng rỗng, hiển
+            // thị y hệt trường hợp thật sự không có vi phạm, dễ khiến Creator lầm tưởng
+            // đã kiểm tra xong trong khi dữ liệu chưa tải được.
+            <CopyrightNotice state="error" icon={<CircleAlert className="h-5 w-5" />}>
+              Không thể tải dữ liệu bản quyền — vui lòng tải lại trang
+            </CopyrightNotice>
           ) : !copyrightResolved ? (
             <CopyrightNotice state="pending" icon={<Loader2 className="h-5 w-5 animate-spin" />}>
               Đang đối chiếu bản quyền...
@@ -374,11 +387,12 @@ function SingleMediaPipelinePanel({
   );
 }
 
-const noticeClass: Record<"idle" | "pending" | "passed" | "failed", string> = {
+const noticeClass: Record<"idle" | "pending" | "passed" | "failed" | "error", string> = {
   idle: "border-gray-500/20 bg-gray-500/10 text-gray-400",
   pending: "border-creator-gold/20 bg-creator-gold/10 text-creator-gold",
   passed: "border-green-500/20 bg-green-500/10 text-green-400",
   failed: "border-red-500/20 bg-red-500/10 text-red-400",
+  error: "border-amber-500/20 bg-amber-500/10 text-amber-400",
 };
 
 function CopyrightNotice({

@@ -30,6 +30,10 @@ export function ViolationDetailDialog({
 }: ViolationDetailDialogProps) {
   const [data, setData] = useState<MediaViolationsResponse | null>(null);
   const [loading, setLoading] = useState(false);
+  // Phân biệt "lỗi tải dữ liệu" với "sạch, không có gì" — trước đây .catch(console.error)
+  // chỉ log ra console, data vẫn null, dialog hiện TRỐNG TRƠN (kể cả dòng "Không có dữ
+  // liệu vi phạm" cũng nằm trong {data && (...)} nên không hiện được khi lỗi).
+  const [error, setError] = useState(false);
   const blockingCopyright = getBlockingCopyrightViolations(data ?? undefined);
   const permittedCopyright = getPermittedCopyrightMatches(data ?? undefined);
   const rejectedCensorship = getRejectedCensorshipResults(data ?? undefined);
@@ -37,9 +41,13 @@ export function ViolationDetailDialog({
   useEffect(() => {
     if (!open || !mediaId) return;
     setLoading(true);
+    setError(false);
     fetchMediaViolations(mediaId)
       .then(setData)
-      .catch(console.error)
+      .catch((e) => {
+        console.error(e);
+        setError(true);
+      })
       .finally(() => setLoading(false));
   }, [open, mediaId]);
 
@@ -54,7 +62,13 @@ export function ViolationDetailDialog({
           <p className="text-muted-foreground py-4">Đang tải...</p>
         )}
 
-        {data && (
+        {!loading && error && (
+          <p className="py-4 text-sm font-bold text-amber-400">
+            Không thể tải dữ liệu vi phạm — vui lòng đóng và thử lại.
+          </p>
+        )}
+
+        {!loading && !error && data && (
           <div className="space-y-6">
             {data.copyrightViolations.length > 0 && (
               <div>

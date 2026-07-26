@@ -170,9 +170,18 @@ export function ResumableVideoUploader({
       )}
 
       {!upload.selectedFile && upload.persistedUpload && (
-        <p className="text-sm font-bold text-creator-gold text-center">
-          Đang chờ tải lên: {upload.persistedUpload.fileName}
-        </p>
+        // Trình duyệt không thể khôi phục lại object File sau khi tải lại trang (giới
+        // hạn bảo mật) — chỉ khôi phục được metadata từ localStorage. Nút "Tiếp tục tải
+        // lên" bên dưới vẫn bị disable cho tới khi chọn lại ĐÚNG file này — không có
+        // dòng hướng dẫn này, user chỉ thấy nút disable, dễ tưởng bị lỗi/kẹt.
+        <div className="text-center space-y-1">
+          <p className="text-sm font-bold text-creator-gold">
+            Đang chờ tải lên: {upload.persistedUpload.fileName}
+          </p>
+          <p className="text-xs text-creator-muted">
+            Vui lòng chọn lại đúng file này (nhấp vào khung phía trên) để tiếp tục tải lên từ vị trí đã dừng.
+          </p>
+        </div>
       )}
 
       {(upload.isUploading || upload.status === "paused" || upload.status === "completed" || upload.progress > 0) && (

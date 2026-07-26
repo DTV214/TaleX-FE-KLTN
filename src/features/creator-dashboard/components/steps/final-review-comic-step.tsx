@@ -127,7 +127,7 @@ export function FinalReviewComicStep({
       {/* Left - Comic Preview & Episode Details */}
       <div className="flex flex-1 flex-col gap-6">
         <div>
-          <h2 className="text-2xl font-bold text-white mb-1">{isPublished ? "Published Episode" : "Kiểm duyệt cuối cùng & Quyết định xuất bản"}</h2>
+          <h2 className="text-2xl font-bold text-white mb-1">{isPublished ? "Tập đã xuất bản" : "Kiểm duyệt cuối cùng & Quyết định xuất bản"}</h2>
           <p className="text-sm text-creator-muted">
             {isPublished ? "Tập này hiện đang hoạt động trên TaleX." : "Xem lại nội dung của bạn trước khi đưa nó lên công khai trên TaleX."}
           </p>
@@ -293,7 +293,7 @@ export function FinalReviewComicStep({
               disabled={isSavingEpisode}
               className="px-6 py-2.5 bg-creator-bg border border-creator-border text-white text-sm font-bold rounded hover:bg-white/10 shrink-0 disabled:opacity-50"
             >
-              {isSavingEpisode ? "Saving..." : "Save Details"}
+              {isSavingEpisode ? "Đang lưu..." : "Lưu chi tiết"}
             </button>
             {isCreator && (
               <button
@@ -302,7 +302,7 @@ export function FinalReviewComicStep({
                 disabled={!canManageUnlockSettings || isSavingUnlockSettings}
                 className="px-6 py-2.5 bg-creator-gold text-black text-sm font-bold rounded hover:bg-creator-gold-hover shrink-0 disabled:opacity-50"
               >
-                {isSavingUnlockSettings ? "Saving Price..." : "Save Price"}
+                {isSavingUnlockSettings ? "Đang lưu giá..." : "Lưu giá"}
               </button>
             )}
           </div>
@@ -356,7 +356,7 @@ export function FinalReviewComicStep({
                 disabled={isCancelingSchedule}
                 className="w-full py-3 rounded-md text-sm font-bold bg-[#13110F] border border-red-500/50 text-red-400 hover:bg-red-500/10 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isCancelingSchedule ? "Canceling..." : <><X size={18} /> Hủy Đặt Lịch</>}
+                {isCancelingSchedule ? "Đang hủy..." : <><X size={18} /> Hủy Đặt Lịch</>}
               </button>
 
               <button
@@ -383,7 +383,7 @@ export function FinalReviewComicStep({
                 {isPublishing ? (
                   <span className="flex items-center gap-2">
                     <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></span>
-                    Publishing...
+                    Đang xuất bản...
                   </span>
                 ) : (
                   <>
@@ -425,7 +425,7 @@ export function FinalReviewComicStep({
                 disabled={isHidingEpisode}
                 className="w-full py-3 rounded-md text-sm font-bold bg-[#13110F] border border-red-500/50 text-red-400 hover:bg-red-500/10 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isHidingEpisode ? "Hiding..." : <><EyeOff size={18} /> Hide Episode</>}
+                {isHidingEpisode ? "Đang ẩn..." : <><EyeOff size={18} /> Ẩn Tập</>}
               </button>
               <button
                 onClick={onBack}
@@ -443,10 +443,15 @@ export function FinalReviewComicStep({
 
 function ComicPagePreview({ page }: { page: any }) {
   const isLocal = page.id.startsWith("LOCAL-");
+  // Trang đã "sạch" (đã qua kiểm duyệt, đang ACTIVE) thì không còn gì để hiển thị badge vi
+  // phạm — bỏ qua fetch hẳn thay vì gọi API cho MỌI trang. Với episode nhiều chục trang,
+  // tránh hàng chục query polling độc lập dồn vào BE cùng lúc trong khi phần lớn trang đã
+  // xong, chỉ những trang chưa "sạch" (đang xử lý/bị từ chối/lỗi) mới cần tiếp tục theo dõi.
+  const isClean = isMediaReadyForPublish({ status: page.status, approvalStatus: page.approvalStatus });
   const violationsQuery = useQuery({
     queryKey: ["creator-dashboard", "media-violations", page.id],
     queryFn: () => getMediaViolations(page.id),
-    enabled: !isLocal,
+    enabled: !isLocal && !isClean,
     refetchInterval: isMediaPipelinePending({
       status: page.status,
       approvalStatus: page.approvalStatus,
@@ -461,28 +466,40 @@ function ComicPagePreview({ page }: { page: any }) {
   const hasCopyrightViolations = copyrightViolations.length > 0;
   const hasCensorshipViolations = censorshipViolations.length > 0;
   const hasAnyViolations = hasCopyrightViolations || hasCensorshipViolations;
+  // Phân biệt "lỗi tải dữ liệu" với "sạch, không vi phạm" — trước đây lỗi fetch khiến
+  // violations=undefined, hiển thị y hệt trường hợp không có vi phạm gì.
+  const hasFetchError = violationsQuery.isError;
 
   return (
-    <div className={`relative overflow-hidden rounded-xl border ${hasAnyViolations ? 'border-red-500' : 'border-creator-border'} bg-creator-sidebar shadow-sm group`}>
+    <div className={`relative overflow-hidden rounded-xl border ${hasFetchError ? 'border-amber-500' : hasAnyViolations ? 'border-red-500' : 'border-creator-border'} bg-creator-sidebar shadow-sm group`}>
       <div className="relative aspect-[3/4]">
         {page.image ? (
           <img src={page.image} alt="" className="h-full w-full object-cover" />
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-creator-bg border border-creator-border text-creator-muted text-xs font-black">
-            No preview
+            Không có bản xem trước
           </div>
         )}
         <span className="absolute left-2 top-2 flex h-7 w-7 items-center justify-center rounded-lg bg-[#151A23] text-xs font-black text-white shadow-md">
           {page.displayOrder}
         </span>
 
-        {hasAnyViolations && (
+        {hasFetchError ? (
+          <div className="absolute top-2 right-2 bg-amber-500 text-white p-1.5 rounded-full shadow-lg">
+            <ShieldAlert size={16} />
+          </div>
+        ) : hasAnyViolations ? (
           <div className="absolute top-2 right-2 bg-red-500 text-white p-1.5 rounded-full shadow-lg">
             <ShieldAlert size={16} />
           </div>
-        )}
+        ) : null}
 
-        {hasAnyViolations && (
+        {hasFetchError ? (
+          <div className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity p-4 flex flex-col justify-center items-center text-center overflow-y-auto backdrop-blur-sm z-10">
+            <AlertTriangle className="text-amber-500 mb-2" size={24} />
+            <span className="text-amber-400 font-bold text-sm">Không thể tải dữ liệu kiểm duyệt</span>
+          </div>
+        ) : hasAnyViolations ? (
           <div className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity p-4 flex flex-col justify-center items-center text-center overflow-y-auto backdrop-blur-sm z-10">
             <AlertTriangle className="text-red-500 mb-2" size={24} />
             <span className="text-red-400 font-bold text-sm mb-2">Nội dung không đạt kiểm duyệt</span>
@@ -497,10 +514,10 @@ function ComicPagePreview({ page }: { page: any }) {
               </p>
             )}
           </div>
-        )}
+        ) : null}
       </div>
       <div className="p-3">
-        <p className={`truncate text-sm font-black ${hasAnyViolations ? 'text-red-400' : 'text-white'}`}>{page.title}</p>
+        <p className={`truncate text-sm font-black ${hasFetchError ? 'text-amber-400' : hasAnyViolations ? 'text-red-400' : 'text-white'}`}>{page.title}</p>
       </div>
     </div>
   );
