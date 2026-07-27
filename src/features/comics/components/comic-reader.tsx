@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -25,6 +25,7 @@ import {
   getPublicEpisodeMedia,
   getPublicEpisodes,
   getPublicEpisodeDetail,
+  getPublicSeasons,
   getPublicSeriesList,
 } from "@/features/series/api/series-api";
 import { ContentPaywallGate } from "@/features/checkout-content/components/content-paywall-gate";
@@ -112,28 +113,58 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
     enabled: !!episodeDetail?.creatorId,
   });
 
-  // Fetch danh sách series public để ghép thông tin creator (accountId, avatar, name, followers)
+  // Fetch danh sách truyện public để ghép đúng series detail của chapter hiện tại.
   const { data: publicSeriesData } = useQuery({
-    queryKey: ["publicSeriesListAll"],
-    queryFn: () => getPublicSeriesList(1, 100),
+    queryKey: ["publicComicSeriesListAll"],
+    queryFn: () => getPublicSeriesList(1, 100, "COMIC"),
     staleTime: 30 * 1000,
   });
 
+  const episodeSeriesId = useMemo(() => {
+    if (!episodeDetail) return null;
+    return "seriesId" in episodeDetail && typeof episodeDetail.seriesId === "string"
+      ? episodeDetail.seriesId
+      : null;
+  }, [episodeDetail]);
+
+  const comicSeriesCandidates = useMemo(
+    () =>
+      (publicSeriesData?.content ?? []).filter(
+        (series) => String(series.contentType).toUpperCase() === "COMIC",
+      ),
+    [publicSeriesData?.content],
+  );
+
+  const comicSeasonQueries = useQueries({
+    queries: comicSeriesCandidates.map((series) => ({
+      queryKey: ["publicComicSeriesSeasonsForReader", series.seriesId],
+      queryFn: () => getPublicSeasons(series.seriesId),
+      enabled: Boolean(episodeDetail?.seasonId && !episodeSeriesId),
+      staleTime: 60 * 1000,
+    })),
+  });
+
   const matchedSeries = useMemo(() => {
-    if (!episodeDetail || !publicSeriesData?.content) return null;
-    const episodeSeriesId =
-      "seriesId" in episodeDetail && typeof episodeDetail.seriesId === "string"
-        ? episodeDetail.seriesId
-        : null;
-    return (
-      publicSeriesData.content.find(
-        (s) =>
-          s.creatorId === episodeDetail.creatorId ||
-          s.seriesId === episodeSeriesId ||
-          (s.creatorName && s.creatorName === episodeDetail.createdBy),
-      ) || null
+    if (!episodeDetail) return null;
+
+    if (episodeSeriesId) {
+      const exactSeries = comicSeriesCandidates.find(
+        (series) => series.seriesId === episodeSeriesId,
+      );
+
+      if (exactSeries) {
+        return exactSeries;
+      }
+    }
+
+    const seriesIndexBySeason = comicSeasonQueries.findIndex((query) =>
+      query.data?.some((season) => season.seasonId === episodeDetail.seasonId),
     );
-  }, [episodeDetail, publicSeriesData]);
+
+    return seriesIndexBySeason >= 0
+      ? comicSeriesCandidates[seriesIndexBySeason]
+      : null;
+  }, [comicSeasonQueries, comicSeriesCandidates, episodeDetail, episodeSeriesId]);
 
   const creatorAccountId =
     creatorDetail?.accountId ||
@@ -318,7 +349,7 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
 
   const seriesDetailHref = matchedSeries?.seriesId
     ? `/series/${matchedSeries.seriesId}#episodes`
-    : "/series";
+    : "/comics";
   const navigationProgress =
     readingMode === "horizontal" && totalPages > 0
       ? ((currentPage + 1) / totalPages) * 100
