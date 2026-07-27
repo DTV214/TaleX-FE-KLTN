@@ -68,7 +68,7 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
   const viewerId = authUser?.accountId;
 
   // Fetch thông tin chi tiết tập truyện
-  const { data: episodeDetail } = useQuery({
+  const { data: episodeDetail, refetch: refetchEpisodeDetail } = useQuery({
     queryKey: ["publicEpisodeDetail", episodeId],
     queryFn: () => getPublicEpisodeDetail(episodeId),
     enabled: !!episodeId,
@@ -185,6 +185,7 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
     data: mediaPages,
     isLoading: isPagesLoading,
     isError: isPagesError,
+    refetch: refetchMediaPages,
   } = useQuery({
     queryKey: ["publicEpisodeMedia", episodeId, viewerId ?? "anonymous"],
     queryFn: () => getPublicEpisodeMedia(episodeId, viewerId),
@@ -307,6 +308,13 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
   const handleZoomIn = () => setZoom((z) => Math.min(z + 20, 200));
   const handleZoomOut = () => setZoom((z) => Math.max(z - 20, 60));
   const handleZoomReset = () => setZoom(100);
+  const handleReloadChapter = () => {
+    setCurrentPage(0);
+    setReadingProgress(0);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    void refetchEpisodeDetail();
+    void refetchMediaPages();
+  };
 
   const seriesDetailHref = matchedSeries?.seriesId
     ? `/series/${matchedSeries.seriesId}#episodes`
@@ -340,9 +348,9 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
         </Link>
         <button
           type="button"
-          onClick={() => router.back()}
+          onClick={handleReloadChapter}
           className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-[#D4AF37] transition hover:bg-white/10 hover:text-[#E5C158]"
-          title="Quay lại"
+          title="Tải lại truyện"
         >
           <RotateCcw className="h-4 w-4" />
         </button>

@@ -1,55 +1,118 @@
 "use client";
 
-import { useState, MouseEvent } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { motion, AnimatePresence, useMotionTemplate, useMotionValue } from "framer-motion";
+import { motion } from "framer-motion";
+import Link from "next/link";
 import {
+  AlertCircle,
+  Bookmark,
   ChevronLeft,
   ChevronRight,
-  Film,
   Eye,
-  Users,
-  AlertCircle,
+  Film,
   HelpCircle,
   Play,
   Sparkles,
+  Star,
+  Users,
 } from "lucide-react";
-import { getPublicSeriesList } from "../api/series-api";
-import Link from "next/link";
-import { AdSlot } from "@/shared/ui/ad-slot";
+import {
+  getPublicSeriesList,
+  type PublicSeriesItem,
+} from "../api/series-api";
+
+type MockShelfItem = {
+  title: string;
+  episode: string;
+  image: string;
+};
+
+const recommendedVideos: MockShelfItem[] = [
+  {
+    title: "Người Gác Cổng Sao Băng",
+    episode: "Tập mới nhất",
+    image:
+      "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=900&auto=format&fit=crop",
+  },
+  {
+    title: "Học Viện Sau Hoàng Hôn",
+    episode: "Tập 12",
+    image:
+      "https://images.unsplash.com/photo-1518676590629-3dcbd9c5a5c9?q=80&w=900&auto=format&fit=crop",
+  },
+  {
+    title: "Thợ Săn Vực Sâu",
+    episode: "Tập 8",
+    image:
+      "https://images.unsplash.com/photo-1520509414578-d9cbf09933a1?q=80&w=900&auto=format&fit=crop",
+  },
+  {
+    title: "Đô Thị Neon",
+    episode: "Tập 21",
+    image:
+      "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=900&auto=format&fit=crop",
+  },
+  {
+    title: "Bản Giao Hưởng Hư Không",
+    episode: "Tập 4",
+    image:
+      "https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=900&auto=format&fit=crop",
+  },
+];
+
+const watchHistory: MockShelfItem[] = [
+  {
+    title: "Akdong Musician: Live Session",
+    episode: "Xem tiếp Tập 2",
+    image:
+      "https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?q=80&w=500&auto=format&fit=crop",
+  },
+  {
+    title: "Nắng Dâu Của Thiên Cung",
+    episode: "Xem tiếp Tập 6",
+    image:
+      "https://images.unsplash.com/photo-1518895949257-7621c3c786d7?q=80&w=500&auto=format&fit=crop",
+  },
+];
+
+const topVideos: MockShelfItem[] = [
+  ...recommendedVideos,
+  {
+    title: "Thiên Hà Đổ Lửa",
+    episode: "Tập 19",
+    image:
+      "https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=500&auto=format&fit=crop",
+  },
+  {
+    title: "Huyết Nguyệt Cổ Thành",
+    episode: "Tập 31",
+    image:
+      "https://images.unsplash.com/photo-1518709268805-4e9042af2176?q=80&w=500&auto=format&fit=crop",
+  },
+];
+
+function getHeroImage(item?: PublicSeriesItem) {
+  return (
+    item?.bannerUrl ||
+    item?.coverUrl ||
+    "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=1800&auto=format&fit=crop"
+  );
+}
 
 export function SeriesList() {
   const [page, setPage] = useState(1);
   const [pageSize] = useState(12);
 
-  // Chuỗi theo dõi tọa độ chuột cho hiệu ứng Spotlight trên toàn Grid
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
-
-  const spotlightBackground = useMotionTemplate`
-    radial-gradient(
-      550px circle at ${mouseX}px ${mouseY}px,
-      rgba(214, 175, 55, 0.04),
-      transparent 80%
-    )
-  `;
-
-  function handleMouseMove({ currentTarget, clientX, clientY }: MouseEvent) {
-    const { left, top } = currentTarget.getBoundingClientRect();
-    mouseX.set(clientX - left);
-    mouseY.set(clientY - top);
-  }
-
-  // Gọi API lấy danh sách phim bộ ("VIDEO")
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["publicMovieSeries", page, pageSize],
     queryFn: () => getPublicSeriesList(page, pageSize, "VIDEO"),
   });
 
-  // Lọc client-side thêm lần nữa để đảm bảo chỉ hiện VIDEO
   const seriesItems = (data?.content || []).filter(
-    (item) => item.contentType?.toUpperCase() === "VIDEO"
+    (item) => item.contentType?.toUpperCase() === "VIDEO",
   );
+  const featuredMovie = seriesItems[0];
   const totalPages = data?.totalPages || 1;
   const isFirst = data?.isFirst ?? true;
   const isLast = data?.isLast ?? true;
@@ -69,218 +132,385 @@ export function SeriesList() {
   };
 
   return (
-    <div className="w-full min-h-screen bg-[#060607] text-gray-100 antialiased selection:bg-[#D4AF37]/30 selection:text-white">
-      
-      {/* 1. Phần tiêu đề đề mục nhỏ gọn nhưng sang trọng */}
-      <div className="container mx-auto px-4 md:px-8 pt-10 pb-2">
-        <div className="flex items-center gap-2.5 text-xs font-bold tracking-[0.2em] text-[#D4AF37] uppercase">
-          <Sparkles className="w-3.5 h-3.5 animate-pulse" />
-          <span>Khám Phá Điện Ảnh</span>
-        </div>
-        <h1 className="text-2xl md:text-3xl font-black text-white mt-1 tracking-tight">
-          Danh Sách Phim Đặc Sắc
-        </h1>
+    <div className="min-h-screen bg-[#060607] pb-20 text-gray-100 antialiased">
+      <div className="container mx-auto space-y-10 px-4 pt-8 md:px-8">
+        {featuredMovie && (
+          <FeaturedBanner
+            item={featuredMovie}
+            label="Cập nhật mới"
+            primaryLabel="Xem ngay"
+          />
+        )}
+
+        <RecommendedCarousel title="Video đề cử" items={recommendedVideos} />
+
+        <section className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_360px]">
+          <div className="min-w-0">
+            <SectionTitle eyebrow="Khám phá điện ảnh" title="Danh Sách Phim Đặc Sắc" />
+
+            {isLoading && <ListSkeleton />}
+            {isError && (
+              <ErrorState
+                message={
+                  error instanceof Error
+                    ? error.message
+                    : "Hệ thống gặp sự cố nhỏ, vui lòng thử lại."
+                }
+                onRetry={() => refetch()}
+              />
+            )}
+
+            {!isLoading && !isError && (
+              <>
+                {seriesItems.length === 0 ? (
+                  <EmptyState title="Kho phim trống" />
+                ) : (
+                  <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
+                    {seriesItems.map((movie) => (
+                      <CatalogCard
+                        key={movie.seriesId}
+                        item={movie}
+                        latestLabel="Tập mới nhất"
+                      />
+                    ))}
+                  </div>
+                )}
+
+                <Pagination
+                  page={page}
+                  totalPages={totalPages}
+                  isFirst={isFirst}
+                  isLast={isLast}
+                  onPageChange={setPage}
+                  onPrev={handlePrevPage}
+                  onNext={handleNextPage}
+                />
+              </>
+            )}
+          </div>
+
+          <CatalogSidebar history={watchHistory} topItems={topVideos} />
+        </section>
       </div>
+    </div>
+  );
+}
 
-      {/* Main Movie Section */}
-      <section className="container mx-auto px-4 md:px-8 pb-16 pt-6">
-        <AdSlot slotId="mock-series-top" format="horizontal" className="mb-8" />
-        
-        {/* TRẠNG THÁI LOADING */}
-        {isLoading && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-4 gap-6 md:gap-8">
-            {Array.from({ length: 8 }).map((_, idx) => (
-              <div key={idx} className="flex flex-col space-y-4">
-                <div className="aspect-[2/3] w-full rounded-2xl bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/[0.04] relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_2s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/[0.03] before:to-transparent" />
-                <div className="h-5 bg-white/[0.03] rounded-md w-5/6" />
-                <div className="h-4 bg-white/[0.03] rounded-md w-2/3" />
-              </div>
-            ))}
-          </div>
-        )}
+function FeaturedBanner({
+  item,
+  label,
+  primaryLabel,
+}: {
+  item: PublicSeriesItem;
+  label: string;
+  primaryLabel: string;
+}) {
+  return (
+    <section className="relative min-h-[460px] overflow-hidden rounded-3xl border border-white/10 bg-[#121214] shadow-[0_24px_80px_rgba(0,0,0,0.4)]">
+      <div
+        className="absolute inset-0 bg-cover bg-center"
+        style={{ backgroundImage: `url(${getHeroImage(item)})` }}
+      />
+      <div className="absolute inset-0 bg-gradient-to-r from-[#0B0B0C] via-[#0B0B0C]/85 to-[#0B0B0C]/35" />
+      <div className="absolute inset-0 bg-gradient-to-t from-[#0B0B0C] via-transparent to-transparent" />
 
-        {/* TRẠNG THÁI LỖI */}
-        {isError && (
-          <div className="py-24 text-center max-w-md mx-auto">
-            <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center text-red-400 mx-auto mb-6 border border-red-500/20">
-              <AlertCircle className="w-6 h-6" />
-            </div>
-            <h3 className="text-xl font-bold mb-2 text-white">Không thể tải danh sách</h3>
-            <p className="text-gray-400 text-sm mb-6">
-              {error instanceof Error ? error.message : "Hệ thống gặp sự cố nhỏ, vui lòng thử lại."}
-            </p>
-            <button
-              onClick={() => refetch()}
-              className="px-6 py-2.5 bg-gradient-to-r from-white to-gray-200 text-black font-semibold rounded-xl hover:shadow-[0_0_30px_rgba(255,255,255,0.15)] transition-all"
+      <div className="relative z-10 flex min-h-[460px] max-w-3xl flex-col justify-center px-6 py-12 md:px-12">
+        <span className="mb-5 inline-flex w-fit rounded-full border border-[#D4AF37]/40 bg-[#D4AF37]/10 px-4 py-2 text-xs font-black uppercase tracking-[0.24em] text-[#D4AF37]">
+          {label}
+        </span>
+        <h1 className="font-heading text-4xl font-extrabold leading-none text-white md:text-6xl">
+          {item.title}
+        </h1>
+        <p className="mt-5 line-clamp-3 max-w-2xl text-sm font-medium leading-relaxed text-white/68 md:text-base">
+          {item.description || "Bộ phim mới nhất vừa được cập nhật trên TaleX."}
+        </p>
+        <div className="mt-5 flex flex-wrap items-center gap-4 text-sm font-bold text-white/70">
+          <span className="inline-flex items-center gap-2">
+            <Eye className="h-4 w-4 text-[#D4AF37]" />
+            {item.totalViews.toLocaleString("vi-VN")} lượt xem
+          </span>
+          <span className="inline-flex items-center gap-2">
+            <Star className="h-4 w-4 fill-[#D4AF37] text-[#D4AF37]" />
+            4.9
+          </span>
+          <span className="rounded-full bg-white/10 px-3 py-1 text-xs uppercase tracking-widest">
+            Tập mới nhất
+          </span>
+        </div>
+        <div className="mt-8 flex flex-wrap gap-3">
+          <Link
+            href={`/series/${item.seriesId}`}
+            className="inline-flex items-center gap-2 rounded-xl bg-[#D4AF37] px-6 py-3 text-sm font-black text-black transition hover:bg-[#E5C158]"
+          >
+            <Play className="h-5 w-5 fill-black" />
+            {primaryLabel}
+          </Link>
+          <Link
+            href="/bookmarks"
+            className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/10 px-6 py-3 text-sm font-black text-white transition hover:bg-white/15"
+          >
+            <Bookmark className="h-5 w-5" />
+            Bookmark
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function RecommendedCarousel({ title, items }: { title: string; items: MockShelfItem[] }) {
+  const loopItems = [...items, ...items];
+
+  return (
+    <section className="space-y-4">
+      <SectionTitle eyebrow="TaleX đề cử" title={title} compact />
+      <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#101014] p-3">
+        <motion.div
+          className="flex w-max gap-3"
+          animate={{ x: ["0%", "-50%"] }}
+          transition={{ duration: 26, ease: "linear", repeat: Infinity }}
+        >
+          {loopItems.map((item, index) => (
+            <div
+              key={`${item.title}-${index}`}
+              className="relative h-44 w-72 shrink-0 overflow-hidden rounded-xl bg-white/5"
             >
-              Thử lại ngay
-            </button>
-          </div>
-        )}
-
-        {/* DANH SÁCH PHIM CHÍNH */}
-        {!isLoading && !isError && (
-          <>
-            {seriesItems.length === 0 ? (
-              <div className="py-32 text-center max-w-md mx-auto">
-                <div className="w-16 h-16 rounded-full bg-white/[0.02] border border-white/[0.06] flex items-center justify-center text-gray-500 mx-auto mb-6">
-                  <HelpCircle className="w-6 h-6" />
-                </div>
-                <h3 className="text-lg font-bold mb-2 text-white">Kho phim trống</h3>
-                <p className="text-gray-400 text-sm leading-relaxed">
-                  Hiện tại danh mục chưa cập nhật nội dung. Vui lòng quay lại sau!
+              <div
+                className="absolute inset-0 bg-cover bg-center"
+                style={{ backgroundImage: `url(${item.image})` }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 p-4">
+                <p className="line-clamp-1 text-base font-black text-white">
+                  {item.title}
+                </p>
+                <p className="mt-1 text-sm font-bold text-[#D4AF37]">
+                  {item.episode}
                 </p>
               </div>
-            ) : (
-              /* Grid bọc ngoài tích hợp hiệu ứng Spotlight Chuột */
-              <div 
-                onMouseMove={handleMouseMove}
-                className="relative group/grid grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-4 gap-6 md:gap-8"
-              >
-                {/* Lớp ánh sáng chạy theo chuột (Ẩn trên thiết bị cảm ứng di động) */}
-                <motion.div
-                  className="pointer-events-none absolute -inset-px rounded-xl opacity-0 group-hover/grid:opacity-100 transition duration-500 hidden md:block z-0"
-                  style={{
-                    background: spotlightBackground,
-                  }}
-                />
+            </div>
+          ))}
+        </motion.div>
+      </div>
+    </section>
+  );
+}
 
-                <AnimatePresence mode="popLayout">
-                  {seriesItems.map((movie) => (
-                    <motion.div
-                      key={movie.seriesId}
-                      variants={{
-                        hidden: { opacity: 0, y: 24 },
-                        visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.215, 0.61, 0.355, 1] } },
-                      }}
-                      className="group flex flex-col relative z-10"
-                    >
-                      <Link
-                        href={`/series/${movie.seriesId}`}
-                        className="relative block w-full cursor-pointer"
-                      >
-                        {/* Poster cao cấp ứng dụng zoom và trượt nút Play */}
-                        <div className="relative aspect-[2/3] w-full rounded-2xl overflow-hidden bg-[#121214] mb-4 border border-white/[0.06] group-hover:border-[#D4AF37]/50 shadow-2xl transition-all duration-500 group-hover:scale-[1.01] group-hover:shadow-[0_20px_40px_rgba(0,0,0,0.7)]">
-                          
-                          {/* Ảnh nền */}
-                          {movie.coverUrl ? (
-                            <div
-                              className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 ease-[cubic-bezier(0.25,1,0.5,1)] group-hover:scale-110 group-hover:blur-[1px]"
-                              style={{ backgroundImage: `url(${movie.coverUrl})` }}
-                            />
-                          ) : (
-                            <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-white/[0.06] flex flex-col items-center justify-center p-4 text-center">
-                              <Film className="w-9 h-9 text-gray-600 mb-2" />
-                              <span className="text-[11px] text-gray-500">No Poster Available</span>
-                            </div>
-                          )}
-
-                          {/* Lớp Overlay Đen Điện Ảnh sâu hơn */}
-                          <div className="absolute inset-0 bg-gradient-to-t from-[#060607] via-black/10 to-transparent opacity-80 group-hover:opacity-85 transition-opacity duration-300" />
-                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-300" />
-
-                          {/* ĐẶC SẮC: Nút Play tròn xuất hiện mượt mà ở chính giữa khi Hover */}
-                          <div className="absolute inset-0 flex items-center justify-center opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]">
-                            <div className="w-14 h-14 rounded-full bg-[#D4AF37] text-black flex items-center justify-center shadow-[0_0_30px_rgba(212,175,55,0.5)] transform group-hover:rotate-12 transition-transform duration-500">
-                              <Play className="w-6 h-6 fill-black ml-0.5" />
-                            </div>
-                          </div>
-
-                          {/* Gắn nhãn phân loại tuổi ở góc */}
-                          {movie.ageRating && (
-                            <div className="absolute top-3.5 left-3.5 z-10">
-                              <span className="px-2 py-0.5 rounded-md text-[10px] font-black tracking-wider uppercase bg-black/70 border border-white/[0.12] text-[#D4AF37] backdrop-blur-md">
-                                {movie.ageRating}
-                              </span>
-                            </div>
-                          )}
-
-                          {/* Thanh thống kê tối giản kết hợp kính mờ (Glassmorphism) */}
-                          <div className="absolute bottom-3.5 left-3.5 right-3.5 flex items-center justify-between text-[10px] text-gray-200 font-bold tracking-wider z-10 opacity-100 group-hover:opacity-0 transition-opacity duration-200">
-                            <span className="flex items-center gap-1.5 bg-black/50 backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/[0.06]">
-                              <Eye className="w-3 h-3 text-[#D4AF37]" /> {movie.totalViews.toLocaleString("vi-VN")}
-                            </span>
-                            <span className="flex items-center gap-1.5 bg-black/50 backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/[0.06]">
-                              <Users className="w-3 h-3 text-[#D4AF37]" /> {movie.totalSubscriptions.toLocaleString("vi-VN")}
-                            </span>
-                          </div>
-                        </div>
-
-                         {/* Tiêu đề và Mô tả được tối ưu hóa hiển thị */}
-                        <div className="px-1.5 transform transition-transform duration-300 group-hover:translate-x-1">
-                          <div className="flex items-center gap-2">
-                            <Film className="w-3.5 h-3.5 text-gray-500 group-hover:text-[#D4AF37] flex-shrink-0 transition-colors" />
-                            <h2 className="text-gray-100 font-extrabold text-base md:text-lg line-clamp-1 group-hover:text-[#D4AF37] transition-colors duration-300 tracking-tight">
-                              {movie.title}
-                            </h2>
-                          </div>
-                          {movie.creatorName && (
-                            <p className="text-[11px] font-bold text-[#D4AF37]/90 mt-1 uppercase tracking-wider">
-                              Tác giả: {movie.creatorName}
-                            </p>
-                          )}
-                          <p className="text-gray-400 text-xs md:text-sm mt-1.5 line-clamp-2 leading-relaxed font-normal opacity-80 group-hover:opacity-100 transition-opacity">
-                            {movie.description || "Bấm để xem thông tin chi tiết và lịch chiếu của bộ phim này trên hệ thống."}
-                          </p>
-                        </div>
-                      </Link>
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-              </div>
-            )}
-
-            {/* 4. Bộ phân trang tinh gọn cao cấp */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-3 mt-20 border-t border-white/[0.04] pt-10">
-                <button
-                  onClick={handlePrevPage}
-                  disabled={isFirst}
-                  className="flex items-center justify-center w-11 h-11 rounded-xl bg-white/[0.01] border border-white/[0.06] text-white transition-all hover:bg-white/[0.05] hover:border-[#D4AF37]/30 disabled:opacity-20 disabled:pointer-events-none active:scale-90"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-
-                <div className="flex items-center gap-2">
-                  {Array.from({ length: totalPages }).map((_, idx) => {
-                    const pageIndex = idx + 1;
-                    const isCurrent = page === pageIndex;
-
-                    if (totalPages > 6 && Math.abs(page - pageIndex) > 2 && pageIndex !== 1 && pageIndex !== totalPages) {
-                      if (pageIndex === 2 || pageIndex === totalPages - 1) {
-                        return <span key={pageIndex} className="text-gray-600 px-1 select-none">...</span>;
-                      }
-                      return null;
-                    }
-
-                    return (
-                      <button
-                        key={pageIndex}
-                        onClick={() => setPage(pageIndex)}
-                        className={`w-11 h-11 rounded-xl text-sm font-black transition-all duration-300 ${
-                          isCurrent
-                            ? "bg-[#D4AF37] text-black shadow-[0_0_25px_rgba(212,175,55,0.4)] scale-105"
-                            : "bg-white/[0.01] border border-white/[0.05] text-gray-400 hover:text-white hover:border-white/20 hover:bg-white/[0.03]"
-                        }`}
-                      >
-                        {pageIndex}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <button
-                  onClick={handleNextPage}
-                  disabled={isLast}
-                  className="flex items-center justify-center w-11 h-11 rounded-xl bg-white/[0.01] border border-white/[0.06] text-white transition-all hover:bg-white/[0.05] hover:border-[#D4AF37]/30 disabled:opacity-20 disabled:pointer-events-none active:scale-90"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            )}
-          </>
+function CatalogCard({
+  item,
+  latestLabel,
+}: {
+  item: PublicSeriesItem;
+  latestLabel: string;
+}) {
+  return (
+    <Link href={`/series/${item.seriesId}`} className="group block min-w-0">
+      <div className="relative aspect-[2/3] overflow-hidden rounded-2xl border border-white/[0.06] bg-[#121214] shadow-2xl transition-all duration-500 group-hover:scale-[1.01] group-hover:border-[#D4AF37]/50">
+        {item.coverUrl ? (
+          <div
+            className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110"
+            style={{ backgroundImage: `url(${item.coverUrl})` }}
+          />
+        ) : (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-white/[0.02] to-white/[0.06] text-center">
+            <Film className="mb-2 h-9 w-9 text-white/25" />
+            <span className="text-[11px] text-white/35">No Poster Available</span>
+          </div>
         )}
-      </section>
+        <div className="absolute inset-0 bg-gradient-to-t from-[#060607] via-black/10 to-transparent" />
+        <div className="absolute left-3 top-3 rounded-md bg-black/70 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-[#D4AF37]">
+          {item.ageRating || "EVERYONE"}
+        </div>
+        <div className="absolute inset-0 flex scale-75 items-center justify-center opacity-0 transition-all duration-300 group-hover:scale-100 group-hover:opacity-100">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#D4AF37] text-black shadow-[0_0_30px_rgba(212,175,55,0.5)]">
+            <Play className="ml-0.5 h-6 w-6 fill-black" />
+          </div>
+        </div>
+        <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-[10px] font-bold text-white/80">
+          <span className="rounded-lg bg-black/55 px-2 py-1 backdrop-blur">
+            <Eye className="mr-1 inline h-3 w-3 text-[#D4AF37]" />
+            {item.totalViews.toLocaleString("vi-VN")}
+          </span>
+          <span className="rounded-lg bg-black/55 px-2 py-1 backdrop-blur">
+            <Users className="mr-1 inline h-3 w-3 text-[#D4AF37]" />
+            {item.totalSubscriptions.toLocaleString("vi-VN")}
+          </span>
+        </div>
+      </div>
+      <h3 className="mt-3 line-clamp-1 text-base font-black text-white group-hover:text-[#D4AF37]">
+        {item.title}
+      </h3>
+      <p className="mt-1 text-sm font-bold text-white/70">{latestLabel}</p>
+      <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-white/45">
+        {item.description || "Bấm để xem thông tin chi tiết và tập mới nhất."}
+      </p>
+    </Link>
+  );
+}
+
+function CatalogSidebar({
+  history,
+  topItems,
+}: {
+  history: MockShelfItem[];
+  topItems: MockShelfItem[];
+}) {
+  return (
+    <aside className="space-y-6 xl:sticky xl:top-24 xl:self-start">
+      <div className="rounded-2xl border border-white/10 bg-[#121214] p-5">
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-lg font-black text-white">Lịch sử xem</h3>
+          <Link href="/history" prefetch={false} className="text-sm font-bold text-[#D4AF37]">
+            Xem tất cả
+          </Link>
+        </div>
+        <div className="space-y-4">
+          {history.map((item) => (
+            <MockSideItem key={item.title} item={item} />
+          ))}
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-white/10 bg-[#121214] p-5">
+        <div className="mb-4 grid grid-cols-3 overflow-hidden rounded-xl border border-white/10 text-center text-sm font-black">
+          <span className="bg-[#D4AF37] py-2 text-black">Top tháng</span>
+          <span className="bg-white/[0.04] py-2 text-white/60">Top tuần</span>
+          <span className="bg-white/[0.04] py-2 text-white/60">Top ngày</span>
+        </div>
+        <div className="space-y-3">
+          {topItems.slice(0, 7).map((item, index) => (
+            <div key={item.title} className="flex items-center gap-3">
+              <span className="w-8 text-center text-xl font-black text-[#D4AF37]/80">
+                {String(index + 1).padStart(2, "0")}
+              </span>
+              <MockSideItem item={item} compact />
+            </div>
+          ))}
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+function MockSideItem({ item, compact = false }: { item: MockShelfItem; compact?: boolean }) {
+  return (
+    <div className="flex min-w-0 gap-3">
+      <div
+        className={`${compact ? "h-14 w-14" : "h-16 w-20"} shrink-0 rounded-lg bg-cover bg-center`}
+        style={{ backgroundImage: `url(${item.image})` }}
+      />
+      <div className="min-w-0 flex-1">
+        <p className="line-clamp-2 text-sm font-bold text-white">{item.title}</p>
+        <p className="mt-1 text-xs font-semibold text-white/45">{item.episode}</p>
+      </div>
+    </div>
+  );
+}
+
+function SectionTitle({
+  eyebrow,
+  title,
+  compact = false,
+}: {
+  eyebrow: string;
+  title: string;
+  compact?: boolean;
+}) {
+  return (
+    <div className={compact ? "" : "mb-6"}>
+      <p className="mb-1 flex items-center gap-2 text-xs font-black uppercase tracking-[0.2em] text-[#D4AF37]">
+        <Sparkles className="h-3.5 w-3.5" />
+        {eyebrow}
+      </p>
+      <h2 className="font-heading text-2xl font-black text-white md:text-3xl">
+        {title}
+      </h2>
+    </div>
+  );
+}
+
+function ListSkeleton() {
+  return (
+    <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
+      {Array.from({ length: 8 }).map((_, idx) => (
+        <div key={idx} className="space-y-3">
+          <div className="aspect-[2/3] rounded-2xl bg-white/[0.04]" />
+          <div className="h-4 w-4/5 rounded bg-white/[0.04]" />
+          <div className="h-3 w-2/3 rounded bg-white/[0.04]" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function EmptyState({ title }: { title: string }) {
+  return (
+    <div className="py-24 text-center">
+      <HelpCircle className="mx-auto mb-4 h-10 w-10 text-white/25" />
+      <h3 className="text-lg font-bold text-white">{title}</h3>
+    </div>
+  );
+}
+
+function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div className="mx-auto max-w-md py-24 text-center">
+      <AlertCircle className="mx-auto mb-4 h-10 w-10 text-red-400" />
+      <h3 className="mb-2 text-xl font-bold text-white">Không thể tải danh sách</h3>
+      <p className="mb-6 text-sm text-white/55">{message}</p>
+      <button
+        onClick={onRetry}
+        className="rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-black"
+      >
+        Thử lại
+      </button>
+    </div>
+  );
+}
+
+function Pagination({
+  page,
+  totalPages,
+  isFirst,
+  isLast,
+  onPageChange,
+  onPrev,
+  onNext,
+}: {
+  page: number;
+  totalPages: number;
+  isFirst: boolean;
+  isLast: boolean;
+  onPageChange: (page: number) => void;
+  onPrev: () => void;
+  onNext: () => void;
+}) {
+  if (totalPages <= 1) return null;
+
+  return (
+    <div className="mt-14 flex items-center justify-center gap-3 border-t border-white/[0.06] pt-8">
+      <button onClick={onPrev} disabled={isFirst} className="h-10 w-10 rounded-xl border border-white/10 text-white disabled:opacity-25">
+        <ChevronLeft className="mx-auto h-4 w-4" />
+      </button>
+      {Array.from({ length: totalPages }).map((_, idx) => {
+        const pageIndex = idx + 1;
+        return (
+          <button
+            key={pageIndex}
+            onClick={() => onPageChange(pageIndex)}
+            className={`h-10 w-10 rounded-xl text-sm font-black ${
+              page === pageIndex
+                ? "bg-[#D4AF37] text-black"
+                : "border border-white/10 bg-white/[0.02] text-white/55"
+            }`}
+          >
+            {pageIndex}
+          </button>
+        );
+      })}
+      <button onClick={onNext} disabled={isLast} className="h-10 w-10 rounded-xl border border-white/10 text-white disabled:opacity-25">
+        <ChevronRight className="mx-auto h-4 w-4" />
+      </button>
     </div>
   );
 }

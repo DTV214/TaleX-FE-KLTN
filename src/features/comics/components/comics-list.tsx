@@ -1,53 +1,117 @@
 "use client";
 
-import { useState, MouseEvent } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { motion, AnimatePresence, useMotionTemplate, useMotionValue } from "framer-motion";
+import { motion } from "framer-motion";
+import Link from "next/link";
 import {
+  AlertCircle,
+  BookOpen,
+  Bookmark,
   ChevronLeft,
   ChevronRight,
-  BookOpen,
   Eye,
-  Users,
-  AlertCircle,
   HelpCircle,
-  BookOpenCheck,
   Sparkles,
+  Star,
+  Users,
 } from "lucide-react";
-import { getPublicSeriesList } from "@/features/series/api/series-api";
-import Link from "next/link";
+import {
+  getPublicSeriesList,
+  type PublicSeriesItem,
+} from "@/features/series/api/series-api";
+
+type MockShelfItem = {
+  title: string;
+  chapter: string;
+  image: string;
+};
+
+const recommendedComics: MockShelfItem[] = [
+  {
+    title: "Vạn Cổ Chí Tôn",
+    chapter: "Chapter 546",
+    image:
+      "https://images.unsplash.com/photo-1612036782180-6f0b6cd846fe?q=80&w=900&auto=format&fit=crop",
+  },
+  {
+    title: "Quỷ Tiến Hóa",
+    chapter: "Chapter 151",
+    image:
+      "https://images.unsplash.com/photo-1634986666676-ec8fd927c23d?q=80&w=900&auto=format&fit=crop",
+  },
+  {
+    title: "Cầm Kiếm Tuyệt Đối",
+    chapter: "Chapter 193",
+    image:
+      "https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=900&auto=format&fit=crop",
+  },
+  {
+    title: "Đại Phụng Đả Canh Nhân",
+    chapter: "Chapter 661",
+    image:
+      "https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=900&auto=format&fit=crop",
+  },
+  {
+    title: "Ta Là Tà Đế",
+    chapter: "Chapter 570",
+    image:
+      "https://images.unsplash.com/photo-1519608487953-e999c86e7455?q=80&w=900&auto=format&fit=crop",
+  },
+];
+
+const readingHistory: MockShelfItem[] = [
+  {
+    title: "Thiên Tài Võ Học Kẻ Nhớ Hết Tất Cả",
+    chapter: "Đọc tiếp Chapter 1",
+    image:
+      "https://images.unsplash.com/photo-1518709268805-4e9042af2176?q=80&w=500&auto=format&fit=crop",
+  },
+  {
+    title: "Haimiya-Senpai Wa Kowakute",
+    chapter: "Đọc tiếp Chapter 12",
+    image:
+      "https://images.unsplash.com/photo-1518791841217-8f162f1e1131?q=80&w=500&auto=format&fit=crop",
+  },
+];
+
+const topComics: MockShelfItem[] = [
+  ...recommendedComics,
+  {
+    title: "Tinh Giáp Hồn Tướng",
+    chapter: "Chapter 388",
+    image:
+      "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=500&auto=format&fit=crop",
+  },
+  {
+    title: "Bách Luyện Thành Thần",
+    chapter: "Chapter 1295",
+    image:
+      "https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=500&auto=format&fit=crop",
+  },
+];
+
+function getCover(item?: PublicSeriesItem) {
+  return (
+    item?.bannerUrl ||
+    item?.coverUrl ||
+    "https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=1800&auto=format&fit=crop"
+  );
+}
 
 export function ComicsList() {
   const [page, setPage] = useState(1);
   const [pageSize] = useState(12);
 
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
-
-  const spotlightBackground = useMotionTemplate`
-    radial-gradient(
-      550px circle at ${mouseX}px ${mouseY}px,
-      rgba(59, 130, 246, 0.04),
-      transparent 80%
-    )
-  `;
-
-  function handleMouseMove({ currentTarget, clientX, clientY }: MouseEvent) {
-    const { left, top } = currentTarget.getBoundingClientRect();
-    mouseX.set(clientX - left);
-    mouseY.set(clientY - top);
-  }
-
-  // Gọi API lấy danh sách truyện tranh ("COMIC")
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["publicComicSeries", page, pageSize],
     queryFn: () => getPublicSeriesList(page, pageSize, "COMIC"),
   });
 
-  // Lọc client-side thêm lần nữa để đảm bảo chỉ hiện COMIC
   const comicItems = (data?.content || []).filter(
-    (item) => item.contentType?.toUpperCase() === "COMIC"
+    (item) => item.contentType?.toUpperCase() === "COMIC",
   );
+  const featuredComic = comicItems[0];
   const totalPages = data?.totalPages || 1;
   const isFirst = data?.isFirst ?? true;
   const isLast = data?.isLast ?? true;
@@ -67,218 +131,397 @@ export function ComicsList() {
   };
 
   return (
-    <div className="w-full min-h-screen bg-[#060607] text-gray-100 antialiased selection:bg-blue-500/30 selection:text-white">
+    <div className="min-h-screen bg-[#060607] pb-20 text-gray-100 antialiased">
+      <div className="container mx-auto space-y-10 px-4 pt-8 md:px-8">
+        {featuredComic && (
+          <FeaturedBanner
+            item={featuredComic}
+            label="Cập nhật mới"
+            primaryLabel="Đọc ngay"
+          />
+        )}
 
-      {/* Tiêu đề */}
-      <div className="container mx-auto px-4 md:px-8 pt-10 pb-2">
-        <div className="flex items-center gap-2.5 text-xs font-bold tracking-[0.2em] text-blue-400 uppercase">
-          <Sparkles className="w-3.5 h-3.5 animate-pulse" />
-          <span>Khám Phá Truyện Tranh</span>
-        </div>
-        <h1 className="text-2xl md:text-3xl font-black text-white mt-1 tracking-tight">
-          Danh Sách Truyện Tranh
-        </h1>
+        <RecommendedCarousel title="Truyện tranh đề cử" items={recommendedComics} />
+
+        <section className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_360px]">
+          <div className="min-w-0">
+            <SectionTitle eyebrow="Khám phá truyện tranh" title="Danh Sách Truyện Tranh" />
+
+            {isLoading && <ListSkeleton />}
+            {isError && (
+              <ErrorState
+                message={
+                  error instanceof Error
+                    ? error.message
+                    : "Hệ thống gặp sự cố nhỏ, vui lòng thử lại."
+                }
+                onRetry={() => refetch()}
+              />
+            )}
+
+            {!isLoading && !isError && (
+              <>
+                {comicItems.length === 0 ? (
+                  <EmptyState title="Chưa có truyện tranh nào" />
+                ) : (
+                  <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
+                    {comicItems.map((comic) => (
+                      <CatalogCard
+                        key={comic.seriesId}
+                        item={comic}
+                        latestLabel="Chapter mới nhất"
+                        accent="blue"
+                      />
+                    ))}
+                  </div>
+                )}
+
+                <Pagination
+                  page={page}
+                  totalPages={totalPages}
+                  isFirst={isFirst}
+                  isLast={isLast}
+                  onPageChange={setPage}
+                  onPrev={handlePrevPage}
+                  onNext={handleNextPage}
+                  accent="blue"
+                />
+              </>
+            )}
+          </div>
+
+          <CatalogSidebar history={readingHistory} topItems={topComics} />
+        </section>
       </div>
+    </div>
+  );
+}
 
-      {/* Main Comics Section */}
-      <section className="container mx-auto px-4 md:px-8 pb-16 pt-6">
+function FeaturedBanner({
+  item,
+  label,
+  primaryLabel,
+}: {
+  item: PublicSeriesItem;
+  label: string;
+  primaryLabel: string;
+}) {
+  return (
+    <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-[#121214] min-h-[460px] shadow-[0_24px_80px_rgba(0,0,0,0.4)]">
+      <div
+        className="absolute inset-0 bg-cover bg-center"
+        style={{ backgroundImage: `url(${getCover(item)})` }}
+      />
+      <div className="absolute inset-0 bg-gradient-to-r from-[#0B0B0C] via-[#0B0B0C]/85 to-[#0B0B0C]/35" />
+      <div className="absolute inset-0 bg-gradient-to-t from-[#0B0B0C] via-transparent to-transparent" />
 
-        {/* LOADING */}
-        {isLoading && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-4 gap-6 md:gap-8">
-            {Array.from({ length: 8 }).map((_, idx) => (
-              <div key={idx} className="flex flex-col space-y-4">
-                <div className="aspect-[2/3] w-full rounded-2xl bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/[0.04] relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_2s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/[0.03] before:to-transparent" />
-                <div className="h-5 bg-white/[0.03] rounded-md w-5/6" />
-                <div className="h-4 bg-white/[0.03] rounded-md w-2/3" />
-              </div>
-            ))}
-          </div>
-        )}
+      <div className="relative z-10 flex min-h-[460px] max-w-3xl flex-col justify-center px-6 py-12 md:px-12">
+        <span className="mb-5 inline-flex w-fit rounded-full border border-[#D4AF37]/40 bg-[#D4AF37]/10 px-4 py-2 text-xs font-black uppercase tracking-[0.24em] text-[#D4AF37]">
+          {label}
+        </span>
+        <h1 className="font-heading text-4xl font-extrabold leading-none text-white md:text-6xl">
+          {item.title}
+        </h1>
+        <p className="mt-5 line-clamp-3 max-w-2xl text-sm font-medium leading-relaxed text-white/68 md:text-base">
+          {item.description || "Bộ truyện mới nhất vừa được cập nhật trên TaleX."}
+        </p>
+        <div className="mt-5 flex flex-wrap items-center gap-4 text-sm font-bold text-white/70">
+          <span className="inline-flex items-center gap-2">
+            <Eye className="h-4 w-4 text-[#D4AF37]" />
+            {item.totalViews.toLocaleString("vi-VN")} lượt đọc
+          </span>
+          <span className="inline-flex items-center gap-2">
+            <Star className="h-4 w-4 fill-[#D4AF37] text-[#D4AF37]" />
+            4.9
+          </span>
+          <span className="rounded-full bg-white/10 px-3 py-1 text-xs uppercase tracking-widest">
+            Chapter mới nhất
+          </span>
+        </div>
+        <div className="mt-8 flex flex-wrap gap-3">
+          <Link
+            href={`/series/${item.seriesId}`}
+            className="inline-flex items-center gap-2 rounded-xl bg-[#D4AF37] px-6 py-3 text-sm font-black text-black transition hover:bg-[#E5C158]"
+          >
+            <BookOpen className="h-5 w-5" />
+            {primaryLabel}
+          </Link>
+          <Link
+            href="/bookmarks"
+            className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/10 px-6 py-3 text-sm font-black text-white transition hover:bg-white/15"
+          >
+            <Bookmark className="h-5 w-5" />
+            Bookmark
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
 
-        {/* ERROR */}
-        {isError && (
-          <div className="py-24 text-center max-w-md mx-auto">
-            <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center text-red-400 mx-auto mb-6 border border-red-500/20">
-              <AlertCircle className="w-6 h-6" />
-            </div>
-            <h3 className="text-xl font-bold mb-2 text-white">Không thể tải danh sách</h3>
-            <p className="text-gray-400 text-sm mb-6">
-              {error instanceof Error ? error.message : "Hệ thống gặp sự cố nhỏ, vui lòng thử lại."}
-            </p>
-            <button
-              onClick={() => refetch()}
-              className="px-6 py-2.5 bg-gradient-to-r from-white to-gray-200 text-black font-semibold rounded-xl hover:shadow-[0_0_30px_rgba(255,255,255,0.15)] transition-all"
+function RecommendedCarousel({ title, items }: { title: string; items: MockShelfItem[] }) {
+  const loopItems = [...items, ...items];
+
+  return (
+    <section className="space-y-4">
+      <SectionTitle eyebrow="TaleX đề cử" title={title} compact />
+      <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#101014] p-3">
+        <motion.div
+          className="flex w-max gap-3"
+          animate={{ x: ["0%", "-50%"] }}
+          transition={{ duration: 26, ease: "linear", repeat: Infinity }}
+        >
+          {loopItems.map((item, index) => (
+            <div
+              key={`${item.title}-${index}`}
+              className="relative h-44 w-64 shrink-0 overflow-hidden rounded-xl bg-white/5"
             >
-              Thử lại ngay
-            </button>
-          </div>
-        )}
-
-        {/* DANH SÁCH TRUYỆN */}
-        {!isLoading && !isError && (
-          <>
-            {comicItems.length === 0 ? (
-              <div className="py-32 text-center max-w-md mx-auto">
-                <div className="w-16 h-16 rounded-full bg-white/[0.02] border border-white/[0.06] flex items-center justify-center text-gray-500 mx-auto mb-6">
-                  <HelpCircle className="w-6 h-6" />
-                </div>
-                <h3 className="text-lg font-bold mb-2 text-white">Chưa có truyện tranh nào</h3>
-                <p className="text-gray-400 text-sm leading-relaxed">
-                  Danh mục truyện tranh đang được cập nhật. Vui lòng quay lại sau!
+              <div
+                className="absolute inset-0 bg-cover bg-center"
+                style={{ backgroundImage: `url(${item.image})` }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 p-4">
+                <p className="line-clamp-1 text-base font-black text-white">
+                  {item.title}
+                </p>
+                <p className="mt-1 text-sm font-bold text-[#D4AF37]">
+                  {item.chapter}
                 </p>
               </div>
-            ) : (
-              <div
-                onMouseMove={handleMouseMove}
-                className="relative group/grid grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-4 gap-6 md:gap-8"
-              >
-                {/* Spotlight */}
-                <motion.div
-                  className="pointer-events-none absolute -inset-px rounded-xl opacity-0 group-hover/grid:opacity-100 transition duration-500 hidden md:block z-0"
-                  style={{ background: spotlightBackground }}
-                />
+            </div>
+          ))}
+        </motion.div>
+      </div>
+    </section>
+  );
+}
 
-                <AnimatePresence mode="popLayout">
-                  {comicItems.map((comic) => (
-                    <motion.div
-                      key={comic.seriesId}
-                      variants={{
-                        hidden: { opacity: 0, y: 24 },
-                        visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.215, 0.61, 0.355, 1] } },
-                      }}
-                      initial="hidden"
-                      animate="visible"
-                      className="group flex flex-col relative z-10"
-                    >
-                      <Link
-                        href={`/series/${comic.seriesId}`}
-                        className="relative block w-full cursor-pointer"
-                      >
-                        {/* Poster */}
-                        <div className="relative aspect-[2/3] w-full rounded-2xl overflow-hidden bg-[#121214] mb-4 border border-white/[0.06] group-hover:border-blue-500/40 shadow-2xl transition-all duration-500 group-hover:scale-[1.01] group-hover:shadow-[0_20px_40px_rgba(0,0,0,0.7)]">
+function CatalogCard({
+  item,
+  latestLabel,
+  accent,
+}: {
+  item: PublicSeriesItem;
+  latestLabel: string;
+  accent: "blue" | "gold";
+}) {
+  const accentClass =
+    accent === "blue"
+      ? "group-hover:border-blue-500/40 text-blue-300"
+      : "group-hover:border-[#D4AF37]/50 text-[#D4AF37]";
 
-                          {/* Ảnh bìa */}
-                          {comic.coverUrl ? (
-                            <div
-                              className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 ease-[cubic-bezier(0.25,1,0.5,1)] group-hover:scale-110 group-hover:blur-[1px]"
-                              style={{ backgroundImage: `url(${comic.coverUrl})` }}
-                            />
-                          ) : (
-                            <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 to-indigo-900/20 flex flex-col items-center justify-center p-4 text-center">
-                              <BookOpen className="w-9 h-9 text-blue-600 mb-2" />
-                              <span className="text-[11px] text-gray-500">No Cover Available</span>
-                            </div>
-                          )}
-
-                          {/* Overlay */}
-                          <div className="absolute inset-0 bg-gradient-to-t from-[#060607] via-black/10 to-transparent opacity-80 group-hover:opacity-85 transition-opacity duration-300" />
-                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-300" />
-
-                          {/* Icon đọc khi hover */}
-                          <div className="absolute inset-0 flex items-center justify-center opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]">
-                            <div className="w-14 h-14 rounded-full bg-blue-500 text-white flex items-center justify-center shadow-[0_0_30px_rgba(59,130,246,0.5)]">
-                              <BookOpenCheck className="w-6 h-6" />
-                            </div>
-                          </div>
-
-                          {/* Badge tuổi */}
-                          {comic.ageRating && (
-                            <div className="absolute top-3.5 left-3.5 z-10">
-                              <span className="px-2 py-0.5 rounded-md text-[10px] font-black tracking-wider uppercase bg-black/70 border border-white/[0.12] text-blue-300 backdrop-blur-md">
-                                {comic.ageRating}
-                              </span>
-                            </div>
-                          )}
-
-                          {/* Badge "Truyện tranh" */}
-                          <div className="absolute top-3.5 right-3.5 z-10">
-                            <span className="px-2 py-0.5 rounded-md text-[10px] font-black tracking-wider uppercase bg-blue-500/10 border border-blue-500/20 text-blue-400 backdrop-blur-md">
-                              Comic
-                            </span>
-                          </div>
-
-                          {/* Stats */}
-                          <div className="absolute bottom-3.5 left-3.5 right-3.5 flex items-center justify-between text-[10px] text-gray-200 font-bold tracking-wider z-10 opacity-100 group-hover:opacity-0 transition-opacity duration-200">
-                            <span className="flex items-center gap-1.5 bg-black/50 backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/[0.06]">
-                              <Eye className="w-3 h-3 text-blue-400" /> {comic.totalViews.toLocaleString("vi-VN")}
-                            </span>
-                            <span className="flex items-center gap-1.5 bg-black/50 backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/[0.06]">
-                              <Users className="w-3 h-3 text-blue-400" /> {comic.totalSubscriptions.toLocaleString("vi-VN")}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Tên + mô tả */}
-                        <div className="px-1.5 transform transition-transform duration-300 group-hover:translate-x-1">
-                          <div className="flex items-center gap-2">
-                            <BookOpen className="w-3.5 h-3.5 text-gray-500 group-hover:text-blue-400 flex-shrink-0 transition-colors" />
-                            <h2 className="text-gray-100 font-extrabold text-base md:text-lg line-clamp-1 group-hover:text-blue-300 transition-colors duration-300 tracking-tight">
-                              {comic.title}
-                            </h2>
-                          </div>
-                          <p className="text-gray-400 text-xs md:text-sm mt-1.5 line-clamp-2 leading-relaxed font-normal opacity-80 group-hover:opacity-100 transition-opacity">
-                            {comic.description || "Bấm để xem chi tiết và danh sách chương truyện này."}
-                          </p>
-                        </div>
-                      </Link>
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-              </div>
-            )}
-
-            {/* Phân trang */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-3 mt-20 border-t border-white/[0.04] pt-10">
-                <button
-                  onClick={handlePrevPage}
-                  disabled={isFirst}
-                  className="flex items-center justify-center w-11 h-11 rounded-xl bg-white/[0.01] border border-white/[0.06] text-white transition-all hover:bg-white/[0.05] hover:border-blue-500/30 disabled:opacity-20 disabled:pointer-events-none active:scale-90"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-
-                <div className="flex items-center gap-2">
-                  {Array.from({ length: totalPages }).map((_, idx) => {
-                    const pageIndex = idx + 1;
-                    const isCurrent = page === pageIndex;
-
-                    if (totalPages > 6 && Math.abs(page - pageIndex) > 2 && pageIndex !== 1 && pageIndex !== totalPages) {
-                      if (pageIndex === 2 || pageIndex === totalPages - 1) {
-                        return <span key={pageIndex} className="text-gray-600 px-1 select-none">...</span>;
-                      }
-                      return null;
-                    }
-
-                    return (
-                      <button
-                        key={pageIndex}
-                        onClick={() => setPage(pageIndex)}
-                        className={`w-11 h-11 rounded-xl text-sm font-black transition-all duration-300 ${
-                          isCurrent
-                            ? "bg-blue-500 text-white shadow-[0_0_25px_rgba(59,130,246,0.4)] scale-105"
-                            : "bg-white/[0.01] border border-white/[0.05] text-gray-400 hover:text-white hover:border-white/20 hover:bg-white/[0.03]"
-                        }`}
-                      >
-                        {pageIndex}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <button
-                  onClick={handleNextPage}
-                  disabled={isLast}
-                  className="flex items-center justify-center w-11 h-11 rounded-xl bg-white/[0.01] border border-white/[0.06] text-white transition-all hover:bg-white/[0.05] hover:border-blue-500/30 disabled:opacity-20 disabled:pointer-events-none active:scale-90"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            )}
-          </>
+  return (
+    <Link href={`/series/${item.seriesId}`} className="group block min-w-0">
+      <div
+        className={`relative aspect-[2/3] overflow-hidden rounded-2xl border border-white/[0.06] bg-[#121214] shadow-2xl transition-all duration-500 group-hover:scale-[1.01] ${accentClass}`}
+      >
+        {item.coverUrl ? (
+          <div
+            className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110"
+            style={{ backgroundImage: `url(${item.coverUrl})` }}
+          />
+        ) : (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-white/[0.02] to-white/[0.06] text-center">
+            <BookOpen className="mb-2 h-9 w-9 text-white/25" />
+            <span className="text-[11px] text-white/35">No Cover Available</span>
+          </div>
         )}
-      </section>
+        <div className="absolute inset-0 bg-gradient-to-t from-[#060607] via-black/10 to-transparent" />
+        <div className="absolute left-3 top-3 rounded-md bg-black/70 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-white/80">
+          {item.ageRating || "EVERYONE"}
+        </div>
+        <div className="absolute right-3 top-3 rounded-md bg-blue-500/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-blue-300">
+          Comic
+        </div>
+        <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-[10px] font-bold text-white/80">
+          <span className="rounded-lg bg-black/55 px-2 py-1 backdrop-blur">
+            <Eye className="mr-1 inline h-3 w-3" />
+            {item.totalViews.toLocaleString("vi-VN")}
+          </span>
+          <span className="rounded-lg bg-black/55 px-2 py-1 backdrop-blur">
+            <Users className="mr-1 inline h-3 w-3" />
+            {item.totalSubscriptions.toLocaleString("vi-VN")}
+          </span>
+        </div>
+      </div>
+      <h3 className="mt-3 line-clamp-1 text-base font-black text-white group-hover:text-[#D4AF37]">
+        {item.title}
+      </h3>
+      <p className="mt-1 text-sm font-bold text-white/70">{latestLabel}</p>
+      <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-white/45">
+        {item.description || "Bấm để xem chi tiết và danh sách chương mới nhất."}
+      </p>
+    </Link>
+  );
+}
+
+function CatalogSidebar({
+  history,
+  topItems,
+}: {
+  history: MockShelfItem[];
+  topItems: MockShelfItem[];
+}) {
+  return (
+    <aside className="space-y-6 xl:sticky xl:top-24 xl:self-start">
+      <div className="rounded-2xl border border-white/10 bg-[#121214] p-5">
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-lg font-black text-white">Lịch sử đọc</h3>
+          <Link href="/history" prefetch={false} className="text-sm font-bold text-[#D4AF37]">
+            Xem tất cả
+          </Link>
+        </div>
+        <div className="space-y-4">
+          {history.map((item) => (
+            <MockSideItem key={item.title} item={item} />
+          ))}
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-white/10 bg-[#121214] p-5">
+        <div className="mb-4 grid grid-cols-3 overflow-hidden rounded-xl border border-white/10 text-center text-sm font-black">
+          <span className="bg-[#D4AF37] py-2 text-black">Top tháng</span>
+          <span className="bg-white/[0.04] py-2 text-white/60">Top tuần</span>
+          <span className="bg-white/[0.04] py-2 text-white/60">Top ngày</span>
+        </div>
+        <div className="space-y-3">
+          {topItems.slice(0, 7).map((item, index) => (
+            <div key={item.title} className="flex items-center gap-3">
+              <span className="w-8 text-center text-xl font-black text-[#D4AF37]/80">
+                {String(index + 1).padStart(2, "0")}
+              </span>
+              <MockSideItem item={item} compact />
+            </div>
+          ))}
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+function MockSideItem({ item, compact = false }: { item: MockShelfItem; compact?: boolean }) {
+  return (
+    <div className="flex min-w-0 gap-3">
+      <div
+        className={`${compact ? "h-14 w-14" : "h-16 w-20"} shrink-0 rounded-lg bg-cover bg-center`}
+        style={{ backgroundImage: `url(${item.image})` }}
+      />
+      <div className="min-w-0 flex-1">
+        <p className="line-clamp-2 text-sm font-bold text-white">{item.title}</p>
+        <p className="mt-1 text-xs font-semibold text-white/45">{item.chapter}</p>
+      </div>
+    </div>
+  );
+}
+
+function SectionTitle({
+  eyebrow,
+  title,
+  compact = false,
+}: {
+  eyebrow: string;
+  title: string;
+  compact?: boolean;
+}) {
+  return (
+    <div className={compact ? "" : "mb-6"}>
+      <p className="mb-1 flex items-center gap-2 text-xs font-black uppercase tracking-[0.2em] text-[#D4AF37]">
+        <Sparkles className="h-3.5 w-3.5" />
+        {eyebrow}
+      </p>
+      <h2 className="font-heading text-2xl font-black text-white md:text-3xl">
+        {title}
+      </h2>
+    </div>
+  );
+}
+
+function ListSkeleton() {
+  return (
+    <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
+      {Array.from({ length: 8 }).map((_, idx) => (
+        <div key={idx} className="space-y-3">
+          <div className="aspect-[2/3] rounded-2xl bg-white/[0.04]" />
+          <div className="h-4 w-4/5 rounded bg-white/[0.04]" />
+          <div className="h-3 w-2/3 rounded bg-white/[0.04]" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function EmptyState({ title }: { title: string }) {
+  return (
+    <div className="py-24 text-center">
+      <HelpCircle className="mx-auto mb-4 h-10 w-10 text-white/25" />
+      <h3 className="text-lg font-bold text-white">{title}</h3>
+    </div>
+  );
+}
+
+function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div className="mx-auto max-w-md py-24 text-center">
+      <AlertCircle className="mx-auto mb-4 h-10 w-10 text-red-400" />
+      <h3 className="mb-2 text-xl font-bold text-white">Không thể tải danh sách</h3>
+      <p className="mb-6 text-sm text-white/55">{message}</p>
+      <button
+        onClick={onRetry}
+        className="rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-black"
+      >
+        Thử lại
+      </button>
+    </div>
+  );
+}
+
+function Pagination({
+  page,
+  totalPages,
+  isFirst,
+  isLast,
+  onPageChange,
+  onPrev,
+  onNext,
+  accent,
+}: {
+  page: number;
+  totalPages: number;
+  isFirst: boolean;
+  isLast: boolean;
+  onPageChange: (page: number) => void;
+  onPrev: () => void;
+  onNext: () => void;
+  accent: "blue" | "gold";
+}) {
+  if (totalPages <= 1) return null;
+  const activeClass = accent === "blue" ? "bg-blue-500 text-white" : "bg-[#D4AF37] text-black";
+
+  return (
+    <div className="mt-14 flex items-center justify-center gap-3 border-t border-white/[0.06] pt-8">
+      <button onClick={onPrev} disabled={isFirst} className="h-10 w-10 rounded-xl border border-white/10 text-white disabled:opacity-25">
+        <ChevronLeft className="mx-auto h-4 w-4" />
+      </button>
+      {Array.from({ length: totalPages }).map((_, idx) => {
+        const pageIndex = idx + 1;
+        return (
+          <button
+            key={pageIndex}
+            onClick={() => onPageChange(pageIndex)}
+            className={`h-10 w-10 rounded-xl text-sm font-black ${
+              page === pageIndex
+                ? activeClass
+                : "border border-white/10 bg-white/[0.02] text-white/55"
+            }`}
+          >
+            {pageIndex}
+          </button>
+        );
+      })}
+      <button onClick={onNext} disabled={isLast} className="h-10 w-10 rounded-xl border border-white/10 text-white disabled:opacity-25">
+        <ChevronRight className="mx-auto h-4 w-4" />
+      </button>
     </div>
   );
 }

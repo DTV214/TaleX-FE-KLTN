@@ -2,15 +2,24 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useAuthStore } from "@/features/auth/store/auth.store";
+import {
+  getFollowedCreators,
+  type AccountFollowInfoDto,
+} from "@/features/series/api/creator-follows-api";
 import { getPublicSeriesDetail } from "@/features/series/api/series-api";
 import {
   BookOpen,
   Bookmark,
+  ChevronDown,
+  ChevronUp,
   Flame,
   Heart,
   History,
   Home,
+  Loader2,
   Radio,
   Sparkles,
   Tv,
@@ -33,7 +42,6 @@ const primaryMenu: MenuItem[] = [
   { title: "Phim bộ", href: "/series", icon: Tv },
   { title: "Truyện tranh", href: "/comics", icon: BookOpen },
   { title: "Shorts", href: "/#shorts", icon: Flame },
-  { title: "Kênh đăng ký", href: "/subscriptions", icon: Radio },
 ];
 
 const libraryMenu: MenuItem[] = [
@@ -71,6 +79,7 @@ export function PublicSidebar() {
   const closeMobileSidebar = usePublicSidebarStore(
     (state) => state.closeMobileSidebar,
   );
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
   return (
     <>
@@ -82,6 +91,11 @@ export function PublicSidebar() {
       >
         <div className="flex min-h-full flex-col py-4">
           <SidebarGroup items={primaryMenu} isOpen={isSidebarOpen} />
+          <SidebarDivider />
+          <SubscriptionsSidebarSection
+            isAuthenticated={isAuthenticated}
+            isOpen={isSidebarOpen}
+          />
           <SidebarDivider />
           <SidebarGroup items={libraryMenu} isOpen={isSidebarOpen} />
           <SidebarDivider />
@@ -138,6 +152,12 @@ export function PublicSidebar() {
               onNavigate={closeMobileSidebar}
             />
             <SidebarDivider />
+            <SubscriptionsSidebarSection
+              isAuthenticated={isAuthenticated}
+              isOpen
+              onNavigate={closeMobileSidebar}
+            />
+            <SidebarDivider />
             <SidebarGroup
               items={libraryMenu}
               isOpen
@@ -154,6 +174,160 @@ export function PublicSidebar() {
         </aside>
       </div>
     </>
+  );
+}
+
+function SubscriptionsSidebarSection({
+  isAuthenticated,
+  isOpen,
+  onNavigate,
+}: {
+  isAuthenticated: boolean;
+  isOpen: boolean;
+  onNavigate?: () => void;
+}) {
+  const pathname = usePathname();
+  const [isExpanded, setIsExpanded] = useState(true);
+  const [showAll, setShowAll] = useState(false);
+  const shouldFetchCreators = isAuthenticated && isOpen && isExpanded;
+
+  const creatorsQuery = useQuery({
+    queryKey: ["publicSidebarFollowedCreators"],
+    queryFn: () => getFollowedCreators(0, 20),
+    enabled: shouldFetchCreators,
+    staleTime: 60 * 1000,
+  });
+
+  const creators = useMemo(
+    () => creatorsQuery.data?.content ?? [],
+    [creatorsQuery.data?.content],
+  );
+  const visibleCreators = showAll ? creators : creators.slice(0, 5);
+  const isActive = pathname.startsWith("/subscriptions");
+
+  if (!isOpen) {
+    return (
+      <button
+        type="button"
+        title="Kênh đăng ký"
+        aria-label="Kênh đăng ký"
+        onClick={() => setIsExpanded((value) => !value)}
+        className={cn(
+          "flex w-full items-center justify-center rounded-xl px-0 py-2.5 text-sm font-bold transition-all duration-300 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37]/60",
+          isActive
+            ? "bg-[#D4AF37]/12 text-[#D4AF37] shadow-[inset_3px_0_0_rgba(212,175,55,0.85)]"
+            : "text-white/72",
+        )}
+      >
+        <Radio className="h-5 w-5 shrink-0" strokeWidth={1.8} />
+      </button>
+    );
+  }
+
+  return (
+    <section className="space-y-2">
+      <button
+        type="button"
+        onClick={() => setIsExpanded((value) => !value)}
+        className={cn(
+          "flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm font-extrabold transition-all duration-300 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37]/60",
+          isActive
+            ? "bg-[#D4AF37]/12 text-[#D4AF37] shadow-[inset_3px_0_0_rgba(212,175,55,0.85)]"
+            : "text-white/82",
+        )}
+      >
+        <span className="flex min-w-0 items-center gap-3">
+          <Radio className="h-5 w-5 shrink-0" strokeWidth={1.8} />
+          <span className="truncate">Kênh đăng ký</span>
+        </span>
+        {isExpanded ? (
+          <ChevronUp className="h-4 w-4 shrink-0 text-white/45" />
+        ) : (
+          <ChevronDown className="h-4 w-4 shrink-0 text-white/45" />
+        )}
+      </button>
+
+      {isExpanded && (
+        <div className="space-y-1 pl-1">
+          {!isAuthenticated && (
+            <div className="rounded-xl border border-white/5 bg-white/[0.03] px-3 py-3 text-xs font-semibold leading-relaxed text-slate-500">
+              Đăng nhập để xem các nhà sáng tạo bạn đang theo dõi.
+            </div>
+          )}
+
+          {isAuthenticated && creatorsQuery.isLoading && (
+            <div className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-500">
+              <Loader2 className="h-4 w-4 animate-spin text-[#D4AF37]" />
+              Đang tải kênh...
+            </div>
+          )}
+
+          {isAuthenticated &&
+            !creatorsQuery.isLoading &&
+            creators.length === 0 && (
+              <div className="rounded-xl border border-white/5 bg-white/[0.03] px-3 py-3 text-xs font-semibold leading-relaxed text-slate-500">
+                Chưa theo dõi nhà sáng tạo nào.
+              </div>
+            )}
+
+          {visibleCreators.map((creator) => (
+            <FollowedCreatorSidebarLink
+              key={creator.accountId}
+              creator={creator}
+              onNavigate={onNavigate}
+            />
+          ))}
+
+          {creators.length > 5 && (
+            <button
+              type="button"
+              onClick={() => setShowAll((value) => !value)}
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-xs font-extrabold text-white/65 transition hover:bg-white/10 hover:text-[#D4AF37]"
+            >
+              {showAll ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : (
+                <ChevronDown className="h-4 w-4" />
+              )}
+              {showAll ? "Ẩn bớt" : "Xem thêm"}
+            </button>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function FollowedCreatorSidebarLink({
+  creator,
+  onNavigate,
+}: {
+  creator: AccountFollowInfoDto;
+  onNavigate?: () => void;
+}) {
+  const avatarStyle = creator.avatarUrl
+    ? { backgroundImage: `url("${creator.avatarUrl}")` }
+    : undefined;
+
+  return (
+    <Link
+      href={`/public-channel?creatorId=${creator.accountId}`}
+      title={creator.username}
+      onClick={onNavigate}
+      className="group flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-bold text-white/72 transition hover:bg-white/10 hover:text-white"
+    >
+      <span
+        className={cn(
+          "flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-cover bg-center text-[11px] font-black uppercase text-white/70 shadow-[0_8px_20px_rgba(0,0,0,0.25)]",
+          creator.avatarUrl ? "bg-white/5" : "bg-[#D4AF37]/15 text-[#D4AF37]",
+        )}
+        style={avatarStyle}
+      >
+        {!creator.avatarUrl ? creator.username.slice(0, 1) : null}
+      </span>
+      <span className="min-w-0 flex-1 truncate">{creator.username}</span>
+      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-sky-400 opacity-80 transition group-hover:bg-[#D4AF37]" />
+    </Link>
   );
 }
 
