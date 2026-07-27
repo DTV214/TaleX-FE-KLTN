@@ -5,20 +5,14 @@ import Autoplay from "embla-carousel-autoplay";
 import { useRouter } from "next/navigation";
 import {
   ArrowRight,
-  Ban,
   BookOpen,
   Crown,
-  Film,
   Gem,
-  Headphones,
   HelpCircle,
-  Infinity,
   Loader2,
   PlayCircle,
   ShieldCheck,
-  Star,
   TrendingUp,
-  Tv,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -37,12 +31,6 @@ import {
 import { Progress } from "@/shared/ui/progress";
 import { cn } from "@/shared/utils/utils";
 
-type FeatureItem = {
-  title: string;
-  description: string;
-  icon: LucideIcon;
-};
-
 type BenefitItem = {
   label: string;
   icon: LucideIcon;
@@ -51,9 +39,8 @@ type BenefitItem = {
 const heroSlides = [
   {
     eyebrow: "TaleX Premium",
-    title: "Rạp chiếu riêng cho mọi vũ trụ bạn yêu",
-    description:
-      "Mở khóa phim, series và truyện tranh kỹ thuật số trong một trải nghiệm cinematic mềm, sâu và không bị ngắt mạch.",
+    title: "Mở khóa thế giới TaleX",
+    description: "Xem phim, đọc truyện và giữ mạch trải nghiệm liền lạc hơn.",
     badge: "Không quảng cáo",
     gradient: "from-[#1A1309] via-[#0B0B0E] to-[#090A12]",
     image:
@@ -61,9 +48,8 @@ const heroSlides = [
   },
   {
     eyebrow: "Original Worlds",
-    title: "Câu chuyện liền mạch từ màn ảnh đến trang truyện",
-    description:
-      "Theo dõi các universe độc quyền, đọc tiếp đúng nơi bạn dừng lại và tận hưởng chất lượng hiển thị trọn vẹn hơn.",
+    title: "Tiếp tục câu chuyện của bạn",
+    description: "Đọc và xem đúng nơi bạn dừng lại, trên mọi thiết bị.",
     badge: "4K HDR ready",
     gradient: "from-[#0E121C] via-[#090A0D] to-[#120B10]",
     image:
@@ -71,9 +57,8 @@ const heroSlides = [
   },
   {
     eyebrow: "Creator Premium",
-    title: "Đặc quyền dành cho người xem nghiêm túc",
-    description:
-      "Các gói thành viên được đồng bộ từ hệ thống TaleX, sẵn sàng đưa bạn đến checkout ngay khi chọn trải nghiệm phù hợp.",
+    title: "Chọn gói, mở khóa ngay",
+    description: "Gói Premium đồng bộ trực tiếp từ hệ thống TaleX.",
     badge: "Thanh toán an toàn",
     gradient: "from-[#10100D] via-[#090909] to-[#111315]",
     image:
@@ -81,86 +66,23 @@ const heroSlides = [
   },
 ];
 
-const featuredBenefits: FeatureItem[] = [
-  {
-    title: "Kho nội dung vô tận",
-    description:
-      "Từ tác phẩm kinh điển đến series mới, TaleX Premium giữ thư viện giải trí luôn được làm mới.",
-    icon: Infinity,
-  },
-  {
-    title: "Không quảng cáo",
-    description:
-      "Giữ trọn nhịp cảm xúc ở các khoảnh khắc cao trào mà không bị gián đoạn bởi quảng cáo.",
-    icon: Ban,
-  },
-  {
-    title: "Truyện tranh kỹ thuật số",
-    description:
-      "Truy cập các tiểu thuyết đồ họa, webcomic và universe truyện được tuyển chọn cho độc giả hiện đại.",
-    icon: BookOpen,
-  },
-  {
-    title: "Phim & series mở khóa",
-    description:
-      "Thưởng thức nội dung độc quyền với trải nghiệm xem mượt, rõ và có chiều sâu hơn.",
-    icon: Film,
-  },
-  {
-    title: "Đồng bộ đa thiết bị",
-    description:
-      "Tiếp tục câu chuyện đúng vị trí đã dừng trên điện thoại, laptop hoặc màn hình lớn.",
-    icon: Tv,
-  },
-  {
-    title: "Hỗ trợ ưu tiên",
-    description:
-      "Đội ngũ TaleX hỗ trợ nhanh hơn cho câu hỏi về thanh toán, quyền lợi và tài khoản.",
-    icon: Headphones,
-  },
-];
-
-const testimonials = [
-  {
-    name: "Minh Anh",
-    role: "Movie lover",
-    quote:
-      "Premium làm TaleX có cảm giác như một rạp chiếu nhỏ ở nhà. Giao diện tối, chữ dịu và nội dung liền mạch hơn hẳn.",
-    initials: "MA",
-  },
-  {
-    name: "Hoàng Nam",
-    role: "Comic reader",
-    quote:
-      "Mình thích nhất phần đọc truyện không bị ngắt. Các gói combo cũng dễ hiểu, chọn xong là đi checkout rất nhanh.",
-    initials: "HN",
-  },
-  {
-    name: "Linh Chi",
-    role: "Series collector",
-    quote:
-      "Cảm giác premium đúng nghĩa: card rõ, màu vàng vừa đủ sang, không bị chói như nhiều trang streaming khác.",
-    initials: "LC",
-  },
-];
-
 const trendSignals = [
   {
     label: "Viewer momentum",
     value: "82%",
-    detail: "người xem ưu tiên combo theo mùa",
+    detail: "ưu tiên combo",
     icon: TrendingUp,
   },
   {
     label: "Watch flow",
     value: "2.4x",
-    detail: "tỷ lệ xem liền mạch sau khi mua trọn bộ",
+    detail: "xem liền mạch hơn",
     icon: PlayCircle,
   },
   {
     label: "Premium habit",
     value: "68%",
-    detail: "quay lại đọc/xem trong tuần đầu",
+    detail: "quay lại trong tuần",
     icon: Users,
   },
 ];
@@ -203,27 +125,27 @@ function getBenefits(subscription: Subscription): BenefitItem[] {
 
   if (subscription.isAdBlocked) {
     benefits.push({
-      label: "Trải nghiệm xem không quảng cáo",
+      label: "Không quảng cáo",
       icon: ShieldCheck,
     });
   }
 
   if (subscription.isStoryUnlocked) {
     benefits.push({
-      label: "Đọc truyện tranh kỹ thuật số không giới hạn",
+      label: "Mở khóa truyện",
       icon: BookOpen,
     });
   }
 
   if (subscription.isMovieUnlocked) {
     benefits.push({
-      label: "Mở khóa toàn bộ kho phim & series",
+      label: "Mở khóa phim & series",
       icon: PlayCircle,
     });
   }
 
   benefits.push({
-    label: "Hỗ trợ chất lượng 4K HDR & âm thanh vòm",
+    label: "Hỗ trợ 4K HDR",
     icon: Gem,
   });
 
@@ -282,7 +204,7 @@ function PremiumHero() {
             <CarouselItem key={slide.title} className="pl-0">
               <div
                 className={cn(
-                  "relative min-h-[280px] overflow-hidden bg-gradient-to-br md:min-h-[320px]",
+                  "relative min-h-[240px] overflow-hidden bg-gradient-to-br md:min-h-[280px]",
                   slide.gradient,
                 )}
               >
@@ -294,15 +216,15 @@ function PremiumHero() {
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_10%,rgba(212,175,55,0.16),transparent_32%),radial-gradient(circle_at_78%_18%,rgba(151,176,255,0.10),transparent_28%)]" />
                 <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#080808] to-transparent" />
                 <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(0,0,0,0.58),rgba(0,0,0,0.22),rgba(0,0,0,0.58))]" />
-                <div className="relative z-10 mx-auto flex min-h-[280px] w-full max-w-6xl items-center justify-center px-4 py-8 text-center md:min-h-[320px]">
+                <div className="relative z-10 mx-auto flex min-h-[240px] w-full max-w-6xl items-center justify-center px-4 py-8 text-center md:min-h-[280px]">
                   <div className="mx-auto max-w-3xl">
                     <Badge variant="premium" className="px-3 py-1 text-xs font-medium">
                       {slide.eyebrow}
                     </Badge>
-                    <h1 className="mt-4 text-2xl font-semibold tracking-normal text-white/90 sm:text-3xl lg:text-4xl">
+                    <h1 className="mt-4 text-2xl font-semibold tracking-normal text-white/90 sm:text-3xl">
                       {slide.title}
                     </h1>
-                    <p className="mx-auto mt-4 max-w-2xl text-sm font-normal leading-6 text-slate-300 sm:text-base">
+                    <p className="mx-auto mt-3 max-w-xl text-sm font-normal leading-6 text-slate-300">
                       {slide.description}
                     </p>
                     <div className="mt-6 flex items-center justify-center gap-3">
@@ -446,7 +368,7 @@ function PricingCard({
         </h3>
         <p className="mt-2 line-clamp-2 text-sm font-normal leading-6 text-slate-400">
           {subscription.description ||
-            "Gói Premium dành cho trải nghiệm TaleX trọn vẹn hơn."}
+            "Trải nghiệm TaleX trọn vẹn hơn."}
         </p>
 
         <div className="mt-4">
@@ -526,8 +448,8 @@ function PricingSection() {
       <div className="relative z-10 mx-auto w-full max-w-6xl px-4">
         <SectionHeading
           eyebrow="Gói thành viên"
-          title="Top trải nghiệm Premium dành cho bạn"
-          description="Dữ liệu gói được đồng bộ trực tiếp từ hệ thống TaleX, giữ nguyên luồng checkout và các trạng thái API hiện có."
+          title="Chọn gói Premium"
+          description="Gói được đồng bộ từ hệ thống TaleX."
         />
 
         {packagesQuery.isLoading && <PricingSkeleton />}
@@ -535,14 +457,14 @@ function PricingSection() {
         {packagesQuery.isError && (
           <ErrorState
             title="Không thể tải danh sách gói Premium"
-            description="Vui lòng kiểm tra kết nối API `/api/v1/subscriptions` hoặc thử lại sau."
+            description="Vui lòng thử lại sau."
           />
         )}
 
         {!packagesQuery.isLoading && !packagesQuery.isError && packages.length === 0 && (
           <EmptyState
             title="Chưa có gói Premium nào"
-            description="Khi admin cấu hình gói Premium, danh sách sẽ tự động xuất hiện tại đây."
+            description="Gói sẽ xuất hiện khi admin cấu hình."
           />
         )}
 
@@ -587,13 +509,13 @@ function AudienceTrendBanner() {
           <div className="relative z-10 grid gap-5 lg:grid-cols-[1.05fr_1.3fr] lg:items-center">
             <div>
               <Badge variant="premium" className="mb-3 px-3 py-1 text-xs font-medium">
-                Xu hướng hưởng ứng
+                Xu hướng
               </Badge>
               <h2 className="text-xl font-semibold tracking-normal text-white/90 sm:text-2xl">
-                Người xem đang chuyển sang trải nghiệm trọn mạch
+                Trải nghiệm trọn mạch hơn
               </h2>
               <p className="mt-3 text-sm font-normal leading-6 text-slate-400">
-                TaleX Premium ưu tiên nhịp xem liền lạc: chọn gói nhanh, mở khóa rõ ràng, rồi tiếp tục câu chuyện không bị vỡ mạch.
+                Chọn gói nhanh, mở khóa rõ ràng, tiếp tục câu chuyện liền mạch.
               </p>
             </div>
 
@@ -629,126 +551,12 @@ function AudienceTrendBanner() {
   );
 }
 
-function TestimonialsSection() {
-  return (
-    <section className="mx-auto w-full max-w-6xl px-4 py-8 lg:py-10">
-      <SectionHeading
-        eyebrow="Đánh giá khách hàng"
-        title="Người xem nói gì về TaleX Premium"
-        description="Một lớp cảm nhận xã hội nhẹ nhàng, giúp trang Premium có chiều sâu hơn mà không ảnh hưởng đến luồng API."
-      />
-
-      <div className="grid gap-5 md:grid-cols-3">
-        {testimonials.map((testimonial) => (
-          <article
-            key={testimonial.name}
-            className="group relative overflow-hidden rounded-2xl border border-white/10 bg-[#121214] p-5 transition-all duration-300 hover:-translate-y-1 hover:border-[#D4AF37]/35"
-          >
-            <Star className="absolute -right-3 -top-3 h-24 w-24 text-[#D4AF37]/[0.06] transition-transform duration-300 group-hover:rotate-6" />
-            <div className="relative z-10">
-              <div className="mb-5 flex gap-1 text-[#D4AF37]">
-                {Array.from({ length: 5 }).map((_, index) => (
-                  <Star key={index} className="h-4 w-4 fill-current" />
-                ))}
-              </div>
-              <p className="line-clamp-4 text-sm font-normal leading-6 text-slate-300">
-                &ldquo;{testimonial.quote}&rdquo;
-              </p>
-              <div className="mt-5 flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[#D4AF37]/25 bg-[#D4AF37]/10 text-sm font-semibold text-[#F5D46E]">
-                  {testimonial.initials}
-                </div>
-                <div>
-                  <p className="font-semibold text-white/90">{testimonial.name}</p>
-                  <p className="text-xs font-medium text-slate-500">
-                    {testimonial.role}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </article>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function BenefitsSection() {
-  return (
-    <section className="border-y border-white/10 bg-white/[0.03] py-8 lg:py-10">
-      <div className="mx-auto w-full max-w-6xl px-4">
-        <SectionHeading
-          eyebrow="Quyền lợi nổi bật"
-          title="Một tài khoản, toàn bộ vũ trụ TaleX"
-          description="Các đặc quyền được trình bày rõ hơn, dịu mắt hơn và có tương tác hover nhẹ theo phong cách cinematic."
-        />
-
-        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-          {featuredBenefits.map((feature) => {
-            const Icon = feature.icon;
-
-            return (
-              <article
-                key={feature.title}
-                className="group rounded-2xl border border-white/10 bg-[#121214] p-5 transition-all duration-300 hover:-translate-y-1 hover:border-[#D4AF37]/35 hover:bg-[#151515]"
-              >
-                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-slate-300 transition-all duration-300 group-hover:border-[#D4AF37]/30 group-hover:bg-[#D4AF37]/10 group-hover:text-[#D4AF37]">
-                  <Icon className="h-5 w-5" />
-                </div>
-                <h3 className="text-lg font-semibold text-white/90">
-                  {feature.title}
-                </h3>
-                <p className="mt-2 line-clamp-3 text-sm font-normal leading-6 text-slate-400">
-                  {feature.description}
-                </p>
-              </article>
-            );
-          })}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function SupportCta() {
-  return (
-    <section className="mx-auto w-full max-w-6xl px-4 py-8 lg:py-10">
-      <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-[#171717] via-[#0D0D0F] to-black px-6 py-8 text-center shadow-2xl sm:px-10">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(212,175,55,0.12),transparent_36%)]" />
-        <div className="relative z-10 mx-auto max-w-3xl">
-          <Badge variant="premium" className="mb-3 px-3 py-1 text-xs font-medium">
-            TaleX Care
-          </Badge>
-          <h2 className="text-xl font-semibold tracking-normal text-white/90 sm:text-2xl">
-            Bạn vẫn còn câu hỏi?
-          </h2>
-          <p className="mx-auto mt-3 max-w-2xl text-sm font-normal leading-6 text-slate-400">
-            Đội ngũ TaleX luôn sẵn sàng hỗ trợ về gói Premium, thanh toán và quyền lợi tài khoản.
-          </p>
-          <Button
-            asChild
-            className="mt-5 h-10 rounded-xl bg-[#D4AF37] px-6 text-sm font-semibold text-black hover:bg-[#F3CE5E]"
-          >
-            <a href="/faq">
-              Truy cập Trung tâm hỗ trợ
-              <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover/button:translate-x-1" />
-            </a>
-          </Button>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 export default function PremiumPage() {
   return (
     <main className="min-h-screen bg-[#080808] text-white">
       <PremiumHero />
       <PricingSection />
       <AudienceTrendBanner />
-      <TestimonialsSection />
-      <BenefitsSection />
-      <SupportCta />
     </main>
   );
 }
