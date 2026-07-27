@@ -3,11 +3,13 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   ChevronLeft,
   ChevronRight,
+  Home,
+  Menu,
+  Heart,
   BookOpen,
   AlignJustify,
   Columns2,
@@ -22,12 +24,10 @@ import {
 import {
   getPublicEpisodeMedia,
   getPublicEpisodes,
-  getPublicSeasons,
   getPublicEpisodeDetail,
   getPublicSeriesList,
 } from "@/features/series/api/series-api";
 import { ContentPaywallGate } from "@/features/checkout-content/components/content-paywall-gate";
-import { isNotEntitledError } from "@/features/checkout-content/utils/is-not-entitled-error";
 import { useAuthStore } from "@/features/auth/store/auth.store";
 import { cn } from "@/shared/utils/utils";
 import { LikeButton } from "@/features/series/components/like-button";
@@ -55,8 +55,10 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
   const [currentPage, setCurrentPage] = useState(0);
   const [showControls, setShowControls] = useState(true);
   const [showChapterMenu, setShowChapterMenu] = useState(false);
+  const [readingProgress, setReadingProgress] = useState(0);
   const [zoom, setZoom] = useState(100);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastScrollYRef = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Falls back to the logged-in viewer's own accountId so the BE entitlement
@@ -71,6 +73,33 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
     queryFn: () => getPublicEpisodeDetail(episodeId),
     enabled: !!episodeId,
   });
+
+  const { data: chapterEpisodes = [] } = useQuery({
+    queryKey: ["publicSeasonEpisodes", episodeDetail?.seasonId],
+    queryFn: () => getPublicEpisodes(episodeDetail!.seasonId),
+    enabled: !!episodeDetail?.seasonId,
+  });
+
+  const sortedChapterEpisodes = useMemo(
+    () =>
+      [...chapterEpisodes].sort(
+        (a, b) => a.episodeNumber - b.episodeNumber,
+      ),
+    [chapterEpisodes],
+  );
+
+  const currentChapterIndex = sortedChapterEpisodes.findIndex(
+    (episode) => episode.episodeId === episodeId,
+  );
+  const previousChapter =
+    currentChapterIndex > 0
+      ? sortedChapterEpisodes[currentChapterIndex - 1]
+      : null;
+  const nextChapter =
+    currentChapterIndex >= 0 &&
+    currentChapterIndex < sortedChapterEpisodes.length - 1
+      ? sortedChapterEpisodes[currentChapterIndex + 1]
+      : null;
 
   // Tải trạng thái và lượt thích tập truyện
   const { totalLikes, isLiked, toggleLike, isMutating } =
@@ -92,11 +121,15 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
 
   const matchedSeries = useMemo(() => {
     if (!episodeDetail || !publicSeriesData?.content) return null;
+    const episodeSeriesId =
+      "seriesId" in episodeDetail && typeof episodeDetail.seriesId === "string"
+        ? episodeDetail.seriesId
+        : null;
     return (
       publicSeriesData.content.find(
         (s) =>
           s.creatorId === episodeDetail.creatorId ||
-          s.seriesId === (episodeDetail as any).seriesId ||
+          s.seriesId === episodeSeriesId ||
           (s.creatorName && s.creatorName === episodeDetail.createdBy),
       ) || null
     );
@@ -117,30 +150,8 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
   const creatorAvatar =
     creatorDetail?.avatarUrl || matchedSeries?.creatorAvatar;
 
-  const {
-    isFollowing,
-    toggleFollow,
-    isMutating: isFollowMutating,
-    isLoading: isFollowListLoading,
-  } = useCreatorFollow(creatorAccountId);
-
-  const [initialIsFollowing, setInitialIsFollowing] = useState<boolean | null>(
-    null,
-  );
-
-  useEffect(() => {
-    setInitialIsFollowing(null);
-  }, [creatorAccountId]);
-
-  useEffect(() => {
-    if (
-      !isFollowListLoading &&
-      initialIsFollowing === null &&
-      creatorAccountId
-    ) {
-      setInitialIsFollowing(isFollowing);
-    }
-  }, [isFollowListLoading, isFollowing, creatorAccountId, initialIsFollowing]);
+  const { isFollowing, toggleFollow, isMutating: isFollowMutating } =
+    useCreatorFollow(creatorAccountId);
 
   const isOwner = Boolean(
     authUser?.accountId &&
@@ -155,8 +166,7 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
   });
 
   const ownFollowerCount =
-    (ownFollowersData as any)?.totalElements ??
-    (ownFollowersData as any)?.numberOfElements ??
+    ownFollowersData?.numberOfElements ??
     ownFollowersData?.content?.length ??
     0;
 
@@ -168,25 +178,13 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
     isOwner ? ownFollowerCount : 0,
   );
 
-  const displayFollowersCount = useMemo(() => {
-    if (rawFollowerCount == null) return isFollowing ? 1 : 0;
-    const baseCount = Number(rawFollowerCount) || 0;
-    if (initialIsFollowing === null) {
-      return isFollowing ? Math.max(1, baseCount) : baseCount;
-    }
-    if (initialIsFollowing) {
-      return isFollowing ? Math.max(1, baseCount) : Math.max(0, baseCount - 1);
-    } else {
-      return isFollowing ? Math.max(1, baseCount + 1) : baseCount;
-    }
-  }, [rawFollowerCount, initialIsFollowing, isFollowing]);
+  const displayFollowersCount = rawFollowerCount;
 
   // Fetch danh sách trang truyện (media pages) từ API
   const {
     data: mediaPages,
     isLoading: isPagesLoading,
     isError: isPagesError,
-    error: pagesError,
   } = useQuery({
     queryKey: ["publicEpisodeMedia", episodeId, viewerId ?? "anonymous"],
     queryFn: () => getPublicEpisodeMedia(episodeId, viewerId),
@@ -207,8 +205,11 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
   // không được giữ nguyên vị trí cuộn cũ từ trang trước đó (checkout/paywall).
   useEffect(() => {
     if (totalPages > 0) {
-      setCurrentPage(0);
-      window.scrollTo({ top: 0, behavior: "auto" });
+      const frameId = window.requestAnimationFrame(() => {
+        setCurrentPage(0);
+        window.scrollTo({ top: 0, behavior: "auto" });
+      });
+      return () => window.cancelAnimationFrame(frameId);
     }
   }, [episodeId, totalPages]);
 
@@ -225,15 +226,57 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
   }, []);
 
   useEffect(() => {
-    resetHideTimer();
+    const timeoutId = window.setTimeout(resetHideTimer, 0);
     return () => {
+      window.clearTimeout(timeoutId);
       if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
     };
   }, [resetHideTimer]);
 
-  const handlePageInteraction = () => {
-    resetHideTimer();
-  };
+  useEffect(() => {
+    let frameId = 0;
+    lastScrollYRef.current = window.scrollY;
+
+    const syncScrollState = () => {
+      const currentScrollY = window.scrollY;
+      const maxScrollY = Math.max(
+        document.documentElement.scrollHeight - window.innerHeight,
+        1,
+      );
+
+      setReadingProgress(
+        Math.min(100, Math.max(0, (currentScrollY / maxScrollY) * 100)),
+      );
+
+      if (readingMode === "vertical") {
+        if (
+          currentScrollY < lastScrollYRef.current - 8 ||
+          currentScrollY < 80
+        ) {
+          setShowControls(true);
+        } else if (currentScrollY > lastScrollYRef.current + 16) {
+          setShowControls(false);
+        }
+      }
+
+      lastScrollYRef.current = currentScrollY;
+      frameId = 0;
+    };
+
+    const handleScroll = () => {
+      if (frameId) return;
+      frameId = window.requestAnimationFrame(syncScrollState);
+    };
+
+    const initialFrameId = window.requestAnimationFrame(syncScrollState);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      window.cancelAnimationFrame(initialFrameId);
+      if (frameId) window.cancelAnimationFrame(frameId);
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, [readingMode]);
 
   // Chuyển trang ngang
   const goToPage = useCallback(
@@ -264,6 +307,130 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
   const handleZoomIn = () => setZoom((z) => Math.min(z + 20, 200));
   const handleZoomOut = () => setZoom((z) => Math.max(z - 20, 60));
   const handleZoomReset = () => setZoom(100);
+
+  const seriesDetailHref = matchedSeries?.seriesId
+    ? `/series/${matchedSeries.seriesId}#episodes`
+    : "/series";
+  const navigationProgress =
+    readingMode === "horizontal" && totalPages > 0
+      ? ((currentPage + 1) / totalPages) * 100
+      : readingProgress;
+
+  const chapterNavigation = (
+    <div className="relative mx-auto flex w-full max-w-6xl items-center justify-between gap-2 overflow-hidden rounded-2xl border border-white/10 bg-[#101014]/95 p-2 shadow-[0_18px_50px_rgba(0,0,0,0.35)] backdrop-blur-xl">
+      <div
+        className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-[#D4AF37] via-[#F56565] to-[#D4AF37] transition-[width] duration-150"
+        style={{ width: `${navigationProgress}%` }}
+      />
+
+      <div className="flex shrink-0 items-center gap-1">
+        <Link
+          href="/"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-[#D4AF37] transition hover:bg-white/10 hover:text-[#E5C158]"
+          title="Trang chủ"
+        >
+          <Home className="h-5 w-5" />
+        </Link>
+        <Link
+          href={seriesDetailHref}
+          className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-[#D4AF37] transition hover:bg-white/10 hover:text-[#E5C158]"
+          title="Danh sách chương"
+        >
+          <Menu className="h-5 w-5" />
+        </Link>
+        <button
+          type="button"
+          onClick={() => router.back()}
+          className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-[#D4AF37] transition hover:bg-white/10 hover:text-[#E5C158]"
+          title="Quay lại"
+        >
+          <RotateCcw className="h-4 w-4" />
+        </button>
+      </div>
+
+      <button
+        type="button"
+        onClick={() => previousChapter && router.push(`/read/${previousChapter.episodeId}`)}
+        disabled={!previousChapter}
+        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-gray-200 transition hover:border-[#D4AF37]/40 hover:bg-[#D4AF37]/15 disabled:cursor-not-allowed disabled:opacity-35"
+        title="Tập trước"
+      >
+        <ChevronLeft className="h-4 w-4" />
+      </button>
+
+      <select
+        value={episodeId}
+        onChange={(event) => router.push(`/read/${event.target.value}`)}
+        disabled={sortedChapterEpisodes.length === 0}
+        className="min-w-0 flex-1 rounded-xl border border-white/10 bg-black/35 px-3 py-2 text-sm font-bold text-white outline-none transition focus:border-[#D4AF37]/60"
+        aria-label="Chọn tập truyện"
+      >
+        {sortedChapterEpisodes.length > 0 ? (
+          sortedChapterEpisodes.map((episode) => (
+            <option
+              key={episode.episodeId}
+              value={episode.episodeId}
+              className="bg-[#121214] text-white"
+            >
+              Tập {episode.episodeNumber}: {episode.title}
+            </option>
+          ))
+        ) : (
+          <option value={episodeId}>Tập hiện tại</option>
+        )}
+      </select>
+
+      <button
+        type="button"
+        onClick={() => nextChapter && router.push(`/read/${nextChapter.episodeId}`)}
+        disabled={!nextChapter}
+        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-gray-200 transition hover:border-[#D4AF37]/40 hover:bg-[#D4AF37]/15 disabled:cursor-not-allowed disabled:opacity-35"
+        title="Tập tiếp theo"
+      >
+        <ChevronRight className="h-4 w-4" />
+      </button>
+
+      {!isOwner && creatorAccountId && (
+        <button
+          type="button"
+          onClick={toggleFollow}
+          disabled={isFollowMutating}
+          className="hidden h-9 shrink-0 items-center gap-1.5 rounded-xl bg-[#D35B51] px-3 text-xs font-black text-white shadow-[0_8px_24px_rgba(211,91,81,0.25)] transition hover:bg-[#E4665B] disabled:cursor-not-allowed disabled:opacity-60 sm:inline-flex"
+        >
+          <Heart
+            className={cn("h-4 w-4", isFollowing && "fill-current")}
+          />
+          {isFollowing ? "Đang theo dõi" : "Theo dõi"}
+        </button>
+      )}
+    </div>
+  );
+
+  const bottomChapterNavigation = (
+    <div className="mx-auto flex w-full max-w-4xl items-center justify-center gap-3">
+      <button
+        type="button"
+        onClick={() =>
+          previousChapter && router.push(`/read/${previousChapter.episodeId}`)
+        }
+        disabled={!previousChapter}
+        className="inline-flex items-center gap-2 rounded-xl border border-[#F3A7A0]/40 bg-[#D35B51]/70 px-5 py-3 text-sm font-black text-white transition hover:bg-[#D35B51] disabled:cursor-not-allowed disabled:opacity-40 sm:text-base"
+      >
+        <ChevronLeft className="h-5 w-5" />
+        Chap trước
+      </button>
+
+      <button
+        type="button"
+        onClick={() => nextChapter && router.push(`/read/${nextChapter.episodeId}`)}
+        disabled={!nextChapter}
+        className="inline-flex items-center gap-2 rounded-xl border border-[#D35B51]/50 bg-[#C55349] px-5 py-3 text-sm font-black text-white transition hover:bg-[#D35B51] disabled:cursor-not-allowed disabled:opacity-40 sm:text-base"
+      >
+        Chap sau
+        <ChevronRight className="h-5 w-5" />
+      </button>
+    </div>
+  );
 
   // ─── Loading State ───
   if (isPagesLoading) {
@@ -326,8 +493,6 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
   return (
     <div
       className="relative min-h-screen bg-[#0B0B0C] select-none"
-      onMouseMove={handlePageInteraction}
-      onTouchStart={handlePageInteraction}
       ref={containerRef}
     >
       {/* ─── TOP BAR ─── */}
@@ -339,53 +504,33 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
             : "opacity-0 -translate-y-full pointer-events-none",
         )}
       >
-        <div className="bg-gradient-to-b from-black/90 to-transparent backdrop-blur-sm border-b border-white/5 px-4 py-3 flex items-center justify-between gap-3">
-          {/* Nút quay lại */}
-          <button
-            onClick={() => router.back()}
-            className="flex items-center gap-2 text-sm font-bold text-gray-300 hover:text-white transition-colors group"
-          >
-            <ChevronLeft className="w-5 h-5 transition-transform group-hover:-translate-x-1" />
-            <span className="hidden sm:inline">Quay lại</span>
-          </button>
+        <div className="border-b border-white/5 bg-black/70 px-3 py-2 backdrop-blur-xl">
+          <div className="mx-auto flex max-w-6xl items-center gap-2">
+            <div className="min-w-0 flex-1">{chapterNavigation}</div>
 
-          {/* Tiêu đề & chỉ số trang */}
-          <div className="flex-1 text-center">
-            <p className="text-white font-bold text-sm line-clamp-1">
-              {episodeDetail
-                ? `Tập ${episodeDetail.episodeNumber}: ${episodeDetail.title}`
-                : `Tập ${episodeId}`}
-            </p>
-            <p className="text-[#D4AF37] text-xs font-semibold mt-0.5">
-              Trang {currentPage + 1} / {totalPages}
-            </p>
-          </div>
-
-          {/* Controls phải */}
-          <div className="flex items-center gap-2">
             {/* Zoom controls (chỉ hiển thị ở vertical mode) */}
             {readingMode === "vertical" && (
-              <div className="hidden sm:flex items-center gap-1 bg-white/5 rounded-lg px-2 py-1 border border-white/10">
+              <div className="hidden items-center gap-2 rounded-full border border-white/10 bg-black/70 px-3 py-2 backdrop-blur-md lg:flex">
                 <button
                   onClick={handleZoomOut}
-                  className="p-1 text-gray-400 hover:text-white transition-colors"
+                  className="rounded-full p-1 text-gray-300 transition-colors hover:bg-white/10 hover:text-white"
                   title="Thu nhỏ"
                 >
                   <ZoomOut className="w-3.5 h-3.5" />
                 </button>
-                <span className="text-xs text-gray-300 w-9 text-center font-bold">
+                <span className="w-9 text-center text-xs font-bold text-gray-300">
                   {zoom}%
                 </span>
                 <button
                   onClick={handleZoomIn}
-                  className="p-1 text-gray-400 hover:text-white transition-colors"
+                  className="rounded-full p-1 text-gray-300 transition-colors hover:bg-white/10 hover:text-white"
                   title="Phóng to"
                 >
                   <ZoomIn className="w-3.5 h-3.5" />
                 </button>
                 <button
                   onClick={handleZoomReset}
-                  className="p-1 text-gray-400 hover:text-white transition-colors"
+                  className="rounded-full p-1 text-gray-300 transition-colors hover:bg-white/10 hover:text-white"
                   title="Đặt lại"
                 >
                   <RotateCcw className="w-3 h-3" />
@@ -483,24 +628,29 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
       )}
 
       {/* ─── READING AREA ─── */}
-      <div className="pt-[60px]">
+      <div className="pt-[70px]">
         {readingMode === "vertical" ? (
           /* ═══ VERTICAL / WEBTOON MODE ═══ */
-          <div className="flex flex-col items-center pb-24 gap-0">
+          <div className="flex flex-col items-center overflow-x-auto pb-24 gap-0">
             {sortedPages.map((page, idx) => (
               <div
                 key={page.mediaId}
                 id={`page-${idx}`}
                 className="w-full flex justify-center bg-[#0B0B0C]"
-                style={{ maxWidth: `${zoom}%` }}
               >
                 {page.isLocked ? (
-                  <div className="w-full aspect-[2/3] max-w-lg mx-auto bg-[#0B0B0C] flex flex-col items-center justify-center relative overflow-hidden">
+                  <div
+                    className="relative mx-auto flex aspect-[2/3] w-full flex-col items-center justify-center overflow-hidden bg-[#0B0B0C]"
+                    style={{
+                      maxWidth: `${(zoom / 100) * 512}px`,
+                      width: `${zoom}%`,
+                    }}
+                  >
                     {page.fileUrl && (
                       <img
                         src={page.fileUrl}
                         alt="Locked content"
-                        className="w-full h-full object-cover select-none"
+                        className="h-full w-full object-cover select-none"
                       />
                     )}
                     <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/40 px-6">
@@ -513,7 +663,11 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
                   <img
                     src={page.fileUrl}
                     alt={`Trang ${idx + 1}`}
-                    className="w-full h-auto object-contain block"
+                    className="mx-auto block h-auto object-contain transition-[width,max-width] duration-200"
+                    style={{
+                      maxWidth: `${(zoom / 100) * 896}px`,
+                      width: `${zoom}%`,
+                    }}
                     loading={idx < 3 ? "eager" : "lazy"}
                     onLoad={() => {
                       if (idx === 0) setCurrentPage(0);
@@ -606,7 +760,9 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
             {/* Page Image */}
             <div
               className="relative w-full h-screen flex items-center justify-center overflow-hidden cursor-pointer"
-              onClick={handlePageInteraction}
+              onClick={() => {
+                setShowControls((current) => !current);
+              }}
             >
               {sortedPages[currentPage] && (
                 sortedPages[currentPage].isLocked ? (
@@ -616,7 +772,7 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
                         key={`locked-${sortedPages[currentPage].mediaId}`}
                         src={sortedPages[currentPage].fileUrl}
                         alt="Locked content"
-                        className="absolute inset-0 w-full h-full object-contain select-none"
+                        className="container absolute inset-0 mx-auto h-full w-full max-w-4xl object-contain select-none"
                       />
                     )}
                     <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/40 px-6">
@@ -628,7 +784,7 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
                     key={sortedPages[currentPage].mediaId}
                     src={sortedPages[currentPage].fileUrl}
                     alt={`Trang ${currentPage + 1}`}
-                    className="max-h-screen max-w-full object-contain"
+                    className="container mx-auto max-h-screen w-full max-w-4xl object-contain"
                     style={{ userSelect: "none" }}
                   />
                 )
@@ -677,6 +833,8 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
         )}
 
         {/* Phần Bình luận tập truyện */}
+        <div className="px-4 py-6">{bottomChapterNavigation}</div>
+
         <AdSlot slotId="mock-read-bottom" format="horizontal" className="my-8" />
 
         <EpisodeCommentsSection

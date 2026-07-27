@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useQueries } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import {
@@ -26,7 +26,6 @@ import {
 } from "../api/series-api";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 import { getMyLikedEpisodes, getEpisodeLikes } from "../api/episode-likes-api";
 import { useGetPublicCombos } from "@/features/public/hooks/use-public-combos";
 import { useCreatorFollow } from "../hooks/use-creator-follow";
@@ -45,7 +44,7 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
   const router = useRouter();
   const authUser = useAuthStore((state) => state.user);
   const [selectedSeasonId, setSelectedSeasonId] = useState<string | null>(null);
-  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const [expandedCombos, setExpandedCombos] = useState<Record<string, boolean>>(
     {},
   );
@@ -76,24 +75,6 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
     isLoading: isFollowListLoading,
   } = useCreatorFollow(series?.accountId);
 
-  const [initialIsFollowing, setInitialIsFollowing] = useState<boolean | null>(
-    null,
-  );
-
-  useEffect(() => {
-    setInitialIsFollowing(null);
-  }, [series?.seriesId]);
-
-  useEffect(() => {
-    if (
-      !isFollowListLoading &&
-      initialIsFollowing === null &&
-      series?.accountId
-    ) {
-      setInitialIsFollowing(isFollowing);
-    }
-  }, [isFollowListLoading, isFollowing, series?.accountId, initialIsFollowing]);
-
   const isOwner = Boolean(
     authUser?.accountId &&
     series?.accountId &&
@@ -107,25 +88,14 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
   });
 
   const ownFollowerCount =
-    (ownFollowersData as any)?.totalElements ??
-    (ownFollowersData as any)?.numberOfElements ??
+    ownFollowersData?.numberOfElements ??
     ownFollowersData?.content?.length ??
     0;
 
-  const displayFollowersCount = (() => {
-    const baseCount = Math.max(
-      series?.totalCreatorFollowers ?? 0,
-      isOwner ? ownFollowerCount : 0,
-    );
-    if (initialIsFollowing === null) {
-      return isFollowing ? Math.max(1, baseCount) : baseCount;
-    }
-    if (initialIsFollowing) {
-      return isFollowing ? Math.max(1, baseCount) : Math.max(0, baseCount - 1);
-    } else {
-      return isFollowing ? Math.max(1, baseCount + 1) : baseCount;
-    }
-  })();
+  const displayFollowersCount = Math.max(
+    series?.totalCreatorFollowers ?? 0,
+    isOwner ? ownFollowerCount : 0,
+  );
 
   // 2. Fetch danh sách Seasons của Series
   const { data: seasons = [], isLoading: isSeasonsLoading } = useQuery({
@@ -227,7 +197,11 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
       );
       return acc + likesForEp;
     }, 0);
-    return Math.max((series as any)?.likes ?? 0, epLikes);
+    const seriesLikes =
+      series && "likes" in series && typeof series.likes === "number"
+        ? series.likes
+        : 0;
+    return Math.max(seriesLikes, epLikes);
   }, [series, allEpisodesInSeries, episodeLikesQueries, myLikedEpisodeIds]);
 
   // Lọc các combo thuộc về Series này
@@ -241,16 +215,6 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
           ep.seriesTitle?.toLowerCase() === series.title.toLowerCase()),
     );
   });
-
-  // Giả lập chức năng đăng ký/theo dõi series
-  const handleSubscribeToggle = () => {
-    setIsSubscribed((prev) => !prev);
-    if (!isSubscribed) {
-      toast.success(`Đã đăng ký nhận thông báo từ series "${series?.title}"`);
-    } else {
-      toast.info(`Đã hủy đăng ký series "${series?.title}"`);
-    }
-  };
 
   // Trạng thái Loading toàn trang (khi chưa load được Series)
   if (isSeriesLoading) {
@@ -287,27 +251,29 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
     );
   }
 
+  const cinematicBackdropUrl =
+    series.bannerUrl ||
+    series.coverUrl ||
+    "https://images.unsplash.com/photo-1612036782180-6f0b6cd846fe?q=80&w=1600&auto=format&fit=crop";
+  const descriptionText =
+    series.description || "Chưa có nội dung giới thiệu chi tiết cho tác phẩm này.";
+  const canToggleDescription = descriptionText.length > 180;
+
   return (
     <div className="w-full min-h-screen bg-[#0B0B0C] text-white relative pb-24 overflow-hidden">
-      {/* 1. Backdrop Banner với blur và gradient */}
-      <div className="absolute top-0 left-0 w-full h-[65vh] min-h-[500px] z-0">
-        {series.bannerUrl ? (
-          <div
-            className="w-full h-full bg-cover bg-center filter blur-[6px] scale-105 opacity-25"
-            style={{ backgroundImage: `url(${series.bannerUrl})` }}
-          />
-        ) : (
-          <div className="w-full h-full bg-gradient-to-b from-[#D4AF37]/5 via-transparent to-transparent opacity-30" />
-        )}
-        {/* Lớp phủ gradient chìm vào nền tối */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/60 to-[#0B0B0C]" />
+      {/* 1. Cinematic background */}
+      <div className="pointer-events-none absolute left-0 top-0 z-0 h-[600px] w-full overflow-hidden">
         <div
-          className="absolute inset-0 bg-radial-gradient"
+          className="h-full w-full scale-105 bg-cover bg-center opacity-15 blur-[2px]"
           style={{
-            background:
-              "radial-gradient(circle at 50% 30%, transparent 20%, #0B0B0C 85%)",
+            backgroundImage: `url(${cinematicBackdropUrl})`,
+            maskImage: "linear-gradient(to bottom, black 30%, transparent 100%)",
+            WebkitMaskImage:
+              "linear-gradient(to bottom, black 30%, transparent 100%)",
           }}
         />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0B0B0C]/80 to-[#0B0B0C]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_24%_24%,rgba(212,175,55,0.16),transparent_34%),radial-gradient(circle_at_76%_18%,rgba(34,211,238,0.12),transparent_30%)]" />
       </div>
 
       {/* 2. Main Content Container */}
@@ -366,70 +332,110 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="flex-1"
           >
-            {/* Cụm Badge thông số nhỏ */}
-            <div className="flex flex-wrap items-center gap-3 mb-4 text-xs font-semibold text-gray-400">
-              {series.ageRating && (
-                <span className="px-2.5 py-1 rounded bg-[#E50914]/10 text-[#FF4D4D] border border-[#E50914]/20 font-extrabold">
-                  {series.ageRating}
-                </span>
-              )}
-              {series.language && (
-                <span className="flex items-center gap-1 bg-white/[0.04] border border-white/5 px-2.5 py-1 rounded">
-                  <Languages className="w-3.5 h-3.5 text-[#D4AF37]" />{" "}
-                  {series.language.toUpperCase()}
-                </span>
-              )}
-              <span className="flex items-center gap-1 bg-white/[0.04] border border-white/5 px-2.5 py-1 rounded text-gray-300">
-                <Eye className="w-3.5 h-3.5 text-gray-400" />{" "}
-                {totalSeriesViews.toLocaleString("vi-VN")} lượt xem
-              </span>
-              <span className="flex items-center gap-1 bg-white/[0.04] border border-white/5 px-2.5 py-1 rounded text-gray-300">
-                <Users className="w-3.5 h-3.5 text-gray-400" />{" "}
-                {displayFollowersCount != null
-                  ? `${displayFollowersCount.toLocaleString("vi-VN")} người theo dõi`
-                  : "0 người theo dõi"}
-              </span>
-              <span className="flex items-center gap-1 bg-white/[0.04] border border-white/5 px-2.5 py-1 rounded text-red-400 font-bold">
-                <Heart className="w-3.5 h-3.5 text-red-500 fill-current" />{" "}
-                {totalSeriesLikes.toLocaleString("vi-VN")} lượt thích
-              </span>
-            </div>
-
             {/* Tiêu đề lớn */}
             <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight mb-6 bg-gradient-to-r from-white via-white to-gray-400 bg-clip-text text-transparent">
               {series.title}
             </h1>
 
-            {/* Thể loại & Tag */}
-            <div className="flex flex-wrap gap-2 mb-6">
-              {series.categories.map((cat) => (
-                <span
-                  key={cat.categoryId}
-                  className="px-3 py-1 rounded-full text-xs font-medium bg-[#D4AF37]/10 text-[#D4AF37] border border-[#D4AF37]/25"
-                >
-                  {cat.categoryName}
-                </span>
-              ))}
-              {series.tags.map((tag) => (
-                <span
-                  key={tag.tagId}
-                  className="px-3 py-1 rounded-full text-xs font-medium bg-white/[0.03] text-gray-400 border border-white/5"
-                >
-                  #{tag.tagName}
-                </span>
-              ))}
+            {/* Metadata grid */}
+            <div className="mb-6 grid max-w-3xl grid-cols-[120px_1fr] gap-y-3 text-sm">
+              <div className="flex items-center gap-2 font-medium text-slate-400">
+                <Users className="h-4 w-4" /> Tác giả
+              </div>
+              <div className="font-semibold text-white">
+                {series.creatorName || "Nhà sáng tạo TaleX"}
+              </div>
+
+              {series.categories.length > 0 && (
+                <>
+                  <div className="flex items-center gap-2 font-medium text-slate-400">
+                    <BookOpen className="h-4 w-4" /> Thể loại
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {series.categories.map((cat) => (
+                      <span
+                        key={cat.categoryId}
+                        className="rounded-md bg-white/5 px-2 py-1 text-xs font-medium text-cyan-100 transition hover:bg-white/10"
+                      >
+                        {cat.categoryName}
+                      </span>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {series.tags.length > 0 && (
+                <>
+                  <div className="flex items-center gap-2 font-medium text-slate-400">
+                    <Sparkles className="h-4 w-4" /> Tags
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {series.tags.map((tag) => (
+                      <span
+                        key={tag.tagId}
+                        className="rounded-md bg-white/5 px-2 py-1 text-xs font-medium text-slate-300 transition hover:bg-white/10"
+                      >
+                        #{tag.tagName}
+                      </span>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {series.ageRating && (
+                <>
+                  <div className="flex items-center gap-2 font-medium text-slate-400">
+                    <AlertCircle className="h-4 w-4" /> Độ tuổi
+                  </div>
+                  <div className="font-extrabold text-[#FF4D4D]">
+                    {series.ageRating}
+                  </div>
+                </>
+              )}
+
+              {series.language && (
+                <>
+                  <div className="flex items-center gap-2 font-medium text-slate-400">
+                    <Languages className="h-4 w-4" /> Ngôn ngữ
+                  </div>
+                  <div className="font-semibold text-white">
+                    {series.language.toUpperCase()}
+                  </div>
+                </>
+              )}
+
+              <div className="flex items-center gap-2 font-medium text-slate-400">
+                <Eye className="h-4 w-4" /> Lượt xem
+              </div>
+              <div className="text-white">
+                {totalSeriesViews.toLocaleString("vi-VN")} lượt xem
+              </div>
+
+              <div className="flex items-center gap-2 font-medium text-slate-400">
+                <Users className="h-4 w-4" /> Theo dõi
+              </div>
+              <div className="text-white">
+                {displayFollowersCount.toLocaleString("vi-VN")} người theo dõi
+              </div>
+
+              <div className="flex items-center gap-2 font-medium text-slate-400">
+                <Heart className="h-4 w-4" /> Lượt thích
+              </div>
+              <div className="font-bold text-red-400">
+                {totalSeriesLikes.toLocaleString("vi-VN")} lượt thích
+              </div>
             </div>
 
             {/* Thông tin nhà sáng tạo (Creator Profile & Follow Action) */}
             {series.creatorName && (
-              <div className="flex items-center gap-3 mb-8 bg-white/[0.02] border border-white/5 w-fit rounded-2xl p-4 backdrop-blur-md">
+              <div className="mb-8 flex w-fit flex-wrap items-center gap-3 rounded-2xl border border-white/5 bg-white/[0.02] p-4 backdrop-blur-md">
                 <Link
                   href={
                     isOwner
                       ? "/creator-channel"
                       : `/public-channel?creatorId=${series.creatorId || series.accountId}`
                   }
-                  className="flex items-center gap-3 min-w-0 pr-2 group cursor-pointer hover:opacity-90 transition-opacity"
+                  className="group flex min-w-0 cursor-pointer items-center gap-3 pr-2 transition-opacity hover:opacity-90"
                 >
                   {/* Avatar */}
                   <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 overflow-hidden relative flex-none shadow-md group-hover:border-yellow-500/50 transition-colors">
@@ -459,11 +465,12 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
                 </Link>
                 {/* Follow Button (Ẩn nếu người xem là tác giả) */}
                 {series.accountId && !isOwner && (
-                  <div className="ml-4 pl-4 border-l border-white/5 shrink-0">
+                  <div className="shrink-0">
                     <FollowButton
                       isFollowing={isFollowing}
                       onFollowToggle={toggleFollow}
                       isMutating={isFollowMutating}
+                      isLoading={isFollowListLoading}
                     />
                   </div>
                 )}
@@ -475,10 +482,38 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
               <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-2">
                 Giới thiệu nội dung
               </h3>
-              <p className="text-gray-300 text-sm sm:text-base leading-relaxed">
-                {series.description ||
-                  "Chưa có nội dung giới thiệu chi tiết cho tác phẩm này."}
-              </p>
+              <div className="relative">
+                <p
+                  className={`whitespace-pre-line break-words text-sm leading-relaxed text-gray-300 [overflow-wrap:anywhere] sm:text-base ${
+                    !isDescriptionExpanded && canToggleDescription
+                      ? "max-h-[5.8rem] overflow-hidden"
+                      : ""
+                  }`}
+                >
+                  {descriptionText}
+                </p>
+
+                {!isDescriptionExpanded && canToggleDescription && (
+                  <div className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-[#0B0B0C] to-transparent" />
+                )}
+              </div>
+
+              {canToggleDescription && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setIsDescriptionExpanded((current) => !current)
+                  }
+                  className="mt-2 inline-flex items-center gap-1 text-sm font-bold text-[#D4AF37] transition hover:text-[#E5C158]"
+                >
+                  {isDescriptionExpanded ? "Thu gọn" : "Xem thêm"}
+                  <ChevronRight
+                    className={`h-4 w-4 transition-transform ${
+                      isDescriptionExpanded ? "-rotate-90" : "rotate-90"
+                    }`}
+                  />
+                </button>
+              )}
             </div>
 
             {/* Nút hành động chính */}
@@ -651,7 +686,10 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
         )}
 
         {/* 3. Section: Season Selector & Episodes list */}
-        <section className="w-full bg-[#121214]/40 border border-white/5 rounded-3xl p-6 md:p-8 backdrop-blur-md shadow-2xl relative">
+        <section
+          id="episodes"
+          className="w-full scroll-mt-24 bg-[#121214]/40 border border-white/5 rounded-3xl p-6 md:p-8 backdrop-blur-md shadow-2xl relative"
+        >
           {/* Lớp nền mờ */}
           <div className="absolute inset-0 bg-gradient-to-br from-white/[0.01] to-transparent pointer-events-none rounded-3xl" />
 
@@ -659,11 +697,13 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 relative z-10 border-b border-white/5 pb-6">
             <div>
               <h2 className="text-xl md:text-2xl font-bold tracking-wide flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-[#D4AF37]" /> Danh Sách Tập
-                Phim
+                <Sparkles className="w-5 h-5 text-[#D4AF37]" />
+                {isComic ? "Danh sách các chương" : "Danh sách các tập phim"}
               </h2>
               <p className="text-xs text-gray-500 mt-1">
-                Chọn phần phim để xem danh sách các tập tương ứng.
+                {isComic
+                  ? "Chọn phần truyện để xem danh sách các chương tương ứng."
+                  : "Chọn phần phim để xem danh sách các tập tương ứng."}
               </p>
             </div>
 
@@ -774,7 +814,7 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
                       hidden: { opacity: 0, y: 15 },
                       visible: { opacity: 1, y: 0 },
                     }}
-                    className="group relative flex flex-col sm:flex-row gap-4 p-4 md:p-5 rounded-2xl bg-white/[0.01] hover:bg-white/[0.03] border border-white/5 hover:border-[#D4AF37]/35 shadow-lg transition-all duration-300"
+                    className="group relative flex flex-col gap-4 rounded-2xl border border-white/[0.02] bg-gradient-to-r from-white/[0.03] to-transparent p-4 shadow-lg transition-all duration-300 hover:from-white/[0.06] hover:border-[#D4AF37]/30 sm:flex-row md:p-5"
                   >
                     {/* Ảnh thu nhỏ (Thumbnail/Play button) */}
                     <div className="w-full sm:w-44 md:w-52 flex-none aspect-video rounded-xl overflow-hidden bg-white/[0.02] border border-white/5 relative group-hover:border-[#D4AF37]/50 shadow-md">
@@ -823,6 +863,11 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
                     <div className="flex-1 flex flex-col justify-center min-w-0">
                       {/* Tập và Tiêu đề */}
                       <h3 className="text-white font-bold text-base md:text-lg line-clamp-1 group-hover:text-[#D4AF37] transition-colors duration-200 mb-1.5 flex items-center gap-2">
+                        {isComic ? (
+                          <BookOpen className="h-4 w-4 flex-none text-[#D4AF37]/80" />
+                        ) : (
+                          <Film className="h-4 w-4 flex-none text-[#D4AF37]/80" />
+                        )}
                         <span className="text-gray-500 font-medium">
                           Tập {episode.episodeNumber}:
                         </span>

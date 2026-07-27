@@ -31,21 +31,21 @@ export function FollowButton({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       className={cn(
-        "inline-flex h-9 items-center justify-center rounded-full px-4 text-xs font-black tracking-wide transition-all duration-300 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer",
+        "inline-flex h-10 items-center justify-center rounded-full px-5 py-2 text-sm font-bold transition-all duration-300 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer",
         isFollowing
           ? isHovered
-            ? "bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20"
-            : "bg-white/5 border border-white/10 text-gray-300 hover:bg-white/10"
-          : "bg-[#D4AF37] text-black hover:bg-[#E5C158] hover:shadow-[0_4px_16px_rgba(212,175,55,0.25)] hover:scale-[1.03]",
+            ? "border border-red-500/20 bg-red-500/10 text-red-400 hover:bg-red-500/20"
+            : "border border-white/10 bg-white/10 text-white hover:bg-white/15"
+          : "bg-[#D4AF37] text-black hover:scale-[1.03] hover:bg-[#E5C158] hover:shadow-[0_4px_16px_rgba(212,175,55,0.25)]",
         className
       )}
     >
       {isMutating ? (
-        <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
+        <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
       ) : isFollowing ? (
-        <Check className="w-3.5 h-3.5 mr-1" />
+        <Check className="mr-1.5 h-4 w-4" />
       ) : (
-        <Plus className="w-3.5 h-3.5 mr-1 stroke-[3]" />
+        <Plus className="mr-1.5 h-4 w-4 stroke-[3]" />
       )}
 
       {isFollowing

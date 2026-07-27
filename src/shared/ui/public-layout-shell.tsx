@@ -41,6 +41,7 @@ const hiddenChromeRoutes = [
   "/watch",
   "/read",
 ] as const;
+const hiddenHeaderRoutes = ["/read"] as const;
 
 function shouldShowPublicSidebar(pathname: string) {
   return sidebarRoutes.some((route) => {
@@ -53,11 +54,16 @@ function shouldOffsetFixedHeader(pathname: string) {
   return !hiddenChromeRoutes.some((route) => pathname.startsWith(route));
 }
 
+function shouldShowSiteHeader(pathname: string) {
+  return !hiddenHeaderRoutes.some((route) => pathname.startsWith(route));
+}
+
 export function PublicLayoutShell({ children }: PublicLayoutShellProps) {
   const pathname = usePathname();
   const isSidebarOpen = usePublicSidebarStore((state) => state.isSidebarOpen);
   const hasPublicSidebar = shouldShowPublicSidebar(pathname);
   const hasFixedHeader = shouldOffsetFixedHeader(pathname);
+  const hasSiteHeader = shouldShowSiteHeader(pathname);
   const sidebarOffsetClass = isSidebarOpen ? "md:ml-64" : "md:ml-20";
 
   if (!hasPublicSidebar) {
@@ -68,7 +74,7 @@ export function PublicLayoutShell({ children }: PublicLayoutShellProps) {
           hasFixedHeader && "pt-16",
         )}
       >
-        <SiteHeader />
+        {hasSiteHeader && <SiteHeader />}
         <main className="flex flex-1 flex-col">{children}</main>
         <BackToTop />
       </div>
@@ -77,7 +83,7 @@ export function PublicLayoutShell({ children }: PublicLayoutShellProps) {
 
   return (
     <div className="min-h-screen bg-black pt-16 text-white">
-      <SiteHeader />
+      {hasSiteHeader && <SiteHeader />}
       <PublicSidebar />
       <main
         className={cn(

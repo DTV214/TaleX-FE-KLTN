@@ -1,8 +1,81 @@
 import { useMemo } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { followCreator, unfollowCreator, getFollowedCreators } from "../api/creator-follows-api";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  type QueryKey,
+} from "@tanstack/react-query";
+import {
+  followCreator,
+  unfollowCreator,
+  getFollowedCreators,
+  type AccountFollowInfoDto,
+} from "../api/creator-follows-api";
 import { useAuthStore } from "@/features/auth/store/auth.store";
 import { toast } from "sonner";
+
+type FollowMutationContext = {
+  previousFollowedCreators?: unknown;
+  previousSeriesDetails: Array<[QueryKey, unknown]>;
+};
+
+type FollowedCreatorItem = AccountFollowInfoDto & {
+  creatorId?: string | null;
+  id?: string | null;
+};
+
+type FollowedCreatorsData = Omit<
+  Awaited<ReturnType<typeof getFollowedCreators>>,
+  "content"
+> & {
+  content?: FollowedCreatorItem[];
+};
+
+type SeriesFollowerCache = {
+  accountId?: string | null;
+  creatorId?: string | null;
+  totalCreatorFollowers?: number | null;
+} & Record<string, unknown>;
+
+function matchesCreator(value: unknown, creatorAccountId?: string) {
+  if (!creatorAccountId || !value || typeof value !== "string") return false;
+  return value.toLowerCase() === creatorAccountId.toLowerCase();
+}
+
+function matchesFollowedCreator(
+  item: FollowedCreatorItem,
+  candidateList: string[]
+) {
+  return candidateList.some((cand) => {
+    const lowerCand = cand.toLowerCase();
+    return (
+      item.accountId?.toLowerCase() === lowerCand ||
+      item.creatorId?.toLowerCase() === lowerCand ||
+      item.id?.toLowerCase() === lowerCand ||
+      item.username?.toLowerCase() === lowerCand
+    );
+  });
+}
+
+function updateSeriesFollowerCount<T extends SeriesFollowerCache | undefined>(
+  old: T,
+  creatorAccountId: string,
+  delta: 1 | -1
+): T {
+  if (!old) return old;
+
+  const belongsToCreator =
+    matchesCreator(old.accountId, creatorAccountId) ||
+    matchesCreator(old.creatorId, creatorAccountId);
+
+  if (!belongsToCreator) return old;
+
+  const currentCount = Number(old.totalCreatorFollowers ?? 0);
+  return {
+    ...old,
+    totalCreatorFollowers: Math.max(0, currentCount + delta),
+  } as T;
+}
 
 export function useCreatorFollow(
   creatorAccountId?: string,
@@ -19,7 +92,10 @@ export function useCreatorFollow(
     enabled: isAuthenticated,
   });
 
-  const followedList = followedQuery.data?.content || [];
+  const followedList = useMemo(
+    () => followedQuery.data?.content ?? [],
+    [followedQuery.data?.content]
+  );
 
   const candidateList = useMemo(() => {
     const list = [creatorAccountId, ...(additionalIds || [])].filter(
@@ -31,17 +107,8 @@ export function useCreatorFollow(
   const followedItem = useMemo(() => {
     if (candidateList.length === 0 || followedList.length === 0) return null;
     return (
-      followedList.find((item: any) =>
-        candidateList.some((cand) => {
-          const lowerCand = cand.toLowerCase();
-          return (
-            (item.accountId && item.accountId.toLowerCase() === lowerCand) ||
-            (item.creatorId && item.creatorId.toLowerCase() === lowerCand) ||
-            (item.id && item.id.toLowerCase() === lowerCand) ||
-            (item.username && item.username.toLowerCase() === lowerCand)
-          );
-        })
-      ) || null
+      followedList.find((item) => matchesFollowedCreator(item, candidateList)) ||
+      null
     );
   }, [candidateList, followedList]);
 
@@ -53,28 +120,60 @@ export function useCreatorFollow(
   // Mutation: Theo dõi
   const followMutation = useMutation({
     mutationFn: () => followCreator(creatorAccountId!),
-    onMutate: async () => {
+    onMutate: async (): Promise<FollowMutationContext> => {
       await queryClient.cancelQueries({ queryKey: ["followedCreators"] });
-      const previousData = queryClient.getQueryData(["followedCreators"]);
+      await queryClient.cancelQueries({ queryKey: ["publicSeriesDetail"] });
 
-      // Optimistic update
-      queryClient.setQueryData(["followedCreators"], (old: any) => {
-        if (!old) return old;
-        return {
-          ...old,
-          content: [
-            ...old.content,
-            { accountId: creatorAccountId, followedAt: new Date().toISOString() },
-          ],
-        };
+      const previousFollowedCreators = queryClient.getQueryData([
+        "followedCreators",
+      ]);
+      const previousSeriesDetails = queryClient.getQueriesData({
+        queryKey: ["publicSeriesDetail"],
       });
 
-      return { previousData };
+      // Optimistic update
+      queryClient.setQueryData<FollowedCreatorsData>(
+        ["followedCreators"],
+        (old) => {
+          if (!old) return old;
+          const alreadyExists = old.content?.some((item) =>
+            matchesFollowedCreator(item, candidateList)
+          );
+
+          if (alreadyExists) return old;
+
+          return {
+            ...old,
+            content: [
+              ...(old.content ?? []),
+              {
+                accountId: creatorAccountId!,
+                username: "",
+                avatarUrl: null,
+                followedAt: new Date().toISOString(),
+              },
+            ],
+          };
+        }
+      );
+
+      queryClient.setQueriesData<SeriesFollowerCache | undefined>(
+        { queryKey: ["publicSeriesDetail"] },
+        (old) => updateSeriesFollowerCount(old, creatorAccountId!, 1)
+      );
+
+      return { previousFollowedCreators, previousSeriesDetails };
     },
     onError: (err, variables, context) => {
-      if (context?.previousData) {
-        queryClient.setQueryData(["followedCreators"], context.previousData);
+      if (context?.previousFollowedCreators) {
+        queryClient.setQueryData(
+          ["followedCreators"],
+          context.previousFollowedCreators
+        );
       }
+      context?.previousSeriesDetails.forEach(([queryKey, data]) => {
+        queryClient.setQueryData(queryKey, data);
+      });
       toast.error("Không thể theo dõi kênh. Vui lòng thử lại!");
     },
     onSuccess: () => {
@@ -93,25 +192,48 @@ export function useCreatorFollow(
   // Mutation: Hủy theo dõi
   const unfollowMutation = useMutation({
     mutationFn: () => unfollowCreator(creatorAccountId!),
-    onMutate: async () => {
+    onMutate: async (): Promise<FollowMutationContext> => {
       await queryClient.cancelQueries({ queryKey: ["followedCreators"] });
-      const previousData = queryClient.getQueryData(["followedCreators"]);
+      await queryClient.cancelQueries({ queryKey: ["publicSeriesDetail"] });
 
-      // Optimistic update
-      queryClient.setQueryData(["followedCreators"], (old: any) => {
-        if (!old) return old;
-        return {
-          ...old,
-          content: old.content.filter((item: any) => item.accountId !== creatorAccountId),
-        };
+      const previousFollowedCreators = queryClient.getQueryData([
+        "followedCreators",
+      ]);
+      const previousSeriesDetails = queryClient.getQueriesData({
+        queryKey: ["publicSeriesDetail"],
       });
 
-      return { previousData };
+      // Optimistic update
+      queryClient.setQueryData<FollowedCreatorsData>(
+        ["followedCreators"],
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            content: (old.content ?? []).filter(
+              (item) => !matchesFollowedCreator(item, candidateList)
+            ),
+          };
+        }
+      );
+
+      queryClient.setQueriesData<SeriesFollowerCache | undefined>(
+        { queryKey: ["publicSeriesDetail"] },
+        (old) => updateSeriesFollowerCount(old, creatorAccountId!, -1)
+      );
+
+      return { previousFollowedCreators, previousSeriesDetails };
     },
     onError: (err, variables, context) => {
-      if (context?.previousData) {
-        queryClient.setQueryData(["followedCreators"], context.previousData);
+      if (context?.previousFollowedCreators) {
+        queryClient.setQueryData(
+          ["followedCreators"],
+          context.previousFollowedCreators
+        );
       }
+      context?.previousSeriesDetails.forEach(([queryKey, data]) => {
+        queryClient.setQueryData(queryKey, data);
+      });
       toast.error("Không thể hủy theo dõi. Vui lòng thử lại!");
     },
     onSuccess: () => {

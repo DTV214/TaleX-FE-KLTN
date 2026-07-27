@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertCircle, Loader2, Calendar, Eye } from "lucide-react";
+import { AlertCircle, Loader2, Calendar, Eye, Film, PlayCircle } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
@@ -10,6 +10,7 @@ import {
 } from "@/features/playback/api/playback-api";
 import {
   getPublicEpisodeDetail,
+  getPublicEpisodes,
   getPublicSeriesList,
 } from "@/features/series/api/series-api";
 import { LikeButton } from "@/features/series/components/like-button";
@@ -113,6 +114,21 @@ export function SignedHlsPlayer({
     enabled: !!episodeId,
   });
 
+  const { data: seasonEpisodes = [], isLoading: isSeasonEpisodesLoading } =
+    useQuery({
+      queryKey: ["publicSeasonEpisodes", episodeDetail?.seasonId],
+      queryFn: () => getPublicEpisodes(episodeDetail!.seasonId),
+      enabled: !compact && !!episodeDetail?.seasonId,
+    });
+
+  const sortedSeasonEpisodes = useMemo(
+    () =>
+      [...seasonEpisodes].sort(
+        (a, b) => a.episodeNumber - b.episodeNumber,
+      ),
+    [seasonEpisodes],
+  );
+
   // Quản lý trạng thái like của tập phim
   const { totalLikes, isLiked, toggleLike, isMutating, likedUsers } =
     useEpisodeLikes(episodeId);
@@ -133,11 +149,15 @@ export function SignedHlsPlayer({
 
   const matchedSeries = useMemo(() => {
     if (!episodeDetail || !publicSeriesData?.content) return null;
+    const episodeSeriesId =
+      "seriesId" in episodeDetail && typeof episodeDetail.seriesId === "string"
+        ? episodeDetail.seriesId
+        : null;
     return (
       publicSeriesData.content.find(
         (s) =>
           s.creatorId === episodeDetail.creatorId ||
-          s.seriesId === (episodeDetail as any).seriesId ||
+          s.seriesId === episodeSeriesId ||
           (s.creatorName && s.creatorName === episodeDetail.createdBy),
       ) || null
     );
@@ -158,30 +178,8 @@ export function SignedHlsPlayer({
   const creatorAvatar =
     creatorDetail?.avatarUrl || matchedSeries?.creatorAvatar;
 
-  const {
-    isFollowing,
-    toggleFollow,
-    isMutating: isFollowMutating,
-    isLoading: isFollowListLoading,
-  } = useCreatorFollow(creatorAccountId);
-
-  const [initialIsFollowing, setInitialIsFollowing] = useState<boolean | null>(
-    null,
-  );
-
-  useEffect(() => {
-    setInitialIsFollowing(null);
-  }, [creatorAccountId]);
-
-  useEffect(() => {
-    if (
-      !isFollowListLoading &&
-      initialIsFollowing === null &&
-      creatorAccountId
-    ) {
-      setInitialIsFollowing(isFollowing);
-    }
-  }, [isFollowListLoading, isFollowing, creatorAccountId, initialIsFollowing]);
+  const { isFollowing, toggleFollow, isMutating: isFollowMutating } =
+    useCreatorFollow(creatorAccountId);
 
   const isOwner = Boolean(
     authUser?.accountId &&
@@ -196,8 +194,7 @@ export function SignedHlsPlayer({
   });
 
   const ownFollowerCount =
-    (ownFollowersData as any)?.totalElements ??
-    (ownFollowersData as any)?.numberOfElements ??
+    ownFollowersData?.numberOfElements ??
     ownFollowersData?.content?.length ??
     0;
 
@@ -209,18 +206,7 @@ export function SignedHlsPlayer({
     isOwner ? ownFollowerCount : 0,
   );
 
-  const displayFollowersCount = useMemo(() => {
-    if (rawFollowerCount == null) return isFollowing ? 1 : 0;
-    const baseCount = Number(rawFollowerCount) || 0;
-    if (initialIsFollowing === null) {
-      return isFollowing ? Math.max(1, baseCount) : baseCount;
-    }
-    if (initialIsFollowing) {
-      return isFollowing ? Math.max(1, baseCount) : Math.max(0, baseCount - 1);
-    } else {
-      return isFollowing ? Math.max(1, baseCount + 1) : baseCount;
-    }
-  }, [rawFollowerCount, initialIsFollowing, isFollowing]);
+  const displayFollowersCount = rawFollowerCount;
 
   const manifestUrl =
     playbackQuery.data?.manifestUrl ||
@@ -285,88 +271,96 @@ export function SignedHlsPlayer({
       className={
         compact
           ? "w-full"
-          : "mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8"
+          : "mx-auto w-full max-w-7xl px-4 pt-24 pb-8 sm:px-6 lg:px-8 lg:pt-28"
       }
     >
-      {notEntitled ? (
-        <ContentPaywallGate
-          episodeId={episodeId}
-          contentKind="VIDEO"
-          compact={compact}
-        />
-      ) : manifestUrl ? (
-        <div className="relative w-full">
-          <HlsVideoPlayer
-            episodeId={episodeId}
-            manifestUrl={manifestUrl}
-            posterUrl={playbackQuery.data?.thumbnailUrl}
-            realDuration={playbackQuery.data?.duration}
-            isLocked={playbackQuery.data?.isLocked ?? false}
-            blurVideo={previewEnded}
-            compact={compact}
-            storageKey={storageKey}
-            onFatalError={handleFatalPlayerError}
-            onEnded={() => {
-              if (playbackQuery.data?.isLocked) {
-                setPreviewEnded(true);
+      <div
+        className={
+          compact
+            ? "w-full"
+            : "grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_340px]"
+        }
+      >
+        <div className="min-w-0">
+          {notEntitled ? (
+            <ContentPaywallGate
+              episodeId={episodeId}
+              contentKind="VIDEO"
+              compact={compact}
+            />
+          ) : manifestUrl ? (
+            <div className="relative w-full">
+              <HlsVideoPlayer
+                episodeId={episodeId}
+                manifestUrl={manifestUrl}
+                posterUrl={playbackQuery.data?.thumbnailUrl}
+                realDuration={playbackQuery.data?.duration}
+                isLocked={playbackQuery.data?.isLocked ?? false}
+                blurVideo={previewEnded}
+                compact={compact}
+                storageKey={storageKey}
+                onFatalError={handleFatalPlayerError}
+                onEnded={() => {
+                  if (playbackQuery.data?.isLocked) {
+                    setPreviewEnded(true);
+                  }
+                }}
+                onTimeUpdate={(time) => {
+                  if (previewEnded && time < 9.9) {
+                    setPreviewEnded(false);
+                  }
+                }}
+              />
+              {previewEnded && playbackQuery.data?.isLocked && (
+                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center overflow-hidden rounded-2xl pointer-events-none">
+                  <div className="w-full bg-black/80 backdrop-blur-md px-6 py-8 shadow-2xl flex flex-col items-center justify-center pointer-events-auto">
+                    <ContentPaywallGate
+                      episodeId={episodeId}
+                      contentKind="VIDEO"
+                      compact={compact}
+                      inline={true}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div
+              className={
+                compact
+                  ? "flex aspect-video w-full items-center justify-center rounded-xl bg-black text-white"
+                  : "flex aspect-video w-full items-center justify-center rounded-2xl bg-black text-white shadow-[0_24px_80px_rgba(0,0,0,0.25)]"
               }
-            }}
-            onTimeUpdate={(time) => {
-              if (previewEnded && time < 9.9) {
-                setPreviewEnded(false);
-              }
-            }}
-          />
-          {previewEnded && playbackQuery.data?.isLocked && (
-            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center overflow-hidden rounded-2xl pointer-events-none">
-              <div className="w-full bg-black/80 backdrop-blur-md px-6 py-8 shadow-2xl flex flex-col items-center justify-center pointer-events-auto">
-                <ContentPaywallGate
-                  episodeId={episodeId}
-                  contentKind="VIDEO"
-                  compact={compact}
-                  inline={true}
-                />
+            >
+              {playbackQuery.isLoading ? (
+                <Loader2 className="h-8 w-8 animate-spin" />
+              ) : (
+                <span className="px-4 text-center text-sm font-bold">
+                  Playback is not available.
+                </span>
+              )}
+            </div>
+          )}
+
+          {!notEntitled && errorMessage && (
+            <div className="mt-4 flex items-start gap-3 rounded-2xl border border-[#FFD8D4] bg-[#FFF7F6] p-4 text-sm font-bold text-[#B42318]">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              <div>
+                <p>{errorMessage}</p>
+                <button
+                  type="button"
+                  onClick={refreshPlayback}
+                  className="mt-3 rounded-full bg-[#B42318] px-4 py-2 text-xs font-black text-white"
+                >
+                  {processingPlaybackError ? "Check Again" : "Retry Playback"}
+                </button>
               </div>
             </div>
           )}
-        </div>
-      ) : (
-        <div
-          className={
-            compact
-              ? "flex aspect-video w-full items-center justify-center rounded-xl bg-black text-white"
-              : "flex aspect-video w-full items-center justify-center rounded-2xl bg-black text-white shadow-[0_24px_80px_rgba(0,0,0,0.25)]"
-          }
-        >
-          {playbackQuery.isLoading ? (
-            <Loader2 className="h-8 w-8 animate-spin" />
-          ) : (
-            <span className="px-4 text-center text-sm font-bold">
-              Playback is not available.
-            </span>
-          )}
-        </div>
-      )}
 
-      {!notEntitled && errorMessage && (
-        <div className="mt-4 flex items-start gap-3 rounded-2xl border border-[#FFD8D4] bg-[#FFF7F6] p-4 text-sm font-bold text-[#B42318]">
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-          <div>
-            <p>{errorMessage}</p>
-            <button
-              type="button"
-              onClick={refreshPlayback}
-              className="mt-3 rounded-full bg-[#B42318] px-4 py-2 text-xs font-black text-white"
-            >
-              {processingPlaybackError ? "Check Again" : "Retry Playback"}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Thông tin tập phim dưới player */}
-      {!compact && episodeDetail && (
-        <div className="mt-6 bg-[#121214]/40 border border-white/5 rounded-3xl p-6 md:p-8 backdrop-blur-md shadow-2xl relative overflow-hidden">
+          {/* Thông tin tập phim dưới player */}
+          {!compact && episodeDetail && (
+            <div className="mt-6 bg-[#121214]/40 border border-white/5 rounded-3xl p-6 md:p-8 backdrop-blur-md shadow-2xl relative overflow-hidden">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-white/5">
             {/* Tiêu đề & Thông số */}
             <div className="space-y-2">
@@ -509,8 +503,84 @@ export function SignedHlsPlayer({
 
           {/* Phần bình luận tập phim */}
           <EpisodeCommentsSection episodeId={episodeId} className="mt-8" />
+            </div>
+          )}
         </div>
-      )}
+
+        {!compact && episodeDetail && (
+          <aside className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#121214]/80 p-3 shadow-2xl lg:sticky lg:top-24">
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#1a1a1c] to-transparent" />
+            <Film className="pointer-events-none absolute -right-8 top-8 h-32 w-32 text-white opacity-5" />
+
+            <div className="relative z-10 mb-4 flex items-center justify-between gap-3">
+              <h2 className="text-sm font-semibold text-white">Danh sách tập</h2>
+              <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] font-bold text-white/50">
+                {sortedSeasonEpisodes.length} tập
+              </span>
+            </div>
+
+            <div className="relative z-10 max-h-[560px] space-y-2 overflow-y-auto pr-1">
+              {isSeasonEpisodesLoading ? (
+                Array.from({ length: 5 }).map((_, index) => (
+                  <div
+                    key={index}
+                    className="h-[74px] animate-pulse rounded-xl bg-white/[0.04]"
+                  />
+                ))
+              ) : sortedSeasonEpisodes.length > 0 ? (
+                sortedSeasonEpisodes.map((episode) => {
+                  const isActive = episode.episodeId === episodeId;
+                  return (
+                    <Link
+                      key={episode.episodeId}
+                      href={`/watch/${episode.episodeId}`}
+                      className={`group flex gap-2 rounded-xl border p-2 transition-all ${
+                        isActive
+                          ? "border-[#D4AF37]/40 bg-[#D4AF37]/10"
+                          : "border-white/5 bg-white/[0.02] hover:border-white/10 hover:bg-white/[0.05]"
+                      }`}
+                    >
+                      <div className="relative aspect-video w-20 shrink-0 overflow-hidden rounded-lg bg-white/5">
+                        {episode.thumbnail || matchedSeries?.coverUrl ? (
+                          <img
+                            src={episode.thumbnail || matchedSeries?.coverUrl}
+                            alt={episode.title}
+                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center">
+                            <Film className="h-5 w-5 text-white/25" />
+                          </div>
+                        )}
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 transition-opacity group-hover:opacity-100">
+                          <PlayCircle className="h-6 w-6 text-white" />
+                        </div>
+                      </div>
+
+                      <div className="min-w-0 flex-1 py-0.5">
+                        <p
+                          className={`line-clamp-2 text-xs font-bold leading-snug ${
+                            isActive ? "text-[#D4AF37]" : "text-white"
+                          }`}
+                        >
+                          Tập {episode.episodeNumber}: {episode.title}
+                        </p>
+                        <p className="mt-1 text-xs font-medium text-white/40">
+                          {episode.views.toLocaleString("vi-VN")} lượt xem
+                        </p>
+                      </div>
+                    </Link>
+                  );
+                })
+              ) : (
+                <div className="rounded-xl border border-white/5 bg-white/[0.02] p-4 text-sm text-white/45">
+                  Chưa có danh sách tập cho phần này.
+                </div>
+              )}
+            </div>
+          </aside>
+        )}
+      </div>
     </div>
   );
 }
