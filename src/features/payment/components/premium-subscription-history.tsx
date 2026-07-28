@@ -7,6 +7,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Crown,
+  FileText,
   History,
   ReceiptText,
   ShieldCheck,
@@ -388,6 +389,36 @@ export function PremiumSubscriptionHistory() {
                 <p className="mt-2 break-all text-sm font-semibold text-white/88">
                   {selectedSubscription.accountSubscriptionId}
                 </p>
+              </div>
+
+              <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+                {selectedSubscription.invoiceUrl ? (
+                  <Button
+                    asChild
+                    variant="outline"
+                    className="h-10 rounded-xl border-[#D4AF37]/45 bg-[#D4AF37]/15 px-4 font-bold text-[#F5D46E] shadow-[0_12px_34px_rgba(212,175,55,0.16)] hover:border-[#F5D46E]/70 hover:bg-[#D4AF37]/25 hover:text-white"
+                  >
+                    <a
+                      href={selectedSubscription.invoiceUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <FileText className="mr-2 h-4 w-4" />
+                      Hóa đơn
+                    </a>
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled
+                    title="API lịch sử Premium chưa trả invoiceUrl cho gói này."
+                    className="h-10 rounded-xl border-[#D4AF37]/25 bg-[#D4AF37]/10 px-4 font-bold text-[#F5D46E]/65 opacity-80"
+                  >
+                    <FileText className="mr-2 h-4 w-4" />
+                    Hóa đơn
+                  </Button>
+                )}
               </div>
 
             </div>

@@ -57,6 +57,9 @@ const cardImages = [
   "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?q=80&w=900&auto=format&fit=crop",
 ];
 
+const onboardingBackgroundVideo =
+  "https://res.cloudinary.com/dratbz8bh/video/upload/v1785246873/mp4_njyxez.mp4";
+
 const profileStepImages = [
   {
     image:
@@ -276,35 +279,35 @@ function ChoiceCard({
     <button
       type="button"
       onClick={onClick}
-      className={`group relative min-h-[136px] overflow-hidden rounded-[1.45rem] border p-4 text-left transition duration-200 hover:-translate-y-1 hover:border-[#D4AF37]/45 hover:shadow-[0_18px_48px_rgba(0,0,0,0.3)] ${
+      className={`group relative min-h-[62px] overflow-hidden rounded-2xl border px-4 py-3 text-center transition duration-200 hover:-translate-y-0.5 hover:border-[#D4AF37]/45 hover:shadow-[0_12px_30px_rgba(0,0,0,0.24)] ${
         selected
           ? "border-[#D4AF37]/65 bg-[#D4AF37]/10 shadow-[0_0_0_1px_rgba(212,175,55,0.18)]"
           : "border-white/10 bg-white/[0.035]"
       }`}
     >
-      <span className="absolute right-4 top-4 z-20 flex h-7 w-7 items-center justify-center rounded-full border border-[#D4AF37]/30 bg-black/45 text-[#E6C95C] shadow-[0_8px_26px_rgba(212,175,55,0.16)] backdrop-blur-md">
-        <Star className="h-3.5 w-3.5 fill-current" />
+      <span className="absolute right-3 top-3 z-20 flex h-6 w-6 items-center justify-center rounded-full border border-[#D4AF37]/30 bg-black/45 text-[#E6C95C] shadow-[0_8px_22px_rgba(212,175,55,0.14)] backdrop-blur-md">
+        <Star className="h-3 w-3 fill-current" />
       </span>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={image}
         alt=""
-        className="absolute inset-0 h-full w-full object-cover opacity-20 transition duration-300 group-hover:opacity-30"
+        className="absolute inset-0 h-full w-full object-cover opacity-18 transition duration-300 group-hover:scale-105 group-hover:opacity-28"
       />
-      <span className="absolute inset-0 bg-gradient-to-br from-black/82 via-black/60 to-[#111112]/88" />
-      <span className="relative z-10 flex h-full flex-col justify-between gap-4">
-        <span>
-          <span className="text-base font-black text-white/92">{title}</span>
+      <span className="absolute inset-0 bg-gradient-to-br from-black/76 via-black/62 to-[#111112]/88" />
+      <span className="relative z-10 flex min-h-[38px] items-center justify-center px-4">
+        <span className="line-clamp-2 text-center text-sm font-black leading-snug text-white/92">
+          {title}
         </span>
-        <span
-          className={`inline-flex h-7 w-7 items-center justify-center rounded-full border transition ${
-            selected
-              ? "border-[#D4AF37] bg-[#D4AF37] text-black"
-              : "border-white/15 bg-black/30 text-white/40"
-          }`}
-        >
-          <Check className="h-4 w-4" />
-        </span>
+      </span>
+      <span
+        className={`absolute bottom-2 left-2 z-20 inline-flex h-5 w-5 items-center justify-center rounded-full border transition ${
+          selected
+            ? "border-[#D4AF37] bg-[#D4AF37] text-black"
+            : "border-white/15 bg-black/30 text-white/40"
+        }`}
+      >
+        <Check className="h-3 w-3" />
       </span>
     </button>
   );
@@ -325,11 +328,11 @@ function OptionGridState({
 }) {
   if (isLoading) {
     return (
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {Array.from({ length: 9 }).map((_, index) => (
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {Array.from({ length: 12 }).map((_, index) => (
           <div
             key={index}
-            className="h-[136px] animate-pulse rounded-[1.45rem] border border-white/10 bg-white/[0.04]"
+            className="h-[62px] animate-pulse rounded-2xl border border-white/10 bg-white/[0.04]"
           />
         ))}
       </div>
@@ -497,15 +500,18 @@ export function OnboardingLandingPage() {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#080808] text-white">
-      <div
-        className="fixed inset-0 bg-cover bg-center opacity-18"
-        style={{
-          backgroundImage:
-            "url('https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=1600&auto=format&fit=crop')",
-        }}
+      <video
+        className="fixed inset-0 h-full w-full object-cover opacity-28"
+        src={onboardingBackgroundVideo}
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="metadata"
+        aria-hidden="true"
       />
-      <div className="fixed inset-0 bg-gradient-to-br from-[#080808]/96 via-[#111113]/95 to-black/98" />
-      <div className="fixed inset-0 bg-[radial-gradient(circle_at_18%_12%,rgba(212,175,55,0.18),transparent_32%),radial-gradient(circle_at_82%_18%,rgba(125,211,252,0.10),transparent_26%)]" />
+      <div className="fixed inset-0 bg-gradient-to-br from-[#0B0A07]/88 via-[#111318]/82 to-black/94" />
+      <div className="fixed inset-0 bg-[radial-gradient(circle_at_16%_16%,rgba(244,205,92,0.22),transparent_30%),radial-gradient(circle_at_82%_18%,rgba(125,211,252,0.13),transparent_28%),linear-gradient(115deg,rgba(212,175,55,0.08),transparent_44%,rgba(255,255,255,0.035))]" />
       <DecorativeIcons />
 
       <section className="relative z-10 mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 py-7 sm:px-6 lg:px-8">
@@ -678,7 +684,7 @@ export function OnboardingLandingPage() {
                   onRetry={() => void categoriesQuery.refetch()}
                 />
                 {!categoriesQuery.isLoading && !categoriesQuery.isError && (
-                  <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                     {categories.map((category, index) => (
                       <MemoChoiceCard
                         key={category.id}
@@ -731,7 +737,7 @@ export function OnboardingLandingPage() {
                   onRetry={() => void tagsQuery.refetch()}
                 />
                 {!tagsQuery.isLoading && !tagsQuery.isError && (
-                  <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                     {tags.map((tag, index) => (
                       <MemoChoiceCard
                         key={tag.id}

@@ -368,7 +368,7 @@ export function ContentPurchaseHistory() {
                   <Button
                     asChild
                     variant="outline"
-                    className="h-10 rounded-xl border-white/10 bg-white/[0.03] text-white/70 hover:border-[#D4AF37]/35 hover:text-[#D4AF37]"
+                    className="h-10 rounded-xl border-[#D4AF37]/45 bg-[#D4AF37]/15 px-4 font-bold text-[#F5D46E] shadow-[0_12px_34px_rgba(212,175,55,0.16)] hover:border-[#F5D46E]/70 hover:bg-[#D4AF37]/25 hover:text-white"
                   >
                     <a
                       href={selectedItem.invoiceUrl}

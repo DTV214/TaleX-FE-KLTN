@@ -46,6 +46,7 @@ export type AccountSubscription = {
   endTime: string;
   updatedAt: string;
   cancelledAt: string | null;
+  invoiceUrl?: string | null;
   isAdBlocked: boolean;
   isMovieUnlocked: boolean;
   isStoryUnlocked: boolean;
