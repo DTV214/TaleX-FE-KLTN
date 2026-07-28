@@ -7,11 +7,11 @@ import { AdAnalyticsChart } from "@/features/advertiser-dashboard/components/ad-
 import { SidebarLabelPopover } from "@/features/advertiser-dashboard/components/sidebar-label-popover";
 import { DateRangePicker } from "@/features/advertiser-dashboard/components/date-range-picker";
 import { BreakdownPopover } from "@/features/advertiser-dashboard/components/breakdown-popover";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { adsApi, AdSlot } from "@/features/ads/api/ads-api";
 import { toast } from "sonner";
-import { Loader2, Plus, Search, Calendar, ChevronDown, Columns, RefreshCw, MoreVertical, X, Check, Tag, Megaphone, PlusCircle } from "lucide-react";
+import { Loader2, Plus, Search, Calendar, ChevronDown, Columns, RefreshCw, MoreVertical, X, Check, Tag, Megaphone, PlusCircle, Coins } from "lucide-react";
 import { useAuthStore } from "@/features/auth/store/auth.store";
 import { useLabels, AdLabel } from "@/features/ads/hooks/use-labels";
 
@@ -122,7 +122,28 @@ function CampaignManagementView({ profile }: { profile: any }) {
   const [isTopupOpen, setIsTopupOpen] = useState(false);
   const { data: campaigns, isLoading } = useQuery({ queryKey: ["my-campaigns"], queryFn: adsApi.getMyCampaigns });
 
+  const toggleMutation = useMutation({
+    mutationFn: adsApi.toggleCampaign,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["my-campaigns"] });
+      toast.success("Campaign status updated!");
+    },
+    onError: (err: any) => toast.error(err.response?.data?.message || err.message)
+  });
+
+  const cancelMutation = useMutation({
+    mutationFn: adsApi.cancelCampaign,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["my-campaigns"] });
+      queryClient.invalidateQueries({ queryKey: ["ad-wallet-balance"] });
+      toast.success("Campaign cancelled and refunded!");
+    },
+    onError: (err: any) => toast.error(err.response?.data?.message || err.message)
+  });
+
   const [activeReportCampaignId, setActiveReportCampaignId] = useState<string | null>(null);
+  const [scheduleCampaign, setScheduleCampaign] = useState<any>(null);
+  const [topupCampaign, setTopupCampaign] = useState<any>(null);
   const { labels } = useLabels();
   const selectedLabel = searchParams.get("labelId");
 
@@ -231,18 +252,25 @@ function CampaignManagementView({ profile }: { profile: any }) {
               <th className="px-4 py-2 border-r border-slate-200">On/off</th>
               <th className="px-4 py-2 border-r border-slate-200">Name</th>
               <th className="px-4 py-2 border-r border-slate-200">Status</th>
+              <th className="px-4 py-2 border-r border-slate-200 text-right">Start Date</th>
+              <th className="px-4 py-2 border-r border-slate-200 text-right">End Date</th>
               <th className="px-4 py-2 border-r border-slate-200 text-right">Campaign Budget</th>
               <th className="px-4 py-2 border-r border-slate-200 text-right">Spend</th>
-              <th className="px-4 py-2 border-r border-slate-200 text-right">CPC (destination)</th>
               <th className="px-4 py-2 border-r border-slate-200 text-right">CPM</th>
+              <th className="px-4 py-2 border-r border-slate-200 text-right">Cost per result</th>
+              <th className="px-4 py-2 border-r border-slate-200 text-right">6-second focused views</th>
+              <th className="px-4 py-2 border-r border-slate-200 text-right">Result rate</th>
+              <th className="px-4 py-2 border-r border-slate-200 text-right">6-second focused views (paid views)</th>
+              <th className="px-4 py-2 border-r border-slate-200 text-right">Focused view 6-second view rate (impression)</th>
+              <th className="px-4 py-2 border-r border-slate-200 text-right">Target Views</th>
               <th className="px-4 py-2 border-r border-slate-200 text-right">Impressions</th>
-              <th className="px-4 py-2 text-right">Clicks (destination)</th>
+              <th className="px-4 py-2 text-right">Clicks</th>
             </tr>
           </thead>
           <tbody>
             {!filteredCampaigns || filteredCampaigns.length === 0 ? (
               <tr>
-                <td colSpan={10} className="px-4 py-32 text-center text-[#757575]">
+                <td colSpan={17} className="px-4 py-32 text-center text-[#757575]">
                   No data to display. Please create a campaign.
                 </td>
               </tr>
@@ -251,14 +279,52 @@ function CampaignManagementView({ profile }: { profile: any }) {
                 <tr key={c.campaignId} className="border-b border-slate-100 hover:bg-slate-50 group">
                   <td className="px-4 py-3 border-r border-slate-100 text-center"><input type="checkbox" className="rounded-sm" /></td>
                   <td className="px-4 py-3 border-r border-slate-100">
-                    <div className={`w-8 h-4 rounded-full flex items-center p-0.5 cursor-pointer ${c.status === 'ACTIVE' || c.status === 'PENDING_REVIEW' ? 'bg-[#00D6BA]' : 'bg-slate-300'}`}>
-                      <div className={`w-3 h-3 rounded-full bg-white transition-transform ${c.status === 'ACTIVE' || c.status === 'PENDING_REVIEW' ? 'translate-x-4' : 'translate-x-0'}`}></div>
+                    <div 
+                      onClick={() => {
+                        if (c.status === 'ACTIVE' || c.status === 'PAUSED') toggleMutation.mutate(c.campaignId);
+                      }}
+                      className={`w-8 h-4 rounded-full flex items-center p-0.5 ${(c.status === 'ACTIVE' || c.status === 'PAUSED') ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'} ${c.status === 'ACTIVE' ? 'bg-[#00D6BA]' : 'bg-slate-300'}`}
+                    >
+                      <div className={`w-3 h-3 rounded-full bg-white transition-transform ${c.status === 'ACTIVE' ? 'translate-x-4' : 'translate-x-0'}`}></div>
                     </div>
                   </td>
                   <td className="px-4 py-3 border-r border-slate-100 min-w-[250px]">
-                    <div className="font-medium text-[#161823] flex items-center justify-between">
-                      {c.name}
-                      <button onClick={() => setActiveReportCampaignId(c.campaignId)} className="opacity-0 group-hover:opacity-100 text-teal-600 hover:underline text-xs">View Report</button>
+                    <div className="font-medium text-[#161823] flex items-center justify-between gap-2">
+                      <span>{c.name}</span>
+                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100">
+                        <button onClick={() => setActiveReportCampaignId(c.campaignId)} className="text-teal-600 hover:underline text-xs">View Report</button>
+                        {(c.status === 'PAUSED' || c.status === 'PENDING_REVIEW') && (
+                          <button 
+                            onClick={() => setScheduleCampaign(c)} 
+                            className="text-blue-500 hover:bg-blue-50 p-1 rounded-sm transition-colors"
+                            title="Update Schedule"
+                          >
+                            <Calendar className="h-4 w-4" />
+                          </button>
+                        )}
+                        {(c.status === 'ACTIVE' || c.status === 'PAUSED' || c.status === 'PENDING_REVIEW') && (
+                          <button 
+                            onClick={() => setTopupCampaign(c)} 
+                            className="text-yellow-500 hover:bg-yellow-50 p-1 rounded-sm transition-colors"
+                            title="Top-up Budget"
+                          >
+                            <Coins className="h-4 w-4" />
+                          </button>
+                        )}
+                        {(c.status === 'ACTIVE' || c.status === 'PAUSED' || c.status === 'PENDING_REVIEW') && (
+                          <button 
+                            onClick={() => {
+                              if (confirm(`Are you sure you want to cancel this campaign? Any unspent balance (≈ ${((c.totalBudget - (c.campaignBalance || 0))).toLocaleString()} VND) will be refunded to your Master Wallet.`)) {
+                                cancelMutation.mutate(c.campaignId);
+                              }
+                            }} 
+                            className="text-red-500 hover:bg-red-50 p-1 rounded-sm transition-colors"
+                            title="Cancel Campaign"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
                     </div>
                     <LabelManager campaign={c} />
                   </td>
@@ -269,14 +335,33 @@ function CampaignManagementView({ profile }: { profile: any }) {
                     </div>
                     <div className="text-[10px] text-slate-400 mt-0.5">Last edit: {new Date(c.createdAt).toLocaleDateString()}</div>
                   </td>
+                  <td className="px-4 py-3 border-r border-slate-100 text-right">{c.startDate ? new Date(c.startDate).toLocaleDateString() : '-'}</td>
+                  <td className="px-4 py-3 border-r border-slate-100 text-right">{c.endDate ? new Date(c.endDate).toLocaleDateString() : '-'}</td>
                   <td className="px-4 py-3 border-r border-slate-100 text-right font-medium">
                     {c.totalBudget.toLocaleString()} VND
                   </td>
                   <td className="px-4 py-3 border-r border-slate-100 text-right">
                     {(c.totalBudget - (c.campaignBalance || 0)).toLocaleString()} VND
                   </td>
-                  <td className="px-4 py-3 border-r border-slate-100 text-right">-</td>
-                  <td className="px-4 py-3 border-r border-slate-100 text-right">-</td>
+                  <td className="px-4 py-3 border-r border-slate-100 text-right">{c.lockedCpm ? c.lockedCpm.toLocaleString() + ' VND' : '-'}</td>
+                  <td className="px-4 py-3 border-r border-slate-100 text-right">
+                    {c.currentClicks && c.currentClicks > 0 
+                      ? Math.round((c.totalBudget - (c.campaignBalance || 0)) / c.currentClicks).toLocaleString() + ' VND' 
+                      : '-'}
+                  </td>
+                  <td className="px-4 py-3 border-r border-slate-100 text-right">{c.focusedViews6s || 0}</td>
+                  <td className="px-4 py-3 border-r border-slate-100 text-right">
+                    {c.currentImpressions && c.currentImpressions > 0 
+                      ? ((c.currentClicks / c.currentImpressions) * 100).toFixed(2) + '%' 
+                      : '-'}
+                  </td>
+                  <td className="px-4 py-3 border-r border-slate-100 text-right">{c.paidFocusedViews6s || 0}</td>
+                  <td className="px-4 py-3 border-r border-slate-100 text-right">
+                    {c.currentImpressions && c.currentImpressions > 0 
+                      ? (((c.focusedViews6s || 0) / c.currentImpressions) * 100).toFixed(2) + '%' 
+                      : '-'}
+                  </td>
+                  <td className="px-4 py-3 border-r border-slate-100 text-right">{c.targetImpressions}</td>
                   <td className="px-4 py-3 border-r border-slate-100 text-right">{c.currentImpressions}</td>
                   <td className="px-4 py-3 text-right">{c.currentClicks}</td>
                 </tr>
@@ -311,9 +396,12 @@ function CampaignManagementView({ profile }: { profile: any }) {
         document.body
       )}
 
-      {/* Topup Modal */}
-      {isTopupOpen && (
-        <TopupModal onClose={() => setIsTopupOpen(false)} balance={profile?.walletBalance || 0} />
+      {/* Modals */}
+      {scheduleCampaign && (
+        <ScheduleUpdateModal campaign={scheduleCampaign} onClose={() => setScheduleCampaign(null)} />
+      )}
+      {topupCampaign && (
+        <CampaignTopupModal campaign={topupCampaign} onClose={() => setTopupCampaign(null)} />
       )}
     </div>
   );
@@ -413,11 +501,146 @@ function LabelManager({ campaign }: { campaign: any }) {
   );
 }
 
+function ScheduleUpdateModal({ campaign, onClose }: { campaign: any, onClose: () => void }) {
+  const queryClient = useQueryClient();
+  const [startDate, setStartDate] = useState(campaign.startDate ? new Date(campaign.startDate).toISOString().slice(0, 16) : "");
+  const [endDate, setEndDate] = useState(campaign.endDate ? new Date(campaign.endDate).toISOString().slice(0, 16) : "");
+
+  const updateMutation = useMutation({
+    mutationFn: (data: { startDate?: string, endDate?: string }) => adsApi.updateCampaignSchedule(campaign.campaignId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["my-campaigns"] });
+      toast.success("Campaign schedule updated successfully!");
+      onClose();
+    },
+    onError: (err: any) => toast.error("Error: " + (err.response?.data?.message || err.message))
+  });
+
+  const handleSubmit = () => {
+    if (startDate && endDate && new Date(endDate) <= new Date(startDate)) {
+      return toast.error("End date must be after start date");
+    }
+    updateMutation.mutate({
+      startDate: startDate ? new Date(startDate).toISOString() : undefined,
+      endDate: endDate ? new Date(endDate).toISOString() : undefined,
+    });
+  };
+
+  return (
+    <div className="absolute inset-0 bg-black/50 z-[100] flex items-center justify-center animate-in fade-in">
+      <div className="bg-white rounded-md w-full max-w-md shadow-xl overflow-hidden animate-in zoom-in-95">
+        <div className="flex items-center justify-between p-4 border-b border-slate-100">
+          <h3 className="font-bold">Update Campaign Schedule</h3>
+          <button onClick={onClose}><X className="h-5 w-5 text-slate-400 hover:text-black" /></button>
+        </div>
+        <div className="p-6 space-y-4">
+          <div className="bg-slate-50 p-4 rounded-sm border border-slate-200 mb-4">
+            <div className="font-medium">{campaign.name}</div>
+            <div className="text-xs text-slate-500">Status: {campaign.status}</div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Start Date (Optional)</label>
+            <input 
+              type="datetime-local" 
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="w-full border border-slate-300 rounded-sm px-3 py-2 outline-none focus:border-teal-500 text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">End Date (Optional)</label>
+            <input 
+              type="datetime-local" 
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="w-full border border-slate-300 rounded-sm px-3 py-2 outline-none focus:border-teal-500 text-sm"
+            />
+          </div>
+          <div className="pt-2">
+            <button 
+              onClick={handleSubmit}
+              disabled={updateMutation.isPending}
+              className="w-full py-2.5 bg-[#00D6BA] text-white font-bold rounded-sm hover:bg-[#00BFA5] transition-colors disabled:opacity-50"
+            >
+              {updateMutation.isPending ? "Updating..." : "Save Schedule"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CampaignTopupModal({ campaign, onClose }: { campaign: any, onClose: () => void }) {
+  const queryClient = useQueryClient();
+  const [amount, setAmount] = useState<number>(100000);
+
+  const topupMutation = useMutation({
+    mutationFn: (topupAmount: number) => adsApi.topupCampaign(campaign.campaignId, topupAmount),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["my-campaigns"] });
+      queryClient.invalidateQueries({ queryKey: ["ad-wallet-balance"] });
+      toast.success("Campaign topped up successfully!");
+      onClose();
+    },
+    onError: (err: any) => toast.error("Error: " + (err.response?.data?.message || err.message))
+  });
+
+  const handleSubmit = () => {
+    if (amount < 10000) {
+      return toast.error("Minimum top-up amount is 10,000 VND");
+    }
+    topupMutation.mutate(amount);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in">
+      <div className="bg-white rounded-md shadow-lg w-[400px] overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+          <h3 className="font-bold text-[#161823]">Top-up Campaign Budget</h3>
+          <button onClick={onClose} className="p-1 rounded-full hover:bg-slate-100">
+            <X className="h-4 w-4 text-slate-500" />
+          </button>
+        </div>
+        <div className="p-4 space-y-4">
+          <div>
+            <label className="block text-xs font-semibold mb-1">Campaign: {campaign.name}</label>
+            <p className="text-xs text-slate-500">Current Balance: {campaign.campaignBalance?.toLocaleString()} VND</p>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold mb-1">Top-up Amount (VND)</label>
+            <input 
+              type="number" 
+              value={amount} 
+              onChange={(e) => setAmount(Number(e.target.value))}
+              className="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm outline-none focus:border-teal-500" 
+            />
+          </div>
+        </div>
+        <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+          <button onClick={onClose} className="px-4 py-1.5 text-sm font-medium rounded-sm border border-slate-300 bg-white hover:bg-slate-50 transition-colors">
+            Cancel
+          </button>
+          <button 
+            onClick={handleSubmit} 
+            disabled={topupMutation.isPending}
+            className="px-4 py-1.5 text-sm font-medium rounded-sm bg-teal-500 text-white hover:bg-teal-600 transition-colors disabled:opacity-70 flex items-center gap-2"
+          >
+            {topupMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+            Confirm Top-up
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function CreateCampaignPanel({ onClose }: { onClose: () => void }) {
   const queryClient = useQueryClient();
   const [step, setStep] = useState(1);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isScheduled, setIsScheduled] = useState(false);
 
   const [formData, setFormData] = useState({
     slotId: "",
@@ -426,7 +649,9 @@ function CreateCampaignPanel({ onClose }: { onClose: () => void }) {
     campaignBudget: 100000,
     mediaType: "IMAGE" as "IMAGE" | "VIDEO",
     targetUrl: "",
-    labels: [] as string[]
+    labels: [] as string[],
+    startDate: "",
+    endDate: ""
   });
 
   const { data: profile } = useQuery({ queryKey: ["ad-wallet-balance"], queryFn: adsApi.getWalletBalance });
@@ -450,6 +675,7 @@ function CreateCampaignPanel({ onClose }: { onClose: () => void }) {
     if (step === 2) {
       if (formData.campaignBudget < 10000) return toast.error("Minimum budget is 10,000 VND");
       if (profile && formData.campaignBudget > profile.walletBalance) return toast.error("Budget exceeds your Master Wallet balance");
+      if (formData.startDate && formData.endDate && new Date(formData.endDate) <= new Date(formData.startDate)) return toast.error("End date must be after start date");
     }
     setStep(step + 1);
   };
@@ -474,6 +700,8 @@ function CreateCampaignPanel({ onClose }: { onClose: () => void }) {
     createCampaignMutation.mutate({
       ...formData,
       mediaUrl: uploadedUrl,
+      startDate: formData.startDate ? new Date(formData.startDate).toISOString() : undefined,
+      endDate: formData.endDate ? new Date(formData.endDate).toISOString() : undefined,
     }, {
       onSettled: () => setIsUploading(false)
     });
@@ -530,7 +758,7 @@ function CreateCampaignPanel({ onClose }: { onClose: () => void }) {
               <p className="text-xs text-[#757575] mb-4">Set your spending limit and goals.</p>
               
               <div className="space-y-4">
-                <div className="p-3 bg-slate-50 border border-slate-200 rounded-sm text-sm">
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-sm text-sm mb-4">
                   <span className="text-[#757575]">Available Master Balance: </span>
                   <span className="font-bold">{profile?.walletBalance?.toLocaleString()} VND</span>
                 </div>
@@ -546,7 +774,7 @@ function CreateCampaignPanel({ onClose }: { onClose: () => void }) {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold mb-1">Target Views (Impressions)</label>
+                  <label className="block text-xs font-semibold mb-1">Target Views (Impressions) *</label>
                   <input 
                     type="number" 
                     value={formData.targetImpressions} 
@@ -554,6 +782,43 @@ function CreateCampaignPanel({ onClose }: { onClose: () => void }) {
                     className="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm outline-none focus:border-teal-500" 
                   />
                 </div>
+                <div className="flex items-center gap-3 pt-2 pb-1 border-t border-slate-100 mt-2">
+                  <div 
+                    onClick={() => {
+                      setIsScheduled(!isScheduled);
+                      if (isScheduled) {
+                        setFormData({...formData, startDate: "", endDate: ""});
+                      }
+                    }}
+                    className={`w-8 h-4 rounded-full flex items-center p-0.5 cursor-pointer ${isScheduled ? 'bg-[#00D6BA]' : 'bg-slate-300'}`}
+                  >
+                    <div className={`w-3 h-3 rounded-full bg-white transition-transform ${isScheduled ? 'translate-x-4' : 'translate-x-0'}`}></div>
+                  </div>
+                  <label className="text-sm font-medium text-[#161823] cursor-pointer" onClick={() => setIsScheduled(!isScheduled)}>Đặt lịch chạy (Tùy chọn)</label>
+                </div>
+                
+                {isScheduled && (
+                  <div className="grid grid-cols-2 gap-4 bg-slate-50 p-3 rounded-sm border border-slate-200">
+                    <div>
+                      <label className="block text-xs font-semibold mb-1">Start Date</label>
+                      <input 
+                        type="datetime-local" 
+                        value={formData.startDate} 
+                        onChange={(e) => setFormData({...formData, startDate: e.target.value})}
+                        className="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm outline-none focus:border-teal-500" 
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold mb-1">End Date</label>
+                      <input 
+                        type="datetime-local" 
+                        value={formData.endDate} 
+                        onChange={(e) => setFormData({...formData, endDate: e.target.value})}
+                        className="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm outline-none focus:border-teal-500" 
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -576,27 +841,20 @@ function CreateCampaignPanel({ onClose }: { onClose: () => void }) {
                   />
                 </div>
                 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold mb-1">Media Type</label>
-                    <select 
-                      value={formData.mediaType} 
-                      onChange={(e) => setFormData({...formData, mediaType: e.target.value as any})}
-                      className="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm outline-none focus:border-teal-500"
-                    >
-                      <option value="IMAGE">Image</option>
-                      <option value="VIDEO">Video</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold mb-1">Upload File *</label>
-                    <input 
-                      type="file" 
-                      accept={formData.mediaType === "IMAGE" ? "image/*" : "video/*"} 
-                      onChange={(e) => setSelectedFile(e.target.files?.[0] || null)} 
-                      className="w-full text-xs file:mr-2 file:rounded-sm file:border-0 file:bg-slate-100 file:px-2 file:py-1 file:font-medium hover:file:bg-slate-200" 
-                    />
-                  </div>
+                <div>
+                  <label className="block text-xs font-semibold mb-1">Upload File * (Image or Video)</label>
+                  <input 
+                    type="file" 
+                    accept="image/*,video/*" 
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] || null;
+                      setSelectedFile(file);
+                      if (file) {
+                        setFormData({...formData, mediaType: file.type.startsWith('video') ? "VIDEO" : "IMAGE"});
+                      }
+                    }} 
+                    className="w-full text-xs file:mr-2 file:rounded-sm file:border-0 file:bg-slate-100 file:px-2 file:py-1 file:font-medium hover:file:bg-slate-200" 
+                  />
                 </div>
 
                 <div>

@@ -33,6 +33,8 @@ export interface AdCampaignCreate {
   mediaUrl: string;
   targetUrl: string;
   labels?: string[];
+  startDate?: string;
+  endDate?: string;
 }
 
 export interface AdSlot {
@@ -123,4 +125,16 @@ export const adsApi = {
   },
   getWalletTransactions: () =>
     api.get("/api/v1/ads/wallet/transactions").then((res) => res.data.data),
+
+  toggleCampaign: (campaignId: string) =>
+    api.patch(`/api/v1/ads/campaigns/${campaignId}/toggle`).then((res) => res.data),
+
+  cancelCampaign: (campaignId: string) =>
+    api.post(`/api/v1/ads/campaigns/${campaignId}/cancel`).then((res) => res.data),
+
+  updateCampaignSchedule: (campaignId: string, data: { startDate?: string, endDate?: string }) =>
+    api.patch(`/api/v1/ads/campaigns/${campaignId}/schedule`, data).then((res) => res.data),
+
+  topupCampaign: (campaignId: string, amount: number) =>
+    api.post(`/api/v1/ads/campaigns/${campaignId}/topup`, { amount }).then((res) => res.data),
 };
