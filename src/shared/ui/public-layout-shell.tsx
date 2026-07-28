@@ -43,8 +43,9 @@ const hiddenChromeRoutes = [
   "/staff",
   "/watch",
   "/read",
+  "/advertiser-dashboard",
 ] as const;
-const hiddenHeaderRoutes = ["/read", "/onboarding"] as const;
+const hiddenHeaderRoutes = ["/read", "/onboarding", "/advertiser-dashboard"] as const;
 
 function shouldShowPublicSidebar(pathname: string) {
   return sidebarRoutes.some((route) => {

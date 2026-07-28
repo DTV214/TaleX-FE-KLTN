@@ -5,15 +5,27 @@ export interface AdvertiseProfile {
   accountId: string;
   walletBalance: number;
   billingInfo: string;
+  companyName: string;
+  phone: string;
+  website: string;
+  isSetupCompleted: boolean;
+}
+
+export interface AdProfileSetup {
+  companyName: string;
+  phone: string;
+  website?: string;
 }
 
 export interface AdCampaignCreate {
   slotId: string;
   name: string;
   targetImpressions: number;
+  campaignBudget: number;
   mediaType: "IMAGE" | "VIDEO" | "HTML";
   mediaUrl: string;
   targetUrl: string;
+  labels?: string[];
 }
 
 export interface AdSlot {
@@ -41,11 +53,21 @@ export const adsApi = {
   getWalletBalance: () =>
     api.get<{ data: AdvertiseProfile }>("/api/v1/ads/wallet/balance").then((res) => res.data.data),
     
-  topupWallet: (amount: number) =>
-    api.post("/api/v1/ads/wallet/topup", { amount }).then((res) => res.data.data),
+  topupWallet: async (amount: number) => {
+    const res = await api.post("/api/v1/ads/wallet/topup", { amount });
+    return res.data?.data;
+  },
+
+  setupProfile: async (data: AdProfileSetup) => {
+    const res = await api.post("/api/v1/ads/campaigns/profile/setup", data);
+    return res.data?.data;
+  },
 
   getCampaignMetrics: (campaignId: string) =>
     api.get(`/api/v1/ads/campaigns/${campaignId}/metrics`).then((res) => res.data.data),
+
+  getCampaignTransactions: (campaignId: string) =>
+    api.get(`/api/v1/ads/campaigns/${campaignId}/transactions`).then((res) => res.data.data),
 
   createCampaign: (data: AdCampaignCreate) =>
     api.post("/api/v1/ads/campaigns", data).then((res) => res.data.data),
@@ -75,4 +97,10 @@ export const adsApi = {
 
   trackClick: (campaignId: string) =>
     api.post("/api/v1/ads/track/click", { campaignId }),
+  updateCampaignLabels: async (campaignId: string, labels: string[]) => {
+    const res = await api.patch(`/api/v1/ads/campaigns/${campaignId}/labels`, labels);
+    return res.data?.data;
+  },
+  getWalletTransactions: () =>
+    api.get("/api/v1/ads/wallet/transactions").then((res) => res.data.data),
 };

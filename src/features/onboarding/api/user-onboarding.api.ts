@@ -123,10 +123,10 @@ export function useUserFeatureProfile(enabled: boolean) {
   return useQuery({
     queryKey: userOnboardingKeys.me(),
     queryFn: async (): Promise<UserFeatureProfile> => {
-      const response = await httpClient.get<BaseResponse<UserFeatureProfile>>(
+      const response = await httpClient.get<UserFeatureProfile>(
         USER_FEATURE_ENDPOINT,
       );
-      return response.data.data;
+      return response.data;
     },
     enabled,
     retry: false,
@@ -185,11 +185,11 @@ export function useCreateUserFeatureProfile() {
     mutationFn: async (
       payload: UserFeatureRequest,
     ): Promise<UserFeatureProfile> => {
-      const response = await httpClient.post<BaseResponse<UserFeatureProfile>>(
+      const response = await httpClient.post<UserFeatureProfile>(
         USER_FEATURE_ENDPOINT,
         payload,
       );
-      return response.data.data;
+      return response.data;
     },
     onSuccess: (data) => {
       queryClient.setQueryData(userOnboardingKeys.me(), data);
