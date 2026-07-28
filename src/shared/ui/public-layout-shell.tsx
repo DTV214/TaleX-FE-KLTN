@@ -7,6 +7,7 @@ import { cn } from "@/shared/utils/utils";
 import { BackToTop } from "@/shared/ui/back-to-top";
 import { PublicSidebar } from "@/shared/ui/public-sidebar";
 import { SiteHeader } from "@/shared/ui/site-header";
+import { OnboardingGate } from "@/features/onboarding/components/onboarding-gate";
 
 type PublicLayoutShellProps = {
   children: ReactNode;
@@ -28,6 +29,7 @@ const sidebarRoutes = [
   "/subscriptions",
   "/creator-channel",
   "/public-channel",
+  "/recomment-demo",
   "/ads",
 ] as const;
 const hiddenChromeRoutes = [
@@ -35,13 +37,14 @@ const hiddenChromeRoutes = [
   "/register",
   "/forgot-password",
   "/complete-profile",
+  "/onboarding",
   "/creator-dashboard",
   "/admin",
   "/staff",
   "/watch",
   "/read",
 ] as const;
-const hiddenHeaderRoutes = ["/read"] as const;
+const hiddenHeaderRoutes = ["/read", "/onboarding"] as const;
 
 function shouldShowPublicSidebar(pathname: string) {
   return sidebarRoutes.some((route) => {
@@ -76,6 +79,7 @@ export function PublicLayoutShell({ children }: PublicLayoutShellProps) {
       >
         {hasSiteHeader && <SiteHeader />}
         <main className="flex flex-1 flex-col">{children}</main>
+        <OnboardingGate />
         <BackToTop />
       </div>
     );
@@ -93,6 +97,7 @@ export function PublicLayoutShell({ children }: PublicLayoutShellProps) {
       >
         {children}
       </main>
+      <OnboardingGate />
       <BackToTop />
     </div>
   );

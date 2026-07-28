@@ -15,6 +15,7 @@ import {
   LogOut,
   Menu,
   Search,
+  Sparkles,
   User as UserIcon,
 } from "lucide-react";
 import { DropdownMenu } from "radix-ui";
@@ -278,6 +279,16 @@ export function SiteHeader() {
                           >
                             <Layers3 className="h-4 w-4 text-sky-300" />
                             Episode &amp; Combo
+                          </Link>
+                        </DropdownMenu.Item>
+
+                        <DropdownMenu.Item asChild>
+                          <Link
+                            href="/recomment-demo"
+                            className="flex cursor-pointer select-none items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium outline-none transition-colors hover:bg-white/5 hover:text-primary focus:bg-white/5 focus:text-primary"
+                          >
+                            <Sparkles className="h-4 w-4 text-[#D4AF37]" />
+                            Recomment Demo
                           </Link>
                         </DropdownMenu.Item>
                       </div>
