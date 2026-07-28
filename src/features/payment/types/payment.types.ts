@@ -16,13 +16,19 @@ export type CreateContentOrderRequest = {
 
 export type OrderResponse = {
   orderId: string;
+  itemId?: string;
+  itemType?: ContentOrderItemType;
+  itemTitle?: string;
   paymentCode: string;
   qrUrl: string | null;
   totalAmount: number;
   coinAmountUsed: number;
   fiatAmount: number;
+  paymentMethod?: OrderPaymentMethod | null;
   status: OrderStatus;
+  createdAt?: string;
   expiresAt: string;
+  invoiceUrl?: string | null;
   // Chỉ có giá trị khi mua Combo và đã sở hữu 1 phần tập trong combo trước đó
   comboOriginalPrice: number | null;
   comboOwnedEpisodeCount: number | null;
@@ -50,6 +56,9 @@ export type OrderPaymentMethod = "COIN" | "SEPAY" | "APP_IAP" | "GOOGLE_IAP";
 
 export type OrderHistoryItem = {
   orderId: string;
+  itemId?: string;
+  episodeId?: string;
+  contentId?: string;
   itemType: ContentOrderItemType;
   itemTitle: string;
   totalAmount: number;

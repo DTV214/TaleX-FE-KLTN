@@ -385,28 +385,33 @@ function CheckoutContentPageBody() {
                 </div>
 
                 <div className="mt-7 space-y-3">
-                  <button
-                    type="button"
-                    onClick={() => router.back()}
-                    className="group inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-white/12 bg-white/[0.04] px-5 text-sm font-semibold text-white/80 transition hover:border-[#D4AF37]/40 hover:bg-white/[0.07] hover:text-white active:translate-y-px"
-                  >
-                    <Clock3 className="h-4 w-4 text-white/45 transition group-hover:text-[#D4AF37]" />
-                    Thoát, thanh toán sau
-                  </button>
-
                   {canCancel && (
                     <button
                       type="button"
-                      onClick={handleCancelOrder}
+                      onClick={() => {
+                        handleCancelOrder();
+                        router.replace(returnTo);
+                      }}
                       disabled={cancelOrderMutation.isPending}
-                      className="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg text-xs font-semibold text-white/35 transition hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-red-300/15 bg-red-400/[0.06] px-5 text-sm font-semibold text-red-100/80 transition hover:border-red-300/35 hover:bg-red-400/[0.1] hover:text-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {cancelOrderMutation.isPending ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
-                        <Trash2 className="h-3.5 w-3.5" />
+                        <Trash2 className="h-4 w-4" />
                       )}
-                      Hủy đơn hàng này
+                      Hủy thanh toán
+                    </button>
+                  )}
+
+                  {!canCancel && (
+                    <button
+                      type="button"
+                      onClick={() => router.replace(returnTo)}
+                      className="group inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-white/12 bg-white/[0.04] px-5 text-sm font-semibold text-white/80 transition hover:border-[#D4AF37]/40 hover:bg-white/[0.07] hover:text-white active:translate-y-px"
+                    >
+                      <Clock3 className="h-4 w-4 text-white/45 transition group-hover:text-[#D4AF37]" />
+                      Quay lại nội dung
                     </button>
                   )}
                 </div>

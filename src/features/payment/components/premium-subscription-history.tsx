@@ -360,22 +360,25 @@ export function PremiumSubscriptionHistory() {
                 <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
                   <ShieldCheck className="mb-2 h-5 w-5 text-[#D4AF37]" />
                   <p className="text-xs text-slate-500">Không quảng cáo</p>
-                  <p className="mt-1 text-sm font-semibold text-white/88">
-                    {selectedSubscription.isAdBlocked ? "Có" : "Không"}
+                  <p className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-300">
+                    <CheckCircle2 className="h-4 w-4" />
+                    Thành công
                   </p>
                 </div>
                 <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
                   <Timer className="mb-2 h-5 w-5 text-[#D4AF37]" />
-                  <p className="text-xs text-slate-500">Mở phim</p>
-                  <p className="mt-1 text-sm font-semibold text-white/88">
-                    {selectedSubscription.isMovieUnlocked ? "Có" : "Không"}
+                  <p className="text-xs text-slate-500">Mở tất cả phim</p>
+                  <p className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-300">
+                    <CheckCircle2 className="h-4 w-4" />
+                    Thành công
                   </p>
                 </div>
                 <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
                   <ReceiptText className="mb-2 h-5 w-5 text-[#D4AF37]" />
-                  <p className="text-xs text-slate-500">Mở truyện</p>
-                  <p className="mt-1 text-sm font-semibold text-white/88">
-                    {selectedSubscription.isStoryUnlocked ? "Có" : "Không"}
+                  <p className="text-xs text-slate-500">Mở tất cả truyện</p>
+                  <p className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-300">
+                    <CheckCircle2 className="h-4 w-4" />
+                    Thành công
                   </p>
                 </div>
               </div>
@@ -386,6 +389,7 @@ export function PremiumSubscriptionHistory() {
                   {selectedSubscription.accountSubscriptionId}
                 </p>
               </div>
+
             </div>
           </article>
         ) : (

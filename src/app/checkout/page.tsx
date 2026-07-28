@@ -4,9 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  ArrowLeft,
   Building2,
-  Check,
   CreditCard,
   Landmark,
   Loader2,
@@ -14,6 +12,7 @@ import {
   ShieldCheck,
   Sparkles,
   Ticket,
+  Trash2,
   WalletCards,
   X,
 } from "lucide-react";
@@ -25,6 +24,7 @@ import { useGetSubscription } from "@/features/admin/subscriptions/hooks/use-sub
 import {
   paymentKeys,
   useActiveSubscription,
+  useCancelOrder,
   useEnsureOrder,
   useOrderStatus,
 } from "@/features/payment/api/payment.api";
@@ -83,7 +83,6 @@ function CheckoutPageContent() {
   const searchParams = useSearchParams();
   const subscriptionId = searchParams.get("subscriptionId") ?? "";
 
-  const [isAgreed, setIsAgreed] = useState(false);
   const [remainingSeconds, setRemainingSeconds] = useState(0);
 
   const subscriptionQuery = useGetSubscription(subscriptionId);
@@ -94,6 +93,7 @@ function CheckoutPageContent() {
   const orderId = createOrderQuery.data?.orderId;
   const orderStatusQuery = useOrderStatus(orderId);
   const order = orderStatusQuery.data ?? createOrderQuery.data;
+  const cancelOrderMutation = useCancelOrder();
 
   useEffect(() => {
     if (!subscriptionId) {
@@ -147,6 +147,23 @@ function CheckoutPageContent() {
         : "PENDING";
 
   const isPreparing = !order || subscriptionQuery.isLoading;
+  const canCancel = Boolean(
+    order &&
+      order.status !== "COMPLETED" &&
+      order.status !== "OUT_OF_TIME" &&
+      order.status !== "CANCELLED",
+  );
+
+  function handleCancelOrder() {
+    if (!orderId) {
+      router.push("/premium");
+      return;
+    }
+
+    cancelOrderMutation.mutate(orderId, {
+      onSuccess: () => router.push("/premium"),
+    });
+  }
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#09090A] text-white">
@@ -305,27 +322,6 @@ function CheckoutPageContent() {
                 </div>
               </PaymentFrame>
 
-              <motion.button
-                {...motionProps}
-                transition={{ ...motionProps.transition, delay: 0.2 }}
-                type="button"
-                onClick={() => setIsAgreed((current) => !current)}
-                className="flex w-full items-start gap-3 rounded-xl border border-white/10 bg-white/[0.035] p-3 text-left transition hover:border-[#D4AF37]/30 hover:bg-[#D4AF37]/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37]/50"
-                aria-pressed={isAgreed}
-              >
-                <span
-                  className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border transition ${
-                    isAgreed
-                      ? "border-[#D4AF37] bg-[#D4AF37] text-black"
-                      : "border-white/20 bg-white/[0.04] text-transparent"
-                  }`}
-                >
-                  <Check className="h-4 w-4" />
-                </span>
-                <span className="text-sm font-normal leading-6 text-slate-300">
-                  Tôi đồng ý với Điều khoản dịch vụ và Chính sách bảo mật của TaleX.
-                </span>
-              </motion.button>
             </motion.div>
 
             <motion.aside
@@ -432,12 +428,17 @@ function CheckoutPageContent() {
                   <div className="mt-4 grid gap-2.5">
                     <Button
                       type="button"
-                      onClick={() => router.push("/premium")}
+                      onClick={handleCancelOrder}
+                      disabled={cancelOrderMutation.isPending || !canCancel}
                       variant="outline"
-                      className="h-10 rounded-xl border-white/12 bg-white/[0.04] px-5 text-sm font-medium text-slate-300 hover:border-white/22 hover:bg-white/[0.08] hover:text-white"
+                      className="h-10 rounded-xl border-red-300/15 bg-red-400/[0.06] px-5 text-sm font-medium text-red-100/80 hover:border-red-300/35 hover:bg-red-400/[0.1] hover:text-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      <ArrowLeft className="mr-2 h-4 w-4" />
-                      Quay lại
+                      {cancelOrderMutation.isPending ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="mr-2 h-4 w-4" />
+                      )}
+                      Hủy thanh toán
                     </Button>
 
                     <div className="inline-flex h-10 items-center justify-center rounded-xl border border-[#D4AF37]/25 bg-[#D4AF37]/10 px-4 text-sm font-medium text-[#F4E7B7]">
