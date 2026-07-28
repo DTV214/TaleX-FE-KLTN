@@ -8,6 +8,7 @@ import { SidebarLabelPopover } from "@/features/advertiser-dashboard/components/
 import { DateRangePicker } from "@/features/advertiser-dashboard/components/date-range-picker";
 import { BreakdownPopover } from "@/features/advertiser-dashboard/components/breakdown-popover";
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { adsApi, AdSlot } from "@/features/ads/api/ads-api";
 import { toast } from "sonner";
@@ -1094,9 +1095,9 @@ function WalletView({ profile }: { profile: any }) {
   );
 }
 
-function CustomerReportView() {
+function CustomerReportView({ campaignId, onClose }: { campaignId?: string; onClose?: () => void }) {
   const { data: campaigns, isLoading } = useQuery({ queryKey: ["my-campaigns"], queryFn: adsApi.getMyCampaigns });
-  const [selectedCampaignId, setSelectedCampaignId] = useState<string>("");
+  const [selectedCampaignId, setSelectedCampaignId] = useState<string>(campaignId || "");
 
   if (isLoading) return <div className="flex h-32 items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-teal-500" /></div>;
 
