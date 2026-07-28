@@ -1,10 +1,6 @@
-import { useState, useEffect } from 'react';
-
-export interface AdLabel {
-  id: string;
-  name: string;
-  color: string;
-}
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { adsApi, AdLabel } from '../api/ads-api';
+import { toast } from 'sonner';
 
 export const PREDEFINED_COLORS = [
   '#fadb14', // Yellow
@@ -15,37 +11,51 @@ export const PREDEFINED_COLORS = [
   '#1890ff', // Blue
 ];
 
-export function useLabels() {
-  const [labels, setLabels] = useState<AdLabel[]>([]);
+export const useLabels = () => {
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const stored = localStorage.getItem('ad_global_labels');
-    if (stored) {
-      try {
-        setLabels(JSON.parse(stored));
-      } catch (e) {
-        setLabels([]);
-      }
+  const { data: labels = [], isLoading } = useQuery({
+    queryKey: ['ad_labels'],
+    queryFn: adsApi.getLabels,
+  });
+
+  const createMutation = useMutation({
+    mutationFn: adsApi.createLabel,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ad_labels'] });
+    },
+    onError: () => {
+      toast.error('Failed to create label');
     }
-  }, []);
+  });
 
-  const addLabel = (name: string, color: string) => {
-    const newLabel: AdLabel = {
-      id: Math.random().toString(36).substring(2, 9),
-      name,
-      color,
-    };
-    const updated = [...labels, newLabel];
-    setLabels(updated);
-    localStorage.setItem('ad_global_labels', JSON.stringify(updated));
-    return newLabel;
+  const deleteMutation = useMutation({
+    mutationFn: adsApi.deleteLabel,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ad_labels'] });
+    },
+    onError: () => {
+      toast.error('Failed to delete label');
+    }
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: (params: { id: string, name: string, color: string }) => adsApi.updateLabel(params.id, { name: params.name, color: params.color }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ad_labels'] });
+    },
+    onError: () => {
+      toast.error('Failed to update label');
+    }
+  });
+
+  return {
+    labels,
+    isLoading,
+    addLabel: (name: string, color: string) => createMutation.mutateAsync({ name, color }),
+    editLabel: (id: string, name: string, color: string) => updateMutation.mutateAsync({ id, name, color }),
+    removeLabel: (id: string) => deleteMutation.mutateAsync(id),
   };
+};
 
-  const removeLabel = (id: string) => {
-    const updated = labels.filter((l) => l.id !== id);
-    setLabels(updated);
-    localStorage.setItem('ad_global_labels', JSON.stringify(updated));
-  };
-
-  return { labels, addLabel, removeLabel };
-}
+export type { AdLabel };

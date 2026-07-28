@@ -298,8 +298,8 @@ function ShortCard({ short }: { short: ShortItem }) {
 function AdImageCarousel() {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const { data: ads, isLoading } = useQuery({
-    queryKey: ["serve-all-ads", "BANNER_HOME"],
-    queryFn: () => adsApi.serveAllAds("BANNER_HOME"),
+    queryKey: ["serve-all-ads", "HOME_BANNER"],
+    queryFn: () => adsApi.serveAllAds("HOME_BANNER"),
     staleTime: 0,
     refetchOnWindowFocus: false,
   });

@@ -1,13 +1,17 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { AdvertiserLayout } from "@/features/advertiser-dashboard/components/advertiser-layout";
 import { AdAnalyticsChart } from "@/features/advertiser-dashboard/components/ad-analytics-chart";
+import { SidebarLabelPopover } from "@/features/advertiser-dashboard/components/sidebar-label-popover";
+import { DateRangePicker } from "@/features/advertiser-dashboard/components/date-range-picker";
+import { BreakdownPopover } from "@/features/advertiser-dashboard/components/breakdown-popover";
 import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { adsApi, AdSlot } from "@/features/ads/api/ads-api";
 import { toast } from "sonner";
-import { Loader2, Plus, Search, Calendar, ChevronDown, Columns, RefreshCw, MoreVertical, X, Check, Tag } from "lucide-react";
+import { Loader2, Plus, Search, Calendar, ChevronDown, Columns, RefreshCw, MoreVertical, X, Check, Tag, Megaphone, PlusCircle } from "lucide-react";
 import { useAuthStore } from "@/features/auth/store/auth.store";
 import { useLabels, AdLabel } from "@/features/ads/hooks/use-labels";
 
@@ -113,25 +117,19 @@ function SetupProfileView({ profile }: { profile: any }) {
 
 function CampaignManagementView({ profile }: { profile: any }) {
   const queryClient = useQueryClient();
+  const searchParams = useSearchParams();
   const [isCreating, setIsCreating] = useState(false);
   const [isTopupOpen, setIsTopupOpen] = useState(false);
   const { data: campaigns, isLoading } = useQuery({ queryKey: ["my-campaigns"], queryFn: adsApi.getMyCampaigns });
 
   const [activeReportCampaignId, setActiveReportCampaignId] = useState<string | null>(null);
   const { labels } = useLabels();
-  const [selectedLabel, setSelectedLabel] = useState("");
+  const selectedLabel = searchParams.get("labelId");
 
   const filteredCampaigns = campaigns?.filter((c: any) => {
     if (!selectedLabel) return true;
     if (!c.labels) return false;
-    return c.labels.some((l: string) => {
-      try {
-        const parsed = JSON.parse(l);
-        return parsed.id === selectedLabel;
-      } catch {
-        return l === selectedLabel;
-      }
-    });
+    return c.labels.includes(selectedLabel);
   });
 
   if (isLoading) return <div className="flex h-32 items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-teal-500" /></div>;
@@ -140,74 +138,94 @@ function CampaignManagementView({ profile }: { profile: any }) {
     <div className="h-full flex flex-col bg-white border border-slate-200 rounded-sm shadow-sm animate-in fade-in slide-in-from-bottom-4 relative">
       
       {/* Top Header Action Bar */}
-      <div className="flex items-center justify-between p-3 border-b border-slate-200 bg-[#F4F5F6]">
-        <div className="flex items-center gap-4">
-          <button 
-            onClick={() => setIsCreating(true)}
-            className="flex items-center gap-1.5 bg-[#00D6BA] hover:bg-[#00BFA5] text-white px-4 py-1.5 rounded-sm font-medium transition-colors"
-          >
-            <Plus className="h-4 w-4" />
-            Create
-          </button>
-          
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-4 w-4 text-slate-400" />
-            </div>
-            <input 
-              type="text" 
-              placeholder="Search & filter (/) | Tips: Multi-keyword search is supported"
-              className="pl-9 pr-4 py-1.5 w-96 text-sm border border-slate-300 rounded-sm outline-none focus:border-teal-500"
-            />
+      <div className="flex items-center gap-4 p-3 border-b border-slate-200 bg-[#F4F5F6]">
+        <button 
+          onClick={() => setIsCreating(true)}
+          className="flex-shrink-0 flex items-center gap-1.5 bg-[#00D6BA] hover:bg-[#00BFA5] text-white px-4 py-1.5 rounded-sm font-medium transition-colors"
+        >
+          <Plus className="h-4 w-4" />
+          Create
+        </button>
+        
+        <div className="flex-1 relative">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Search className="h-4 w-4 text-slate-400" />
           </div>
-          
-          <select 
-            value={selectedLabel}
-            onChange={(e) => setSelectedLabel(e.target.value)}
-            className="px-3 py-1.5 text-sm border border-slate-300 rounded-sm outline-none focus:border-teal-500 bg-white"
-          >
-            <option value="">All Labels</option>
-            {labels.map((l) => (
-              <option key={l.id} value={l.id}>{l.name}</option>
-            ))}
-          </select>
+          <input 
+            type="text" 
+            placeholder="Search & filter (/) | Tips: Multi-keyword search is supported"
+            className="pl-9 pr-4 py-1.5 w-full text-sm border border-slate-300 rounded-sm outline-none focus:border-teal-500 bg-white"
+          />
         </div>
         
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-shrink-0">
           <button 
             onClick={() => setIsTopupOpen(true)}
-            className="flex items-center gap-2 text-sm font-medium text-teal-600 hover:bg-teal-50 px-3 py-1.5 rounded-sm transition-colors border border-teal-200"
+            className="flex items-center gap-2 text-sm font-medium text-teal-600 hover:bg-teal-50 px-3 py-1.5 rounded-sm transition-colors border border-teal-200 bg-white"
           >
             Balance: {profile?.walletBalance?.toLocaleString() || 0} VND
           </button>
 
-          <div className="flex items-center gap-2 px-3 py-1.5 border border-slate-300 rounded-sm bg-white cursor-pointer hover:bg-slate-50 text-sm">
-            <Calendar className="h-4 w-4 text-slate-500" />
-            <span>Jul 21, 2026 - Jul 28, 2026</span>
-            <ChevronDown className="h-4 w-4 text-slate-500" />
-          </div>
+          <DateRangePicker />
           
-          <div className="flex items-center gap-2 px-3 py-1.5 border border-slate-300 rounded-sm bg-white cursor-pointer hover:bg-slate-50 text-sm">
-            <Columns className="h-4 w-4 text-slate-500" />
-            <span>Custom Columns</span>
-            <ChevronDown className="h-4 w-4 text-slate-500" />
-          </div>
+          <BreakdownPopover />
           
-          <div className="flex items-center gap-2 px-3 py-1.5 border border-slate-300 rounded-sm bg-white cursor-pointer hover:bg-slate-50 text-sm">
-            <span>Breakdown</span>
-            <ChevronDown className="h-4 w-4 text-slate-500" />
-          </div>
-          
-          <button onClick={() => queryClient.invalidateQueries({queryKey: ["my-campaigns"]})} className="p-1.5 border border-slate-300 rounded-sm bg-white hover:bg-slate-50">
+          <button onClick={() => queryClient.invalidateQueries({queryKey: ["my-campaigns"]})} className="p-1.5 border border-slate-300 rounded-sm bg-white hover:bg-slate-50 transition-colors">
             <RefreshCw className="h-4 w-4 text-slate-600" />
           </button>
         </div>
       </div>
 
-      {/* Main Table Area */}
-      <div className="flex-1 overflow-auto bg-white">
-        <table className="w-full text-left text-xs whitespace-nowrap">
-          <thead className="sticky top-0 bg-[#F4F5F6] text-[#757575] font-semibold z-10 shadow-sm border-b border-slate-200">
+      <div className="flex flex-1 overflow-hidden">
+        {/* Inner Sidebar */}
+        <aside className="hidden w-[220px] flex-col border-r border-slate-200 bg-white lg:flex z-0">
+          <div className="flex-1 overflow-y-auto">
+            <nav className="flex flex-col py-4">
+              <Link href="/advertiser-dashboard?view=campaigns" className={`group flex items-center justify-between px-6 py-2.5 ${!selectedLabel ? 'bg-teal-50 text-teal-600 border-r-2 border-teal-500' : 'text-[#757575] hover:bg-slate-50'}`}>
+                <div className="flex items-center gap-3">
+                  <Megaphone className={`h-5 w-5 ${!selectedLabel ? 'text-teal-500' : ''}`} />
+                  <span className="text-sm font-medium">All Campaigns</span>
+                </div>
+                <PlusCircle className={`h-4 w-4 ${!selectedLabel ? 'text-teal-500' : 'text-transparent'}`} />
+              </Link>
+              
+              {labels.map(l => (
+                <Link 
+                  key={l.labelId}
+                  href={`/advertiser-dashboard?view=campaigns&labelId=${l.labelId}`} 
+                  className={`flex items-center px-6 py-2.5 cursor-pointer ${selectedLabel === l.labelId ? 'bg-teal-50 text-teal-600 border-r-2 border-teal-500' : 'text-[#757575] hover:bg-slate-50'}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Tag className="h-4 w-4" style={{ color: l.color }} />
+                    <span className="text-sm font-medium">{l.name}</span>
+                  </div>
+                </Link>
+              ))}
+              
+              <div className="mt-6 mb-2 px-6">
+                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Management</span>
+              </div>
+              
+              <div className="flex items-center justify-between px-6 py-2.5 text-[#757575] hover:bg-slate-50 cursor-pointer">
+                <span className="text-sm font-medium">Bulk export/import</span>
+                <span className="text-xs">›</span>
+              </div>
+              
+              <SidebarLabelPopover />
+
+              <div className="flex items-center justify-between px-6 py-2.5 text-[#757575] hover:bg-slate-50 cursor-pointer">
+                <span className="text-sm font-medium">View report</span>
+                <span className="text-xs">›</span>
+              </div>
+            </nav>
+          </div>
+        </aside>
+
+        {/* Main Content Area (Table + Footer) */}
+        <div className="flex-1 flex flex-col min-w-0 bg-white">
+          <div className="flex-1 overflow-auto">
+            <table className="w-full text-left text-xs whitespace-nowrap">
+            <thead className="sticky top-0 bg-[#F4F5F6] text-[#757575] font-semibold z-10 shadow-sm border-b border-slate-200">
             <tr>
               <th className="px-4 py-2 border-r border-slate-200 w-10 text-center"><input type="checkbox" className="rounded-sm" /></th>
               <th className="px-4 py-2 border-r border-slate-200">On/off</th>
@@ -279,6 +297,8 @@ function CampaignManagementView({ profile }: { profile: any }) {
           <div>200/page</div>
         </div>
       </div>
+    </div>
+  </div>
 
       {/* Slide-over Create Campaign */}
       {isCreating && (
@@ -286,8 +306,9 @@ function CampaignManagementView({ profile }: { profile: any }) {
       )}
 
       {/* Slide-over Report */}
-      {activeReportCampaignId && (
-        <ReportPanel campaignId={activeReportCampaignId} onClose={() => setActiveReportCampaignId(null)} />
+      {activeReportCampaignId && typeof document !== 'undefined' && createPortal(
+        <CustomerReportView campaignId={activeReportCampaignId} onClose={() => setActiveReportCampaignId(null)} />,
+        document.body
       )}
 
       {/* Topup Modal */}
@@ -313,33 +334,25 @@ function LabelManager({ campaign }: { campaign: any }) {
     }
   });
 
-  const parsedLabels: AdLabel[] = (campaign.labels || []).map((l: string) => {
-    try {
-      return JSON.parse(l);
-    } catch {
-      return { id: l, name: l, color: '#94a3b8' };
-    }
-  });
+  const parsedLabels: AdLabel[] = (campaign.labels || [])
+    .map((labelId: string) => labels.find(l => l.labelId === labelId))
+    .filter(Boolean) as AdLabel[];
 
   const availableLabels = labels.filter((l) => 
     l.name.toLowerCase().includes(search.toLowerCase()) && 
-    !parsedLabels.find((pl) => pl.id === l.id)
+    !parsedLabels.find((pl) => pl.labelId === l.labelId)
   );
 
   const toggleLabel = (label: AdLabel) => {
     const currentLabels = campaign.labels || [];
-    updateMutation.mutate([...currentLabels, JSON.stringify(label)]);
+    if (!currentLabels.includes(label.labelId)) {
+      updateMutation.mutate([...currentLabels, label.labelId]);
+    }
   };
 
   const removeLabel = (labelToRemove: AdLabel) => {
     const currentLabels = campaign.labels || [];
-    updateMutation.mutate(currentLabels.filter((l: string) => {
-      try {
-        return JSON.parse(l).id !== labelToRemove.id;
-      } catch {
-        return l !== labelToRemove.name;
-      }
-    }));
+    updateMutation.mutate(currentLabels.filter((id: string) => id !== labelToRemove.labelId));
   };
 
   return (
@@ -383,7 +396,7 @@ function LabelManager({ campaign }: { campaign: any }) {
               ) : (
                 availableLabels.map((l) => (
                   <div 
-                    key={l.id} 
+                    key={l.labelId} 
                     onClick={() => toggleLabel(l)}
                     className="flex items-center gap-2 p-2 hover:bg-slate-50 rounded-sm cursor-pointer"
                   >

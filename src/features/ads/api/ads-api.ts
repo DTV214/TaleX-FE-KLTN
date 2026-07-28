@@ -1,5 +1,12 @@
 import { httpClient as api } from "@/shared/api/http-client";
 
+export interface AdLabel {
+  labelId: string;
+  name: string;
+  color: string;
+  profileId: string;
+}
+
 export interface AdvertiseProfile {
   profileId: string;
   accountId: string;
@@ -97,6 +104,19 @@ export const adsApi = {
 
   trackClick: (campaignId: string) =>
     api.post("/api/v1/ads/track/click", { campaignId }),
+
+  getLabels: () =>
+    api.get<{ data: AdLabel[] }>("/api/v1/ads/labels").then((res) => res.data.data),
+
+  createLabel: (data: { name: string; color: string }) =>
+    api.post<{ data: AdLabel }>("/api/v1/ads/labels", data).then((res) => res.data.data),
+
+  updateLabel: (labelId: string, data: { name: string; color: string }) =>
+    api.put<{ data: AdLabel }>(`/api/v1/ads/labels/${labelId}`, data).then((res) => res.data.data),
+
+  deleteLabel: (labelId: string) =>
+    api.delete(`/api/v1/ads/labels/${labelId}`).then((res) => res.data.data),
+
   updateCampaignLabels: async (campaignId: string, labels: string[]) => {
     const res = await api.patch(`/api/v1/ads/campaigns/${campaignId}/labels`, labels);
     return res.data?.data;

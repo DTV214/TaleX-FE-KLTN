@@ -88,6 +88,7 @@ export default function AdminAdsPage() {
 
   const handleCreateOrUpdateSlot = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!editingSlot) return; // Creation is disabled
     const formData = new FormData(e.currentTarget);
     const data = {
       codeName: formData.get("codeName") as string,
@@ -98,11 +99,7 @@ export default function AdminAdsPage() {
       isActive: formData.get("isActive") === "true",
     };
 
-    if (editingSlot) {
-      updateSlotMutation.mutate({ id: editingSlot.slotId, data });
-    } else {
-      createSlotMutation.mutate(data);
-    }
+    updateSlotMutation.mutate({ id: editingSlot.slotId, data });
   };
 
   if (loadingSlots || loadingPending || loadingAll) return <div className="p-8">Loading...</div>;
@@ -138,9 +135,10 @@ export default function AdminAdsPage() {
       <div className="space-y-6">
         
         {activeTab === "SLOTS" && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-              <h2 className="text-lg font-bold mb-4">{editingSlot ? "Cập nhật Vị trí" : "Thêm Vị trí mới"}</h2>
+          <div className="flex flex-col lg:flex-row gap-8">
+            {editingSlot && (
+              <div className="lg:w-1/3 shrink-0 bg-white p-6 rounded-2xl shadow-sm border border-slate-100 h-fit">
+                <h2 className="text-lg font-bold mb-4">Cập nhật Vị trí</h2>
               
               <form onSubmit={handleCreateOrUpdateSlot} className="mb-6 grid grid-cols-2 gap-4 text-slate-900" key={editingSlot ? editingSlot.slotId : "new"}>
                 <div>
@@ -181,19 +179,18 @@ export default function AdminAdsPage() {
                 </div>
 
                 <div className="col-span-2 flex gap-3 mt-2">
-                  <button type="submit" disabled={createSlotMutation.isPending || updateSlotMutation.isPending} className="flex-1 bg-indigo-600 text-white rounded px-4 py-2 font-medium hover:bg-indigo-700">
-                    {createSlotMutation.isPending || updateSlotMutation.isPending ? "Đang lưu..." : (editingSlot ? "Lưu thay đổi" : "Tạo Slot")}
+                  <button type="submit" disabled={updateSlotMutation.isPending} className="flex-1 bg-indigo-600 text-white rounded px-4 py-2 font-medium hover:bg-indigo-700">
+                    {updateSlotMutation.isPending ? "Đang lưu..." : "Lưu thay đổi"}
                   </button>
-                  {editingSlot && (
-                    <button type="button" onClick={() => setEditingSlot(null)} className="flex-1 bg-slate-200 text-slate-700 rounded px-4 py-2 font-medium hover:bg-slate-300">
-                      Hủy
-                    </button>
-                  )}
+                  <button type="button" onClick={() => setEditingSlot(null)} className="flex-1 bg-slate-200 text-slate-700 rounded px-4 py-2 font-medium hover:bg-slate-300">
+                    Hủy
+                  </button>
                 </div>
               </form>
             </div>
+            )}
 
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 overflow-x-auto">
+            <div className={`bg-white p-6 rounded-2xl shadow-sm border border-slate-100 overflow-x-auto ${editingSlot ? 'lg:w-2/3' : 'w-full'}`}>
               <h2 className="text-lg font-bold mb-4">Danh sách Vị trí</h2>
               <table className="w-full text-left text-sm border-collapse text-slate-800 whitespace-nowrap">
                 <thead>
