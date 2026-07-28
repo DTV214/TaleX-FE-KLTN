@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { motion } from "framer-motion";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import {
   AlertCircle,
@@ -16,80 +15,15 @@ import {
   Star,
   Users,
 } from "lucide-react";
+import { usePublicSidebarStore } from "@/shared/stores/public-sidebar.store";
+import { AdSlot } from "@/shared/ui/ad-slot";
 import {
+  getPublicEpisodes,
   getPublicSeriesList,
+  getPublicSeasons,
+  type PublicEpisodeItem,
   type PublicSeriesItem,
 } from "@/features/series/api/series-api";
-
-type MockShelfItem = {
-  title: string;
-  chapter: string;
-  image: string;
-};
-
-const recommendedComics: MockShelfItem[] = [
-  {
-    title: "Vạn Cổ Chí Tôn",
-    chapter: "Chapter 546",
-    image:
-      "https://images.unsplash.com/photo-1612036782180-6f0b6cd846fe?q=80&w=900&auto=format&fit=crop",
-  },
-  {
-    title: "Quỷ Tiến Hóa",
-    chapter: "Chapter 151",
-    image:
-      "https://images.unsplash.com/photo-1634986666676-ec8fd927c23d?q=80&w=900&auto=format&fit=crop",
-  },
-  {
-    title: "Cầm Kiếm Tuyệt Đối",
-    chapter: "Chapter 193",
-    image:
-      "https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=900&auto=format&fit=crop",
-  },
-  {
-    title: "Đại Phụng Đả Canh Nhân",
-    chapter: "Chapter 661",
-    image:
-      "https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=900&auto=format&fit=crop",
-  },
-  {
-    title: "Ta Là Tà Đế",
-    chapter: "Chapter 570",
-    image:
-      "https://images.unsplash.com/photo-1519608487953-e999c86e7455?q=80&w=900&auto=format&fit=crop",
-  },
-];
-
-const readingHistory: MockShelfItem[] = [
-  {
-    title: "Thiên Tài Võ Học Kẻ Nhớ Hết Tất Cả",
-    chapter: "Đọc tiếp Chapter 1",
-    image:
-      "https://images.unsplash.com/photo-1518709268805-4e9042af2176?q=80&w=500&auto=format&fit=crop",
-  },
-  {
-    title: "Haimiya-Senpai Wa Kowakute",
-    chapter: "Đọc tiếp Chapter 12",
-    image:
-      "https://images.unsplash.com/photo-1518791841217-8f162f1e1131?q=80&w=500&auto=format&fit=crop",
-  },
-];
-
-const topComics: MockShelfItem[] = [
-  ...recommendedComics,
-  {
-    title: "Tinh Giáp Hồn Tướng",
-    chapter: "Chapter 388",
-    image:
-      "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=500&auto=format&fit=crop",
-  },
-  {
-    title: "Bách Luyện Thành Thần",
-    chapter: "Chapter 1295",
-    image:
-      "https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=500&auto=format&fit=crop",
-  },
-];
 
 function getCover(item?: PublicSeriesItem) {
   return (
@@ -99,9 +33,55 @@ function getCover(item?: PublicSeriesItem) {
   );
 }
 
+async function getLatestComicEpisodes(seriesId: string) {
+  const seasons = await getPublicSeasons(seriesId);
+  const episodeGroups = await Promise.all(
+    seasons.map((season) => getPublicEpisodes(season.seasonId)),
+  );
+
+  return episodeGroups
+    .flat()
+    .filter((episode) => episode.contentType?.toUpperCase() === "COMIC")
+    .sort((a, b) => {
+      if (a.episodeNumber !== b.episodeNumber) {
+        return b.episodeNumber - a.episodeNumber;
+      }
+
+      return getEpisodeTime(b) - getEpisodeTime(a);
+    })
+    .slice(0, 3);
+}
+
+function getEpisodeTime(episode: PublicEpisodeItem) {
+  const dateValue = episode.publishedAt || episode.updatedAt || episode.createdAt;
+  const timestamp = new Date(dateValue).getTime();
+  return Number.isFinite(timestamp) ? timestamp : 0;
+}
+
+function formatRelativeTime(value?: string | null) {
+  if (!value) return "";
+
+  const timestamp = new Date(value).getTime();
+  if (!Number.isFinite(timestamp)) return "";
+
+  const diffMs = Date.now() - timestamp;
+  if (diffMs < 0) return "vừa xong";
+
+  const minute = 60_000;
+  const hour = 60 * minute;
+  const day = 24 * hour;
+
+  if (diffMs < minute) return "vừa xong";
+  if (diffMs < hour) return `${Math.floor(diffMs / minute)} phút trước`;
+  if (diffMs < day) return `${Math.floor(diffMs / hour)} giờ trước`;
+
+  return `${Math.floor(diffMs / day)} ngày trước`;
+}
+
 export function ComicsList() {
   const [page, setPage] = useState(1);
   const [pageSize] = useState(12);
+  const isSidebarOpen = usePublicSidebarStore((state) => state.isSidebarOpen);
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["publicComicSeries", page, pageSize],
@@ -111,10 +91,22 @@ export function ComicsList() {
   const comicItems = (data?.content || []).filter(
     (item) => item.contentType?.toUpperCase() === "COMIC",
   );
+  const latestEpisodeQueries = useQueries({
+    queries: comicItems.map((comic) => ({
+      queryKey: ["publicComicLatestEpisodes", comic.seriesId],
+      queryFn: () => getLatestComicEpisodes(comic.seriesId),
+      enabled: !isLoading && !isError,
+      staleTime: 5 * 60 * 1000,
+      refetchOnWindowFocus: false,
+    })),
+  });
   const featuredComic = comicItems[0];
   const totalPages = data?.totalPages || 1;
   const isFirst = data?.isFirst ?? true;
   const isLast = data?.isLast ?? true;
+  const catalogGridClass = isSidebarOpen
+    ? "grid grid-cols-2 justify-start gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-[repeat(3,minmax(0,240px))] xl:grid-cols-[repeat(3,minmax(0,260px))]"
+    : "grid grid-cols-2 justify-start gap-x-8 gap-y-10 sm:grid-cols-3 lg:grid-cols-[repeat(4,minmax(0,230px))] 2xl:grid-cols-[repeat(5,minmax(0,240px))]";
 
   const handlePrevPage = () => {
     if (page > 1) {
@@ -132,7 +124,7 @@ export function ComicsList() {
 
   return (
     <div className="min-h-screen bg-[#060607] pb-20 text-gray-100 antialiased">
-      <div className="container mx-auto space-y-10 px-4 pt-8 md:px-8">
+      <div className="mx-auto max-w-[1600px] space-y-10 px-4 pt-8 md:px-8">
         {featuredComic && (
           <FeaturedBanner
             item={featuredComic}
@@ -141,56 +133,60 @@ export function ComicsList() {
           />
         )}
 
-        <RecommendedCarousel title="Truyện tranh đề cử" items={recommendedComics} />
+        <AdSlot
+          slotId="mock-comics-top"
+          format="horizontal"
+          className="my-2"
+        />
 
-        <section className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_360px]">
-          <div className="min-w-0">
-            <SectionTitle eyebrow="Khám phá truyện tranh" title="Danh Sách Truyện Tranh" />
+        <section>
+          <SectionTitle
+            eyebrow="Khám phá truyện tranh"
+            title="Danh Sách Truyện Tranh"
+          />
 
-            {isLoading && <ListSkeleton />}
-            {isError && (
-              <ErrorState
-                message={
-                  error instanceof Error
-                    ? error.message
-                    : "Hệ thống gặp sự cố nhỏ, vui lòng thử lại."
-                }
-                onRetry={() => refetch()}
+          {isLoading && <ListSkeleton isSidebarOpen={isSidebarOpen} />}
+          {isError && (
+            <ErrorState
+              message={
+                error instanceof Error
+                  ? error.message
+                  : "Hệ thống gặp sự cố nhỏ, vui lòng thử lại."
+              }
+              onRetry={() => refetch()}
+            />
+          )}
+
+          {!isLoading && !isError && (
+            <>
+              {comicItems.length === 0 ? (
+                <EmptyState title="Chưa có truyện tranh nào" />
+              ) : (
+                <div className={catalogGridClass}>
+                  {comicItems.map((comic, index) => (
+                    <CatalogCard
+                      key={comic.seriesId}
+                      item={comic}
+                      latestEpisodes={latestEpisodeQueries[index]?.data ?? []}
+                      isLoadingEpisodes={
+                        latestEpisodeQueries[index]?.isLoading ?? false
+                      }
+                    />
+                  ))}
+                </div>
+              )}
+
+              <Pagination
+                page={page}
+                totalPages={totalPages}
+                isFirst={isFirst}
+                isLast={isLast}
+                onPageChange={setPage}
+                onPrev={handlePrevPage}
+                onNext={handleNextPage}
               />
-            )}
-
-            {!isLoading && !isError && (
-              <>
-                {comicItems.length === 0 ? (
-                  <EmptyState title="Chưa có truyện tranh nào" />
-                ) : (
-                  <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
-                    {comicItems.map((comic) => (
-                      <CatalogCard
-                        key={comic.seriesId}
-                        item={comic}
-                        latestLabel="Chapter mới nhất"
-                        accent="blue"
-                      />
-                    ))}
-                  </div>
-                )}
-
-                <Pagination
-                  page={page}
-                  totalPages={totalPages}
-                  isFirst={isFirst}
-                  isLast={isLast}
-                  onPageChange={setPage}
-                  onPrev={handlePrevPage}
-                  onNext={handleNextPage}
-                  accent="blue"
-                />
-              </>
-            )}
-          </div>
-
-          <CatalogSidebar history={readingHistory} topItems={topComics} />
+            </>
+          )}
         </section>
       </div>
     </div>
@@ -207,7 +203,7 @@ function FeaturedBanner({
   primaryLabel: string;
 }) {
   return (
-    <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-[#121214] min-h-[460px] shadow-[0_24px_80px_rgba(0,0,0,0.4)]">
+    <section className="relative min-h-[460px] overflow-hidden rounded-3xl border border-white/10 bg-[#121214] shadow-[0_24px_80px_rgba(0,0,0,0.4)]">
       <div
         className="absolute inset-0 bg-cover bg-center"
         style={{ backgroundImage: `url(${getCover(item)})` }}
@@ -223,7 +219,8 @@ function FeaturedBanner({
           {item.title}
         </h1>
         <p className="mt-5 line-clamp-3 max-w-2xl text-sm font-medium leading-relaxed text-white/68 md:text-base">
-          {item.description || "Bộ truyện mới nhất vừa được cập nhật trên TaleX."}
+          {item.description ||
+            "Bộ truyện mới nhất vừa được cập nhật trên TaleX."}
         </p>
         <div className="mt-5 flex flex-wrap items-center gap-4 text-sm font-bold text-white/70">
           <span className="inline-flex items-center gap-2">
@@ -259,173 +256,101 @@ function FeaturedBanner({
   );
 }
 
-function RecommendedCarousel({ title, items }: { title: string; items: MockShelfItem[] }) {
-  const loopItems = [...items, ...items];
-
-  return (
-    <section className="space-y-4">
-      <SectionTitle eyebrow="TaleX đề cử" title={title} compact />
-      <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#101014] p-3">
-        <motion.div
-          className="flex w-max gap-3"
-          animate={{ x: ["0%", "-50%"] }}
-          transition={{ duration: 26, ease: "linear", repeat: Infinity }}
-        >
-          {loopItems.map((item, index) => (
-            <div
-              key={`${item.title}-${index}`}
-              className="relative h-44 w-64 shrink-0 overflow-hidden rounded-xl bg-white/5"
-            >
-              <div
-                className="absolute inset-0 bg-cover bg-center"
-                style={{ backgroundImage: `url(${item.image})` }}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
-              <div className="absolute inset-x-0 bottom-0 p-4">
-                <p className="line-clamp-1 text-base font-black text-white">
-                  {item.title}
-                </p>
-                <p className="mt-1 text-sm font-bold text-[#D4AF37]">
-                  {item.chapter}
-                </p>
-              </div>
-            </div>
-          ))}
-        </motion.div>
-      </div>
-    </section>
-  );
-}
-
 function CatalogCard({
   item,
-  latestLabel,
-  accent,
+  latestEpisodes,
+  isLoadingEpisodes,
 }: {
   item: PublicSeriesItem;
-  latestLabel: string;
-  accent: "blue" | "gold";
-}) {
-  const accentClass =
-    accent === "blue"
-      ? "group-hover:border-blue-500/40 text-blue-300"
-      : "group-hover:border-[#D4AF37]/50 text-[#D4AF37]";
-
-  return (
-    <Link href={`/series/${item.seriesId}`} className="group block min-w-0">
-      <div
-        className={`relative aspect-[2/3] overflow-hidden rounded-2xl border border-white/[0.06] bg-[#121214] shadow-2xl transition-all duration-500 group-hover:scale-[1.01] ${accentClass}`}
-      >
-        {item.coverUrl ? (
-          <div
-            className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110"
-            style={{ backgroundImage: `url(${item.coverUrl})` }}
-          />
-        ) : (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-white/[0.02] to-white/[0.06] text-center">
-            <BookOpen className="mb-2 h-9 w-9 text-white/25" />
-            <span className="text-[11px] text-white/35">No Cover Available</span>
-          </div>
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#060607] via-black/10 to-transparent" />
-        <div className="absolute left-3 top-3 rounded-md bg-black/70 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-white/80">
-          {item.ageRating || "EVERYONE"}
-        </div>
-        <div className="absolute right-3 top-3 rounded-md bg-blue-500/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-blue-300">
-          Comic
-        </div>
-        <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-[10px] font-bold text-white/80">
-          <span className="rounded-lg bg-black/55 px-2 py-1 backdrop-blur">
-            <Eye className="mr-1 inline h-3 w-3" />
-            {item.totalViews.toLocaleString("vi-VN")}
-          </span>
-          <span className="rounded-lg bg-black/55 px-2 py-1 backdrop-blur">
-            <Users className="mr-1 inline h-3 w-3" />
-            {item.totalSubscriptions.toLocaleString("vi-VN")}
-          </span>
-        </div>
-      </div>
-      <h3 className="mt-3 line-clamp-1 text-base font-black text-white group-hover:text-[#D4AF37]">
-        {item.title}
-      </h3>
-      <p className="mt-1 text-sm font-bold text-white/70">{latestLabel}</p>
-      <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-white/45">
-        {item.description || "Bấm để xem chi tiết và danh sách chương mới nhất."}
-      </p>
-    </Link>
-  );
-}
-
-function CatalogSidebar({
-  history,
-  topItems,
-}: {
-  history: MockShelfItem[];
-  topItems: MockShelfItem[];
+  latestEpisodes: PublicEpisodeItem[];
+  isLoadingEpisodes: boolean;
 }) {
   return (
-    <aside className="space-y-6 xl:sticky xl:top-24 xl:self-start">
-      <div className="rounded-2xl border border-white/10 bg-[#121214] p-5">
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-black text-white">Lịch sử đọc</h3>
-          <Link href="/history" prefetch={false} className="text-sm font-bold text-[#D4AF37]">
-            Xem tất cả
-          </Link>
-        </div>
-        <div className="space-y-4">
-          {history.map((item) => (
-            <MockSideItem key={item.title} item={item} />
-          ))}
-        </div>
-      </div>
-
-      <div className="rounded-2xl border border-white/10 bg-[#121214] p-5">
-        <div className="mb-4 grid grid-cols-3 overflow-hidden rounded-xl border border-white/10 text-center text-sm font-black">
-          <span className="bg-[#D4AF37] py-2 text-black">Top tháng</span>
-          <span className="bg-white/[0.04] py-2 text-white/60">Top tuần</span>
-          <span className="bg-white/[0.04] py-2 text-white/60">Top ngày</span>
-        </div>
-        <div className="space-y-3">
-          {topItems.slice(0, 7).map((item, index) => (
-            <div key={item.title} className="flex items-center gap-3">
-              <span className="w-8 text-center text-xl font-black text-[#D4AF37]/80">
-                {String(index + 1).padStart(2, "0")}
+    <article className="group block min-w-0">
+      <Link href={`/series/${item.seriesId}`} className="block">
+        <div className="relative aspect-[4/5] overflow-hidden rounded-[1.2rem] border border-white/[0.07] bg-[#121214] shadow-[0_16px_42px_rgba(0,0,0,0.3)] transition-all duration-500 group-hover:scale-[1.012] group-hover:border-[#D4AF37]/50">
+          {item.coverUrl ? (
+            <div
+              className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110"
+              style={{ backgroundImage: `url(${item.coverUrl})` }}
+            />
+          ) : (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-white/[0.02] to-white/[0.06] text-center">
+              <BookOpen className="mb-2 h-9 w-9 text-white/25" />
+              <span className="text-[11px] text-white/35">
+                No Cover Available
               </span>
-              <MockSideItem item={item} compact />
+            </div>
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#060607] via-black/12 to-transparent" />
+          <div className="absolute left-3 top-3 rounded-md bg-black/70 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-white/80">
+            {item.ageRating || "EVERYONE"}
+          </div>
+          <div className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full border border-[#D4AF37]/35 bg-black/60 text-[#D4AF37] backdrop-blur-md">
+            <Star className="h-4 w-4 fill-current" />
+          </div>
+          <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-[10px] font-bold text-white/80">
+            <span className="rounded-lg bg-black/55 px-2 py-1 backdrop-blur">
+              <Eye className="mr-1 inline h-3 w-3 text-[#D4AF37]" />
+              {item.totalViews.toLocaleString("vi-VN")}
+            </span>
+            <span className="rounded-lg bg-black/55 px-2 py-1 backdrop-blur">
+              <Users className="mr-1 inline h-3 w-3 text-[#D4AF37]" />
+              {item.totalSubscriptions.toLocaleString("vi-VN")}
+            </span>
+          </div>
+        </div>
+        <h3 className="mt-3 line-clamp-1 text-base font-black text-white group-hover:text-[#D4AF37]">
+          {item.title}
+        </h3>
+      </Link>
+
+      <div className="mt-3 space-y-1.5">
+        {isLoadingEpisodes &&
+          Array.from({ length: 3 }).map((_, index) => (
+            <div key={index} className="flex items-center justify-between gap-3">
+              <span className="h-4 w-24 rounded bg-white/[0.06]" />
+              <span className="h-3 w-16 rounded bg-white/[0.04]" />
             </div>
           ))}
-        </div>
-      </div>
-    </aside>
-  );
-}
 
-function MockSideItem({ item, compact = false }: { item: MockShelfItem; compact?: boolean }) {
-  return (
-    <div className="flex min-w-0 gap-3">
-      <div
-        className={`${compact ? "h-14 w-14" : "h-16 w-20"} shrink-0 rounded-lg bg-cover bg-center`}
-        style={{ backgroundImage: `url(${item.image})` }}
-      />
-      <div className="min-w-0 flex-1">
-        <p className="line-clamp-2 text-sm font-bold text-white">{item.title}</p>
-        <p className="mt-1 text-xs font-semibold text-white/45">{item.chapter}</p>
+        {!isLoadingEpisodes && latestEpisodes.length === 0 && (
+          <p className="text-sm font-semibold text-white/36">
+            Chưa có chương mới
+          </p>
+        )}
+
+        {!isLoadingEpisodes &&
+          latestEpisodes.map((episode) => (
+            <Link
+              key={episode.episodeId}
+              href={`/read/${episode.episodeId}`}
+              className="flex items-center justify-between gap-3 text-sm transition hover:text-[#D4AF37]"
+            >
+              <span className="min-w-0 truncate font-semibold text-white/84">
+                {episode.episodeNumber != null
+                  ? `Chapter ${episode.episodeNumber}`
+                  : episode.title}
+              </span>
+              <span className="shrink-0 text-xs font-semibold italic text-white/32">
+                {formatRelativeTime(episode.publishedAt || episode.createdAt)}
+              </span>
+            </Link>
+          ))}
       </div>
-    </div>
+    </article>
   );
 }
 
 function SectionTitle({
   eyebrow,
   title,
-  compact = false,
 }: {
   eyebrow: string;
   title: string;
-  compact?: boolean;
 }) {
   return (
-    <div className={compact ? "" : "mb-6"}>
+    <div className="mb-6">
       <p className="mb-1 flex items-center gap-2 text-xs font-black uppercase tracking-[0.2em] text-[#D4AF37]">
         <Sparkles className="h-3.5 w-3.5" />
         {eyebrow}
@@ -437,12 +362,16 @@ function SectionTitle({
   );
 }
 
-function ListSkeleton() {
+function ListSkeleton({ isSidebarOpen }: { isSidebarOpen: boolean }) {
+  const skeletonGridClass = isSidebarOpen
+    ? "grid grid-cols-2 justify-start gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-[repeat(3,minmax(0,240px))] xl:grid-cols-[repeat(3,minmax(0,260px))]"
+    : "grid grid-cols-2 justify-start gap-x-8 gap-y-10 sm:grid-cols-3 lg:grid-cols-[repeat(4,minmax(0,230px))] 2xl:grid-cols-[repeat(5,minmax(0,240px))]";
+
   return (
-    <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
+    <div className={skeletonGridClass}>
       {Array.from({ length: 8 }).map((_, idx) => (
         <div key={idx} className="space-y-3">
-          <div className="aspect-[2/3] rounded-2xl bg-white/[0.04]" />
+          <div className="aspect-[4/5] rounded-[1.2rem] bg-white/[0.04]" />
           <div className="h-4 w-4/5 rounded bg-white/[0.04]" />
           <div className="h-3 w-2/3 rounded bg-white/[0.04]" />
         </div>
@@ -460,11 +389,19 @@ function EmptyState({ title }: { title: string }) {
   );
 }
 
-function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
+function ErrorState({
+  message,
+  onRetry,
+}: {
+  message: string;
+  onRetry: () => void;
+}) {
   return (
     <div className="mx-auto max-w-md py-24 text-center">
       <AlertCircle className="mx-auto mb-4 h-10 w-10 text-red-400" />
-      <h3 className="mb-2 text-xl font-bold text-white">Không thể tải danh sách</h3>
+      <h3 className="mb-2 text-xl font-bold text-white">
+        Không thể tải danh sách
+      </h3>
       <p className="mb-6 text-sm text-white/55">{message}</p>
       <button
         onClick={onRetry}
@@ -484,7 +421,6 @@ function Pagination({
   onPageChange,
   onPrev,
   onNext,
-  accent,
 }: {
   page: number;
   totalPages: number;
@@ -493,14 +429,16 @@ function Pagination({
   onPageChange: (page: number) => void;
   onPrev: () => void;
   onNext: () => void;
-  accent: "blue" | "gold";
 }) {
   if (totalPages <= 1) return null;
-  const activeClass = accent === "blue" ? "bg-blue-500 text-white" : "bg-[#D4AF37] text-black";
 
   return (
     <div className="mt-14 flex items-center justify-center gap-3 border-t border-white/[0.06] pt-8">
-      <button onClick={onPrev} disabled={isFirst} className="h-10 w-10 rounded-xl border border-white/10 text-white disabled:opacity-25">
+      <button
+        onClick={onPrev}
+        disabled={isFirst}
+        className="h-10 w-10 rounded-xl border border-white/10 text-white disabled:opacity-25"
+      >
         <ChevronLeft className="mx-auto h-4 w-4" />
       </button>
       {Array.from({ length: totalPages }).map((_, idx) => {
@@ -511,7 +449,7 @@ function Pagination({
             onClick={() => onPageChange(pageIndex)}
             className={`h-10 w-10 rounded-xl text-sm font-black ${
               page === pageIndex
-                ? activeClass
+                ? "bg-[#D4AF37] text-black"
                 : "border border-white/10 bg-white/[0.02] text-white/55"
             }`}
           >
@@ -519,7 +457,11 @@ function Pagination({
           </button>
         );
       })}
-      <button onClick={onNext} disabled={isLast} className="h-10 w-10 rounded-xl border border-white/10 text-white disabled:opacity-25">
+      <button
+        onClick={onNext}
+        disabled={isLast}
+        className="h-10 w-10 rounded-xl border border-white/10 text-white disabled:opacity-25"
+      >
         <ChevronRight className="mx-auto h-4 w-4" />
       </button>
     </div>

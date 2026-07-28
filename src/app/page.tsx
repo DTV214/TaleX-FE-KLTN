@@ -1,6 +1,9 @@
 "use client";
 
+import { useCallback, useRef } from "react";
 import {
+  ChevronLeft,
+  ChevronRight,
   Film,
   Flame,
   Play,
@@ -21,9 +24,7 @@ import { WebtoonAdaptationsRow } from "@/features/home/components/webtoon-adapta
 import { TrendingComics } from "@/features/intro/components/trending-comics";
 import { AdSlot } from "@/shared/ui/ad-slot";
 import { useQuery } from "@tanstack/react-query";
-import { adsApi } from "@/features/ads/api/ads-api";
-import useEmblaCarousel from "embla-carousel-react";
-import Autoplay from "embla-carousel-autoplay";
+import { adsApi, type AdServeResponse } from "@/features/ads/api/ads-api";
 
 type ShortItem = {
   title: string;
@@ -295,6 +296,7 @@ function ShortCard({ short }: { short: ShortItem }) {
 }
 
 function AdImageCarousel() {
+  const scrollRef = useRef<HTMLDivElement | null>(null);
   const { data: ads, isLoading } = useQuery({
     queryKey: ["serve-all-ads", "BANNER_HOME"],
     queryFn: () => adsApi.serveAllAds("BANNER_HOME"),
@@ -302,39 +304,67 @@ function AdImageCarousel() {
     refetchOnWindowFocus: false,
   });
 
+  const scrollCarousel = useCallback((direction: -1 | 1) => {
+    const container = scrollRef.current;
+    if (!container) return;
+
+    const scrollDistance = Math.min(container.clientWidth * 0.78, 430);
+    container.scrollBy({
+      left: direction * scrollDistance,
+      behavior: "smooth",
+    });
+  }, []);
+
   if (isLoading || !ads || ads.length === 0) return null;
 
-  // Duplicate ads to fill carousel if there are too few
-  let displayAds = [...ads];
-  if (displayAds.length < 4) {
-    displayAds = [...displayAds, ...displayAds, ...displayAds, ...displayAds].slice(0, 4);
-  }
+  const displayAds =
+    ads.length < 4
+      ? Array.from({ length: 4 }, (_, index) => ads[index % ads.length])
+      : ads;
 
   return (
-    <section className="talex-ad-carousel relative mt-5 overflow-hidden rounded-2xl border border-white/5 bg-[#111113] shadow-[0_18px_60px_rgba(0,0,0,0.35)]">
+    <section className="relative mt-5 overflow-hidden rounded-2xl border border-white/5 bg-[#111113] p-2 shadow-[0_18px_60px_rgba(0,0,0,0.35)]">
       <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-20 bg-gradient-to-r from-[#111113] to-transparent" />
       <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-20 bg-gradient-to-l from-[#111113] to-transparent" />
-      <EmblaCarouselWrapper ads={displayAds} />
-    </section>
-  );
-}
 
-function EmblaCarouselWrapper({ ads }: { ads: any[] }) {
-  const [emblaRef] = useEmblaCarousel(
-    { loop: true, align: "start", dragFree: false },
-    [Autoplay({ delay: 3500, stopOnInteraction: false })]
-  );
+      {displayAds.length > 1 ? (
+        <>
+          <button
+            type="button"
+            aria-label="Quảng cáo trước"
+            onClick={() => scrollCarousel(-1)}
+            className="absolute left-3 top-1/2 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-black/55 text-white/80 shadow-lg backdrop-blur-md transition hover:border-[#D4AF37]/40 hover:bg-[#D4AF37] hover:text-black"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            aria-label="Quảng cáo tiếp theo"
+            onClick={() => scrollCarousel(1)}
+            className="absolute right-3 top-1/2 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-black/55 text-white/80 shadow-lg backdrop-blur-md transition hover:border-[#D4AF37]/40 hover:bg-[#D4AF37] hover:text-black"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </>
+      ) : null}
 
-  return (
-    <div className="h-[230px] overflow-hidden p-2 md:h-[270px] lg:h-[310px]" ref={emblaRef}>
-      <div className="talex-ad-carousel-track flex h-full gap-2">
-        {ads.map((ad, index) => (
-          <div key={`${ad.campaignId}-${index}`} className="relative h-full w-[78vw] shrink-0 overflow-hidden rounded-xl border border-white/5 bg-white/5 md:w-[360px] lg:w-[430px] flex-[0_0_auto] ml-2">
-            <AdSlot adData={ad} className="h-full w-full rounded-none border-none bg-transparent" />
+      <div
+        ref={scrollRef}
+        className="flex h-[230px] snap-x snap-mandatory gap-2 overflow-x-auto scroll-smooth pr-12 [scrollbar-width:none] md:h-[270px] lg:h-[310px] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+      >
+        {displayAds.map((ad: AdServeResponse, index) => (
+          <div
+            key={`${ad.campaignId}-${index}`}
+            className="relative ml-2 h-full w-[78vw] shrink-0 snap-start overflow-hidden rounded-xl border border-white/5 bg-white/[0.04] md:w-[360px] lg:w-[430px]"
+          >
+            <AdSlot
+              adData={ad}
+              className="h-full min-h-0 w-full rounded-none border-none bg-transparent"
+            />
           </div>
         ))}
       </div>
-    </div>
+    </section>
   );
 }
 

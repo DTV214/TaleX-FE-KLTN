@@ -108,14 +108,12 @@ const floatingDecorations: Array<{
 const genderOptions: Array<{
   value: OnboardingGender;
   label: string;
-  description: string;
   image: string;
   icon: LucideIcon;
 }> = [
   {
     value: "MALE",
     label: "Nam",
-    description: "Phiêu lưu, hành động hoặc nhịp kể mạnh.",
     image:
       "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=900&auto=format&fit=crop",
     icon: Mars,
@@ -123,7 +121,6 @@ const genderOptions: Array<{
   {
     value: "FEMAL",
     label: "Nữ",
-    description: "Cảm xúc, đời thường hoặc lãng mạn nhẹ.",
     image:
       "https://images.unsplash.com/photo-1518005020951-eccb494ad742?q=80&w=900&auto=format&fit=crop",
     icon: Venus,
@@ -131,7 +128,6 @@ const genderOptions: Array<{
   {
     value: "UNKNOWN",
     label: "Riêng tư",
-    description: "TaleX sẽ dựa vào lựa chọn bên dưới.",
     image:
       "https://images.unsplash.com/photo-1518709268805-4e9042af2176?q=80&w=900&auto=format&fit=crop",
     icon: ShieldQuestion,
@@ -267,13 +263,11 @@ function StackedPosterCards({
 
 function ChoiceCard({
   title,
-  description,
   selected,
   onClick,
   image,
 }: {
   title: string;
-  description?: string;
   selected: boolean;
   onClick: () => void;
   image: string;
@@ -282,7 +276,7 @@ function ChoiceCard({
     <button
       type="button"
       onClick={onClick}
-      className={`group relative min-h-[168px] overflow-hidden rounded-[1.65rem] border p-5 text-left transition duration-200 hover:-translate-y-1 hover:border-[#D4AF37]/45 hover:shadow-[0_22px_58px_rgba(0,0,0,0.32)] ${
+      className={`group relative min-h-[136px] overflow-hidden rounded-[1.45rem] border p-4 text-left transition duration-200 hover:-translate-y-1 hover:border-[#D4AF37]/45 hover:shadow-[0_18px_48px_rgba(0,0,0,0.3)] ${
         selected
           ? "border-[#D4AF37]/65 bg-[#D4AF37]/10 shadow-[0_0_0_1px_rgba(212,175,55,0.18)]"
           : "border-white/10 bg-white/[0.035]"
@@ -298,14 +292,9 @@ function ChoiceCard({
         className="absolute inset-0 h-full w-full object-cover opacity-20 transition duration-300 group-hover:opacity-30"
       />
       <span className="absolute inset-0 bg-gradient-to-br from-black/82 via-black/60 to-[#111112]/88" />
-      <span className="relative z-10 flex h-full flex-col justify-between gap-5">
+      <span className="relative z-10 flex h-full flex-col justify-between gap-4">
         <span>
           <span className="text-base font-black text-white/92">{title}</span>
-          {description ? (
-            <span className="mt-2 line-clamp-2 block text-sm leading-6 text-slate-400">
-              {description}
-            </span>
-          ) : null}
         </span>
         <span
           className={`inline-flex h-7 w-7 items-center justify-center rounded-full border transition ${
@@ -336,11 +325,11 @@ function OptionGridState({
 }) {
   if (isLoading) {
     return (
-      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {Array.from({ length: 9 }).map((_, index) => (
           <div
             key={index}
-            className="h-[168px] animate-pulse rounded-[1.65rem] border border-white/10 bg-white/[0.04]"
+            className="h-[136px] animate-pulse rounded-[1.45rem] border border-white/10 bg-white/[0.04]"
           />
         ))}
       </div>
@@ -613,9 +602,6 @@ export function OnboardingLandingPage() {
                             <span className="block text-xl font-black text-white/92">
                               {option.label}
                             </span>
-                            <span className="mt-2 block text-sm leading-6 text-slate-400">
-                              {option.description}
-                            </span>
                           </span>
                         </span>
                       </button>
@@ -692,12 +678,11 @@ export function OnboardingLandingPage() {
                   onRetry={() => void categoriesQuery.refetch()}
                 />
                 {!categoriesQuery.isLoading && !categoriesQuery.isError && (
-                  <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                  <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                     {categories.map((category, index) => (
                       <MemoChoiceCard
                         key={category.id}
                         title={category.name}
-                        description={category.description}
                         image={cardImages[index % cardImages.length]}
                         selected={selectedCategoryIds.includes(category.id)}
                         onClick={() => toggleCategory(category.id)}
@@ -746,12 +731,11 @@ export function OnboardingLandingPage() {
                   onRetry={() => void tagsQuery.refetch()}
                 />
                 {!tagsQuery.isLoading && !tagsQuery.isError && (
-                  <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                  <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                     {tags.map((tag, index) => (
                       <MemoChoiceCard
                         key={tag.id}
                         title={`#${tag.name}`}
-                        description={tag.description}
                         image={cardImages[(index + 2) % cardImages.length]}
                         selected={selectedTagIds.includes(tag.id)}
                         onClick={() => toggleTag(tag.id)}
