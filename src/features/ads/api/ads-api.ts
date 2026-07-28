@@ -44,6 +44,9 @@ export const adsApi = {
   topupWallet: (amount: number) =>
     api.post("/api/v1/ads/wallet/topup", { amount }).then((res) => res.data.data),
 
+  getCampaignMetrics: (campaignId: string) =>
+    api.get(`/api/v1/ads/campaigns/${campaignId}/metrics`).then((res) => res.data.data),
+
   createCampaign: (data: AdCampaignCreate) =>
     api.post("/api/v1/ads/campaigns", data).then((res) => res.data.data),
 

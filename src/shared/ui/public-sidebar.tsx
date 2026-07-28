@@ -53,7 +53,7 @@ const libraryMenu: MenuItem[] = [
 const platformMenu: MenuItem[] = [
   { title: "Giới thiệu", href: "/intro", icon: Sparkles },
   { title: "Creator Studio", href: "/creator-dashboard", icon: UserRoundCog },
-  { title: "Quảng cáo", href: "/ads", icon: Megaphone },
+  { title: "Quảng cáo", href: "/advertiser-dashboard", icon: Megaphone },
 ];
 
 const legalLinks = [
