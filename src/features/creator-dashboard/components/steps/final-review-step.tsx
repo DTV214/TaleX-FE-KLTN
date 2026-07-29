@@ -8,6 +8,7 @@ import {
   type MediaType,
 } from "@/features/creator-dashboard/api/creator-content-api";
 import { AIPolicyAndCopyright } from "@/features/creator-dashboard/components/ai-policy-and-copyright";
+import { CreatorBackButton } from "@/features/creator-dashboard/components/creator-back-button";
 import {
   getBlockingCopyrightViolations,
   getRejectedCensorshipResults,
@@ -417,12 +418,7 @@ export function FinalReviewStep({
                 {isCancelingSchedule ? "Đang hủy..." : <><X size={18} /> Hủy Đặt Lịch</>}
               </button>
 
-              <button
-                onClick={onBack}
-                className="w-full py-3 rounded-md text-sm font-bold bg-white/5 hover:bg-white/10 border border-creator-border transition-colors flex items-center justify-center gap-2"
-              >
-                Quay lại danh sách tập
-              </button>
+              <CreatorBackButton onClick={onBack} className="w-full" />
             </>
           ) : !isPublished ? (
             <>
@@ -465,12 +461,7 @@ export function FinalReviewStep({
                 >
                   <Edit3 size={16} /> Lưu Nháp
                 </button>
-                <button
-                  onClick={onBack}
-                  className="py-2.5 rounded-md text-sm font-medium bg-white/5 hover:bg-white/10 border border-creator-border transition-colors flex items-center justify-center gap-2"
-                >
-                  Quay lại
-                </button>
+                <CreatorBackButton onClick={onBack} className="w-full" />
               </div>
             </>
           ) : (
@@ -485,12 +476,7 @@ export function FinalReviewStep({
               >
                 {isHidingEpisode ? "Đang ẩn..." : <><EyeOff size={18} /> Ẩn Tập</>}
               </button>
-              <button
-                onClick={onBack}
-                className="w-full py-3 rounded-md text-sm font-bold bg-white/5 hover:bg-white/10 border border-creator-border transition-colors flex items-center justify-center gap-2"
-              >
-                Quay lại
-              </button>
+              <CreatorBackButton onClick={onBack} className="w-full" />
             </>
           )}
         </div>

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Plus, GripVertical, Edit3, Trash2, Check, Clock, PlayCircle } from "lucide-react";
+import { CreatorBackButton } from "@/features/creator-dashboard/components/creator-back-button";
 
 export interface SeasonData {
   id: string;
@@ -194,12 +195,7 @@ export function SeasonStructureStep({
             <Check size={16} />
           </button>
 
-          <button
-            onClick={onBack}
-            className="w-full py-2.5 rounded-md text-sm font-medium text-creator-muted hover:text-white transition-colors"
-          >
-            Back to Core Identity
-          </button>
+          <CreatorBackButton onClick={onBack} className="w-full" />
         </div>
       </div>
     </div>

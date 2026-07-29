@@ -1,5 +1,6 @@
 import React from "react";
 import { CheckCircle2, Play, Check, BarChart3, ShieldCheck, Activity } from "lucide-react";
+import { CreatorBackButton } from "@/features/creator-dashboard/components/creator-back-button";
 
 interface ReadyPublishStepProps {
   mediaUrl?: string;
@@ -96,12 +97,7 @@ export function ReadyPublishStep({ mediaUrl, title, description, onContinue, onB
           </div>
 
           <div className="flex justify-end gap-3 pt-8">
-            <button 
-              onClick={onBack}
-              className="px-6 py-2.5 rounded-md text-sm font-medium text-creator-muted hover:text-white transition-colors"
-            >
-              Back
-            </button>
+            <CreatorBackButton onClick={onBack} />
             <button 
               onClick={onContinue}
               className="px-6 py-2.5 rounded-md text-sm font-medium bg-creator-gold text-black hover:bg-creator-gold-hover transition-colors flex items-center gap-2"

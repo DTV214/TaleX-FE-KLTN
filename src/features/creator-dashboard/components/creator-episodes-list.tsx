@@ -1,5 +1,6 @@
 import React from "react";
 import { Plus, Edit3, Trash2, ListVideo, PlayCircle, Clock } from "lucide-react";
+import { CreatorBackButton } from "@/features/creator-dashboard/components/creator-back-button";
 
 interface CreatorEpisodesListProps {
   episodes: any[];
@@ -10,19 +11,23 @@ interface CreatorEpisodesListProps {
   onBack: () => void;
 }
 
-export function CreatorEpisodesList({ episodes, onSelect, onCreate, onEdit, onDelete, onBack }: CreatorEpisodesListProps) {
+export function CreatorEpisodesList({
+  episodes,
+  onSelect,
+  onCreate,
+  onEdit,
+  onDelete,
+  onBack,
+}: CreatorEpisodesListProps) {
   return (
     <div className="w-full p-6 text-creator-text">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
         <div>
-          <button
-            onClick={onBack}
-            className="text-creator-muted hover:text-white text-sm mb-4 inline-flex items-center gap-2"
-          >
-            &larr; Back to Seasons
-          </button>
+          <CreatorBackButton onClick={onBack} className="mb-4" />
           <h2 className="text-3xl font-bold text-white mb-2">Số tập</h2>
-          <p className="text-creator-muted">Chọn một tập để quản lý nội dung, hoặc thêm tập mới.</p>
+          <p className="text-creator-muted">
+            Chọn một tập để quản lý nội dung, hoặc thêm tập mới.
+          </p>
         </div>
         <button
           onClick={onCreate}
@@ -37,7 +42,9 @@ export function CreatorEpisodesList({ episodes, onSelect, onCreate, onEdit, onDe
           <div className="w-20 h-20 bg-creator-bg rounded-full flex items-center justify-center mb-6">
             <ListVideo size={40} className="text-creator-muted" />
           </div>
-          <h3 className="text-xl font-bold text-white mb-3">Không tìm thấy tập nào</h3>
+          <h3 className="text-xl font-bold text-white mb-3">
+            Không tìm thấy tập nào
+          </h3>
           <p className="text-creator-muted max-w-md mb-8">
             Mùa này chưa có tập nào. Bấm vào nút bên dưới để thêm tập mới.
           </p>
@@ -58,34 +65,55 @@ export function CreatorEpisodesList({ episodes, onSelect, onCreate, onEdit, onDe
             >
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded bg-creator-bg flex items-center justify-center shrink-0 border border-creator-border">
-                  <PlayCircle size={20} className="text-creator-muted group-hover:text-creator-gold transition-colors" />
+                  <PlayCircle
+                    size={20}
+                    className="text-creator-muted group-hover:text-creator-gold transition-colors"
+                  />
                 </div>
                 <div>
                   <div className="flex items-center gap-3 mb-1">
-                    <span className="text-sm font-bold text-creator-gold">EP {episode.episodeNumber < 10 ? `0${episode.episodeNumber}` : episode.episodeNumber}</span>
+                    <span className="text-sm font-bold text-creator-gold">
+                      EP{" "}
+                      {episode.episodeNumber < 10
+                        ? `0${episode.episodeNumber}`
+                        : episode.episodeNumber}
+                    </span>
                     <h3 className="text-lg font-bold text-white">{episode.title}</h3>
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${episode.status === "PUBLISHED" ? "bg-green-500/20 text-green-500 border border-green-500/20" :
-                        episode.status === "DRAFT" ? "bg-creator-muted/20 text-creator-muted border border-creator-muted/20" :
-                          "bg-creator-gold/20 text-creator-gold border border-creator-gold/20"
-                      }`}>
+                    <span
+                      className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                        episode.status === "PUBLISHED"
+                          ? "bg-green-500/20 text-green-500 border border-green-500/20"
+                          : episode.status === "DRAFT"
+                            ? "bg-creator-muted/20 text-creator-muted border border-creator-muted/20"
+                            : "bg-creator-gold/20 text-creator-gold border border-creator-gold/20"
+                      }`}
+                    >
                       {episode.status}
                     </span>
                   </div>
                   <div className="flex items-center gap-4 text-xs text-creator-muted mt-1">
-                    <span className="flex items-center gap-1"><Clock size={12} /> {episode.duration || "00:00"}</span>
+                    <span className="flex items-center gap-1">
+                      <Clock size={12} /> {episode.duration || "00:00"}
+                    </span>
                   </div>
                 </div>
               </div>
 
               <div className="flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                 <button
-                  onClick={(e) => { e.stopPropagation(); onEdit(episode); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(episode);
+                  }}
                   className="w-8 h-8 rounded-full bg-white/5 text-white flex items-center justify-center hover:bg-creator-gold hover:text-black transition-colors"
                 >
                   <Edit3 size={14} />
                 </button>
                 <button
-                  onClick={(e) => { e.stopPropagation(); onDelete(episode); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(episode);
+                  }}
                   className="w-8 h-8 rounded-full bg-white/5 text-white flex items-center justify-center hover:bg-red-500 transition-colors"
                 >
                   <Trash2 size={14} />

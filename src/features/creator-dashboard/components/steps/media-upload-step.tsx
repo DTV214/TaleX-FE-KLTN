@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Upload, CheckCircle2, Shield, AlertTriangle, FileVideo, Plus, Check } from "lucide-react";
 import { ResumableVideoUploader } from "@/features/creator-dashboard/components/resumable-video-uploader";
+import { CreatorBackButton } from "@/features/creator-dashboard/components/creator-back-button";
 
 interface MediaUploadStepProps {
   contentType: "COMIC" | "VIDEO";
@@ -167,12 +168,7 @@ export function MediaUploadStep({
             <Check size={16} />
           </button>
           
-          <button 
-            onClick={onBack}
-            className="w-full py-2.5 rounded-md text-sm font-medium text-creator-muted hover:text-white transition-colors"
-          >
-            Back to Structure
-          </button>
+          <CreatorBackButton onClick={onBack} className="w-full" />
         </div>
       </div>
     </div>
