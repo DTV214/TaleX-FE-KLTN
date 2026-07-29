@@ -28,11 +28,11 @@ interface SeasonStructureStepProps {
   onBack: () => void;
 }
 
-export function SeasonStructureStep({ 
-  seasons, 
-  onAddSeason, 
-  onAddEpisode, 
-  onEditEpisode, 
+export function SeasonStructureStep({
+  seasons,
+  onAddSeason,
+  onAddEpisode,
+  onEditEpisode,
   onDeleteEpisode,
   onContinue,
   onBack
@@ -86,11 +86,11 @@ export function SeasonStructureStep({
                     </div>
                     <p className="text-sm text-creator-muted mt-2">{season.description}</p>
                   </div>
-                  <button 
+                  <button
                     onClick={() => onAddEpisode(season.id)}
                     className="text-xs font-medium px-3 py-1.5 border border-creator-border rounded hover:bg-white/5 transition-colors flex items-center gap-1.5"
                   >
-                    <Plus size={14} /> Add Episode
+                    <Plus size={14} /> Thêm Tập Mới
                   </button>
                 </div>
 
@@ -138,26 +138,26 @@ export function SeasonStructureStep({
       <div className="w-full lg:w-80 space-y-6">
         <div className="bg-creator-sidebar border border-creator-border rounded-xl p-5">
           <h3 className="font-semibold text-white mb-4">Tạo Mùa mới</h3>
-          
+
           <form onSubmit={handleCreateSeason} className="space-y-4">
             <div>
               <label className="block text-xs font-medium mb-1.5 text-creator-muted">Số thứ tự Mùa</label>
-              <input 
-                type="number" 
+              <input
+                type="number"
                 value={newSeasonForm.seasonNumber}
-                onChange={(e) => setNewSeasonForm({...newSeasonForm, seasonNumber: parseInt(e.target.value) || 1})}
+                onChange={(e) => setNewSeasonForm({ ...newSeasonForm, seasonNumber: parseInt(e.target.value) || 1 })}
                 className="w-full bg-creator-bg border border-creator-border rounded-md px-3 py-2 text-white text-sm focus:outline-none focus:border-creator-gold"
                 min="1"
                 required
               />
             </div>
-            
+
             <div>
               <label className="block text-xs font-medium mb-1.5 text-creator-muted">Tiêu đề Mùa</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 value={newSeasonForm.title}
-                onChange={(e) => setNewSeasonForm({...newSeasonForm, title: e.target.value})}
+                onChange={(e) => setNewSeasonForm({ ...newSeasonForm, title: e.target.value })}
                 className="w-full bg-creator-bg border border-creator-border rounded-md px-3 py-2 text-white text-sm focus:outline-none focus:border-creator-gold"
                 placeholder="VD: Sự khởi đầu"
                 required
@@ -166,16 +166,16 @@ export function SeasonStructureStep({
 
             <div>
               <label className="block text-xs font-medium mb-1.5 text-creator-muted">Mô tả (Không bắt buộc)</label>
-              <textarea 
+              <textarea
                 value={newSeasonForm.description}
-                onChange={(e) => setNewSeasonForm({...newSeasonForm, description: e.target.value})}
+                onChange={(e) => setNewSeasonForm({ ...newSeasonForm, description: e.target.value })}
                 rows={3}
                 className="w-full bg-creator-bg border border-creator-border rounded-md px-3 py-2 text-white text-sm focus:outline-none focus:border-creator-gold"
                 placeholder="Điều gì xảy ra trong mùa này?"
               />
             </div>
 
-            <button 
+            <button
               type="submit"
               className="w-full py-2.5 bg-white/5 hover:bg-white/10 border border-creator-border rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-2 mt-2"
             >
@@ -185,7 +185,7 @@ export function SeasonStructureStep({
         </div>
 
         <div className="flex flex-col gap-3 pt-4 border-t border-creator-border">
-          <button 
+          <button
             onClick={onContinue}
             disabled={seasons.length === 0}
             className="w-full py-2.5 rounded-md text-sm font-medium bg-creator-gold text-black hover:bg-creator-gold-hover transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -193,8 +193,8 @@ export function SeasonStructureStep({
             Continue to Content
             <Check size={16} />
           </button>
-          
-          <button 
+
+          <button
             onClick={onBack}
             className="w-full py-2.5 rounded-md text-sm font-medium text-creator-muted hover:text-white transition-colors"
           >

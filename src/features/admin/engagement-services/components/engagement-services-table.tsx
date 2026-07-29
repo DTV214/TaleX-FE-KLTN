@@ -85,8 +85,6 @@ export function EngagementServicesTable({
             <thead className="border-b border-slate-200 bg-slate-50">
               <tr className="text-xs font-black uppercase tracking-wider text-slate-500">
                 <th className="px-6 py-4">Tên gói</th>
-                <th className="px-6 py-4">Loại</th>
-                <th className="px-6 py-4">Mục tiêu</th>
                 <th className="px-6 py-4">Giá tiền</th>
                 <th className="px-6 py-4">Target Value</th>
                 <th className="px-6 py-4">Trạng thái</th>
@@ -112,16 +110,6 @@ export function EngagementServicesTable({
                         {service.description}
                       </p>
                     </td>
-                    <td className="px-6 py-4">
-                      <span className="rounded-md bg-cyan-50 px-2.5 py-1 text-xs font-black text-cyan-700">
-                        {service.engagementType}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="rounded-md bg-violet-50 px-2.5 py-1 text-xs font-black text-violet-700">
-                        {service.engagementTarget}
-                      </span>
-                    </td>
                     <td className="px-6 py-4 text-sm font-black text-slate-900">
                       {formatCurrency(service.price)}
                     </td>
@@ -137,9 +125,8 @@ export function EngagementServicesTable({
                         }
                       >
                         <span
-                          className={`h-1.5 w-1.5 rounded-full ${
-                            service.isActive ? "bg-emerald-500" : "bg-slate-400"
-                          }`}
+                          className={`h-1.5 w-1.5 rounded-full ${service.isActive ? "bg-emerald-500" : "bg-slate-400"
+                            }`}
                         />
                         {service.isActive ? "Active" : "Inactive"}
                       </span>

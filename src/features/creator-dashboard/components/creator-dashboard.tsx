@@ -2365,8 +2365,8 @@ function EditEntityModal({
     modal.kind === "series"
       ? "Update Series"
       : modal.kind === "season"
-        ? "Update Season"
-        : "Update Episode";
+        ? "Cập Nhập Mùa"
+        : "Cập Nhập Tập";
 
 
   if (modal.kind === "series") {
@@ -2421,11 +2421,11 @@ function EditEntityModal({
   }
 
   return (
-    <ModalShell title={title} subtitle="Edit the fields and save your changes." onClose={onClose}>
+    <ModalShell title={title} subtitle="" onClose={onClose}>
 
       {modal.kind === "season" && (
         <form onSubmit={handleSeasonSubmit} className="space-y-5">
-          <Field label="Season Number">
+          <Field label="Số Mùa">
             <input
               type="number"
               min={1}
@@ -2434,7 +2434,7 @@ function EditEntityModal({
               className={controlClass}
             />
           </Field>
-          <Field label="Title" required>
+          <Field label="Tiêu Đề" required>
             <input
               name="title"
               required
@@ -2442,20 +2442,21 @@ function EditEntityModal({
               className={controlClass}
             />
           </Field>
-          <Field label="Description">
+          <Field label="Mô Tả">
             <textarea
               name="description"
               defaultValue={modal.value.description}
               className={textareaClass}
             />
           </Field>
-          <Field label="Lifecycle">
+          {/* <Field label="Lifecycle">
             <input
               value={formatStatusLabel(modal.value.status)}
               readOnly
+              hidden
               className={controlClass}
             />
-          </Field>
+          </Field> */}
           <ModalActions isSaving={isSaving} onClose={onClose} />
         </form>
       )}
@@ -3374,13 +3375,13 @@ function EpisodeManagementView({
             className="inline-flex items-center gap-2 text-sm font-bold text-creator-muted hover:text-white transition-colors mb-4"
           >
             <ChevronLeft className="h-4 w-4" />
-            Quay lại
+            Quay lại Season
           </button>
           <h2 className="text-3xl font-bold text-white mb-2">
             {selectedSeason.title}
           </h2>
           <p className="text-creator-muted">
-            {selectedSeries.title} . Season {selectedSeason.seasonNumber}
+            {selectedSeries.title} . Mùa {selectedSeason.seasonNumber}
           </p>
         </div>
       </div>
@@ -3408,7 +3409,7 @@ function EpisodeManagementView({
             className="inline-flex h-10 items-center justify-center gap-2 rounded bg-creator-gold px-5 text-sm font-black text-black transition-colors hover:bg-creator-gold-hover disabled:cursor-not-allowed disabled:opacity-60"
           >
             <Plus className="h-4 w-4" />
-            {isCreatingEpisode ? "Creating..." : "Add Episode"}
+            {isCreatingEpisode ? "Đang Tạo..." : "Thêm Tập Mới"}
           </button>
         </div>
 
@@ -4618,46 +4619,12 @@ function CampaignPurchaseView() {
       <section className="overflow-hidden rounded-[28px] border border-white/10 bg-[#121212] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.4)] md:p-8">
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-center">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-yellow-400">
-              Creator Growth
-            </p>
             <h2 className="mt-4 text-4xl font-black tracking-tight text-zinc-50 md:text-5xl">
-              TaleX Boost
+              Dịch Vụ Tăng Tương Tác
             </h2>
             <p className="mt-4 max-w-2xl text-base font-semibold leading-7 text-zinc-400">
-              Đẩy tác phẩm của bạn tới đúng nhóm độc giả và khán giả tiềm năng,
-              tăng tốc lượt xem, lượt thích và cơ hội xuất hiện trên các khu vực đề xuất.
+              Đẩy tác phẩm của bạn tới nhiều độc giả và khán giả, tăng tốc lượt xem, lượt thích và cơ hội xuất hiện trên các khu vực đề xuất.
             </p>
-          </div>
-
-          <div className="relative flex flex-col justify-between gap-5 rounded-2xl border border-yellow-400/20 bg-[#1A1A1A] p-5 shadow-inner sm:flex-row sm:items-center">
-            <div className="flex min-w-0 flex-1 items-center gap-4">
-              <div
-                className="h-16 w-12 shrink-0 rounded-lg border border-white/10 bg-cover bg-center object-cover shadow-[0_12px_30px_rgba(0,0,0,0.35)] sm:h-20 sm:w-14"
-                style={{
-                  backgroundImage:
-                    "linear-gradient(160deg, rgba(250,204,21,0.18), rgba(8,47,73,0.7)), url('https://images.unsplash.com/photo-1518709268805-4e9042af2176?auto=format&fit=crop&w=400&q=80')",
-                }}
-              />
-              <div className="min-w-0 flex-1">
-                <p className="mb-1 truncate text-xs font-semibold text-zinc-400">
-                  Bạn đang chọn đẩy tương tác cho:
-                </p>
-                <h3 className="truncate text-base font-black text-zinc-50 sm:text-lg">
-                  The Lost Horizon
-                </h3>
-                <p className="mt-0.5 truncate text-xs font-bold text-yellow-400 sm:text-sm">
-                  Season 1 . Fantasy Adventure
-                </p>
-              </div>
-            </div>
-            <button
-              type="button"
-              className="mt-2 flex w-full shrink-0 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-xs font-bold text-zinc-300 transition-colors hover:bg-white/10 hover:text-yellow-400 sm:mt-0 sm:w-auto"
-            >
-              <RefreshCw className="h-4 w-4" />
-              Đổi nội dung
-            </button>
           </div>
         </div>
       </section>

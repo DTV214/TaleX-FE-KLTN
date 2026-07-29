@@ -90,14 +90,14 @@ export function CoreIdentityStep({ initialData, onSave, onCancel, categories, ta
       <div className="flex-1 space-y-6">
         <div>
           <h2 className="text-2xl font-bold text-white mb-1">Thông tin cốt lõi</h2>
-          <p className="text-sm text-creator-muted">Define the fundamental characteristics of your new series.</p>
+          <p className="text-sm text-creator-muted">Hãy xác định những đặc điểm cơ bản của series.</p>
         </div>
 
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-2">Tiêu đề Series</label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               className="w-full bg-creator-sidebar border border-creator-border rounded-md px-4 py-3 text-white placeholder-creator-muted focus:outline-none focus:border-creator-gold transition-colors"
@@ -108,7 +108,7 @@ export function CoreIdentityStep({ initialData, onSave, onCancel, categories, ta
 
           <div>
             <label className="block text-sm font-medium mb-2">Tổng quan nội dung</label>
-            <textarea 
+            <textarea
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows={4}
@@ -123,11 +123,11 @@ export function CoreIdentityStep({ initialData, onSave, onCancel, categories, ta
             <div className="flex gap-4">
               <label className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-md border transition-colors ${isUpdate ? "cursor-not-allowed opacity-60" : "cursor-pointer"} ${formData.contentType === "COMIC" ? "border-creator-gold bg-creator-gold/10 text-creator-gold" : "border-creator-border bg-creator-sidebar text-creator-muted hover:border-white/30"}`}>
                 <input type="radio" name="contentType" className="hidden" checked={formData.contentType === "COMIC"} onChange={() => !isUpdate && setFormData({ ...formData, contentType: "COMIC" })} disabled={isUpdate} />
-                <span className="font-medium">Truyện tranh / Webtoon</span>
+                <span className="font-medium">Truyện Tranh</span>
               </label>
               <label className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-md border transition-colors ${isUpdate ? "cursor-not-allowed opacity-60" : "cursor-pointer"} ${formData.contentType === "VIDEO" ? "border-creator-gold bg-creator-gold/10 text-creator-gold" : "border-creator-border bg-creator-sidebar text-creator-muted hover:border-white/30"}`}>
                 <input type="radio" name="contentType" className="hidden" checked={formData.contentType === "VIDEO"} onChange={() => !isUpdate && setFormData({ ...formData, contentType: "VIDEO" })} disabled={isUpdate} />
-                <span className="font-medium">Series Video</span>
+                <span className="font-medium">Phim Ngắn</span>
               </label>
             </div>
           </div>
@@ -140,11 +140,10 @@ export function CoreIdentityStep({ initialData, onSave, onCancel, categories, ta
                   key={cat.id}
                   type="button"
                   onClick={() => toggleCategory(cat.id)}
-                  className={`px-3 py-2 rounded-md text-sm transition-colors border ${
-                    formData.categoryIds.includes(cat.id)
-                      ? "bg-creator-gold text-black font-semibold border-creator-gold"
-                      : "bg-creator-sidebar border-creator-border text-creator-muted hover:border-white/30"
-                  }`}
+                  className={`px-3 py-2 rounded-md text-sm transition-colors border ${formData.categoryIds.includes(cat.id)
+                    ? "bg-creator-gold text-black font-semibold border-creator-gold"
+                    : "bg-creator-sidebar border-creator-border text-creator-muted hover:border-white/30"
+                    }`}
                 >
                   {cat.name}
                 </button>
@@ -160,11 +159,10 @@ export function CoreIdentityStep({ initialData, onSave, onCancel, categories, ta
                   key={tag.id}
                   type="button"
                   onClick={() => toggleTag(tag.id)}
-                  className={`px-3 py-2 rounded-md text-sm transition-colors border ${
-                    formData.tagIds.includes(tag.id)
-                      ? "bg-creator-gold text-black font-semibold border-creator-gold"
-                      : "bg-creator-sidebar border-creator-border text-creator-muted hover:border-white/30"
-                  }`}
+                  className={`px-3 py-2 rounded-md text-sm transition-colors border ${formData.tagIds.includes(tag.id)
+                    ? "bg-creator-gold text-black font-semibold border-creator-gold"
+                    : "bg-creator-sidebar border-creator-border text-creator-muted hover:border-white/30"
+                    }`}
                 >
                   {tag.name}
                 </button>
@@ -176,7 +174,7 @@ export function CoreIdentityStep({ initialData, onSave, onCancel, categories, ta
             <div>
               <label className="block text-sm font-medium mb-2">Ngôn ngữ gốc</label>
               <div className="relative">
-                <select 
+                <select
                   value={formData.language}
                   onChange={(e) => setFormData({ ...formData, language: e.target.value })}
                   className="w-full bg-creator-sidebar border border-creator-border rounded-md px-4 py-3 text-white appearance-none focus:outline-none focus:border-creator-gold"
@@ -189,11 +187,11 @@ export function CoreIdentityStep({ initialData, onSave, onCancel, categories, ta
                 <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-creator-muted pointer-events-none" size={16} />
               </div>
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium mb-2">Độ tuổi</label>
               <div className="relative">
-                <select 
+                <select
                   value={formData.ageRating}
                   onChange={(e) => setFormData({ ...formData, ageRating: e.target.value })}
                   className="w-full bg-creator-sidebar border border-creator-border rounded-md px-4 py-3 text-white appearance-none focus:outline-none focus:border-creator-gold"
@@ -213,7 +211,7 @@ export function CoreIdentityStep({ initialData, onSave, onCancel, categories, ta
       <div className="w-full lg:w-80 space-y-6">
         <div className="bg-creator-sidebar border border-creator-border rounded-xl p-5">
           <h3 className="font-semibold text-white mb-4">Tài nguyên đa phương tiện</h3>
-          
+
           <div className="space-y-5">
             {/* Vertical Poster */}
             <div>
@@ -221,11 +219,10 @@ export function CoreIdentityStep({ initialData, onSave, onCancel, categories, ta
                 <label className="text-sm font-medium">Poster dọc</label>
                 <span className="text-xs text-creator-muted">Tỷ lệ 2:3</span>
               </div>
-              <div 
+              <div
                 onClick={() => posterInputRef.current?.click()}
-                className={`relative w-[160px] aspect-[2/3] mx-auto rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors overflow-hidden group ${
-                  posterPreview ? "border-creator-gold" : "border-creator-border hover:border-creator-gold/50"
-                }`}
+                className={`relative w-[160px] aspect-[2/3] mx-auto rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors overflow-hidden group ${posterPreview ? "border-creator-gold" : "border-creator-border hover:border-creator-gold/50"
+                  }`}
               >
                 {posterPreview ? (
                   <>
@@ -243,12 +240,12 @@ export function CoreIdentityStep({ initialData, onSave, onCancel, categories, ta
                     <span className="text-xs text-creator-muted px-4 text-center">Tải Poster lên</span>
                   </>
                 )}
-                <input 
-                  type="file" 
-                  ref={posterInputRef} 
-                  onChange={handlePosterUpload} 
-                  accept="image/*" 
-                  className="hidden" 
+                <input
+                  type="file"
+                  ref={posterInputRef}
+                  onChange={handlePosterUpload}
+                  accept="image/*"
+                  className="hidden"
                 />
               </div>
             </div>
@@ -259,11 +256,10 @@ export function CoreIdentityStep({ initialData, onSave, onCancel, categories, ta
                 <label className="text-sm font-medium">Banner ngang</label>
                 <span className="text-xs text-creator-muted">Tỷ lệ 16:9</span>
               </div>
-              <div 
+              <div
                 onClick={() => bannerInputRef.current?.click()}
-                className={`relative w-full aspect-video rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors overflow-hidden group ${
-                  bannerPreview ? "border-creator-gold" : "border-creator-border hover:border-creator-gold/50"
-                }`}
+                className={`relative w-full aspect-video rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors overflow-hidden group ${bannerPreview ? "border-creator-gold" : "border-creator-border hover:border-creator-gold/50"
+                  }`}
               >
                 {bannerPreview ? (
                   <>
@@ -281,12 +277,12 @@ export function CoreIdentityStep({ initialData, onSave, onCancel, categories, ta
                     <span className="text-xs text-creator-muted px-4 text-center">Nhấp hoặc kéo ảnh vào để tải banner lên</span>
                   </>
                 )}
-                <input 
-                  type="file" 
-                  ref={bannerInputRef} 
-                  onChange={handleBannerUpload} 
-                  accept="image/*" 
-                  className="hidden" 
+                <input
+                  type="file"
+                  ref={bannerInputRef}
+                  onChange={handleBannerUpload}
+                  accept="image/*"
+                  className="hidden"
                 />
               </div>
             </div>
@@ -295,19 +291,19 @@ export function CoreIdentityStep({ initialData, onSave, onCancel, categories, ta
 
         <div className="flex justify-end gap-3 pt-4 border-t border-creator-border">
           {onCancel && (
-            <button 
-              type="button" 
+            <button
+              type="button"
               onClick={onCancel}
               className="px-5 py-2.5 rounded-md text-sm font-medium text-creator-muted hover:text-white transition-colors"
             >
-              Cancel
+              Hủy
             </button>
           )}
-          <button 
+          <button
             type="submit"
             className="px-5 py-2.5 rounded-md text-sm font-medium bg-creator-gold text-black hover:bg-creator-gold-hover transition-colors flex items-center gap-2"
           >
-            {isUpdate ? "Save Changes" : "Continue to Structure"}
+            {isUpdate ? "Lưu Thay Đổi" : "Tiếp Tục Cấu Trúc"}
             <Check size={16} />
           </button>
         </div>

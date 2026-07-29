@@ -28,19 +28,19 @@ export function CreatorSeriesList({ seriesList, onSelect, onCreate, onEdit, onDe
           <h2 className="text-3xl font-bold text-white mb-2">Series của tôi</h2>
           <p className="text-creator-muted">Quản lý series, mùa và tập của bạn.</p>
         </div>
-        <button 
+        <button
           onClick={onCreate}
           className="px-6 py-2.5 rounded-md text-sm font-medium bg-creator-gold text-black hover:bg-creator-gold-hover transition-colors flex items-center gap-2 shrink-0"
         >
-          <Plus size={18} /> Create New Series
+          <Plus size={18} /> Tạo Series Mới
         </button>
       </div>
 
       <div className="flex flex-col sm:flex-row items-center gap-4 mb-8">
         <div className="relative flex-1 w-full">
           <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-creator-muted" />
-          <input 
-            type="text" 
+          <input
+            type="text"
             placeholder="Tìm kiếm series theo tiêu đề..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -49,14 +49,14 @@ export function CreatorSeriesList({ seriesList, onSelect, onCreate, onEdit, onDe
         </div>
         <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
           <Filter size={18} className="text-creator-muted hidden sm:block" />
-          <select 
+          <select
             value={filterType}
             onChange={(e) => setFilterType(e.target.value)}
             className="bg-creator-sidebar border border-creator-border rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-creator-gold transition-colors w-full sm:w-auto outline-none cursor-pointer"
           >
             <option value="ALL">Tất cả định dạng</option>
             <option value="COMIC">Truyện tranh</option>
-            <option value="VIDEO">Video</option>
+            <option value="VIDEO">Phim ngắn</option>
           </select>
         </div>
       </div>
@@ -68,24 +68,24 @@ export function CreatorSeriesList({ seriesList, onSelect, onCreate, onEdit, onDe
           </div>
           <h3 className="text-xl font-bold text-white mb-3">No Series Found</h3>
           <p className="text-creator-muted max-w-md mb-8">
-            {seriesList.length > 0 
-              ? "No series match your search and filter criteria." 
+            {seriesList.length > 0
+              ? "No series match your search and filter criteria."
               : "You haven't created any series yet. Start building your universe by creating your first series."}
           </p>
           {seriesList.length === 0 && (
-            <button 
+            <button
               onClick={onCreate}
               className="px-6 py-3 rounded-md text-sm font-bold bg-creator-gold text-black hover:bg-creator-gold-hover transition-colors flex items-center gap-2"
             >
-              <Plus size={18} /> Create New Series
+              <Plus size={18} /> Tạo Series Mới
             </button>
           )}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredSeries.map((series) => (
-            <div 
-              key={series.id} 
+            <div
+              key={series.id}
               className="bg-creator-sidebar border border-creator-border rounded-xl overflow-hidden hover:border-creator-gold/50 transition-colors group cursor-pointer flex flex-col"
               onClick={() => onSelect(series.id)}
             >
@@ -99,13 +99,13 @@ export function CreatorSeriesList({ seriesList, onSelect, onCreate, onEdit, onDe
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
                 <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button 
+                  <button
                     onClick={(e) => { e.stopPropagation(); onEdit(series); }}
                     className="w-8 h-8 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-creator-gold hover:text-black transition-colors"
                   >
                     <Edit3 size={14} />
                   </button>
-                  <button 
+                  <button
                     onClick={(e) => { e.stopPropagation(); onDelete(series); }}
                     className="w-8 h-8 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-red-500 transition-colors"
                   >
@@ -113,11 +113,10 @@ export function CreatorSeriesList({ seriesList, onSelect, onCreate, onEdit, onDe
                   </button>
                 </div>
                 <div className="absolute bottom-3 left-3 right-3">
-                  <span className={`inline-block px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider mb-2 ${
-                    series.status === "PUBLISHED" ? "bg-green-500/20 text-green-500 border border-green-500/20" :
+                  <span className={`inline-block px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider mb-2 ${series.status === "PUBLISHED" ? "bg-green-500/20 text-green-500 border border-green-500/20" :
                     series.status === "DRAFT" ? "bg-creator-muted/20 text-creator-muted border border-creator-muted/20" :
-                    "bg-creator-gold/20 text-creator-gold border border-creator-gold/20"
-                  }`}>
+                      "bg-creator-gold/20 text-creator-gold border border-creator-gold/20"
+                    }`}>
                     {series.status}
                   </span>
                   <h3 className="text-lg font-bold text-white line-clamp-1">{series.title}</h3>

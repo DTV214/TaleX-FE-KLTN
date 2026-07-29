@@ -15,22 +15,9 @@ import { EngagementServicesTable } from "./engagement-services-table";
 
 const DEFAULT_PAGE_SIZE = 10;
 
-type TypeFilter = "ALL" | EngagementType;
-type TargetFilter = "ALL" | EngagementTarget;
-
-function toTypes(value: TypeFilter) {
-  return value === "ALL" ? undefined : [value];
-}
-
-function toTargets(value: TargetFilter) {
-  return value === "ALL" ? undefined : [value];
-}
-
 export function EngagementServicesDashboard() {
   const [page, setPage] = useState(1);
   const [searchKey, setSearchKey] = useState("");
-  const [typeFilter, setTypeFilter] = useState<TypeFilter>("ALL");
-  const [targetFilter, setTargetFilter] = useState<TargetFilter>("ALL");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingService, setEditingService] =
     useState<EngagementService | null>(null);
@@ -41,13 +28,11 @@ export function EngagementServicesDashboard() {
       pageSize: DEFAULT_PAGE_SIZE,
       sortBy: "createdAt",
       sortDirection: "DESC",
-      types: toTypes(typeFilter),
-      targets: toTargets(targetFilter),
       criteria: {
         searchKey: searchKey.trim() || undefined,
       },
     }),
-    [page, searchKey, targetFilter, typeFilter],
+    [page, searchKey],
   );
 
   const servicesQuery = useGetEngagementServices(filters);
@@ -79,16 +64,6 @@ export function EngagementServicesDashboard() {
     setPage(1);
   }
 
-  function handleTypeChange(value: TypeFilter) {
-    setTypeFilter(value);
-    setPage(1);
-  }
-
-  function handleTargetChange(value: TargetFilter) {
-    setTargetFilter(value);
-    setPage(1);
-  }
-
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-8">
       <div className="flex flex-col gap-5 rounded-xl border border-slate-200 bg-white p-6 shadow-sm lg:flex-row lg:items-center lg:justify-between">
@@ -97,9 +72,6 @@ export function EngagementServicesDashboard() {
             <Megaphone className="h-6 w-6" />
           </div>
           <div>
-            <p className="mb-1 text-sm font-bold text-slate-500">
-              Admin / Engagement Services
-            </p>
             <h1 className="font-heading text-3xl font-black text-slate-900">
               Quản lý Dịch vụ Tương tác
             </h1>
@@ -124,7 +96,7 @@ export function EngagementServicesDashboard() {
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_180px_180px_auto] lg:items-end">
           <label className="space-y-2">
             <span className="text-sm font-bold text-slate-800">
-              Tìm kiếm tên
+              Tìm kiếm tên dịch vụ
             </span>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -137,37 +109,6 @@ export function EngagementServicesDashboard() {
             </div>
           </label>
 
-          <label className="space-y-2">
-            <span className="text-sm font-bold text-slate-800">Types</span>
-            <select
-              value={typeFilter}
-              onChange={(event) =>
-                handleTypeChange(event.target.value as TypeFilter)
-              }
-              className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#007A8A] focus:ring-4 focus:ring-[#007A8A]/10"
-            >
-              <option value="ALL">Tất cả</option>
-              <option value="BROAD">BROAD</option>
-              <option value="TARGETED">TARGETED</option>
-            </select>
-          </label>
-
-          <label className="space-y-2">
-            <span className="text-sm font-bold text-slate-800">Targets</span>
-            <select
-              value={targetFilter}
-              onChange={(event) =>
-                handleTargetChange(event.target.value as TargetFilter)
-              }
-              className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#007A8A] focus:ring-4 focus:ring-[#007A8A]/10"
-            >
-              <option value="ALL">Tất cả</option>
-              <option value="VIEW">VIEW</option>
-              <option value="FOLLOW">FOLLOW</option>
-              <option value="LIKE">LIKE</option>
-            </select>
-          </label>
-
           <Button
             type="button"
             variant="outline"
@@ -175,9 +116,8 @@ export function EngagementServicesDashboard() {
             className="h-11 border-slate-200 bg-white px-4 text-slate-700 hover:bg-slate-50"
           >
             <RefreshCw
-              className={`h-4 w-4 ${
-                servicesQuery.isFetching ? "animate-spin" : ""
-              }`}
+              className={`h-4 w-4 ${servicesQuery.isFetching ? "animate-spin" : ""
+                }`}
             />
             Làm mới
           </Button>

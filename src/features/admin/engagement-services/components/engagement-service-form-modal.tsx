@@ -141,16 +141,13 @@ export function EngagementServiceFormModal({
       >
         <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-slate-100 bg-white px-6 py-5">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#007A8A]">
-              Engagement Services
-            </p>
             <h2 className="mt-1 text-2xl font-black text-slate-900">
               {mode === "create"
                 ? "Tạo mới dịch vụ"
                 : "Cập nhật dịch vụ"}
             </h2>
             <p className="mt-2 text-sm font-medium text-slate-500">
-              Thiết lập loại tương tác, mục tiêu, giá tiền và giới hạn số lượng.
+              Thiết lập mục tiêu, giá tiền và giới hạn số lượng.
             </p>
           </div>
           <button
@@ -203,35 +200,6 @@ export function EngagementServiceFormModal({
             </FormField>
 
             <FormField
-              label="Loại dịch vụ"
-              error={form.formState.errors.engagementType?.message}
-            >
-              <select
-                {...form.register("engagementType")}
-                aria-invalid={Boolean(form.formState.errors.engagementType)}
-                className={fieldClassName}
-              >
-                <option value="BROAD">BROAD</option>
-                <option value="TARGETED">TARGETED</option>
-              </select>
-            </FormField>
-
-            <FormField
-              label="Mục tiêu tương tác"
-              error={form.formState.errors.engagementTarget?.message}
-            >
-              <select
-                {...form.register("engagementTarget")}
-                aria-invalid={Boolean(form.formState.errors.engagementTarget)}
-                className={fieldClassName}
-              >
-                <option value="VIEW">VIEW</option>
-                <option value="FOLLOW">FOLLOW</option>
-                <option value="LIKE">LIKE</option>
-              </select>
-            </FormField>
-
-            <FormField
               label="Giá tiền"
               error={form.formState.errors.price?.message}
             >
@@ -252,7 +220,7 @@ export function EngagementServiceFormModal({
             </FormField>
 
             <FormField
-              label="Target Value"
+              label="Mục tiêu cần đạt"
               error={form.formState.errors.targetValue?.message}
             >
               <input
