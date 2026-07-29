@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { adsApi, AdSlot } from "@/features/ads/api/ads-api";
 import { adminAdsApi, AdCampaignAdmin } from "@/features/admin/api/admin-ads-api";
@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/shared/ui/di
 
 export default function AdminAdsPage() {
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<"SLOTS" | "PENDING" | "ALL">("SLOTS");
+  const [activeTab, setActiveTab] = useState<"SLOTS" | "PENDING" | "ALL" | "CONFIG">("SLOTS");
   const [editingSlot, setEditingSlot] = useState<AdSlot | null>(null);
   const [previewMedia, setPreviewMedia] = useState<{ url: string; type: string } | null>(null);
 
@@ -86,6 +86,52 @@ export default function AdminAdsPage() {
     onError: (err: any) => toast.error(err.response?.data?.message || err.message)
   });
 
+  // ---- Popup Route Config ----
+  const { data: popupConfig, isLoading: loadingRoutes } = useQuery({
+    queryKey: ["ad-popup-config"],
+    queryFn: adsApi.getPopupConfig,
+  });
+  const [routeInput, setRouteInput] = useState("");
+  const [editedRoutes, setEditedRoutes] = useState<string[]>([]);
+  const [delayMs, setDelayMs] = useState<number>(3000);
+  const [cooldownMinutes, setCooldownMinutes] = useState<number>(15);
+
+  // Sync với data từ server khi load xong lần đầu
+  const configSynced = useRef(false);
+  useEffect(() => {
+    if (popupConfig && !configSynced.current) {
+      setEditedRoutes(popupConfig.allowedRoutes);
+      setDelayMs(popupConfig.showDelayMs);
+      setCooldownMinutes(popupConfig.cooldownMinutes);
+      configSynced.current = true;
+    }
+  }, [popupConfig]);
+
+  const updateConfigMutation = useMutation({
+    mutationFn: (config: { allowedRoutes: string[], showDelayMs: number, cooldownMinutes: number }) => adsApi.updatePopupConfig(config),
+    onSuccess: (data) => {
+      setEditedRoutes(data.allowedRoutes);
+      setDelayMs(data.showDelayMs);
+      setCooldownMinutes(data.cooldownMinutes);
+      queryClient.invalidateQueries({ queryKey: ["ad-popup-config"] });
+      toast.success("Đã lưu cấu hình Popup!");
+    },
+    onError: (err: any) => toast.error(err.response?.data?.message || err.message)
+  });
+
+  const handleAddRoute = () => {
+    const r = routeInput.trim();
+    if (!r) return;
+    if (!r.startsWith("/")) { toast.error("Route phải bắt đầu bằng /"); return; }
+    if (editedRoutes.includes(r)) { toast.error("Route này đã tồn tại"); return; }
+    setEditedRoutes([...editedRoutes, r]);
+    setRouteInput("");
+  };
+
+  const handleRemoveRoute = (route: string) => {
+    setEditedRoutes(editedRoutes.filter(r => r !== route));
+  };
+
   const handleCreateOrUpdateSlot = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!editingSlot) return; // Creation is disabled
@@ -128,12 +174,149 @@ export default function AdminAdsPage() {
           onClick={() => setActiveTab("ALL")} 
           className={`pb-2 px-1 font-semibold ${activeTab === "ALL" ? "text-indigo-600 border-b-2 border-indigo-600" : "text-slate-500 hover:text-slate-700"}`}
         >
-          Tất cả Chiến Dịch
+        Tất cả Chiến Dịch
+        </button>
+        <button 
+          onClick={() => setActiveTab("CONFIG")} 
+          className={`pb-2 px-1 font-semibold ${activeTab === "CONFIG" ? "text-indigo-600 border-b-2 border-indigo-600" : "text-slate-500 hover:text-slate-700"}`}
+        >
+          ⚙️ Cấu hình Popup
         </button>
       </div>
 
       <div className="space-y-6">
         
+        {activeTab === "CONFIG" && (
+          <div className="max-w-2xl bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+            <h2 className="text-lg font-bold mb-1 text-slate-800">Cấu hình Popup Quảng Cáo</h2>
+            <p className="text-sm text-slate-500 mb-6">
+              Quản lý danh sách các trang được phép hiển thị Popup. Dùng <strong>prefix match</strong> — 
+              ví dụ <code className="bg-slate-100 px-1 rounded">/series</code> sẽ khớp cả <code className="bg-slate-100 px-1 rounded">/series/123</code>.
+            </p>
+
+            {/* Danh sách routes hiện tại */}
+            <div className="mb-4">
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Routes đang bật</label>
+              {loadingRoutes ? (
+                <div className="text-slate-400 text-sm">Đang tải...</div>
+              ) : (editedRoutes.length === 0 ? (
+                <div className="text-slate-400 text-sm italic">Chưa có route nào — Popup sẽ không hiển thị ở bất kỳ đâu.</div>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {editedRoutes.map((route) => (
+                    <div
+                      key={route}
+                      className="flex items-center gap-1.5 bg-indigo-50 border border-indigo-200 text-indigo-700 text-sm px-3 py-1 rounded-full"
+                    >
+                      <span className="font-mono">{route}</span>
+                      <button
+                        onClick={() => handleRemoveRoute(route)}
+                        className="text-indigo-400 hover:text-red-500 transition-colors"
+                        title="Xoá route này"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+
+            {/* Thêm route mới */}
+            <div className="flex gap-2 mb-6">
+              <input
+                type="text"
+                value={routeInput}
+                onChange={(e) => setRouteInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddRoute())}
+                placeholder="/watch, /series, /comics, ..."
+                className="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-indigo-500 font-mono"
+              />
+              <button
+                onClick={handleAddRoute}
+                className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
+              >
+                <Check className="w-4 h-4" />
+                Thêm
+              </button>
+            </div>
+
+            {/* Các route phổ biến để thêm nhanh */}
+            <div className="mb-6">
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Thêm nhanh</label>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  "/", "/series", "/comics", "/watch", "/read", "/intro", "/missions",
+                  "/profile", "/bookmarks", "/liked", "/coin-history", "/premium",
+                  "/premium-history", "/purchase-history", "/subscriptions",
+                  "/creator-channel", "/public-channel", "/recomment-demo"
+                ].map((r) => (
+                  <button
+                    key={r}
+                    onClick={() => {
+                      if (!editedRoutes.includes(r)) setEditedRoutes([...editedRoutes, r]);
+                      else toast.info(`${r} đã có trong danh sách`);
+                    }}
+                    className={`text-xs font-mono px-3 py-1 rounded-full border transition-colors ${
+                      editedRoutes.includes(r)
+                        ? "bg-green-50 border-green-300 text-green-700 cursor-default"
+                        : "bg-slate-50 border-slate-200 text-slate-600 hover:border-indigo-400 hover:text-indigo-600"
+                    }`}
+                  >
+                    {editedRoutes.includes(r) ? "✓ " : "+ "}{r}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Configs (Delay & Cooldown) */}
+            <div className="mb-6 border-t border-slate-100 pt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-semibold text-slate-800 mb-1">Thời gian chờ (ms)</label>
+                <p className="text-[11px] text-slate-500 mb-3 leading-tight">Khi user vào trang, đợi bao lâu thì hiện? (1000ms = 1s)</p>
+                <input
+                  type="number"
+                  value={delayMs}
+                  onChange={(e) => setDelayMs(Number(e.target.value))}
+                  min={0}
+                  step={500}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-500 font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-800 mb-1">Thời gian làm mát (Phút)</label>
+                <p className="text-[11px] text-slate-500 mb-3 leading-tight">Bao lâu sau khi đóng quảng cáo thì mới được hiện lại?</p>
+                <input
+                  type="number"
+                  value={cooldownMinutes}
+                  onChange={(e) => setCooldownMinutes(Number(e.target.value))}
+                  min={0}
+                  step={1}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-500 font-mono"
+                />
+              </div>
+            </div>
+
+            {/* Nút lưu */}
+            <div className="flex items-center justify-between border-t border-slate-100 pt-4">
+              <button
+                onClick={() => setEditedRoutes([])}
+                className="text-sm text-red-500 hover:text-red-700 underline transition-colors"
+              >
+                Xoá tất cả routes
+              </button>
+              <button
+                onClick={() => updateConfigMutation.mutate({ allowedRoutes: editedRoutes, showDelayMs: delayMs, cooldownMinutes })}
+                disabled={updateConfigMutation.isPending}
+                className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white px-6 py-2 rounded-lg text-sm font-semibold transition-colors"
+              >
+                {updateConfigMutation.isPending ? "Đang lưu..." : "💾 Lưu cấu hình"}
+              </button>
+            </div>
+          </div>
+        )}
+
         {activeTab === "SLOTS" && (
           <div className="flex flex-col lg:flex-row gap-8">
             {editingSlot && (

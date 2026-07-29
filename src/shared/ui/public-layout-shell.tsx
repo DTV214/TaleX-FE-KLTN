@@ -8,6 +8,7 @@ import { BackToTop } from "@/shared/ui/back-to-top";
 import { PublicSidebar } from "@/shared/ui/public-sidebar";
 import { SiteHeader } from "@/shared/ui/site-header";
 import { OnboardingGate } from "@/features/onboarding/components/onboarding-gate";
+import { PopupAdWidget } from "@/features/ads/components/popup-ad-widget";
 
 type PublicLayoutShellProps = {
   children: ReactNode;
@@ -82,6 +83,7 @@ export function PublicLayoutShell({ children }: PublicLayoutShellProps) {
         <main className="flex flex-1 flex-col">{children}</main>
         <OnboardingGate />
         <BackToTop />
+        <PopupAdWidget />
       </div>
     );
   }
@@ -100,6 +102,7 @@ export function PublicLayoutShell({ children }: PublicLayoutShellProps) {
       </main>
       <OnboardingGate />
       <BackToTop />
+      <PopupAdWidget />
     </div>
   );
 }

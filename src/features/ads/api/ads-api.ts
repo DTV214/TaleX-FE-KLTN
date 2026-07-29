@@ -58,7 +58,14 @@ export interface AdTrackRequest {
   campaignId: string;
 }
 
+export interface PopupConfig {
+  allowedRoutes: string[];
+  showDelayMs: number;
+  cooldownMinutes: number;
+}
+
 export const adsApi = {
+  // ... other methods ...
   getWalletBalance: () =>
     api.get<{ data: AdvertiseProfile }>("/api/v1/ads/wallet/balance").then((res) => res.data.data),
     
@@ -137,4 +144,13 @@ export const adsApi = {
 
   topupCampaign: (campaignId: string, amount: number) =>
     api.post(`/api/v1/ads/campaigns/${campaignId}/topup`, { amount }).then((res) => res.data),
+
+  // ---- System Config ----
+  /** Lấy cấu hình Popup (public, FE dùng khi load) */
+  getPopupConfig: (): Promise<PopupConfig> =>
+    api.get<{ data: PopupConfig }>("/api/v1/ads/config/popup").then((res) => res.data.data),
+
+  /** Admin cập nhật cấu hình Popup */
+  updatePopupConfig: (config: PopupConfig): Promise<PopupConfig> =>
+    api.put<{ data: PopupConfig }>("/api/v1/ads/config/popup", config).then((res) => res.data.data),
 };
