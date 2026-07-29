@@ -657,6 +657,7 @@ function CreateCampaignPanel({ onClose }: { onClose: () => void }) {
 
   const { data: profile } = useQuery({ queryKey: ["ad-wallet-balance"], queryFn: adsApi.getWalletBalance });
   const { data: slots } = useQuery({ queryKey: ["ad-slots"], queryFn: adsApi.getAllSlots });
+  const { data: labelsData } = useQuery({ queryKey: ["ad-labels"], queryFn: adsApi.getLabels });
 
   const createCampaignMutation = useMutation({
     mutationFn: adsApi.createCampaign,
@@ -870,13 +871,39 @@ function CreateCampaignPanel({ onClose }: { onClose: () => void }) {
                 </div>
                 
                 <div>
-                  <label className="block text-xs font-semibold mb-1">Initial Labels (Comma separated)</label>
-                  <input 
-                    type="text" 
-                    onChange={(e) => setFormData({...formData, labels: e.target.value.split(',').map(s=>s.trim()).filter(s=>s)})}
-                    placeholder="e.g., Promo, 2026"
-                    className="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm outline-none focus:border-teal-500" 
-                  />
+                  <label className="block text-xs font-semibold mb-2">Initial Labels (Optional)</label>
+                  <div className="flex flex-wrap gap-2">
+                    {!labelsData || labelsData.length === 0 ? (
+                      <p className="text-xs text-slate-500 italic">No labels created yet. Go to Settings tab to create.</p>
+                    ) : (
+                      labelsData.map((lbl) => {
+                        const isSelected = formData.labels.includes(lbl.name);
+                        return (
+                          <button
+                            key={lbl.labelId}
+                            type="button"
+                            onClick={() => {
+                              const newLabels = isSelected
+                                ? formData.labels.filter((n) => n !== lbl.name)
+                                : [...formData.labels, lbl.name];
+                              setFormData({ ...formData, labels: newLabels });
+                            }}
+                            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors flex items-center ${
+                              isSelected
+                                ? "bg-indigo-50 border-indigo-300 text-indigo-700"
+                                : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                            }`}
+                          >
+                            <span 
+                              className="inline-block w-2 h-2 rounded-full mr-2" 
+                              style={{ backgroundColor: lbl.color }}
+                            />
+                            {lbl.name}
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
