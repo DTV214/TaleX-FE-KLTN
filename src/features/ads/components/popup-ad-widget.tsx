@@ -40,6 +40,7 @@ export function PopupAdWidget() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const countdownRef = useRef<NodeJS.Timeout | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
 
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const activeSubscriptionQuery = useActiveSubscription(isAuthenticated);
@@ -142,6 +143,22 @@ export function PopupAdWidget() {
     };
   }, [isVisible, ad, impressionTracked]);
 
+  // Dừng video khi chuyển tab
+  useEffect(() => {
+    if (!isVisible || !videoRef.current) return;
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        videoRef.current?.pause();
+      } else {
+        videoRef.current?.play().catch(console.error);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [isVisible]);
+
   const handleClose = () => {
     setIsVisible(false);
     // Tính timestamp hết hạn = hiện tại + số phút cooldown * 60 * 1000
@@ -161,7 +178,9 @@ export function PopupAdWidget() {
     // Backdrop overlay
     <div
       className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm animate-in fade-in duration-300"
-      onClick={handleClose}
+      onClick={() => {
+        if (canSkip) handleClose();
+      }}
     >
       {/* Popup card — bấm vào trong không đóng */}
       <div
@@ -194,11 +213,12 @@ export function PopupAdWidget() {
 
         {/* Media content */}
         <div
-          className="relative w-full cursor-pointer group"
+          className="relative w-full cursor-pointer group bg-black"
           onClick={handleClickAd}
         >
           {ad.mediaType === "VIDEO" ? (
             <video
+              ref={videoRef}
               src={ad.mediaUrl}
               autoPlay
               muted
@@ -215,13 +235,18 @@ export function PopupAdWidget() {
             />
           )}
 
-          {/* Hover overlay */}
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-end justify-start p-4">
-            <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-              <span className="inline-flex items-center gap-1.5 bg-white text-black text-xs font-semibold px-4 py-2 rounded-full shadow-lg">
-                Tìm hiểu thêm →
-              </span>
-            </div>
+          {/* Hover overlay & CTA */}
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors pointer-events-none" />
+          <div className="absolute bottom-4 left-4 z-20">
+            <button 
+              className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-5 py-2.5 rounded-lg shadow-lg hover:shadow-indigo-500/30 transition-all active:scale-95 group-hover:px-6 pointer-events-auto"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleClickAd();
+              }}
+            >
+              Tìm hiểu thêm ↗
+            </button>
           </div>
         </div>
 
