@@ -23,7 +23,13 @@ function selectPlanIcon(plan: CreatorCampaignService) {
     return planIconMap.default;
 }
 
-export function CreatorCampaignPlanList() {
+type CreatorCampaignPlanListProps = {
+    onSelectPlan?: (plan: CreatorCampaignService) => void;
+};
+
+export function CreatorCampaignPlanList({
+    onSelectPlan,
+}: CreatorCampaignPlanListProps) {
     const { data, isLoading, isError, error, isFetching } =
         useGetCreatorCampaignPlans({ page: 1, pageSize: 20 });
 
@@ -85,6 +91,7 @@ export function CreatorCampaignPlanList() {
                     icon={selectPlanIcon(plan)}
                     iconClass={plan.isActive ? "text-yellow-400" : "text-zinc-400"}
                     isPopular={plan.price >= 150000}
+                    onSelect={onSelectPlan}
                 />
             ))}
             {isFetching && (

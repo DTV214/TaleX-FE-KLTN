@@ -6,6 +6,7 @@ type CreatorCampaignPlanCardProps = {
     icon: LucideIcon;
     iconClass: string;
     isPopular: boolean;
+    onSelect?: (plan: CreatorCampaignService) => void;
 };
 
 const formatPrice = (price: number) =>
@@ -20,6 +21,7 @@ export function CreatorCampaignPlanCard({
     icon: Icon,
     iconClass,
     isPopular,
+    onSelect,
 }: CreatorCampaignPlanCardProps) {
     return (
         <div
@@ -68,7 +70,9 @@ export function CreatorCampaignPlanCard({
 
                 <button
                     type="button"
-                    className={`creator-shine-card relative z-10 mt-8 h-12 rounded-2xl text-sm font-black transition ${isPopular
+                    disabled={!plan.isActive}
+                    onClick={() => onSelect?.(plan)}
+                    className={`creator-shine-card relative z-10 mt-8 h-12 rounded-2xl text-sm font-black transition disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/[0.04] disabled:text-zinc-500 disabled:shadow-none ${isPopular
                         ? "bg-yellow-400 text-black shadow-[0_4px_20px_rgba(250,204,21,0.18)] hover:bg-yellow-300 hover:shadow-[0_0_20px_rgba(250,204,21,0.4)]"
                         : "border border-yellow-400/30 bg-yellow-400/5 text-yellow-400 hover:bg-yellow-400 hover:text-black"
                         }`}

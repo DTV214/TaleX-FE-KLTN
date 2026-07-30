@@ -108,6 +108,7 @@ import { SignedHlsPlayer } from "@/features/playback/components/signed-hls-playe
 import { ComboManagementView } from "@/features/creator-dashboard/components/combo-management";
 import { CreatorMonetizationView } from "@/features/creator-dashboard/components/views/creator-monetization-view";
 import { CreatorCampaignPurchaseView } from "@/features/creator-dashboard/components/views/creator-campaign-purchase-view";
+import { CreatorCampaignsView } from "@/features/creator-dashboard/components/views/creator-campaigns-view";
 import { AIPolicyAndCopyright } from "@/features/creator-dashboard/components/ai-policy-and-copyright";
 import {
   getBlockingCopyrightViolations,
@@ -128,6 +129,7 @@ type DashboardView =
   | "combos"
   | "monetization"
   | "campaign"
+  | "campaigns"
   | "publish"
   | "analytics"
   | "revenue";
@@ -150,6 +152,7 @@ const dashboardViews: DashboardView[] = [
   "combos",
   "monetization",
   "campaign",
+  "campaigns",
   "publish",
   "analytics",
   "revenue",
@@ -381,6 +384,10 @@ const viewMeta: Record<
   campaign: {
     title: "Đẩy mạnh tương tác",
     description: "Tiếp cận hàng ngàn độc giả và khán giả mới bằng các gói đẩy xu hướng.",
+  },
+  campaigns: {
+    title: "Chiến dịch",
+    description: "Theo dõi các chiến dịch tăng tương tác đã tạo.",
   },
   dashboard: {
     title: "Tổng quan",
@@ -2164,6 +2171,8 @@ function CreatorDashboardContent() {
               />
             ) : activeView === "campaign" ? (
               <CreatorCampaignPurchaseView />
+            ) : activeView === "campaigns" ? (
+              <CreatorCampaignsView />
             ) : (
               <div className="p-8 text-white flex flex-col items-center justify-center min-h-[50vh]">
                 <h2 className="text-xl font-bold mb-4">View not mapped yet ({activeView})</h2>

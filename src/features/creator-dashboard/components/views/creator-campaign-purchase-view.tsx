@@ -1,7 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { BarChart3, Eye, Zap, type LucideIcon } from "lucide-react";
 import { CreatorCampaignPlanList } from "./creator-campaign-plan-list";
+import { CreatorCampaignCheckoutModal } from "./creator-campaign-checkout-modal";
+import type { CreatorCampaignService } from "@/features/creator-dashboard/types/creator-campaigns.types";
 
 function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
@@ -33,6 +36,9 @@ const campaignBenefits: Array<{
   ];
 
 export function CreatorCampaignPurchaseView() {
+  const [selectedPlan, setSelectedPlan] =
+    useState<CreatorCampaignService | null>(null);
+
   return (
     <div className="space-y-8">
       <section className="creator-shine-card relative overflow-hidden rounded-[32px] border border-white/10 bg-white/[0.035] p-6 shadow-[0_24px_70px_rgba(0,0,0,0.24)] md:p-8">
@@ -51,7 +57,7 @@ export function CreatorCampaignPurchaseView() {
         </div>
       </section>
 
-      <CreatorCampaignPlanList />
+      <CreatorCampaignPlanList onSelectPlan={setSelectedPlan} />
 
       <section className="grid gap-4 md:grid-cols-3">
         {campaignBenefits.map((benefit) => {
@@ -75,6 +81,15 @@ export function CreatorCampaignPurchaseView() {
           );
         })}
       </section>
+      <CreatorCampaignCheckoutModal
+        open={Boolean(selectedPlan)}
+        plan={selectedPlan}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedPlan(null);
+          }
+        }}
+      />
     </div>
   );
 }

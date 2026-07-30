@@ -15,6 +15,7 @@ import {
   Clapperboard,
   Tag,
   Zap,
+  Megaphone,
   Home,
   Tv,
 } from "lucide-react";
@@ -48,6 +49,7 @@ export function CreatorLayout({
     { label: "Quản lý sản xuất", view: "production", icon: Clapperboard },
     { label: "Quản lý Combo", view: "combos", icon: Tag },
     { label: "Tăng tương tác", view: "campaign", icon: Zap },
+    { label: "Chiến dịch", view: "campaigns", icon: Megaphone },
   ];
 
   const handleLogout = async () => {
