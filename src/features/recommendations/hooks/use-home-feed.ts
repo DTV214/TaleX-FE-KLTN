@@ -12,7 +12,8 @@ export function useHomeFeed(params: HomeFeedRequest = DEFAULT_HOME_FEED_LIMITS) 
     queryKey: [...HOME_FEED_QUERY_KEY, params],
     queryFn: () => getHomeFeed(params),
     placeholderData: (previousData) => previousData,
-    staleTime: 60_000,
+    staleTime: 0,
+    refetchOnMount: "always",
     refetchOnWindowFocus: false,
   });
 }

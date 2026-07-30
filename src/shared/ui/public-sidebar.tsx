@@ -41,7 +41,7 @@ const primaryMenu: MenuItem[] = [
   { title: "Trang chủ", href: "/", icon: Home },
   { title: "Phim bộ", href: "/series", icon: Tv },
   { title: "Truyện tranh", href: "/comics", icon: BookOpen },
-  { title: "Shorts", href: "/#shorts", icon: Flame },
+  { title: "Xu hướng", href: "/#shorts", icon: Flame },
 ];
 
 const libraryMenu: MenuItem[] = [
@@ -71,6 +71,9 @@ const noPrefetchRoutes = new Set([
   "/contact",
 ]);
 
+const sidebarScrollbarClass =
+  "[scrollbar-gutter:stable] [scrollbar-width:thin] [scrollbar-color:transparent_transparent] hover:[scrollbar-color:rgba(212,175,55,0.38)_transparent] focus-within:[scrollbar-color:rgba(212,175,55,0.38)_transparent] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:border-2 [&::-webkit-scrollbar-thumb]:border-transparent [&::-webkit-scrollbar-thumb]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-clip-content hover:[&::-webkit-scrollbar-thumb]:bg-white/30 focus-within:[&::-webkit-scrollbar-thumb]:bg-white/30 [&::-webkit-scrollbar-button]:hidden";
+
 export function PublicSidebar() {
   const isSidebarOpen = usePublicSidebarStore((state) => state.isSidebarOpen);
   const isMobileSidebarOpen = usePublicSidebarStore(
@@ -85,7 +88,8 @@ export function PublicSidebar() {
     <>
       <aside
         className={cn(
-          "fixed left-0 top-0 z-40 hidden h-screen flex-col overflow-y-auto border-r border-white/5 bg-[#0f0f0f] pt-16 text-white shadow-[16px_0_40px_rgba(0,0,0,0.28)] transition-all duration-300 ease-in-out md:flex",
+          "fixed left-0 top-0 z-40 hidden h-screen flex-col overflow-x-hidden overflow-y-auto border-r border-white/5 bg-[#0f0f0f] pt-16 text-white shadow-[16px_0_40px_rgba(0,0,0,0.28)] transition-all duration-300 ease-in-out md:flex",
+          sidebarScrollbarClass,
           isSidebarOpen ? "w-64 px-3" : "w-20 px-2",
         )}
       >
@@ -122,7 +126,8 @@ export function PublicSidebar() {
 
         <aside
           className={cn(
-            "absolute left-0 top-0 flex h-full w-[min(82vw,320px)] flex-col overflow-y-auto border-r border-white/10 bg-[#0f0f0f] px-3 pt-4 text-white shadow-[24px_0_70px_rgba(0,0,0,0.55)] transition-transform duration-300 ease-out",
+            "absolute left-0 top-0 flex h-full w-[min(82vw,320px)] flex-col overflow-x-hidden overflow-y-auto border-r border-white/10 bg-[#0f0f0f] px-3 pt-4 text-white shadow-[24px_0_70px_rgba(0,0,0,0.55)] transition-transform duration-300 ease-out",
+            sidebarScrollbarClass,
             isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full",
           )}
         >

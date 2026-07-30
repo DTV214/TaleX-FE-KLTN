@@ -278,6 +278,7 @@ export function HomeFeed() {
   const [isAppending, setIsAppending] = useState(false);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const appendTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const appendingRef = useRef(false);
   const queryParams = useMemo<HomeFeedRequest>(
     () => ({
       ...DEFAULT_HOME_FEED_LIMITS,
@@ -319,13 +320,15 @@ export function HomeFeed() {
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (!entry?.isIntersecting || isAppending) return;
+        if (!entry?.isIntersecting || appendingRef.current) return;
 
+        appendingRef.current = true;
         setIsAppending(true);
         appendTimerRef.current = setTimeout(() => {
           setVisibleRecommendationCount((current) =>
             Math.min(current + MIXED_LOAD_STEP, mixedRecommendations.length),
           );
+          appendingRef.current = false;
           setIsAppending(false);
         }, 420);
       },
@@ -340,8 +343,9 @@ export function HomeFeed() {
         clearTimeout(appendTimerRef.current);
         appendTimerRef.current = null;
       }
+      appendingRef.current = false;
     };
-  }, [canRevealMore, isAppending, mixedRecommendations.length]);
+  }, [canRevealMore, mixedRecommendations.length]);
 
   if (isLoading) {
     return <HomeFeedSkeleton />;
@@ -460,17 +464,17 @@ function HomeFeedNav({
   };
 
   return (
-    <div className="sticky top-0 z-30 -mx-4 bg-[#0F0F0F]/88 px-4 py-3 backdrop-blur-xl md:-mx-6 md:px-6">
+    <div className="sticky top-0 z-30 -mx-4 bg-[#0d0c0a]/78 px-4 py-3 backdrop-blur-xl md:-mx-6 md:px-6">
       <div className="flex gap-3 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         {navItems.map((item, index) => (
           <button
             key={`${item.id}-${index}`}
             type="button"
             onClick={() => scrollToSection(item.id)}
-            className={`shrink-0 cursor-pointer rounded-xl px-4 py-2.5 text-sm font-black transition md:text-base ${
+            className={`shrink-0 cursor-pointer rounded-xl px-4 py-2.5 font-sans text-sm font-semibold transition md:text-base ${
               index === 0
-                ? "bg-white text-black hover:bg-white/90"
-                : "bg-white/10 text-white/82 hover:bg-white/18 hover:text-white"
+                ? "bg-white/90 text-black/88 hover:bg-white"
+                : "bg-white/[0.08] text-white/58 hover:bg-white/[0.12] hover:text-white/76"
             }`}
           >
             {item.label}
@@ -503,10 +507,10 @@ function TypedHeroSection({ section }: { section: TypedHomeSection }) {
             section={section}
             icon={<Crown className="h-5 w-5" />}
           />
-          <h3 className="mt-5 font-heading text-4xl font-black leading-tight tracking-tight text-white md:text-6xl">
+          <h3 className="mt-5 bg-[linear-gradient(110deg,rgba(255,255,255,0.82),rgba(255,255,255,0.82),rgba(212,175,55,0.92),rgba(255,255,255,0.82))] bg-[length:220%_100%] bg-clip-text font-sans text-4xl font-semibold leading-tight tracking-tight text-white/86 transition-[color,filter] duration-300 hover:text-transparent hover:drop-shadow-[0_0_20px_rgba(212,175,55,0.18)] md:text-6xl">
             {featured.title}
           </h3>
-          <p className="mt-5 line-clamp-3 max-w-2xl text-base font-medium leading-relaxed text-white/62 md:text-lg">
+          <p className="mt-5 line-clamp-3 max-w-2xl text-base font-medium leading-relaxed text-white/50 md:text-lg">
             {featured.description || section.description}
           </p>
 
@@ -585,6 +589,7 @@ function HeroMiniCard({
         }}
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/88 via-black/24 to-transparent" />
+      <CardSunSheen />
       <div className="absolute bottom-3 left-3 right-3">
         <p className="line-clamp-1 text-sm font-black text-white">
           {series.title}
@@ -670,10 +675,10 @@ function TypedSpotlightSection({ section }: { section: TypedHomeSection }) {
             icon={<Clapperboard className="h-5 w-5" />}
             compact
           />
-          <h3 className="mt-5 font-heading text-3xl font-black leading-tight text-white md:text-5xl">
+          <h3 className="mt-5 bg-[linear-gradient(110deg,rgba(255,255,255,0.82),rgba(255,255,255,0.82),rgba(212,175,55,0.92),rgba(255,255,255,0.82))] bg-[length:220%_100%] bg-clip-text font-sans text-3xl font-semibold leading-tight text-white/86 transition-[color,filter] duration-300 hover:text-transparent hover:drop-shadow-[0_0_20px_rgba(212,175,55,0.18)] md:text-5xl">
             {featured.title}
           </h3>
-          <p className="mt-4 line-clamp-4 max-w-xl text-sm font-medium leading-relaxed text-white/55 md:text-base">
+          <p className="mt-4 line-clamp-4 max-w-xl text-sm font-medium leading-relaxed text-white/48 md:text-base">
             {featured.description || section.description}
           </p>
           <Link
@@ -704,6 +709,7 @@ function TypedSpotlightSection({ section }: { section: TypedHomeSection }) {
                 }}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/18 to-transparent" />
+              <CardSunSheen />
               <p className="absolute bottom-3 left-3 right-3 line-clamp-1 text-sm font-black text-white">
                 {series.title}
               </p>
@@ -849,13 +855,14 @@ function LandscapeCard({
       className="group w-[260px] shrink-0 sm:w-[320px] lg:w-[360px]"
     >
       <div className="relative aspect-video overflow-hidden rounded-xl border border-white/10 bg-white/[0.04]">
-        <CardStar />
-        <CardNumber value={index + 1} />
         <div
           className="absolute inset-0 bg-cover bg-center transition duration-500 group-hover:scale-105"
           style={{ backgroundImage: `url(${imageFor(series, index)})` }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/10" />
+        <CardSunSheen />
+        <CardStar />
+        <CardNumber value={index + 1} />
         <TypeBadge kind="VIDEO" />
         {series.ageRating ? <AgeBadge value={series.ageRating} /> : null}
       </div>
@@ -878,12 +885,13 @@ function RankingLandscapeCard({
       href={seriesHref(series)}
       className="group relative h-[190px] w-[250px] shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] transition hover:border-[#D4AF37]/45 sm:w-[300px]"
     >
-      <CardStar />
       <div
         className="absolute inset-0 bg-cover bg-center transition duration-500 group-hover:scale-105"
         style={{ backgroundImage: `url(${imageFor(series, index)})` }}
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
+      <CardSunSheen />
+      <CardStar />
       <span className="absolute left-3 top-3 font-heading text-5xl font-black text-white/18">
         {String(rank).padStart(2, "0")}
       </span>
@@ -914,13 +922,14 @@ function PortraitCard({
       className="group w-[155px] shrink-0 sm:w-[175px] lg:w-[195px]"
     >
       <div className="relative aspect-[2/3] overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] shadow-[0_18px_40px_rgba(0,0,0,0.28)] transition group-hover:border-[#D4AF37]/45">
-        <CardStar />
-        <CardNumber value={rank ?? index + 1} />
         <div
           className="absolute inset-0 bg-cover bg-center transition duration-500 group-hover:scale-105"
           style={{ backgroundImage: `url(${imageFor(series, index, "cover")})` }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/86 via-transparent to-black/14" />
+        <CardSunSheen />
+        <CardStar />
+        <CardNumber value={rank ?? index + 1} />
         <TypeBadge kind="COMIC" />
         <span className="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-full bg-black/70 px-2 py-1 text-xs font-black text-white/88">
           <Eye className="h-3.5 w-3.5 text-[#D4AF37]" />
@@ -949,12 +958,13 @@ function MixedRecommendationCard({
   return (
     <Link href={seriesHref(series)} className="group">
       <div className="relative aspect-video overflow-hidden rounded-xl bg-white/[0.04]">
-        <CardStar />
         <div
           className="absolute inset-0 bg-cover bg-center transition duration-500 group-hover:scale-105"
           style={{ backgroundImage: `url(${imageFor(series, index)})` }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent" />
+        <CardSunSheen />
+        <CardStar />
         <TypeBadge kind={kind} />
       </div>
       <div className="mt-3 flex gap-3">
@@ -1043,6 +1053,12 @@ function AgeBadge({ value }: { value: string }) {
   );
 }
 
+function CardSunSheen() {
+  return (
+    <span className="pointer-events-none absolute -left-20 -top-24 z-[8] h-[180%] w-12 -translate-x-full rotate-12 bg-gradient-to-r from-transparent via-white/18 to-transparent opacity-0 blur-[1px] transition-all duration-700 ease-out group-hover:translate-x-[760%] group-hover:opacity-100" />
+  );
+}
+
 function SectionHeading({
   section,
   icon,
@@ -1061,11 +1077,11 @@ function SectionHeading({
         </span>
       </div>
       <div className={compact ? "mt-2" : "mt-1"}>
-        <h2 className="font-heading text-2xl font-black tracking-tight text-white md:text-4xl">
+        <h2 className="bg-[linear-gradient(110deg,rgba(255,255,255,0.76),rgba(255,255,255,0.76),rgba(212,175,55,0.92),rgba(151,176,255,0.7),rgba(255,255,255,0.76))] bg-[length:220%_100%] bg-clip-text font-sans text-2xl font-semibold tracking-tight text-white/82 transition-[color,filter] duration-300 hover:text-transparent hover:drop-shadow-[0_0_18px_rgba(212,175,55,0.18)] md:text-4xl">
           {section.title}
         </h2>
         {!compact ? (
-          <p className="mt-1 text-sm font-medium text-white/42">
+          <p className="mt-1 text-sm font-medium text-white/38">
             {section.description}
           </p>
         ) : null}

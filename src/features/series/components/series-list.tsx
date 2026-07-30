@@ -1,16 +1,21 @@
 "use client";
 
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type MouseEvent,
+  type RefObject,
+} from "react";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import {
   AlertCircle,
   Bookmark,
-  ChevronLeft,
-  ChevronRight,
   Eye,
   Film,
   HelpCircle,
+  Loader2,
   Play,
   Sparkles,
   Star,
@@ -32,43 +37,58 @@ function getHeroImage(item?: PublicSeriesItem) {
 }
 
 export function SeriesList() {
-  const [page, setPage] = useState(1);
   const [pageSize] = useState(12);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const isSidebarOpen = usePublicSidebarStore((state) => state.isSidebarOpen);
 
-  const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ["publicMovieSeries", page, pageSize],
-    queryFn: () => getPublicSeriesList(page, pageSize, "VIDEO"),
+  const {
+    data,
+    isLoading,
+    isError,
+    error,
+    refetch,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    queryKey: ["publicMovieSeriesInfinite", pageSize],
+    queryFn: ({ pageParam = 1 }) =>
+      getPublicSeriesList(pageParam, pageSize, "VIDEO"),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.isLast ? undefined : allPages.length + 1,
   });
 
-  const seriesItems = (data?.content || []).filter(
+  const seriesItems = (data?.pages.flatMap((page) => page.content) || []).filter(
     (item) => item.contentType?.toUpperCase() === "VIDEO",
   );
   const featuredMovie = seriesItems[0];
-  const totalPages = data?.totalPages || 1;
-  const isFirst = data?.isFirst ?? true;
-  const isLast = data?.isLast ?? true;
   const catalogGridClass = isSidebarOpen
-    ? "grid grid-cols-2 justify-start gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-[repeat(3,minmax(0,240px))] xl:grid-cols-[repeat(3,minmax(0,260px))]"
-    : "grid grid-cols-2 justify-start gap-x-8 gap-y-10 sm:grid-cols-3 lg:grid-cols-[repeat(4,minmax(0,230px))] 2xl:grid-cols-[repeat(5,minmax(0,240px))]";
+    ? "grid grid-cols-2 gap-x-5 gap-y-9 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5"
+    : "grid grid-cols-2 gap-x-5 gap-y-9 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5";
 
-  const handlePrevPage = () => {
-    if (page > 1) {
-      setPage((prev) => prev - 1);
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-  };
+  useEffect(() => {
+    const trigger = loadMoreRef.current;
+    if (!trigger || !hasNextPage || isFetchingNextPage) return;
 
-  const handleNextPage = () => {
-    if (page < totalPages) {
-      setPage((prev) => prev + 1);
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-  };
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          void fetchNextPage();
+        }
+      },
+      { rootMargin: "420px 0px", threshold: 0.1 },
+    );
+
+    observer.observe(trigger);
+
+    return () => observer.disconnect();
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   return (
-    <div className="min-h-screen bg-[#060607] pb-20 text-gray-100 antialiased">
-      <div className="mx-auto max-w-[1600px] space-y-10 px-4 pt-8 md:px-8">
+    <div className="relative min-h-screen overflow-hidden bg-[#060607] pb-20 text-gray-100 antialiased">
+      <PageAtmosphere />
+      <div className="relative z-10 mx-auto w-full max-w-[1320px] space-y-10 px-4 pt-8 md:px-8">
         {featuredMovie && (
           <FeaturedBanner
             item={featuredMovie}
@@ -116,14 +136,10 @@ export function SeriesList() {
                 </div>
               )}
 
-              <Pagination
-                page={page}
-                totalPages={totalPages}
-                isFirst={isFirst}
-                isLast={isLast}
-                onPageChange={setPage}
-                onPrev={handlePrevPage}
-                onNext={handleNextPage}
+              <InfiniteLoadTrigger
+                refEl={loadMoreRef}
+                hasNextPage={hasNextPage}
+                isFetchingNextPage={isFetchingNextPage}
               />
             </>
           )}
@@ -142,14 +158,52 @@ function FeaturedBanner({
   label: string;
   primaryLabel: string;
 }) {
+  const blobFrameRef = useRef<number | null>(null);
+  const pendingBlobRef = useRef({ x: "50%", y: "50%" });
+
+  useEffect(() => {
+    return () => {
+      if (blobFrameRef.current !== null) {
+        window.cancelAnimationFrame(blobFrameRef.current);
+      }
+    };
+  }, []);
+
+  const handleBlobMove = (event: MouseEvent<HTMLElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const target = event.currentTarget;
+    pendingBlobRef.current = {
+      x: `${event.clientX - rect.left}px`,
+      y: `${event.clientY - rect.top}px`,
+    };
+
+    if (blobFrameRef.current !== null) return;
+
+    blobFrameRef.current = window.requestAnimationFrame(() => {
+      target.style.setProperty("--blob-x", pendingBlobRef.current.x);
+      target.style.setProperty("--blob-y", pendingBlobRef.current.y);
+      blobFrameRef.current = null;
+    });
+  };
+
   return (
-    <section className="relative min-h-[460px] overflow-hidden rounded-3xl border border-white/10 bg-[#121214] shadow-[0_24px_80px_rgba(0,0,0,0.4)]">
+    <section
+      onMouseMove={handleBlobMove}
+      className="group/banner relative min-h-[460px] overflow-hidden rounded-3xl border border-white/10 bg-[#121214] shadow-[0_24px_80px_rgba(0,0,0,0.4)] [--blob-x:50%] [--blob-y:50%]"
+    >
       <div
         className="absolute inset-0 bg-cover bg-center"
         style={{ backgroundImage: `url(${getHeroImage(item)})` }}
       />
       <div className="absolute inset-0 bg-gradient-to-r from-[#0B0B0C] via-[#0B0B0C]/85 to-[#0B0B0C]/35" />
       <div className="absolute inset-0 bg-gradient-to-t from-[#0B0B0C] via-transparent to-transparent" />
+      <div
+        className="pointer-events-none absolute left-0 top-0 z-[1] h-56 w-72 rounded-full bg-[radial-gradient(circle_at_35%_35%,rgba(212,175,55,0.28),rgba(125,211,252,0.16)_40%,rgba(168,85,247,0.1)_62%,transparent_76%)] opacity-0 blur-2xl transition-opacity duration-300 will-change-transform group-hover/banner:opacity-100"
+        style={{
+          transform:
+            "translate3d(var(--blob-x), var(--blob-y), 0) translate(-50%, -50%)",
+        }}
+      />
 
       <div className="relative z-10 flex min-h-[460px] max-w-3xl flex-col justify-center px-6 py-12 md:px-12">
         <span className="mb-5 inline-flex w-fit rounded-full border border-[#D4AF37]/40 bg-[#D4AF37]/10 px-4 py-2 text-xs font-black uppercase tracking-[0.24em] text-[#D4AF37]">
@@ -268,8 +322,8 @@ function SectionTitle({
 
 function ListSkeleton({ isSidebarOpen }: { isSidebarOpen: boolean }) {
   const skeletonGridClass = isSidebarOpen
-    ? "grid grid-cols-2 justify-start gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-[repeat(3,minmax(0,240px))] xl:grid-cols-[repeat(3,minmax(0,260px))]"
-    : "grid grid-cols-2 justify-start gap-x-8 gap-y-10 sm:grid-cols-3 lg:grid-cols-[repeat(4,minmax(0,230px))] 2xl:grid-cols-[repeat(5,minmax(0,240px))]";
+    ? "grid grid-cols-2 gap-x-5 gap-y-9 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5"
+    : "grid grid-cols-2 gap-x-5 gap-y-9 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5";
 
   return (
     <div className={skeletonGridClass}>
@@ -280,6 +334,57 @@ function ListSkeleton({ isSidebarOpen }: { isSidebarOpen: boolean }) {
           <div className="h-3 w-2/3 rounded bg-white/[0.04]" />
         </div>
       ))}
+    </div>
+  );
+}
+
+function PageAtmosphere() {
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_12%,rgba(212,175,55,0.14),transparent_32%),radial-gradient(circle_at_82%_20%,rgba(59,130,246,0.08),transparent_30%),linear-gradient(180deg,#070707_0%,#0b0b0d_54%,#050506_100%)]" />
+      <div
+        className="absolute inset-x-0 top-0 h-[620px] bg-cover bg-center opacity-[0.11] blur-[1px]"
+        style={{
+          backgroundImage:
+            "url(https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=2000&auto=format&fit=crop)",
+        }}
+      />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-[#060607]/82 to-[#060607]" />
+      <div className="absolute -left-32 top-36 h-72 w-[760px] rotate-[-14deg] rounded-[100%] border-t border-[#D4AF37]/16 blur-[0.3px]" />
+      <div className="absolute right-[-220px] top-16 h-[420px] w-[900px] rotate-[18deg] rounded-[100%] border-t border-cyan-200/10" />
+      <div className="absolute bottom-24 left-1/4 h-56 w-[720px] rotate-[8deg] rounded-[100%] border-t border-fuchsia-200/8" />
+    </div>
+  );
+}
+
+function InfiniteLoadTrigger({
+  refEl,
+  hasNextPage,
+  isFetchingNextPage,
+}: {
+  refEl: RefObject<HTMLDivElement | null>;
+  hasNextPage: boolean;
+  isFetchingNextPage: boolean;
+}) {
+  return (
+    <div
+      ref={refEl}
+      className="mt-12 flex min-h-20 items-center justify-center border-t border-white/[0.06] pt-8"
+    >
+      {isFetchingNextPage ? (
+        <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-bold text-white/55">
+          <Loader2 className="h-4 w-4 animate-spin text-[#D4AF37]" />
+          Đang tải thêm phim
+        </span>
+      ) : hasNextPage ? (
+        <span className="text-xs font-bold text-white/35">
+          Cuộn xuống để xem thêm
+        </span>
+      ) : (
+        <span className="text-xs font-bold text-white/25">
+          Đã hết danh sách phim
+        </span>
+      )}
     </div>
   );
 }
@@ -312,61 +417,6 @@ function ErrorState({
         className="rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-black"
       >
         Thử lại
-      </button>
-    </div>
-  );
-}
-
-function Pagination({
-  page,
-  totalPages,
-  isFirst,
-  isLast,
-  onPageChange,
-  onPrev,
-  onNext,
-}: {
-  page: number;
-  totalPages: number;
-  isFirst: boolean;
-  isLast: boolean;
-  onPageChange: (page: number) => void;
-  onPrev: () => void;
-  onNext: () => void;
-}) {
-  if (totalPages <= 1) return null;
-
-  return (
-    <div className="mt-14 flex items-center justify-center gap-3 border-t border-white/[0.06] pt-8">
-      <button
-        onClick={onPrev}
-        disabled={isFirst}
-        className="h-10 w-10 rounded-xl border border-white/10 text-white disabled:opacity-25"
-      >
-        <ChevronLeft className="mx-auto h-4 w-4" />
-      </button>
-      {Array.from({ length: totalPages }).map((_, idx) => {
-        const pageIndex = idx + 1;
-        return (
-          <button
-            key={pageIndex}
-            onClick={() => onPageChange(pageIndex)}
-            className={`h-10 w-10 rounded-xl text-sm font-black ${
-              page === pageIndex
-                ? "bg-[#D4AF37] text-black"
-                : "border border-white/10 bg-white/[0.02] text-white/55"
-            }`}
-          >
-            {pageIndex}
-          </button>
-        );
-      })}
-      <button
-        onClick={onNext}
-        disabled={isLast}
-        className="h-10 w-10 rounded-xl border border-white/10 text-white disabled:opacity-25"
-      >
-        <ChevronRight className="mx-auto h-4 w-4" />
       </button>
     </div>
   );
