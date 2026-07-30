@@ -58,16 +58,16 @@ export function CreatorLayout({
   };
 
   return (
-    <div className="flex h-screen bg-creator-bg text-creator-text font-sans overflow-hidden">
+    <div className="creator-studio-shell flex h-screen overflow-hidden font-sans text-creator-text">
       {/* Sidebar */}
-      <aside className="w-64 bg-creator-sidebar flex flex-col border-r border-creator-border flex-shrink-0 z-20">
-        <div className="h-16 flex items-center px-6 border-b border-creator-border">
-          <span className="text-xl font-bold tracking-wider text-creator-gold">
+      <aside className="relative z-20 flex w-64 flex-shrink-0 flex-col border-r border-white/10 bg-black/80 shadow-[18px_0_60px_rgba(0,0,0,0.28)] backdrop-blur-2xl">
+        <div className="flex h-16 items-center border-b border-white/10 px-6">
+          <span className="creator-spotlight-text text-xl font-bold tracking-wider text-creator-gold">
             TaleX <span className="text-white">Studio</span>
           </span>
         </div>
 
-        <div className="p-4 flex-1 overflow-y-auto">
+        <div className="creator-soft-scrollbar flex-1 overflow-y-auto p-4 pr-3">
           <div className="space-y-1">
             {navItems.map((item) => {
               // Basic active state logic
@@ -79,54 +79,47 @@ export function CreatorLayout({
                 <button
                   key={item.label}
                   onClick={() => {
-                    console.log("[CreatorDashboard] sidebar item clicked", {
-                      label: item.label,
-                      targetView: item.view,
-                      activeView,
-                      accountId: user?.accountId,
-                      roleName: user?.roleName,
-                      isAuthenticated: Boolean(user),
-                    });
-
                     if (item.view && onNavigate) {
                       onNavigate(item.view);
                     }
                   }}
-                  className={`flex items-center w-full gap-3 px-4 py-3 rounded-md transition-colors ${
+                  className={`group flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left transition-colors ${
                     isActive
-                      ? "bg-creator-gold/10 text-creator-gold font-medium"
-                      : "text-creator-muted hover:text-white hover:bg-white/5"
+                      ? "border border-creator-gold/20 bg-creator-gold/15 text-creator-gold shadow-[0_10px_30px_rgba(226,177,60,0.08)]"
+                      : "text-creator-muted hover:bg-white/[0.055] hover:text-white"
                   }`}
                 >
                   <item.icon
                     size={18}
                     className={
-                      isActive ? "text-creator-gold" : "text-creator-muted"
+                      isActive
+                        ? "text-creator-gold"
+                        : "text-creator-muted transition-colors group-hover:text-creator-gold"
                     }
                   />
-                  {item.label}
+                  <span className="text-sm font-semibold">{item.label}</span>
                 </button>
               );
             })}
           </div>
         </div>
 
-        <div className="p-4 border-t border-creator-border">
+        <div className="border-t border-white/10 p-4">
           <Link
             href="/"
-            className="flex items-center gap-3 px-4 py-3 rounded-md text-creator-muted hover:text-white hover:bg-white/5 transition-colors w-full text-left"
+            className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-creator-muted transition-colors hover:bg-white/[0.055] hover:text-white"
           >
             <Home size={18} />
             Về Trang Chủ
           </Link>
-          <button className="flex items-center gap-3 px-4 py-3 rounded-md text-creator-muted hover:text-white hover:bg-white/5 transition-colors w-full text-left">
+          <button className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-creator-muted transition-colors hover:bg-white/[0.055] hover:text-white">
             <Settings size={18} />
             Cài đặt
           </button>
           <button
             type="button"
             onClick={handleLogout}
-            className="flex items-center gap-3 px-4 py-3 rounded-md text-creator-muted hover:text-white hover:bg-white/5 transition-colors w-full text-left mt-1"
+            className="mt-1 flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-creator-muted transition-colors hover:bg-red-500/10 hover:text-red-300"
           >
             <LogOut size={18} />
             Đăng xuất
@@ -135,27 +128,27 @@ export function CreatorLayout({
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col overflow-hidden relative">
+      <div className="relative z-10 flex flex-1 flex-col overflow-hidden">
         {/* Topbar */}
-        <header className="h-16 border-b border-creator-border bg-creator-bg/95 backdrop-blur-sm flex items-center justify-between px-8 flex-shrink-0 z-10 sticky top-0">
-          <div className="flex items-center max-w-md w-full relative">
+        <header className="sticky top-0 z-10 flex h-16 flex-shrink-0 items-center justify-between border-b border-white/10 bg-black/45 px-8 backdrop-blur-2xl">
+          <div className="relative flex w-full max-w-md items-center">
             <Search className="absolute left-3 text-creator-muted" size={18} />
             <input
               type="text"
               placeholder="Tìm kiếm trong studio..."
-              className="w-full bg-creator-card border border-creator-border rounded-full py-2 pl-10 pr-4 text-sm text-white placeholder:text-creator-muted focus:outline-none focus:border-creator-gold transition-colors"
+              className="w-full rounded-full border border-white/10 bg-white/[0.045] py-2 pl-10 pr-4 text-sm text-white outline-none transition-colors placeholder:text-creator-muted focus:border-creator-gold/70 focus:bg-black/35"
             />
           </div>
 
           <div className="flex items-center gap-6">
-            <button className="text-creator-muted hover:text-white transition-colors relative">
+            <button className="relative rounded-full p-2 text-creator-muted transition-colors hover:bg-white/[0.055] hover:text-white">
               <Bell size={20} />
               <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border border-creator-bg"></span>
             </button>
             <DropdownMenu.Root>
               <DropdownMenu.Trigger asChild>
-                <button type="button" className="flex items-center gap-3 cursor-pointer pl-6 border-l border-creator-border text-left outline-none hover:opacity-80 transition-opacity">
-                  <div className="w-8 h-8 rounded-full bg-creator-gold/20 flex items-center justify-center text-creator-gold overflow-hidden">
+                <button type="button" className="flex cursor-pointer items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.035] px-3 py-2 text-left outline-none transition-colors hover:border-creator-gold/35 hover:bg-white/[0.06]">
+                  <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-creator-gold/20 text-creator-gold ring-1 ring-creator-gold/25">
                     {profileUser?.avatarUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
@@ -206,8 +199,8 @@ export function CreatorLayout({
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto bg-[#13110F]">
-          <div className="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8">
+        <main className="creator-soft-scrollbar flex-1 overflow-y-auto bg-transparent">
+          <div className="relative z-10 mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8">
             {children}
           </div>
         </main>

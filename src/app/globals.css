@@ -100,3 +100,133 @@
   @apply bg-black/40 backdrop-blur-md border border-white/10;
 }
 
+@layer utilities {
+  .creator-studio-shell {
+    position: relative;
+    isolation: isolate;
+    background:
+      radial-gradient(circle at 16% 10%, rgba(226, 177, 60, 0.18), transparent 32%),
+      radial-gradient(circle at 82% 14%, rgba(91, 119, 255, 0.12), transparent 30%),
+      linear-gradient(135deg, #070706 0%, #14110e 48%, #080b0f 100%);
+  }
+
+  .creator-studio-shell::before,
+  .creator-studio-shell::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .creator-studio-shell::before {
+    background-image:
+      linear-gradient(to bottom, rgba(7, 7, 6, 0.1), rgba(7, 7, 6, 0.92)),
+      url("https://images.unsplash.com/photo-1519608487953-e999c86e7455?q=80&w=1800&auto=format&fit=crop");
+    background-position: center;
+    background-size: cover;
+    opacity: 0.13;
+    mask-image: linear-gradient(to bottom, black 0%, black 55%, transparent 100%);
+  }
+
+  .creator-studio-shell::after {
+    background:
+      radial-gradient(70% 45% at 18% 0%, rgba(226, 177, 60, 0.09), transparent 64%),
+      radial-gradient(70% 50% at 92% 4%, rgba(120, 165, 255, 0.08), transparent 68%),
+      repeating-radial-gradient(ellipse at 80% 16%, transparent 0 92px, rgba(226, 177, 60, 0.08) 93px 94px, transparent 95px 190px);
+    opacity: 0.72;
+  }
+
+  .creator-soft-scrollbar {
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+  }
+
+  .creator-soft-scrollbar:hover,
+  .creator-soft-scrollbar:focus-within {
+    scrollbar-color: rgba(226, 177, 60, 0.34) transparent;
+  }
+
+  .creator-soft-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .creator-soft-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .creator-soft-scrollbar::-webkit-scrollbar-thumb {
+    background: transparent;
+    border: 2px solid transparent;
+    border-radius: 999px;
+    background-clip: content-box;
+  }
+
+  .creator-soft-scrollbar:hover::-webkit-scrollbar-thumb,
+  .creator-soft-scrollbar:focus-within::-webkit-scrollbar-thumb {
+    background-color: rgba(226, 177, 60, 0.34);
+  }
+
+  .creator-soft-scrollbar::-webkit-scrollbar-button {
+    display: none;
+  }
+
+  .creator-spotlight-text {
+    position: relative;
+    display: inline-block;
+  }
+
+  .creator-spotlight-text::before {
+    content: "";
+    position: absolute;
+    inset: -0.2em -0.45em;
+    z-index: -1;
+    border-radius: 999px;
+    background: radial-gradient(circle at 50% 50%, rgba(226, 177, 60, 0.32), transparent 62%);
+    filter: blur(16px);
+    opacity: 0;
+    transition: opacity 180ms ease;
+  }
+
+  .creator-spotlight-text:hover::before {
+    opacity: 1;
+  }
+
+  .creator-shine-card {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .creator-shine-card::after {
+    content: "";
+    position: absolute;
+    top: -45%;
+    left: -70%;
+    width: 42%;
+    height: 190%;
+    pointer-events: none;
+    transform: rotate(18deg);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.16), transparent);
+    opacity: 0;
+    transition:
+      transform 720ms ease,
+      opacity 180ms ease;
+  }
+
+  .creator-shine-card:hover::after {
+    transform: translateX(360%) rotate(18deg);
+    opacity: 1;
+  }
+
+  .creator-format-select option {
+    background-color: #121214;
+    color: #f8fafc;
+  }
+
+  .creator-format-select option:checked {
+    background-color: rgba(226, 177, 60, 0.24);
+    color: #ffffff;
+  }
+}

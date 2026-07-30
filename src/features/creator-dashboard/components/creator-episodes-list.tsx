@@ -20,8 +20,8 @@ export function CreatorEpisodesList({
   onBack,
 }: CreatorEpisodesListProps) {
   return (
-    <div className="w-full p-6 text-creator-text">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+    <div className="w-full py-6 text-creator-text">
+      <div className="mb-8 flex flex-col justify-between gap-4 rounded-[28px] border border-white/10 bg-white/[0.035] p-6 shadow-[0_24px_70px_rgba(0,0,0,0.22)] md:flex-row md:items-end">
         <div>
           <CreatorBackButton onClick={onBack} className="mb-4" />
           <h2 className="text-3xl font-bold text-white mb-2">Số tập</h2>
@@ -31,15 +31,15 @@ export function CreatorEpisodesList({
         </div>
         <button
           onClick={onCreate}
-          className="px-6 py-2.5 rounded-md text-sm font-medium bg-creator-gold text-black hover:bg-creator-gold-hover transition-colors flex items-center gap-2 shrink-0"
+          className="creator-shine-card flex shrink-0 items-center gap-2 rounded-2xl bg-creator-gold px-6 py-3 text-sm font-bold text-black shadow-[0_16px_40px_rgba(212,175,55,0.16)] transition-all hover:-translate-y-0.5 hover:bg-creator-gold-hover"
         >
           <Plus size={18} /> Thêm Tập Mới
         </button>
       </div>
 
       {episodes.length === 0 ? (
-        <div className="bg-creator-sidebar border border-creator-border border-dashed rounded-xl p-16 flex flex-col items-center justify-center text-center mt-8">
-          <div className="w-20 h-20 bg-creator-bg rounded-full flex items-center justify-center mb-6">
+        <div className="mt-8 flex flex-col items-center justify-center rounded-[28px] border border-dashed border-creator-gold/25 bg-white/[0.03] p-16 text-center shadow-[0_24px_70px_rgba(0,0,0,0.2)]">
+          <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl border border-creator-gold/20 bg-creator-gold/10">
             <ListVideo size={40} className="text-creator-muted" />
           </div>
           <h3 className="text-xl font-bold text-white mb-3">
@@ -50,7 +50,7 @@ export function CreatorEpisodesList({
           </p>
           <button
             onClick={onCreate}
-            className="px-6 py-3 rounded-md text-sm font-bold bg-creator-gold text-black hover:bg-creator-gold-hover transition-colors flex items-center gap-2"
+            className="creator-shine-card flex items-center gap-2 rounded-2xl bg-creator-gold px-6 py-3 text-sm font-bold text-black transition-all hover:-translate-y-0.5 hover:bg-creator-gold-hover"
           >
             <Plus size={18} /> Thêm Tập Mới
           </button>
@@ -60,11 +60,11 @@ export function CreatorEpisodesList({
           {episodes.map((episode) => (
             <div
               key={episode.id}
-              className="bg-creator-sidebar border border-creator-border rounded-xl p-4 hover:border-creator-gold/50 transition-colors group cursor-pointer flex items-center justify-between"
+              className="creator-shine-card group flex cursor-pointer items-center justify-between rounded-[24px] border border-white/10 bg-white/[0.035] p-4 shadow-[0_18px_60px_rgba(0,0,0,0.18)] transition-all duration-300 hover:-translate-y-0.5 hover:border-creator-gold/45 hover:bg-white/[0.055]"
               onClick={() => onSelect(episode.id)}
             >
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded bg-creator-bg flex items-center justify-center shrink-0 border border-creator-border">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-creator-gold/20 bg-creator-gold/10">
                   <PlayCircle
                     size={20}
                     className="text-creator-muted group-hover:text-creator-gold transition-colors"
@@ -99,13 +99,13 @@ export function CreatorEpisodesList({
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+              <div className="flex shrink-0 items-center gap-3 opacity-0 transition-opacity group-hover:opacity-100">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     onEdit(episode);
                   }}
-                  className="w-8 h-8 rounded-full bg-white/5 text-white flex items-center justify-center hover:bg-creator-gold hover:text-black transition-colors"
+                  className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white transition-colors hover:bg-creator-gold hover:text-black"
                 >
                   <Edit3 size={14} />
                 </button>
@@ -114,7 +114,7 @@ export function CreatorEpisodesList({
                     e.stopPropagation();
                     onDelete(episode);
                   }}
-                  className="w-8 h-8 rounded-full bg-white/5 text-white flex items-center justify-center hover:bg-red-500 transition-colors"
+                  className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white transition-colors hover:bg-red-500"
                 >
                   <Trash2 size={14} />
                 </button>

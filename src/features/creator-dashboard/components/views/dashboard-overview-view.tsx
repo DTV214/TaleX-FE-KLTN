@@ -205,7 +205,7 @@ export function DashboardOverviewView({
   return (
     <div className="w-full space-y-6 py-6">
       {/* ================= CHANNEL INFO CARD ================= */}
-      <div className="relative overflow-hidden rounded-2xl border border-white/5 bg-gradient-to-br from-[#2E1E1E] to-[#1E1E22] p-6 shadow-xl">
+      <div className="creator-shine-card relative overflow-hidden rounded-[28px] border border-white/10 bg-gradient-to-br from-[#2E1E1E]/90 to-[#1E1E22]/90 p-6 shadow-[0_24px_70px_rgba(0,0,0,0.25)]">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_120%,rgba(212,175,55,0.08),transparent_50%)]" />
         <div className="relative flex flex-col items-center gap-5 sm:flex-row">
           <div className="h-16 w-16 shrink-0 overflow-hidden rounded-full border-2 border-[#D4AF37] bg-zinc-950 sm:h-20 sm:w-20">
@@ -224,7 +224,7 @@ export function DashboardOverviewView({
           </div>
           <div className="flex-1 space-y-1.5 text-center sm:text-left">
             <div className="flex flex-col items-center gap-2.5 sm:flex-row">
-              <h1 className="text-xl font-black tracking-tight text-white sm:text-2xl">
+              <h1 className="creator-spotlight-text text-xl font-black tracking-tight text-white sm:text-2xl">
                 {displayName}
               </h1>
               <span className="inline-flex items-center gap-1 rounded-full border bg-yellow-400/10 border-yellow-400/20 px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-[#D4AF37] shadow-sm">
@@ -257,7 +257,7 @@ export function DashboardOverviewView({
       </div>
 
       {/* ================= TAB BAR ================= */}
-      <div className="flex gap-1 overflow-x-auto border-b border-white/10 scrollbar-none">
+      <div className="creator-soft-scrollbar flex gap-1 overflow-x-auto rounded-2xl border border-white/10 bg-black/25 px-2 pt-2">
         {(
           [
             { id: "overview", label: "Tổng quan" },
@@ -272,13 +272,13 @@ export function DashboardOverviewView({
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                "relative cursor-pointer px-5 pb-3.5 text-sm font-black transition-colors outline-none",
+                "relative cursor-pointer rounded-xl px-5 py-3 text-sm font-black transition-colors outline-none",
                 isSelected ? "text-white" : "text-zinc-500 hover:text-zinc-300"
               )}
             >
               {tab.label}
               {isSelected && (
-                <span className="absolute bottom-0 left-5 right-5 h-0.5 rounded-full bg-red-500" />
+                <span className="absolute bottom-0 left-5 right-5 h-0.5 rounded-full bg-creator-gold" />
               )}
             </button>
           );
@@ -289,7 +289,7 @@ export function DashboardOverviewView({
       {activeTab === "overview" && (
         <div className="space-y-6">
           <div>
-            <h2 className="text-lg font-black tracking-wide text-white">
+            <h2 className="creator-spotlight-text text-lg font-black tracking-wide text-white">
               Số liệu phân tích kênh
             </h2>
             <p className="mt-1 text-xs font-semibold text-zinc-450">
@@ -300,7 +300,7 @@ export function DashboardOverviewView({
           {/* 4 Stats Grid */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {/* Stat 1: Views */}
-            <div className="rounded-2xl border border-white/5 bg-[#1C1C1F] p-5 transition-colors hover:border-white/10">
+            <div className="creator-shine-card rounded-[24px] border border-white/10 bg-white/[0.035] p-5 transition-all hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.055]">
               <div className="flex items-start justify-between">
                 <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">
                   Tổng lượt xem
@@ -322,7 +322,7 @@ export function DashboardOverviewView({
             </div>
 
             {/* Stat 2: Series Count */}
-            <div className="rounded-2xl border border-white/5 bg-[#1C1C1F] p-5 transition-colors hover:border-white/10">
+            <div className="creator-shine-card rounded-[24px] border border-white/10 bg-white/[0.035] p-5 transition-all hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.055]">
               <div className="flex items-start justify-between">
                 <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">
                   Tổng số Series
@@ -346,7 +346,7 @@ export function DashboardOverviewView({
             {/* Stat 3: Followers */}
             <div
               onClick={() => setIsFollowersModalOpen(true)}
-              className="group cursor-pointer rounded-2xl border border-white/5 bg-[#1C1C1F] p-5 transition-colors hover:border-[#D4AF37]/40"
+              className="creator-shine-card group cursor-pointer rounded-[24px] border border-white/10 bg-white/[0.035] p-5 transition-all hover:-translate-y-0.5 hover:border-[#D4AF37]/40 hover:bg-white/[0.055]"
             >
               <div className="flex items-start justify-between">
                 <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">
@@ -372,7 +372,7 @@ export function DashboardOverviewView({
             </div>
 
             {/* Stat 4: Revenue / Wallet */}
-            <div className="rounded-2xl border border-[#D4AF37]/25 bg-[#1C1C1F] p-5 shadow-lg shadow-yellow-500/5 transition-colors hover:border-[#D4AF37]/40">
+            <div className="creator-shine-card rounded-[24px] border border-[#D4AF37]/25 bg-[#D4AF37]/[0.055] p-5 shadow-lg shadow-yellow-500/5 transition-all hover:-translate-y-0.5 hover:border-[#D4AF37]/40">
               <div className="flex items-start justify-between">
                 <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">
                   Số dư Ví Coin
@@ -395,10 +395,10 @@ export function DashboardOverviewView({
           </div>
 
           {/* Quick Actions Bar */}
-          <div className="flex flex-col items-center justify-around gap-6 rounded-2xl border border-white/5 bg-[#1C1C1F] p-5 sm:flex-row">
+          <div className="flex flex-col items-center justify-around gap-6 rounded-[28px] border border-white/10 bg-white/[0.035] p-5 shadow-[0_18px_60px_rgba(0,0,0,0.20)] sm:flex-row">
             <button
               onClick={() => onNavigate("create")}
-              className="group flex w-full max-w-[160px] flex-col items-center justify-center rounded-xl p-3 text-center transition-colors hover:bg-white/[0.03]"
+              className="creator-shine-card group flex w-full max-w-[180px] flex-col items-center justify-center rounded-2xl border border-white/10 bg-black/25 p-4 text-center transition-all hover:-translate-y-0.5 hover:border-red-400/30 hover:bg-white/[0.055]"
             >
               <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-red-500/10 transition-colors group-hover:bg-red-500/20">
                 <Plus size={20} className="text-red-500" />
@@ -410,7 +410,7 @@ export function DashboardOverviewView({
 
             <button
               onClick={() => onNavigate("series")}
-              className="group flex w-full max-w-[160px] flex-col items-center justify-center rounded-xl p-3 text-center transition-colors hover:bg-white/[0.03]"
+              className="creator-shine-card group flex w-full max-w-[180px] flex-col items-center justify-center rounded-2xl border border-white/10 bg-black/25 p-4 text-center transition-all hover:-translate-y-0.5 hover:border-emerald-400/30 hover:bg-white/[0.055]"
             >
               <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/10 transition-colors group-hover:bg-emerald-500/20">
                 <Library size={20} className="text-emerald-500" />
@@ -422,7 +422,7 @@ export function DashboardOverviewView({
 
             <button
               onClick={() => setActiveTab("revenue")}
-              className="group flex w-full max-w-[160px] flex-col items-center justify-center rounded-xl p-3 text-center transition-colors hover:bg-white/[0.03]"
+              className="creator-shine-card group flex w-full max-w-[180px] flex-col items-center justify-center rounded-2xl border border-white/10 bg-black/25 p-4 text-center transition-all hover:-translate-y-0.5 hover:border-blue-400/30 hover:bg-white/[0.055]"
             >
               <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-blue-500/10 transition-colors group-hover:bg-blue-500/20">
                 <Coins size={20} className="text-blue-500" />
@@ -434,7 +434,7 @@ export function DashboardOverviewView({
           {/* Combined Preview Sections */}
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             {/* Content Preview */}
-            <div className="space-y-4 rounded-2xl border border-white/5 bg-[#1C1C1F] p-5">
+            <div className="space-y-4 rounded-[26px] border border-white/10 bg-white/[0.035] p-5 shadow-[0_18px_60px_rgba(0,0,0,0.18)]">
               <div className="flex items-center justify-between">
                 <h3 className="text-base font-black text-white">
                   Series vừa khởi tạo
@@ -463,7 +463,7 @@ export function DashboardOverviewView({
                       <div
                         key={item.seriesId}
                         onClick={() => onNavigate("series")}
-                        className="flex cursor-pointer items-center gap-3 rounded-xl border border-white/5 bg-white/[0.02] p-3 transition-colors hover:bg-white/[0.04]"
+                        className="creator-shine-card flex cursor-pointer items-center gap-3 rounded-2xl border border-white/10 bg-black/25 p-3 transition-all hover:border-creator-gold/30 hover:bg-white/[0.055]"
                       >
                         <div className="relative flex h-12 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-zinc-800">
                           {item.coverUrl ? (
@@ -508,7 +508,7 @@ export function DashboardOverviewView({
                 )}
               </div>
             </div>            {/* Comments Preview */}
-            <div className="space-y-4 rounded-2xl border border-white/5 bg-[#1C1C1F] p-5">
+            <div className="space-y-4 rounded-[26px] border border-white/10 bg-white/[0.035] p-5 shadow-[0_18px_60px_rgba(0,0,0,0.18)]">
               <div className="flex items-center justify-between">
                 <h3 className="text-base font-black text-white">
                   Bình luận & Phản hồi

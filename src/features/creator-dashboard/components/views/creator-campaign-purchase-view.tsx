@@ -35,10 +35,12 @@ const campaignBenefits: Array<{
 export function CreatorCampaignPurchaseView() {
   return (
     <div className="space-y-8">
-      <section className="overflow-hidden rounded-[28px] border border-white/10 bg-[#121212] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.4)] md:p-8">
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-center">
+      <section className="creator-shine-card relative overflow-hidden rounded-[32px] border border-white/10 bg-white/[0.035] p-6 shadow-[0_24px_70px_rgba(0,0,0,0.24)] md:p-8">
+        <div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-creator-gold/10 blur-3xl" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(212,175,55,0.08),transparent_34%)]" />
+        <div className="relative grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-center">
           <div>
-            <h2 className="mt-4 text-4xl font-black tracking-tight text-zinc-50 md:text-5xl">
+            <h2 className="creator-spotlight-text mt-4 text-4xl font-black tracking-tight text-zinc-50 md:text-5xl">
               Dịch Vụ Tăng Tương Tác
             </h2>
             <p className="mt-4 max-w-2xl text-base font-semibold leading-7 text-zinc-400">
@@ -58,7 +60,7 @@ export function CreatorCampaignPurchaseView() {
           return (
             <div
               key={benefit.title}
-              className="group rounded-2xl border border-white/10 bg-[#121212] p-5 shadow-[0_4px_20px_rgba(0,0,0,0.4)] transition-all duration-300 hover:-translate-y-1 hover:border-yellow-400/40"
+              className="creator-shine-card group rounded-[26px] border border-white/10 bg-white/[0.035] p-5 shadow-[0_18px_60px_rgba(0,0,0,0.20)] transition-all duration-300 hover:-translate-y-1 hover:border-yellow-400/40 hover:bg-white/[0.055]"
             >
               <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-yellow-400/10 text-yellow-400">
                 <Icon className="h-5 w-5 transition-transform group-hover:scale-110" />

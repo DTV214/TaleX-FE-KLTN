@@ -11,8 +11,8 @@ export function CreatorBackButton({ onClick, className }: CreatorBackButtonProps
       type="button"
       onClick={onClick}
       className={[
-        "inline-flex h-12 items-center justify-center gap-2 rounded-lg border border-creator-gold/60 bg-creator-gold/10 px-5 text-base font-black text-creator-gold shadow-[0_0_0_1px_rgba(223,183,74,0.12)] transition-colors",
-        "hover:bg-creator-gold hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-creator-gold focus-visible:ring-offset-2 focus-visible:ring-offset-creator-bg",
+        "creator-shine-card inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-creator-gold/55 bg-creator-gold/15 px-5 text-base font-black text-creator-gold shadow-[0_12px_34px_rgba(226,177,60,0.12)] ring-1 ring-creator-gold/10 transition-all",
+        "hover:-translate-y-0.5 hover:border-creator-gold hover:bg-creator-gold hover:text-black hover:shadow-[0_18px_44px_rgba(226,177,60,0.2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-creator-gold focus-visible:ring-offset-2 focus-visible:ring-offset-creator-bg",
         className,
       ]
         .filter(Boolean)

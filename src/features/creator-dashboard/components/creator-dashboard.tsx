@@ -3327,12 +3327,12 @@ function EpisodeManagementView({
   onDeleteEpisode: (episode: EpisodeRow) => void;
 }) {
   return (
-    <div className="w-full py-6 text-creator-text space-y-6">
+    <div className="w-full space-y-6 py-6 text-creator-text">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-2">
+      <div className="mb-2 flex flex-col justify-between gap-4 rounded-[28px] border border-white/10 bg-white/[0.035] p-6 shadow-[0_24px_70px_rgba(0,0,0,0.22)] md:flex-row md:items-end">
         <div>
           <CreatorBackButton onClick={onBack} className="mb-4" />
-          <h2 className="text-3xl font-bold text-white mb-2">
+          <h2 className="creator-spotlight-text mb-2 text-3xl font-bold text-white">
             {selectedSeason.title}
           </h2>
           <p className="text-creator-muted">
@@ -3346,8 +3346,8 @@ function EpisodeManagementView({
       {/* Season Card matching Mockup */}
 
 
-      <div className="bg-creator-sidebar border border-creator-border rounded-xl overflow-hidden shadow-xl">
-        <div className="p-6 border-b border-creator-border flex flex-col sm:flex-row justify-between items-start sm:items-center bg-creator-card/30 gap-4">
+      <div className="overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.035] shadow-[0_24px_70px_rgba(0,0,0,0.22)]">
+        <div className="flex flex-col items-start justify-between gap-4 border-b border-white/10 bg-black/25 p-6 sm:flex-row sm:items-center">
           <div>
             <div className="flex items-center gap-3 mb-1">
               <span className="text-xs font-bold px-2.5 py-1 bg-creator-gold/10 text-creator-gold rounded border border-creator-gold/20">
@@ -3361,7 +3361,7 @@ function EpisodeManagementView({
             type="button"
             onClick={onCreateEpisode}
             disabled={isCreatingEpisode}
-            className="inline-flex h-10 items-center justify-center gap-2 rounded bg-creator-gold px-5 text-sm font-black text-black transition-colors hover:bg-creator-gold-hover disabled:cursor-not-allowed disabled:opacity-60"
+            className="creator-shine-card inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-creator-gold px-5 text-sm font-black text-black shadow-[0_16px_40px_rgba(212,175,55,0.16)] transition-all hover:-translate-y-0.5 hover:bg-creator-gold-hover disabled:cursor-not-allowed disabled:opacity-60"
           >
             <Plus className="h-4 w-4" />
             {isCreatingEpisode ? "Đang Tạo..." : "Thêm Tập Mới"}
@@ -3370,20 +3370,20 @@ function EpisodeManagementView({
 
         <div className="p-0">
           {!isLoading && episodes.length === 0 ? (
-            <div className="p-12 text-center flex flex-col items-center justify-center">
-              <div className="w-16 h-16 rounded-full bg-creator-bg border border-creator-border flex items-center justify-center mb-4">
+            <div className="flex flex-col items-center justify-center p-12 text-center">
+              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-creator-gold/25 bg-creator-gold/10 shadow-[0_16px_40px_rgba(212,175,55,0.10)]">
                 <PlayCircle size={32} className="text-creator-muted" />
               </div>
               <h3 className="text-lg font-medium text-white mb-2">Chưa có tập nào</h3>
               <p className="text-sm text-creator-muted">Nhấn "Thêm Tập" để bắt đầu xây dựng mùa này.</p>
             </div>
           ) : (
-            <ul className="divide-y divide-creator-border">
+            <ul className="divide-y divide-white/10">
               {episodes.map((episode) => (
-                <li key={episode.id} className="flex flex-col sm:flex-row sm:items-center gap-4 p-5 hover:bg-white/5 transition-colors group">
-                  <div className="flex items-center gap-4 flex-1 cursor-pointer" onClick={() => onOpenUpload(episode)}>
+                <li key={episode.id} className="creator-shine-card group flex flex-col gap-4 p-5 transition-all duration-300 hover:bg-white/[0.055] sm:flex-row sm:items-center">
+                  <div className="flex flex-1 cursor-pointer items-center gap-4" onClick={() => onOpenUpload(episode)}>
                     <GripVertical size={18} className="text-creator-border group-hover:text-creator-muted cursor-grab hidden sm:block" />
-                    <div className="w-10 h-10 shrink-0 rounded-lg bg-creator-bg border border-creator-border flex items-center justify-center text-sm font-bold text-creator-muted shadow-inner">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-black/35 text-sm font-bold text-creator-gold shadow-inner">
                       {episode.episodeNumber}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -3406,17 +3406,17 @@ function EpisodeManagementView({
                   </div>
 
                   {/* Actions Container */}
-                  <div className="flex items-center gap-2 pl-14 sm:pl-0 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                  <div className="flex items-center gap-2 pl-14 transition-opacity sm:pl-0 sm:opacity-0 sm:group-hover:opacity-100">
                     <button
                       onClick={(e) => { e.stopPropagation(); onUpdateEpisode(episode); }}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-creator-bg border border-creator-border rounded hover:bg-white/10 transition-colors"
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-black/35 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:border-white/20 hover:bg-white/10"
                       title="Settings (Unlock, Schedule)"
                     >
                       <Edit3 size={14} /> Settings
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); onOpenUpload(episode); }}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-black bg-creator-gold rounded hover:bg-creator-gold-hover transition-colors"
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-creator-gold px-3 py-1.5 text-xs font-bold text-black transition-colors hover:bg-creator-gold-hover"
                       title="Upload Media"
                     >
                       {episode.contentType === "COMIC" ? <ImagePlus size={14} /> : <Video size={14} />} Media

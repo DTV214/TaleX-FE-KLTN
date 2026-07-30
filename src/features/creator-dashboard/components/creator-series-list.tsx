@@ -23,20 +23,20 @@ export function CreatorSeriesList({ seriesList, onSelect, onCreate, onEdit, onDe
 
   return (
     <div className="w-full py-6 text-creator-text">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
+      <div className="mb-8 flex flex-col gap-4 rounded-[28px] border border-white/10 bg-white/[0.035] p-6 shadow-[0_24px_70px_rgba(0,0,0,0.22)] md:flex-row md:items-end md:justify-between">
         <div>
-          <h2 className="text-3xl font-bold text-white mb-2">Series của tôi</h2>
+          <h2 className="creator-spotlight-text mb-2 text-3xl font-bold text-white">Series của tôi</h2>
           <p className="text-creator-muted">Quản lý series, mùa và tập của bạn.</p>
         </div>
         <button
           onClick={onCreate}
-          className="px-6 py-2.5 rounded-md text-sm font-medium bg-creator-gold text-black hover:bg-creator-gold-hover transition-colors flex items-center gap-2 shrink-0"
+          className="creator-shine-card flex shrink-0 items-center gap-2 rounded-2xl bg-creator-gold px-6 py-3 text-sm font-black text-black shadow-[0_16px_40px_rgba(226,177,60,0.18)] transition-all hover:-translate-y-0.5 hover:bg-creator-gold-hover"
         >
           <Plus size={18} /> Tạo Series Mới
         </button>
       </div>
 
-      <div className="flex flex-col sm:flex-row items-center gap-4 mb-8">
+      <div className="mb-8 flex flex-col items-center gap-4 rounded-2xl border border-white/10 bg-black/35 p-3 backdrop-blur-sm sm:flex-row">
         <div className="relative flex-1 w-full">
           <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-creator-muted" />
           <input
@@ -44,7 +44,7 @@ export function CreatorSeriesList({ seriesList, onSelect, onCreate, onEdit, onDe
             placeholder="Tìm kiếm series theo tiêu đề..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-creator-sidebar border border-creator-border rounded-lg pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-creator-gold transition-colors"
+            className="w-full rounded-xl border border-white/10 bg-white/[0.045] py-3 pl-10 pr-4 text-sm text-white outline-none transition-colors placeholder:text-creator-muted focus:border-creator-gold/70"
           />
         </div>
         <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
@@ -52,7 +52,7 @@ export function CreatorSeriesList({ seriesList, onSelect, onCreate, onEdit, onDe
           <select
             value={filterType}
             onChange={(e) => setFilterType(e.target.value)}
-            className="bg-creator-sidebar border border-creator-border rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-creator-gold transition-colors w-full sm:w-auto outline-none cursor-pointer"
+            className="creator-format-select w-full cursor-pointer rounded-xl border border-white/10 bg-[#121214] px-4 py-3 text-sm font-semibold text-white outline-none transition-colors [color-scheme:dark] hover:border-creator-gold/40 focus:border-creator-gold/70 sm:w-auto"
           >
             <option value="ALL">Tất cả định dạng</option>
             <option value="COMIC">Truyện tranh</option>
@@ -62,8 +62,8 @@ export function CreatorSeriesList({ seriesList, onSelect, onCreate, onEdit, onDe
       </div>
 
       {filteredSeries.length === 0 ? (
-        <div className="bg-creator-sidebar border border-creator-border border-dashed rounded-xl p-16 flex flex-col items-center justify-center text-center mt-8">
-          <div className="w-20 h-20 bg-creator-bg rounded-full flex items-center justify-center mb-6">
+        <div className="creator-shine-card mt-8 flex flex-col items-center justify-center rounded-[28px] border border-dashed border-creator-gold/30 bg-white/[0.035] p-16 text-center shadow-[0_24px_70px_rgba(0,0,0,0.2)]">
+          <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full border border-white/10 bg-black/40">
             <Film size={40} className="text-creator-muted" />
           </div>
           <h3 className="text-xl font-bold text-white mb-3">No Series Found</h3>
@@ -75,21 +75,21 @@ export function CreatorSeriesList({ seriesList, onSelect, onCreate, onEdit, onDe
           {seriesList.length === 0 && (
             <button
               onClick={onCreate}
-              className="px-6 py-3 rounded-md text-sm font-bold bg-creator-gold text-black hover:bg-creator-gold-hover transition-colors flex items-center gap-2"
+              className="creator-shine-card flex items-center gap-2 rounded-2xl bg-creator-gold px-6 py-3 text-sm font-black text-black transition-colors hover:bg-creator-gold-hover"
             >
               <Plus size={18} /> Tạo Series Mới
             </button>
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 gap-7 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filteredSeries.map((series) => (
             <div
               key={series.id}
-              className="bg-creator-sidebar border border-creator-border rounded-xl overflow-hidden hover:border-creator-gold/50 transition-colors group cursor-pointer flex flex-col"
+              className="creator-shine-card group flex cursor-pointer flex-col overflow-hidden rounded-[26px] border border-white/10 bg-white/[0.035] shadow-[0_22px_70px_rgba(0,0,0,0.22)] transition-all duration-300 hover:-translate-y-1 hover:border-creator-gold/45 hover:bg-white/[0.055]"
               onClick={() => onSelect(series.id)}
             >
-              <div className="aspect-[3/4] w-full relative bg-creator-bg overflow-hidden border-b border-creator-border">
+              <div className="relative aspect-[3/4] w-full overflow-hidden border-b border-white/10 bg-black/45">
                 {series.coverUrl ? (
                   <img src={series.coverUrl} alt={series.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 ) : (
@@ -97,17 +97,17 @@ export function CreatorSeriesList({ seriesList, onSelect, onCreate, onEdit, onDe
                     <Film size={40} className="text-creator-muted/30" />
                   </div>
                 )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent"></div>
                 <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
                     onClick={(e) => { e.stopPropagation(); onEdit(series); }}
-                    className="w-8 h-8 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-creator-gold hover:text-black transition-colors"
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-black/65 text-white transition-colors hover:bg-creator-gold hover:text-black"
                   >
                     <Edit3 size={14} />
                   </button>
                   <button
                     onClick={(e) => { e.stopPropagation(); onDelete(series); }}
-                    className="w-8 h-8 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-red-500 transition-colors"
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-black/65 text-white transition-colors hover:bg-red-500"
                   >
                     <Trash2 size={14} />
                   </button>
@@ -122,9 +122,9 @@ export function CreatorSeriesList({ seriesList, onSelect, onCreate, onEdit, onDe
                   <h3 className="text-lg font-bold text-white line-clamp-1">{series.title}</h3>
                 </div>
               </div>
-              <div className="p-4 flex-1 flex flex-col justify-between">
+              <div className="flex flex-1 flex-col justify-between p-4">
                 <p className="text-sm text-creator-muted line-clamp-2 mb-4">{series.description || "No description provided."}</p>
-                <div className="flex items-center justify-between text-xs font-medium text-creator-muted border-t border-creator-border pt-3">
+                <div className="flex items-center justify-between border-t border-white/10 pt-3 text-xs font-medium text-creator-muted">
                   <span className="flex items-center gap-1.5"><Layers size={14} /> {series.contentType === "COMIC" ? "Comic" : "Video"}</span>
                   <span className="flex items-center gap-1.5"><Eye size={14} /> {series.views || "0"} Views</span>
                 </div>
