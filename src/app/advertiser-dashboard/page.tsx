@@ -12,7 +12,7 @@ import { createPortal } from "react-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { adsApi, AdSlot } from "@/features/ads/api/ads-api";
 import { toast } from "sonner";
-import { Loader2, Plus, Search, Calendar, ChevronDown, Columns, RefreshCw, MoreVertical, X, Check, Tag, Megaphone, PlusCircle, Coins, HelpCircle } from "lucide-react";
+import { Loader2, Plus, Search, Calendar, ChevronDown, Columns, RefreshCw, MoreVertical, X, Check, Tag, Megaphone, PlusCircle, Coins, HelpCircle, BarChart2 } from "lucide-react";
 import { useAuthStore } from "@/features/auth/store/auth.store";
 import { useLabels, AdLabel } from "@/features/ads/hooks/use-labels";
 
@@ -48,7 +48,6 @@ export default function AdvertiserDashboardPage() {
       case "dashboard": return <OverviewView profile={profile} />;
       case "campaigns": return <CampaignManagementView profile={profile} />;
       case "wallet": return <WalletView profile={profile} />;
-      case "report": return <CustomerReportView />;
       default: return <OverviewView profile={profile} />;
     }
   };
@@ -122,6 +121,13 @@ function CampaignManagementView({ profile }: { profile: any }) {
   const [isCreating, setIsCreating] = useState(false);
   const [isTopupOpen, setIsTopupOpen] = useState(false);
   const { data: campaigns, isLoading } = useQuery({ queryKey: ["my-campaigns"], queryFn: adsApi.getMyCampaigns });
+  const [selectedCampaignIds, setSelectedCampaignIds] = useState<string[]>([]);
+
+  const handleSelectCampaign = (id: string) => {
+    setSelectedCampaignIds(prev => 
+      prev.includes(id) ? prev.filter(cId => cId !== id) : [...prev, id]
+    );
+  };
 
   const toggleMutation = useMutation({
     mutationFn: adsApi.toggleCampaign,
@@ -235,7 +241,16 @@ function CampaignManagementView({ profile }: { profile: any }) {
               
               <SidebarLabelPopover />
 
-              <div className="flex items-center justify-between px-6 py-2.5 text-[#757575] hover:bg-slate-50 cursor-pointer">
+              <div 
+                className="flex items-center justify-between px-6 py-2.5 text-[#757575] hover:bg-slate-50 cursor-pointer"
+                onClick={() => {
+                  if (selectedCampaignIds.length > 0) {
+                    setActiveReportCampaignId(selectedCampaignIds[0]);
+                  } else {
+                    toast.error("Vui lòng tick chọn ít nhất 1 chiến dịch ở bảng bên phải để xem báo cáo");
+                  }
+                }}
+              >
                 <span className="text-sm font-medium">View report</span>
                 <span className="text-xs">›</span>
               </div>
@@ -366,7 +381,14 @@ function CampaignManagementView({ profile }: { profile: any }) {
             ) : (
               filteredCampaigns.map((c: any) => (
                 <tr key={c.campaignId} className="border-b border-slate-100 hover:bg-slate-50 group">
-                  <td className="px-4 py-3 border-r border-slate-100 text-center"><input type="checkbox" className="rounded-sm" /></td>
+                  <td className="px-4 py-3 border-r border-slate-100 text-center">
+                    <input 
+                      type="checkbox" 
+                      className="rounded-sm cursor-pointer w-4 h-4 text-teal-500 focus:ring-teal-500" 
+                      checked={selectedCampaignIds.includes(c.campaignId)}
+                      onChange={() => handleSelectCampaign(c.campaignId)}
+                    />
+                  </td>
                   <td className="px-4 py-3 border-r border-slate-100">
                     <div 
                       onClick={() => {
@@ -1214,35 +1236,55 @@ function CustomerReportView({ campaignId, onClose }: { campaignId?: string; onCl
   const { data: campaigns, isLoading } = useQuery({ queryKey: ["my-campaigns"], queryFn: adsApi.getMyCampaigns });
   const [selectedCampaignId, setSelectedCampaignId] = useState<string>(campaignId || "");
 
-  if (isLoading) return <div className="flex h-32 items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-teal-500" /></div>;
+  if (isLoading) return null;
 
   return (
-    <div className="h-full flex flex-col bg-white border border-slate-200 rounded-sm shadow-sm animate-in fade-in slide-in-from-bottom-4">
-      <div className="p-6 border-b border-slate-200">
-        <h2 className="text-xl font-bold mb-4">Customer Report</h2>
-        <div className="flex items-center gap-4">
-          <label className="text-sm font-medium">Chọn chiến dịch:</label>
-          <select 
-            value={selectedCampaignId}
-            onChange={(e) => setSelectedCampaignId(e.target.value)}
-            className="border border-slate-300 rounded-sm px-3 py-2 outline-none focus:border-teal-500 min-w-[250px] text-sm"
-          >
-            <option value="">-- Chọn một chiến dịch --</option>
-            {campaigns?.map((c: any) => (
-              <option key={c.campaignId} value={c.campaignId}>{c.name}</option>
-            ))}
-          </select>
-        </div>
-      </div>
-      
-      <div className="flex-1 overflow-auto p-6">
-        {selectedCampaignId ? (
-          <AdAnalyticsChart campaignId={selectedCampaignId} />
-        ) : (
-          <div className="h-full flex items-center justify-center text-slate-400">
-            Vui lòng chọn một chiến dịch để xem báo cáo
+    <div className="fixed inset-0 z-50 flex justify-end bg-black/60 transition-opacity" onClick={onClose}>
+      <div 
+        className="relative h-full w-[calc(100%-80px)] bg-white shadow-2xl flex flex-col animate-in slide-in-from-right duration-300"
+        onClick={e => e.stopPropagation()}
+      >
+        <button 
+          onClick={onClose}
+          className="absolute top-0 -left-10 flex h-10 w-10 items-center justify-center bg-[#24252a] hover:bg-[#111113] text-slate-400 hover:text-white rounded-l-md transition-colors"
+        >
+          <X className="h-5 w-5" />
+        </button>
+
+        <div className="flex items-center justify-between p-6 border-b border-slate-200 bg-slate-50/50">
+          <div>
+            <h2 className="text-xl font-bold text-slate-800">Customer Report</h2>
+            <p className="text-sm text-slate-500 mt-1">Xem thống kê hiệu suất chi tiết của chiến dịch</p>
           </div>
-        )}
+        </div>
+        
+        <div className="p-6 border-b border-slate-100 bg-white">
+          <div className="flex items-center gap-4">
+            <label className="text-sm font-semibold text-slate-700">Chọn chiến dịch:</label>
+            <select 
+              value={selectedCampaignId}
+              onChange={(e) => setSelectedCampaignId(e.target.value)}
+              className="border border-slate-200 rounded-lg px-4 py-2 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 min-w-[300px] text-sm font-medium text-slate-800 bg-slate-50 transition-all cursor-pointer"
+            >
+              <option value="">-- Chọn một chiến dịch --</option>
+              {campaigns?.map((c: any) => (
+                <option key={c.campaignId} value={c.campaignId}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+        
+        <div className="flex-1 overflow-auto p-6 bg-slate-50/30">
+          {selectedCampaignId ? (
+            <AdAnalyticsChart campaignId={selectedCampaignId} />
+          ) : (
+            <div className="h-full flex flex-col items-center justify-center text-slate-400">
+              <BarChart2 className="h-12 w-12 text-slate-200 mb-4" />
+              <p className="text-lg font-medium text-slate-500">Chưa chọn chiến dịch</p>
+              <p className="text-sm mt-1">Vui lòng chọn một chiến dịch để xem báo cáo thống kê</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
