@@ -72,13 +72,28 @@ export type CreatorCampaign = {
     analyticData?: Record<string, unknown> | null;
 };
 
+export type CreatorCampaignFilterFields = {
+    startAtFrom?: string;
+    startAtTo?: string;
+    endAtFrom?: string;
+    endAtTo?: string;
+    targetValueFrom?: string;
+    targetValueTo?: string;
+    currentValueFrom?: string;
+    currentValueTo?: string;
+    engagementServiceId?: string;
+    createdAtFrom?: string;
+    createdAtTo?: string;
+    updatedAtFrom?: string;
+    updatedAtTo?: string;
+};
+
 export type CreatorCampaignFilterParams = {
-    targets?: string[];
-    statuses?: CreatorCampaignStatus[];
     sortBy?: CreatorCampaignSortBy;
     sortDirection?: "ASC" | "DESC";
     page?: number;
     pageSize?: number;
+    filters?: CreatorCampaignFilterFields;
 };
 
 export type CreatorCampaignPageResponse = BasePageResponse<CreatorCampaign>;

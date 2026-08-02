@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { create } from "zustand";
 import { logoutAction } from "@/features/auth/api/auth.actions";
 import { useAuthStore } from "@/features/auth/store/auth.store";
@@ -61,6 +61,15 @@ const creatorVerificationNavItems = [
   },
 ];
 
+const interactionNavItems = [
+  {
+    name: "Dịch vụ tương tác",
+    href: "/admin/engagement-services",
+    icon: Megaphone,
+  },
+  { name: "Chiến dịch", href: "/admin/campaigns", icon: ImageIcon },
+];
+
 const navItems = [
   { name: "Bảng Điều Khiển", href: "/admin/dashboard", icon: LayoutDashboard },
   { name: "Người Dùng", href: "/admin/users", icon: Users },
@@ -87,13 +96,7 @@ const navItems = [
     href: "/admin/mission-management",
     icon: Target,
   },
-  {
-    name: "Dịch vụ Tương tác",
-    href: "/admin/engagement-services",
-    icon: Megaphone,
-  },
   { name: "Quảng cáo Direct", href: "/admin/ads", icon: Megaphone },
-  { name: "Chiến Dịch", href: "/admin/campaigns", icon: ImageIcon },
   { name: "Điều Khoản", href: "/admin/terms", icon: FileText },
   { name: "Cài Đặt", href: "/admin/settings", icon: Settings },
 ];
@@ -174,10 +177,16 @@ export function AdminSidebar() {
   const isCreatorVerificationRouteActive = creatorVerificationNavItems.some(
     (item) => isHrefActive(pathname, currentHref, item.href),
   );
+  const isInteractionRouteActive = interactionNavItems.some((item) =>
+    isRouteActive(pathname, item.href),
+  );
   const [isContentMenuOpen, setIsContentMenuOpen] =
     useState(isContentRouteActive);
   const [isCreatorVerificationMenuOpen, setIsCreatorVerificationMenuOpen] =
     useState(isCreatorVerificationRouteActive);
+  const [isInteractionMenuOpen, setIsInteractionMenuOpen] = useState(
+    isInteractionRouteActive,
+  );
 
   const handleLogout = async () => {
     await logoutAction();
@@ -378,14 +387,109 @@ export function AdminSidebar() {
         </div>
 
         {navItems.slice(1).map((item) => (
-          <AdminNavLink
-            key={item.href}
-            href={item.href}
-            icon={item.icon}
-            isSidebarOpen={isSidebarOpen}
-            name={item.name}
-            pathname={pathname}
-          />
+          <Fragment key={item.href}>
+            <AdminNavLink
+              href={item.href}
+              icon={item.icon}
+              isSidebarOpen={isSidebarOpen}
+              name={item.name}
+              pathname={pathname}
+            />
+
+            {item.href === "/admin/mission-management" && (
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setIsInteractionMenuOpen((open) => !open)}
+                  title="Tương tác"
+                  aria-expanded={isInteractionMenuOpen}
+                  className={`flex w-full items-center rounded-lg py-3 text-sm font-medium transition-all duration-300 ${
+                    isSidebarOpen
+                      ? "justify-start gap-3 px-4"
+                      : "justify-center px-0"
+                  } ${
+                    isInteractionRouteActive
+                      ? "bg-violet-50 text-violet-600"
+                      : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+                  }`}
+                >
+                  <Megaphone
+                    className={`h-5 w-5 shrink-0 ${
+                      isInteractionRouteActive
+                        ? "text-violet-600"
+                        : "text-slate-400"
+                    }`}
+                  />
+                  <span
+                    className={`truncate whitespace-nowrap transition-all duration-200 ${
+                      isSidebarOpen
+                        ? "max-w-[170px] opacity-100"
+                        : "max-w-0 overflow-hidden opacity-0"
+                    }`}
+                  >
+                    Tương tác
+                  </span>
+                  <ChevronRight
+                    className={`ml-auto h-4 w-4 shrink-0 transition-transform duration-300 ${
+                      isInteractionMenuOpen ? "rotate-90" : ""
+                    } ${isSidebarOpen ? "opacity-100" : "hidden opacity-0"}`}
+                  />
+                </button>
+
+                <div
+                  className={`grid transition-all duration-300 ease-in-out ${
+                    isInteractionMenuOpen
+                      ? "grid-rows-[1fr] opacity-100"
+                      : "grid-rows-[0fr] opacity-0"
+                  }`}
+                >
+                  <div className="overflow-hidden">
+                    <div className="mt-1 space-y-1">
+                      {interactionNavItems.map((interactionItem) => {
+                        const Icon = interactionItem.icon;
+                        const isActive = isRouteActive(
+                          pathname,
+                          interactionItem.href,
+                        );
+
+                        return (
+                          <Link
+                            key={interactionItem.href}
+                            href={interactionItem.href}
+                            title={interactionItem.name}
+                            className={`flex items-center rounded-lg py-2.5 text-sm font-medium transition-all duration-300 ${
+                              isSidebarOpen
+                                ? "justify-start gap-3 pl-12 pr-3"
+                                : "justify-center px-0"
+                            } ${
+                              isActive
+                                ? "bg-violet-50 text-violet-600"
+                                : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                            }`}
+                          >
+                            <Icon
+                              className={`h-4 w-4 shrink-0 ${
+                                isActive ? "text-violet-600" : "text-slate-400"
+                              }`}
+                            />
+                            <span
+                              className={`truncate whitespace-nowrap transition-all duration-200 ${
+                                isSidebarOpen
+                                  ? "max-w-[150px] opacity-100"
+                                  : "max-w-0 overflow-hidden opacity-0"
+                              }`}
+                            >
+                              {interactionItem.name}
+                            </span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </Fragment>
         ))}
       </nav>
 

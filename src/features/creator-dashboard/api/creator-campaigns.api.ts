@@ -21,14 +21,6 @@ const CREATOR_OWN_CAMPAIGNS_ENDPOINT = "/api/v1/campaigns/own";
 function buildCampaignSearchParams(params: CreatorCampaignFilterParams) {
     const searchParams = new URLSearchParams();
 
-    params.targets?.forEach((target) => {
-        if (target) searchParams.append("targets", target);
-    });
-
-    params.statuses?.forEach((status) => {
-        if (status) searchParams.append("statuses", status);
-    });
-
     if (params.sortBy) searchParams.set("sortBy", params.sortBy);
     if (params.sortDirection) {
         searchParams.set("sortDirection", params.sortDirection);
@@ -37,6 +29,12 @@ function buildCampaignSearchParams(params: CreatorCampaignFilterParams) {
     if (params.pageSize !== undefined) {
         searchParams.set("pageSize", String(params.pageSize));
     }
+
+    Object.entries(params.filters ?? {}).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && String(value).trim()) {
+            searchParams.set(key, String(value).trim());
+        }
+    });
 
     return searchParams;
 }

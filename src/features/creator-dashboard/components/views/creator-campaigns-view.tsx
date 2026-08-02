@@ -5,6 +5,7 @@ import {
   ArrowLeft,
   ArrowRight,
   BarChart3,
+  Calendar,
   CalendarClock,
   CheckCircle2,
   ChevronLeft,
@@ -14,22 +15,37 @@ import {
   Hash,
   Megaphone,
   RefreshCw,
-  Search,
   Sparkles,
   Target,
   TrendingUp,
   WalletCards,
   type LucideIcon,
 } from "lucide-react";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Progress } from "@/shared/ui/progress";
 import { cn } from "@/shared/utils/utils";
 import { parseBackendDate } from "@/shared/utils/backend-date";
 import { getApiErrorMessage } from "@/shared/api/http-client";
-import { useGetCreatorOwnCampaigns } from "@/features/creator-dashboard/hooks/use-creator-campaigns";
+import {
+  useGetCreatorCampaignPlans,
+  useGetCreatorOwnCampaigns,
+} from "@/features/creator-dashboard/hooks/use-creator-campaigns";
 import type {
   CreatorCampaign,
+  CreatorCampaignFilterFields,
   CreatorCampaignSortBy,
   CreatorCampaignStatus,
 } from "@/features/creator-dashboard/types/creator-campaigns.types";
@@ -37,13 +53,11 @@ import type {
 const PAGE_SIZE = 8;
 
 const campaignStatuses: Array<{ value: CreatorCampaignStatus; label: string }> = [
-  { value: "PENDING", label: "Đang chờ" },
-  { value: "ACTIVE", label: "Đang chạy" },
   { value: "RUNNING", label: "Đang phân phối" },
   { value: "COMPLETED", label: "Hoàn tất" },
   { value: "PAUSED", label: "Tạm dừng" },
   { value: "CANCELLED", label: "Đã hủy" },
-  { value: "FAILED", label: "Thất bại" },
+  { value: "UNAVAILABLE", label: "Không khả dụng" },
 ];
 
 const sortOptions: Array<{ value: CreatorCampaignSortBy; label: string }> = [
@@ -107,6 +121,7 @@ function getStatusClass(status?: string | null) {
       return "border-orange-300/35 bg-orange-300/10 text-orange-100";
     case "CANCELLED":
     case "FAILED":
+    case "UNAVAILABLE":
       return "border-red-300/35 bg-red-300/10 text-red-100";
     default:
       return "border-white/15 bg-white/[0.06] text-zinc-300";
@@ -132,6 +147,35 @@ function formatAnalyticValue(value: unknown) {
   if (typeof value === "boolean") return value ? "Có" : "Không";
   if (typeof value === "string") return value;
   return JSON.stringify(value);
+}
+
+function getAnalyticNumber(campaign: CreatorCampaign | undefined, key: string) {
+  const value = campaign?.analyticData?.[key];
+
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  return 0;
+}
+
+function getNumericAnalytics(campaign: CreatorCampaign | undefined) {
+  return Object.entries(campaign?.analyticData ?? {})
+    .map(([key, value]) => ({
+      key,
+      label: formatAnalyticLabel(key),
+      value:
+        typeof value === "number"
+          ? value
+          : typeof value === "string" && Number.isFinite(Number(value))
+            ? Number(value)
+            : null,
+    }))
+    .filter((item): item is { key: string; label: string; value: number } =>
+      item.value !== null,
+    );
 }
 
 function CampaignStatCard({
@@ -168,155 +212,327 @@ function CampaignStatCard({
 
 function CampaignCard({
   campaign,
-  selected,
+  serviceName,
   onSelect,
 }: {
   campaign: CreatorCampaign;
-  selected: boolean;
+  serviceName: string;
   onSelect: () => void;
 }) {
   const progress = getProgress(campaign);
 
   return (
-    <button
-      type="button"
-      onClick={onSelect}
-      className={cn(
-        "group relative w-full cursor-pointer overflow-hidden rounded-2xl border p-5 text-left transition-colors duration-200",
-        selected
-          ? "border-[#D4AF37]/45 bg-[#D4AF37]/10"
-          : "border-white/10 bg-white/[0.04] hover:border-[#D4AF37]/25 hover:bg-white/[0.07]",
-      )}
-    >
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#D4AF37]/45 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
-      <div className="flex items-start justify-between gap-4">
+    <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.035] p-4 transition-colors duration-200 hover:border-[#D4AF37]/25 hover:bg-white/[0.06]">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#D4AF37]/40 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+
+      <div className="grid gap-4 lg:grid-cols-[minmax(260px,1.25fr)_minmax(190px,0.9fr)_minmax(220px,1fr)_auto] lg:items-center">
         <div className="min-w-0">
-          <Badge className={getStatusClass(campaign.status)} variant="outline">
-            {getStatusLabel(campaign.status)}
-          </Badge>
-          <h3 className="mt-4 truncate text-xl font-black text-white">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge className={getStatusClass(campaign.status)} variant="outline">
+              {getStatusLabel(campaign.status)}
+            </Badge>
+            <span className="text-xs font-bold uppercase tracking-[0.14em] text-zinc-600">
+              {shortenId(campaign.campaignId)}
+            </span>
+          </div>
+          <h3 className="mt-3 truncate text-lg font-black text-white">
             Chiến dịch {shortenId(campaign.campaignId)}
           </h3>
-          <p className="mt-2 flex items-center gap-2 text-sm font-semibold text-zinc-500">
-            <WalletCards className="h-4 w-4 text-[#D4AF37]" />
-            Order {shortenId(campaign.orderId)}
+          <p className="mt-2 flex min-w-0 items-center gap-2 text-sm font-semibold text-zinc-500">
+            <WalletCards className="h-4 w-4 shrink-0 text-[#D4AF37]" />
+            <span className="truncate">{serviceName}</span>
           </p>
         </div>
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37]">
-          <Megaphone className="h-5 w-5" />
-        </div>
-      </div>
 
-      <div className="mt-5 rounded-2xl border border-white/[0.08] bg-black/20 p-4">
-        <div className="mb-2 flex items-center justify-between text-sm font-bold">
-          <span className="text-zinc-400">Tiến độ hiển thị</span>
-          <span className="text-[#F5D46E]">{progress}%</span>
-        </div>
-        <Progress value={progress} />
-        <div className="mt-3 flex items-center justify-between gap-3 text-xs font-semibold text-zinc-500">
-          <span>{formatNumber(campaign.currentImpression)} đã đạt</span>
-          <span>{formatNumber(campaign.targetImpression)} mục tiêu</span>
-        </div>
-      </div>
-
-      <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-        <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-3">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-zinc-500">
-            Bắt đầu
+        <div className="rounded-2xl border border-white/[0.08] bg-black/20 p-4">
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-zinc-500">
+            Mục tiêu
           </p>
-          <p className="mt-1 font-bold text-zinc-200">
-            {formatDateTime(campaign.startAt)}
+          <p className="mt-1 text-lg font-black text-zinc-100">
+            {formatNumber(campaign.targetImpression)}
+          </p>
+          <p className="mt-1 text-xs font-semibold text-zinc-600">
+            Đã đạt {formatNumber(campaign.currentImpression)}
           </p>
         </div>
-        <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-3">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-zinc-500">
-            Kết thúc
-          </p>
-          <p className="mt-1 font-bold text-zinc-200">
-            {formatDateTime(campaign.endAt)}
-          </p>
+
+        <div className="rounded-2xl border border-white/[0.08] bg-black/20 p-4">
+          <div className="mb-2 flex items-center justify-between text-xs font-bold uppercase tracking-[0.14em]">
+            <span className="text-zinc-500">Tiến độ</span>
+            <span className="text-[#F5D46E]">{progress}%</span>
+          </div>
+          <Progress value={progress} />
+          <div className="mt-3 grid grid-cols-2 gap-2 text-xs font-semibold text-zinc-500">
+            <span>Bắt đầu: {formatDateTime(campaign.startAt)}</span>
+            <span>Kết thúc: {formatDateTime(campaign.endAt)}</span>
+          </div>
         </div>
-      </div>
-    </button>
-  );
-}
 
-function CampaignDetail({
-  campaign,
-  onBack,
-}: {
-  campaign?: CreatorCampaign;
-  onBack: () => void;
-}) {
-  const progress = getProgress(campaign);
-  const analyticEntries = Object.entries(campaign?.analyticData ?? {}).filter(
-    ([, value]) => value !== undefined && value !== null,
-  );
-
-  if (!campaign) {
-    return (
-      <div className="flex min-h-[420px] flex-col items-center justify-center rounded-[28px] border border-white/10 bg-white/[0.035] p-8 text-center">
-        <div className="flex h-16 w-16 items-center justify-center rounded-3xl border border-[#D4AF37]/25 bg-[#D4AF37]/10 text-[#D4AF37]">
-          <Search className="h-7 w-7" />
-        </div>
-        <h3 className="mt-5 text-2xl font-black text-white">
-          Chọn một chiến dịch
-        </h3>
-        <p className="mt-2 max-w-md text-sm font-semibold leading-6 text-zinc-500">
-          Bấm vào một mục trong danh sách để xem tiến độ, thời gian và các chỉ
-          số phân tích mà hệ thống trả về.
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <article className="relative overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.045] p-6 shadow-[0_30px_90px_rgba(0,0,0,0.28)]">
-      <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_22%_0%,rgba(212,175,55,0.16),transparent_32%),radial-gradient(circle_at_92%_24%,rgba(96,165,250,0.12),transparent_36%)]" />
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
+        <div className="flex flex-col gap-3 sm:flex-row lg:flex-col xl:flex-row xl:items-center">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37]">
+            <Megaphone className="h-5 w-5" />
+          </div>
           <Button
             type="button"
             variant="outline"
-            onClick={onBack}
-            className="mb-5 cursor-pointer border-[#D4AF37]/25 bg-[#D4AF37]/10 px-4 text-[#F5D46E] hover:bg-[#D4AF37]/15"
+            onClick={onSelect}
+            className="h-11 cursor-pointer rounded-2xl border-[#D4AF37]/25 bg-[#D4AF37]/10 px-4 text-[#F5D46E] hover:bg-[#D4AF37]/15"
           >
-            <ArrowLeft className="h-4 w-4" />
-            Danh sách
+            Xem chi tiết
+            <ArrowRight className="h-4 w-4" />
           </Button>
-          <Badge variant="premium" className="mb-4">
-            Campaign Detail
-          </Badge>
-          <h2 className="text-4xl font-black text-white">Chi tiết chiến dịch</h2>
-          <p className="mt-2 text-sm font-semibold text-zinc-500">
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CampaignDetailDashboard({
+  campaign,
+  campaigns,
+  getServiceName,
+  onBack,
+  onSelectCampaign,
+}: {
+  campaign: CreatorCampaign;
+  campaigns: CreatorCampaign[];
+  getServiceName: (engagementServiceId?: string | null) => string;
+  onBack: () => void;
+  onSelectCampaign: (campaignId: string) => void;
+}) {
+  const progress = getProgress(campaign);
+  const remaining = getRemaining(campaign);
+  const numericAnalytics = getNumericAnalytics(campaign);
+  const analyticEntries = Object.entries(campaign.analyticData ?? {}).filter(
+    ([, value]) => value !== undefined && value !== null,
+  );
+  const chartMetrics = numericAnalytics.length
+    ? numericAnalytics.slice(0, 6)
+    : [
+        { key: "likes", label: "Likes", value: getAnalyticNumber(campaign, "likes") },
+        { key: "views", label: "Views", value: getAnalyticNumber(campaign, "views") },
+        { key: "comments", label: "Comments", value: getAnalyticNumber(campaign, "comments") },
+        { key: "shares", label: "Shares", value: getAnalyticNumber(campaign, "shares") },
+      ];
+  const progressData = [
+    { name: "Đã đạt", value: campaign.currentImpression ?? 0 },
+    { name: "Còn lại", value: remaining },
+  ];
+  const pieProgressData = progressData.some((item) => item.value > 0)
+    ? progressData
+    : [
+        { name: "Đã đạt", value: 0 },
+        { name: "Còn lại", value: 1 },
+      ];
+  const selectorCampaigns = campaigns.length ? campaigns : [campaign];
+
+  return (
+    <article className="relative overflow-hidden rounded-[32px] border border-white/10 bg-white/[0.045] p-6 shadow-[0_30px_90px_rgba(0,0,0,0.28)]">
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_18%_0%,rgba(212,175,55,0.17),transparent_30%),radial-gradient(circle_at_92%_20%,rgba(96,165,250,0.14),transparent_34%)]" />
+
+      <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+        <div className="min-w-0">
+          <div className="mb-6 flex flex-wrap items-center gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onBack}
+              className="h-11 cursor-pointer rounded-2xl border-[#D4AF37]/25 bg-[#D4AF37]/10 px-4 text-[#F5D46E] hover:bg-[#D4AF37]/15"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Danh sách
+            </Button>
+            <Badge variant="premium" className="px-4 py-2">
+              Campaign Detail
+            </Badge>
+          </div>
+
+          <h2 className="text-4xl font-black tracking-tight text-white">
+            Chi tiết chiến dịch
+          </h2>
+          <p className="mt-2 break-all text-sm font-semibold text-zinc-500">
             Campaign ID: {campaign.campaignId}
           </p>
+          <p className="mt-3 text-sm font-bold text-[#F5D46E]">
+            {getServiceName(campaign.engagementServiceId)}
+          </p>
         </div>
-        <div className={cn("rounded-2xl border px-5 py-4", getStatusClass(campaign.status))}>
+
+        <div className={cn("rounded-3xl border px-6 py-5", getStatusClass(campaign.status))}>
           <p className="text-xs font-bold uppercase tracking-[0.18em] opacity-70">
             Trạng thái
           </p>
-          <p className="mt-1 flex items-center gap-2 text-xl font-black">
+          <p className="mt-2 flex items-center gap-2 text-2xl font-black">
             <CheckCircle2 className="h-5 w-5" />
             {getStatusLabel(campaign.status)}
           </p>
         </div>
       </div>
 
-      <div className="mt-7 rounded-2xl border border-white/10 bg-black/20 p-5">
-        <div className="mb-3 flex items-center justify-between text-sm font-bold">
-          <span className="text-zinc-400">Tiến độ chiến dịch</span>
-          <span className="text-[#F5D46E]">{progress}%</span>
+      <section className="mt-7 rounded-3xl border border-white/10 bg-black/20 p-4">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div>
+            <h3 className="text-lg font-black text-white">Chuyển chiến dịch</h3>
+            <p className="text-xs font-semibold text-zinc-500">
+              Chọn nhanh một chiến dịch khác trong danh sách hiện tại.
+            </p>
+          </div>
+          <Megaphone className="h-5 w-5 text-[#D4AF37]" />
         </div>
-        <Progress value={progress} />
-        <div className="mt-4 grid gap-3 text-sm font-semibold text-zinc-400 sm:grid-cols-3">
-          <span>{formatNumber(campaign.currentImpression)} lượt đã đạt</span>
-          <span>{formatNumber(campaign.targetImpression)} lượt mục tiêu</span>
-          <span>{formatNumber(getRemaining(campaign))} lượt còn lại</span>
-        </div>
-      </div>
+        <div className="flex gap-3 overflow-x-auto pb-1">
+          {selectorCampaigns.map((item) => {
+            const itemProgress = getProgress(item);
+            const isSelected = item.campaignId === campaign.campaignId;
 
-      <div className="mt-5 grid gap-4 md:grid-cols-2">
+            return (
+              <button
+                key={item.campaignId}
+                type="button"
+                onClick={() => onSelectCampaign(item.campaignId)}
+                className={cn(
+                  "min-w-[250px] rounded-2xl border p-4 text-left transition-colors",
+                  isSelected
+                    ? "border-[#D4AF37]/45 bg-[#D4AF37]/12"
+                    : "border-white/10 bg-white/[0.035] hover:border-[#D4AF37]/25 hover:bg-white/[0.06]",
+                )}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="truncate text-sm font-black text-white">
+                    {shortenId(item.campaignId)}
+                  </span>
+                  <Badge className={getStatusClass(item.status)} variant="outline">
+                    {getStatusLabel(item.status)}
+                  </Badge>
+                </div>
+                <Progress className="mt-3" value={itemProgress} />
+                <p className="mt-2 text-xs font-bold text-[#F5D46E]">
+                  {itemProgress}% hoàn thành
+                </p>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <DetailMetric
+          icon={TrendingUp}
+          label="Tiến độ"
+          value={`${progress}%`}
+        />
+        <DetailMetric
+          icon={Target}
+          label="Mục tiêu"
+          value={formatNumber(campaign.targetImpression)}
+        />
+        <DetailMetric
+          icon={CheckCircle2}
+          label="Đã đạt"
+          value={formatNumber(campaign.currentImpression)}
+        />
+        <DetailMetric
+          icon={Sparkles}
+          label="Còn lại"
+          value={formatNumber(remaining)}
+        />
+      </section>
+
+      <section className="mt-6 grid gap-5 xl:grid-cols-[0.9fr_1.4fr]">
+        <div className="rounded-3xl border border-white/10 bg-black/20 p-5">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h3 className="text-xl font-black text-white">Tỷ trọng tiến độ</h3>
+              <p className="text-sm font-semibold text-zinc-500">
+                So sánh lượt đã đạt và phần còn lại.
+              </p>
+            </div>
+            <BarChart3 className="h-5 w-5 text-[#D4AF37]" />
+          </div>
+          <div className="mt-4 h-[250px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={pieProgressData}
+                  dataKey="value"
+                  nameKey="name"
+                  innerRadius={68}
+                  outerRadius={96}
+                  paddingAngle={4}
+                >
+                  <Cell fill="#D4AF37" />
+                  <Cell fill="#334155" />
+                </Pie>
+                <Tooltip
+                  contentStyle={{
+                    background: "rgba(15, 15, 18, 0.95)",
+                    border: "1px solid rgba(255,255,255,0.12)",
+                    borderRadius: 12,
+                    color: "#fff",
+                  }}
+                  formatter={(value) => formatNumber(Number(value))}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {progressData.map((item) => (
+              <div
+                key={item.name}
+                className="rounded-2xl border border-white/[0.08] bg-white/[0.035] p-4"
+              >
+                <p className="text-xs font-bold uppercase tracking-[0.14em] text-zinc-500">
+                  {item.name}
+                </p>
+                <p className="mt-1 text-xl font-black text-white">
+                  {formatNumber(item.value)}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-white/10 bg-black/20 p-5">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h3 className="text-xl font-black text-white">Chỉ số tương tác</h3>
+              <p className="text-sm font-semibold text-zinc-500">
+                Biểu đồ dựa trên các field số trong `analyticData`.
+              </p>
+            </div>
+            <TrendingUp className="h-5 w-5 text-[#D4AF37]" />
+          </div>
+          <div className="mt-5 h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartMetrics}>
+                <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
+                <XAxis
+                  dataKey="label"
+                  tick={{ fill: "#a1a1aa", fontSize: 12 }}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <YAxis
+                  tick={{ fill: "#71717a", fontSize: 12 }}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <Tooltip
+                  contentStyle={{
+                    background: "rgba(15, 15, 18, 0.95)",
+                    border: "1px solid rgba(255,255,255,0.12)",
+                    borderRadius: 12,
+                    color: "#fff",
+                  }}
+                  formatter={(value) => formatNumber(Number(value))}
+                />
+                <Bar dataKey="value" radius={[10, 10, 0, 0]} fill="#D4AF37" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </section>
+
+      <section className="mt-6 grid gap-4 md:grid-cols-2">
         <DetailMetric
           icon={CalendarClock}
           label="Ngày bắt đầu"
@@ -337,22 +553,19 @@ function CampaignDetail({
           label="Ngày tạo"
           value={formatDateTime(campaign.createdAt)}
         />
-      </div>
-
-      <div className="mt-5 grid gap-4 md:grid-cols-2">
         <DetailMetric
           icon={Hash}
           label="Mã đơn hàng"
           value={campaign.orderId ?? "Chưa có"}
         />
         <DetailMetric
-          icon={Target}
+          icon={WalletCards}
           label="Gói tăng tương tác"
-          value={campaign.engagementServiceId ?? "Chưa có"}
+          value={getServiceName(campaign.engagementServiceId)}
         />
-      </div>
+      </section>
 
-      <section className="mt-6 rounded-2xl border border-white/10 bg-black/20 p-5">
+      <section className="mt-6 rounded-3xl border border-white/10 bg-black/20 p-5">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37]">
             <BarChart3 className="h-5 w-5" />
@@ -412,28 +625,56 @@ function DetailMetric({
 export function CreatorCampaignsView() {
   const [page, setPage] = useState(1);
   const [selectedStatus, setSelectedStatus] = useState<CreatorCampaignStatus | "">("");
-  const [targetInput, setTargetInput] = useState("");
   const [sortBy, setSortBy] = useState<CreatorCampaignSortBy>("createdAt");
   const [sortDirection, setSortDirection] = useState<"ASC" | "DESC">("DESC");
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  const [campaignFilters, setCampaignFilters] =
+    useState<CreatorCampaignFilterFields>({});
+
+  const updateCriteriaFilter = (
+    key: keyof CreatorCampaignFilterFields,
+    value: string,
+  ) => {
+    setCampaignFilters((current) => ({
+      ...current,
+      [key]: value,
+    }));
+    setPage(1);
+  };
 
   const queryParams = useMemo(
-    () => ({
-      page,
-      pageSize: PAGE_SIZE,
-      sortBy,
-      sortDirection,
-      statuses: selectedStatus ? [selectedStatus] : undefined,
-      targets: targetInput.trim() ? [targetInput.trim()] : undefined,
-    }),
-    [page, selectedStatus, sortBy, sortDirection, targetInput],
+    () => {
+      const filters = Object.fromEntries(
+        Object.entries(campaignFilters).filter(([, value]) =>
+          String(value ?? "").trim(),
+        ),
+      ) as CreatorCampaignFilterFields;
+
+      return {
+        page,
+        pageSize: PAGE_SIZE,
+        sortBy,
+        sortDirection,
+        filters: Object.keys(filters).length > 0 ? filters : undefined,
+      };
+    },
+    [page, sortBy, sortDirection, campaignFilters],
   );
 
   const campaignsQuery = useGetCreatorOwnCampaigns(queryParams);
+  const servicesQuery = useGetCreatorCampaignPlans({ page: 1, pageSize: 100 });
 
-  const campaigns = useMemo(
+  const rawCampaigns = useMemo(
     () => campaignsQuery.data?.content ?? [],
     [campaignsQuery.data?.content],
+  );
+  const campaigns = useMemo(
+    () =>
+      selectedStatus
+        ? rawCampaigns.filter((campaign) => campaign.status === selectedStatus)
+        : rawCampaigns,
+    [rawCampaigns, selectedStatus],
   );
   const selectedCampaign = campaigns.find(
     (campaign) => campaign.campaignId === selectedCampaignId,
@@ -441,7 +682,7 @@ export function CreatorCampaignsView() {
 
   const stats = useMemo(() => {
     const activeCount = campaigns.filter((campaign) =>
-      ["ACTIVE", "RUNNING"].includes(campaign.status ?? ""),
+      campaign.status === "RUNNING",
     ).length;
     const completedCount = campaigns.filter(
       (campaign) => campaign.status === "COMPLETED",
@@ -455,7 +696,45 @@ export function CreatorCampaignsView() {
   }, [campaigns]);
 
   const totalPages = campaignsQuery.data?.totalPages ?? 1;
-  const totalElements = campaignsQuery.data?.totalElements ?? 0;
+  const totalElements = selectedStatus
+    ? campaigns.length
+    : campaignsQuery.data?.totalElements ?? 0;
+  const activeCriteriaCount = Object.values(campaignFilters).filter((value) =>
+    String(value ?? "").trim(),
+  ).length;
+  const activeFilterCount = activeCriteriaCount + (selectedStatus ? 1 : 0);
+  const serviceOptions = useMemo(
+    () => [
+      { value: "", label: "Tất cả gói tương tác" },
+      ...(servicesQuery.data?.content ?? []).map((service) => ({
+        value: service.engagementServiceId,
+        label: `${service.name} · ${formatNumber(service.targetValue)} lượt`,
+      })),
+    ],
+    [servicesQuery.data?.content],
+  );
+  const serviceNameById = useMemo(
+    () =>
+      new Map(
+        (servicesQuery.data?.content ?? []).map((service) => [
+          service.engagementServiceId,
+          service.name,
+        ]),
+      ),
+    [servicesQuery.data?.content],
+  );
+  const getServiceName = (engagementServiceId?: string | null) => {
+    if (!engagementServiceId) return "Chưa có gói";
+    return serviceNameById.get(engagementServiceId) ?? "Gói tăng tương tác";
+  };
+
+  const resetFilters = () => {
+    setCampaignFilters({});
+    setSelectedStatus("");
+    setSortBy("createdAt");
+    setSortDirection("DESC");
+    setPage(1);
+  };
 
   return (
     <section className="space-y-8">
@@ -500,26 +779,38 @@ export function CreatorCampaignsView() {
       </div>
 
       <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5">
-        <div className="mb-4 flex items-center gap-3">
-          <Filter className="h-5 w-5 text-[#D4AF37]" />
-          <h2 className="text-xl font-black text-white">Bộ lọc chiến dịch</h2>
-        </div>
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[1.1fr_1fr_1fr_1fr_auto]">
-          <label className="space-y-2">
-            <span className="text-xs font-bold uppercase tracking-[0.16em] text-zinc-500">
-              Target
-            </span>
-            <input
-              value={targetInput}
-              onChange={(event) => {
-                setTargetInput(event.target.value);
-                setPage(1);
-              }}
-              placeholder="Ví dụ: IMPRESSION"
-              className="h-12 w-full rounded-2xl border border-white/10 bg-black/25 px-4 text-sm font-semibold text-zinc-100 outline-none transition focus:border-[#D4AF37]/45"
-            />
-          </label>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-start gap-3">
+            <Filter className="mt-1 h-5 w-5 text-[#D4AF37]" />
+            <div>
+              <h2 className="text-xl font-black text-white">
+                Bộ lọc chiến dịch
+              </h2>
+              {activeFilterCount > 0 ? (
+                <p className="mt-1 text-xs font-bold text-[#F5D46E]">
+                  {activeFilterCount} bộ lọc đang áp dụng
+                </p>
+              ) : null}
+            </div>
+          </div>
 
+          <Button
+            type="button"
+            variant="outline"
+            className="h-11 cursor-pointer rounded-2xl border-white/10 bg-white/[0.05] px-4 text-zinc-200 hover:bg-white/[0.08]"
+            onClick={() => setIsFiltersOpen((open) => !open)}
+          >
+            <ChevronRight
+              className={cn(
+                "h-4 w-4 transition-transform",
+                isFiltersOpen && "rotate-90",
+              )}
+            />
+            {isFiltersOpen ? "Thu gọn" : "Mở bộ lọc"}
+          </Button>
+        </div>
+
+        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           <SelectField
             label="Trạng thái"
             value={selectedStatus}
@@ -531,6 +822,16 @@ export function CreatorCampaignsView() {
               { value: "", label: "Tất cả trạng thái" },
               ...campaignStatuses,
             ]}
+          />
+
+          <SelectField
+            label="Gói tương tác"
+            value={campaignFilters.engagementServiceId ?? ""}
+            onChange={(value) =>
+              updateCriteriaFilter("engagementServiceId", value)
+            }
+            options={serviceOptions}
+            disabled={servicesQuery.isLoading}
           />
 
           <SelectField
@@ -555,45 +856,146 @@ export function CreatorCampaignsView() {
               { value: "ASC", label: "Cũ nhất" },
             ]}
           />
+        </div>
+
+        {isFiltersOpen ? (
+        <div className="mt-5 grid gap-3 border-t border-white/10 pt-5 md:grid-cols-2 xl:grid-cols-4">
+          <FilterInput
+            label="Mục tiêu từ"
+            type="number"
+            min={0}
+            value={campaignFilters.targetValueFrom ?? ""}
+            onChange={(value) => updateCriteriaFilter("targetValueFrom", value)}
+            placeholder="0"
+          />
+
+          <FilterInput
+            label="Mục tiêu đến"
+            type="number"
+            min={0}
+            value={campaignFilters.targetValueTo ?? ""}
+            onChange={(value) => updateCriteriaFilter("targetValueTo", value)}
+            placeholder="1000"
+          />
+
+          <FilterInput
+            label="Đã đạt từ"
+            type="number"
+            min={0}
+            value={campaignFilters.currentValueFrom ?? ""}
+            onChange={(value) => updateCriteriaFilter("currentValueFrom", value)}
+            placeholder="0"
+          />
+
+          <FilterInput
+            label="Đã đạt đến"
+            type="number"
+            min={0}
+            value={campaignFilters.currentValueTo ?? ""}
+            onChange={(value) => updateCriteriaFilter("currentValueTo", value)}
+            placeholder="1000"
+          />
+
+          <FilterInput
+            label="Bắt đầu từ"
+            type="datetime-local"
+            value={campaignFilters.startAtFrom ?? ""}
+            onChange={(value) => updateCriteriaFilter("startAtFrom", value)}
+          />
+
+          <FilterInput
+            label="Bắt đầu đến"
+            type="datetime-local"
+            value={campaignFilters.startAtTo ?? ""}
+            onChange={(value) => updateCriteriaFilter("startAtTo", value)}
+          />
+
+          <FilterInput
+            label="Kết thúc từ"
+            type="datetime-local"
+            value={campaignFilters.endAtFrom ?? ""}
+            onChange={(value) => updateCriteriaFilter("endAtFrom", value)}
+          />
+
+          <FilterInput
+            label="Kết thúc đến"
+            type="datetime-local"
+            value={campaignFilters.endAtTo ?? ""}
+            onChange={(value) => updateCriteriaFilter("endAtTo", value)}
+          />
+
+          <FilterInput
+            label="Ngày tạo từ"
+            type="datetime-local"
+            value={campaignFilters.createdAtFrom ?? ""}
+            onChange={(value) => updateCriteriaFilter("createdAtFrom", value)}
+          />
+
+          <FilterInput
+            label="Ngày tạo đến"
+            type="datetime-local"
+            value={campaignFilters.createdAtTo ?? ""}
+            onChange={(value) => updateCriteriaFilter("createdAtTo", value)}
+          />
+
+          <FilterInput
+            label="Cập nhật từ"
+            type="datetime-local"
+            value={campaignFilters.updatedAtFrom ?? ""}
+            onChange={(value) => updateCriteriaFilter("updatedAtFrom", value)}
+          />
+
+          <FilterInput
+            label="Cập nhật đến"
+            type="datetime-local"
+            value={campaignFilters.updatedAtTo ?? ""}
+            onChange={(value) => updateCriteriaFilter("updatedAtTo", value)}
+          />
 
           <Button
             type="button"
             variant="outline"
-            className="mt-6 h-12 cursor-pointer rounded-2xl border-white/10 bg-white/[0.05] px-4 text-zinc-200 hover:bg-white/[0.08]"
-            onClick={() => {
-              setTargetInput("");
-              setSelectedStatus("");
-              setSortBy("createdAt");
-              setSortDirection("DESC");
-              setPage(1);
-            }}
+            className="h-12 cursor-pointer self-end rounded-2xl border-white/10 bg-white/[0.05] px-4 text-zinc-200 hover:bg-white/[0.08]"
+            onClick={resetFilters}
           >
             <RefreshCw className="h-4 w-4" />
             Đặt lại
           </Button>
         </div>
+        ) : null}
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[460px_1fr]">
-        <aside className="rounded-[28px] border border-white/10 bg-white/[0.035] p-5">
-          <div className="flex items-center justify-between gap-3">
+      {selectedCampaign ? (
+        <CampaignDetailDashboard
+          campaign={selectedCampaign}
+          campaigns={campaigns}
+          getServiceName={getServiceName}
+          onBack={() => setSelectedCampaignId(null)}
+          onSelectCampaign={setSelectedCampaignId}
+        />
+      ) : (
+        <section className="rounded-[28px] border border-white/10 bg-white/[0.035] p-5">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-2xl font-black text-white">Danh sách</h2>
+              <h2 className="text-2xl font-black text-white">Danh sách chiến dịch</h2>
               <p className="mt-1 text-sm font-semibold text-zinc-500">
                 {formatNumber(totalElements)} chiến dịch
               </p>
             </div>
             {campaignsQuery.isFetching ? (
-              <RefreshCw className="h-5 w-5 animate-spin text-[#D4AF37]" />
+              <div className="flex items-center gap-2 rounded-2xl border border-[#D4AF37]/20 bg-[#D4AF37]/10 px-4 py-2 text-sm font-bold text-[#F5D46E]">
+                <RefreshCw className="h-4 w-4 animate-spin" />
+                Đang cập nhật
+              </div>
             ) : null}
           </div>
 
-          <div className="mt-5 space-y-4">
+          <div className="mt-5 space-y-3">
             {campaignsQuery.isLoading ? (
-              Array.from({ length: 3 }).map((_, index) => (
+              Array.from({ length: 4 }).map((_, index) => (
                 <div
                   key={index}
-                  className="h-56 animate-pulse rounded-2xl border border-white/10 bg-white/[0.05]"
+                  className="h-32 animate-pulse rounded-2xl border border-white/10 bg-white/[0.05]"
                 />
               ))
             ) : campaignsQuery.error ? (
@@ -605,7 +1007,7 @@ export function CreatorCampaignsView() {
                 <CampaignCard
                   key={campaign.campaignId}
                   campaign={campaign}
-                  selected={campaign.campaignId === selectedCampaignId}
+                  serviceName={getServiceName(campaign.engagementServiceId)}
                   onSelect={() => setSelectedCampaignId(campaign.campaignId)}
                 />
               ))
@@ -616,8 +1018,7 @@ export function CreatorCampaignsView() {
                   Chưa có chiến dịch
                 </p>
                 <p className="mt-2 text-sm font-semibold leading-6 text-zinc-500">
-                  Khi bạn mua gói tăng tương tác, chiến dịch sẽ xuất hiện tại
-                  đây để theo dõi.
+                  Khi bạn mua gói tăng tương tác, chiến dịch sẽ xuất hiện tại đây để theo dõi.
                 </p>
               </div>
             )}
@@ -650,14 +1051,49 @@ export function CreatorCampaignsView() {
               </Button>
             </div>
           </div>
-        </aside>
-
-        <CampaignDetail
-          campaign={selectedCampaign}
-          onBack={() => setSelectedCampaignId(null)}
-        />
-      </div>
+        </section>
+      )}
     </section>
+  );
+}
+
+function FilterInput({
+  label,
+  value,
+  onChange,
+  placeholder,
+  type = "text",
+  min,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  type?: "text" | "number" | "datetime-local";
+  min?: number;
+}) {
+  return (
+    <label className="space-y-2">
+      <span className="text-xs font-bold uppercase tracking-[0.16em] text-zinc-500">
+        {label}
+      </span>
+      <div className="relative">
+        <input
+          type={type}
+          min={min}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder={placeholder}
+          className={cn(
+            "h-12 w-full rounded-2xl border border-white/10 bg-black/25 px-4 text-sm font-semibold text-zinc-100 outline-none transition placeholder:text-zinc-600 focus:border-[#D4AF37]/45",
+            type === "datetime-local" && "creator-date-input pr-12",
+          )}
+        />
+        {type === "datetime-local" ? (
+          <Calendar className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/90" />
+        ) : null}
+      </div>
+    </label>
   );
 }
 
@@ -666,11 +1102,13 @@ function SelectField({
   value,
   onChange,
   options,
+  disabled = false,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   options: Array<{ value: string; label: string }>;
+  disabled?: boolean;
 }) {
   return (
     <label className="space-y-2">
@@ -681,7 +1119,8 @@ function SelectField({
         <select
           value={value}
           onChange={(event) => onChange(event.target.value)}
-          className="h-12 w-full cursor-pointer appearance-none rounded-2xl border border-white/10 bg-black/25 px-4 pr-10 text-sm font-semibold text-zinc-100 outline-none transition focus:border-[#D4AF37]/45"
+          disabled={disabled}
+          className="h-12 w-full cursor-pointer appearance-none rounded-2xl border border-white/10 bg-black/25 px-4 pr-10 text-sm font-semibold text-zinc-100 outline-none transition focus:border-[#D4AF37]/45 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {options.map((option) => (
             <option key={option.value} value={option.value} className="bg-[#111] text-zinc-100">
@@ -694,3 +1133,4 @@ function SelectField({
     </label>
   );
 }
+

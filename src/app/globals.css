@@ -229,4 +229,17 @@
     background-color: rgba(226, 177, 60, 0.24);
     color: #ffffff;
   }
+
+  .creator-date-input {
+    color-scheme: dark;
+  }
+
+  .creator-date-input::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    height: 100%;
+    opacity: 0;
+    position: absolute;
+    right: 0;
+    width: 3rem;
+  }
 }
