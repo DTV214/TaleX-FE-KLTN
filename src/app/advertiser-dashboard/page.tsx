@@ -12,7 +12,7 @@ import { createPortal } from "react-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { adsApi, AdSlot } from "@/features/ads/api/ads-api";
 import { toast } from "sonner";
-import { Loader2, Plus, Search, Calendar, ChevronDown, Columns, RefreshCw, MoreVertical, X, Check, Tag, Megaphone, PlusCircle, Coins, HelpCircle, BarChart2 } from "lucide-react";
+import { Loader2, Plus, Search, Calendar, ChevronDown, Columns, RefreshCw, MoreVertical, X, Check, Tag, Megaphone, PlusCircle, Coins, HelpCircle, BarChart2, Trash2 } from "lucide-react";
 import { useAuthStore } from "@/features/auth/store/auth.store";
 import { useLabels, AdLabel } from "@/features/ads/hooks/use-labels";
 
@@ -153,11 +153,12 @@ function CampaignManagementView({ profile }: { profile: any }) {
   const [topupCampaign, setTopupCampaign] = useState<any>(null);
   const { labels } = useLabels();
   const selectedLabel = searchParams.get("labelId");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const filteredCampaigns = campaigns?.filter((c: any) => {
-    if (!selectedLabel) return true;
-    if (!c.labels) return false;
-    return c.labels.includes(selectedLabel);
+    if (selectedLabel && (!c.labels || !c.labels.includes(selectedLabel))) return false;
+    if (searchQuery && (!c.name || !c.name.toLowerCase().includes(searchQuery.toLowerCase()))) return false;
+    return true;
   });
 
   if (isLoading) return <div className="flex h-32 items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-teal-500" /></div>;
@@ -181,7 +182,9 @@ function CampaignManagementView({ profile }: { profile: any }) {
           </div>
           <input 
             type="text" 
-            placeholder="Search & filter (/) | Tips: Multi-keyword search is supported"
+            placeholder="Search & filter (/)"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9 pr-4 py-1.5 w-full text-sm border border-slate-300 rounded-sm outline-none focus:border-teal-500 bg-white"
           />
         </div>
@@ -230,7 +233,7 @@ function CampaignManagementView({ profile }: { profile: any }) {
                 </Link>
               ))}
               
-              <div className="mt-6 mb-2 px-6">
+              <div className="mt-4 pt-4 mb-2 px-6 border-t border-slate-100">
                 <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Management</span>
               </div>
               
@@ -254,6 +257,30 @@ function CampaignManagementView({ profile }: { profile: any }) {
                 <span className="text-sm font-medium">View report</span>
                 <span className="text-xs">›</span>
               </div>
+
+              {selectedCampaignIds.length > 0 && (
+                <>
+                  <div className="my-1 border-t border-slate-100 mx-4" />
+                  <div 
+                  className="flex items-center justify-start gap-3 px-6 py-2.5 text-red-500 hover:bg-red-50 cursor-pointer transition-colors"
+                  onClick={() => {
+                    const cId = selectedCampaignIds[0];
+                    const c = campaigns?.find((cmp: any) => cmp.campaignId === cId);
+                    if (c && (c.status === 'ACTIVE' || c.status === 'PAUSED' || c.status === 'PENDING_REVIEW')) {
+                      if (confirm(`Are you sure you want to cancel this campaign? Any unspent balance (≈ ${((c.totalBudget - (c.campaignBalance || 0))).toLocaleString()} VND) will be refunded to your Master Wallet.`)) {
+                        cancelMutation.mutate(cId);
+                        setSelectedCampaignIds(prev => prev.filter(id => id !== cId));
+                      }
+                    } else {
+                      toast.error("Chiến dịch này đã hoàn thành hoặc đã hủy, không thể thao tác.");
+                    }
+                  }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  <span className="text-sm font-medium">Cancel campaign</span>
+                </div>
+                </>
+              )}
             </nav>
           </div>
         </aside>
@@ -399,40 +426,25 @@ function CampaignManagementView({ profile }: { profile: any }) {
                       <div className={`w-3 h-3 rounded-full bg-white transition-transform ${c.status === 'ACTIVE' ? 'translate-x-4' : 'translate-x-0'}`}></div>
                     </div>
                   </td>
-                  <td className="px-4 py-3 border-r border-slate-100 min-w-[250px]">
-                    <div className="font-medium text-[#161823] flex items-center justify-between gap-2">
-                      <span>{c.name}</span>
-                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100">
-                        <button onClick={() => setActiveReportCampaignId(c.campaignId)} className="text-teal-600 hover:underline text-xs">View Report</button>
+                  <td className="px-4 py-3 border-r border-slate-100 min-w-[250px] relative align-top">
+                    <div className="font-medium text-[#161823] flex items-start justify-between gap-2">
+                      <span className="pr-20">{c.name}</span>
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col items-end gap-1 opacity-0 group-hover:opacity-100 bg-slate-50 pl-4 py-1 z-10">
+                        <button onClick={() => setActiveReportCampaignId(c.campaignId)} className="text-teal-600 hover:underline text-xs font-medium">View Report</button>
                         {(c.status === 'PAUSED' || c.status === 'PENDING_REVIEW') && (
                           <button 
                             onClick={() => setScheduleCampaign(c)} 
-                            className="text-blue-500 hover:bg-blue-50 p-1 rounded-sm transition-colors"
-                            title="Update Schedule"
+                            className="text-blue-500 hover:underline text-xs font-medium"
                           >
-                            <Calendar className="h-4 w-4" />
+                            Edit Schedule
                           </button>
                         )}
                         {(c.status === 'ACTIVE' || c.status === 'PAUSED' || c.status === 'PENDING_REVIEW') && (
                           <button 
                             onClick={() => setTopupCampaign(c)} 
-                            className="text-yellow-500 hover:bg-yellow-50 p-1 rounded-sm transition-colors"
-                            title="Top-up Budget"
+                            className="text-yellow-600 hover:underline text-xs font-medium"
                           >
-                            <Coins className="h-4 w-4" />
-                          </button>
-                        )}
-                        {(c.status === 'ACTIVE' || c.status === 'PAUSED' || c.status === 'PENDING_REVIEW') && (
-                          <button 
-                            onClick={() => {
-                              if (confirm(`Are you sure you want to cancel this campaign? Any unspent balance (≈ ${((c.totalBudget - (c.campaignBalance || 0))).toLocaleString()} VND) will be refunded to your Master Wallet.`)) {
-                                cancelMutation.mutate(c.campaignId);
-                              }
-                            }} 
-                            className="text-red-500 hover:bg-red-50 p-1 rounded-sm transition-colors"
-                            title="Cancel Campaign"
-                          >
-                            <X className="h-4 w-4" />
+                            Top-up Budget
                           </button>
                         )}
                       </div>
@@ -555,7 +567,7 @@ function LabelManager({ campaign }: { campaign: any }) {
   };
 
   return (
-    <div className="mt-2 flex flex-wrap items-center gap-1.5 relative">
+    <div className="mt-2 flex flex-wrap items-center gap-1.5 relative pr-24">
       {parsedLabels.map((label: AdLabel, idx: number) => (
         <span 
           key={idx} 
