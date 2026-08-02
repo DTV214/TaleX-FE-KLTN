@@ -5,14 +5,18 @@ import {
   ArrowLeft,
   ArrowRight,
   BarChart3,
+  BookOpen,
   Calendar,
   CalendarClock,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
   Clock3,
+  Eye,
+  Film,
   Filter,
   Hash,
+  ImageIcon,
   Megaphone,
   RefreshCw,
   Sparkles,
@@ -33,6 +37,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { useQueries } from "@tanstack/react-query";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Progress } from "@/shared/ui/progress";
@@ -41,14 +46,20 @@ import { parseBackendDate } from "@/shared/utils/backend-date";
 import { getApiErrorMessage } from "@/shared/api/http-client";
 import {
   useGetCreatorCampaignPlans,
+  useGetCreatorCampaignSeriesByCampaignId,
   useGetCreatorOwnCampaigns,
 } from "@/features/creator-dashboard/hooks/use-creator-campaigns";
 import type {
   CreatorCampaign,
   CreatorCampaignFilterFields,
+  CreatorCampaignSeries,
   CreatorCampaignSortBy,
   CreatorCampaignStatus,
 } from "@/features/creator-dashboard/types/creator-campaigns.types";
+import {
+  getPublicSeriesDetail,
+  type PublicSeriesItem,
+} from "@/features/series/api/series-api";
 
 const PAGE_SIZE = 8;
 
@@ -141,14 +152,6 @@ function formatAnalyticLabel(value: string) {
     .replace(/^./, (char) => char.toUpperCase());
 }
 
-function formatAnalyticValue(value: unknown) {
-  if (value === null || value === undefined || value === "") return "Chưa có";
-  if (typeof value === "number") return formatNumber(value);
-  if (typeof value === "boolean") return value ? "Có" : "Không";
-  if (typeof value === "string") return value;
-  return JSON.stringify(value);
-}
-
 function getAnalyticNumber(campaign: CreatorCampaign | undefined, key: string) {
   const value = campaign?.analyticData?.[key];
 
@@ -177,6 +180,33 @@ function getNumericAnalytics(campaign: CreatorCampaign | undefined) {
       item.value !== null,
     );
 }
+
+function getContentTypeLabel(contentType?: string | null) {
+  return contentType?.toUpperCase() === "VIDEO" ? "Phim bộ" : "Truyện tranh";
+}
+
+function getSeriesArtwork(series?: PublicSeriesItem) {
+  return series?.bannerUrl || series?.coverUrl || "";
+}
+
+function getCampaignSeriesMetric(item: CreatorCampaignSeries, key: string) {
+  const value = item.analyticData?.[key];
+
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  return 0;
+}
+
+type CampaignSeriesDashboardRow = {
+  campaignSeries: CreatorCampaignSeries;
+  series?: PublicSeriesItem;
+  isSeriesLoading: boolean;
+  isSeriesError: boolean;
+};
 
 function CampaignStatCard({
   icon: Icon,
@@ -287,7 +317,246 @@ function CampaignCard({
   );
 }
 
-function CampaignDetailDashboard({
+function CampaignSeriesInsights({
+  rows,
+  isLoading,
+  isError,
+  error,
+}: {
+  rows: CampaignSeriesDashboardRow[];
+  isLoading: boolean;
+  isError: boolean;
+  error: unknown;
+}) {
+  return (
+    <section className="mt-7 rounded-[30px] border border-white/10 bg-black/20 p-5 md:p-6">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="flex items-start gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37]">
+            <BookOpen className="h-5 w-5" />
+          </div>
+          <div>
+            <h3 className="text-2xl font-black text-white">Series trong chiến dịch</h3>
+            <p className="mt-1 max-w-2xl text-sm font-semibold leading-6 text-zinc-500">
+              Nội dung đang được phân phối trong campaign, ghép từ Campaign Series
+              và thông tin public của từng series.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div className="rounded-2xl border border-white/[0.08] bg-white/[0.035] px-4 py-3">
+            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-zinc-500">
+              Tổng series
+            </p>
+            <p className="mt-1 text-lg font-black text-white">{formatNumber(rows.length)}</p>
+          </div>
+          <div className="rounded-2xl border border-[#D4AF37]/20 bg-[#D4AF37]/10 px-4 py-3">
+            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-zinc-500">
+              Impression
+            </p>
+            <p className="mt-1 text-lg font-black text-[#F5D46E]">
+              {formatNumber(
+                rows.reduce(
+                  (sum, row) => sum + (row.campaignSeries.totalImpression ?? 0),
+                  0,
+                ),
+              )}
+            </p>
+          </div>
+          <div className="col-span-2 rounded-2xl border border-emerald-400/20 bg-emerald-400/[0.08] px-4 py-3 sm:col-span-1">
+            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-zinc-500">
+              Hoàn tất
+            </p>
+            <p className="mt-1 text-lg font-black text-emerald-200">
+              {formatNumber(
+                rows.filter(
+                  (row) => row.campaignSeries.status === "COMPLETED",
+                ).length,
+              )}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {isLoading ? (
+        <div className="mt-6 grid gap-4 lg:grid-cols-2">
+          {Array.from({ length: 2 }).map((_, index) => (
+            <div
+              key={index}
+              className="min-h-[260px] animate-pulse rounded-[26px] border border-white/[0.08] bg-white/[0.035]"
+            />
+          ))}
+        </div>
+      ) : isError ? (
+        <div className="mt-6 rounded-2xl border border-red-300/20 bg-red-500/10 p-5 text-sm font-semibold text-red-100">
+          {getApiErrorMessage(error)}
+        </div>
+      ) : rows.length === 0 ? (
+        <div className="mt-6 rounded-2xl border border-dashed border-white/12 bg-white/[0.025] p-6 text-sm font-semibold text-zinc-500">
+          Chưa có series nào được gắn với chiến dịch này.
+        </div>
+      ) : (
+        <div className="mt-6 grid gap-5 xl:grid-cols-2">
+          {rows.map((row) => (
+            <CampaignSeriesCard
+              key={row.campaignSeries.campaignSeriesId}
+              row={row}
+            />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function CampaignSeriesCard({ row }: { row: CampaignSeriesDashboardRow }) {
+  const { campaignSeries, series, isSeriesLoading, isSeriesError } = row;
+  const artwork = getSeriesArtwork(series);
+  const isVideo = series?.contentType?.toUpperCase() === "VIDEO";
+  const analytics = [
+    { label: "Views", value: getCampaignSeriesMetric(campaignSeries, "views") },
+    { label: "Likes", value: getCampaignSeriesMetric(campaignSeries, "likes") },
+    { label: "Comments", value: getCampaignSeriesMetric(campaignSeries, "comments") },
+    { label: "Shares", value: getCampaignSeriesMetric(campaignSeries, "shares") },
+  ];
+  const categories = series?.categories?.slice(0, 2) ?? [];
+
+  return (
+    <div className="group overflow-hidden rounded-[26px] border border-white/10 bg-white/[0.04] shadow-[0_20px_60px_rgba(0,0,0,0.22)] transition-colors hover:border-[#D4AF37]/25">
+      <div className="grid min-h-[280px] md:grid-cols-[220px_1fr]">
+        <div className="relative min-h-[260px] overflow-hidden bg-white/[0.035] md:min-h-full">
+          {artwork ? (
+            <div
+              className="h-full w-full bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
+              role="img"
+              aria-label={series?.title ?? campaignSeries.seriesId}
+              style={{ backgroundImage: `url(${artwork})` }}
+            />
+          ) : (
+            <div className="flex h-full min-h-[260px] items-center justify-center bg-[radial-gradient(circle_at_30%_15%,rgba(212,175,55,0.24),transparent_30%),linear-gradient(135deg,rgba(39,39,42,0.9),rgba(9,9,11,0.95))]">
+              <ImageIcon className="h-10 w-10 text-[#D4AF37]" />
+            </div>
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
+          <Badge
+            className={cn(
+              "absolute left-4 top-4 border-white/10 bg-black/45 text-white backdrop-blur",
+              isVideo && "bg-sky-400/15 text-sky-100",
+            )}
+            variant="outline"
+          >
+            {isVideo ? <Film className="h-3.5 w-3.5" /> : <BookOpen className="h-3.5 w-3.5" />}
+            {getContentTypeLabel(series?.contentType)}
+          </Badge>
+          <Badge
+            className={cn("absolute bottom-4 left-4", getStatusClass(campaignSeries.status))}
+            variant="outline"
+          >
+            {getStatusLabel(campaignSeries.status)}
+          </Badge>
+        </div>
+
+        <div className="flex min-w-0 flex-col p-5 md:p-6">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#D4AF37]">
+                Campaign Series
+              </p>
+              <h4 className="mt-2 line-clamp-2 text-2xl font-black text-white">
+                {isSeriesLoading
+                  ? "Đang tải thông tin series..."
+                  : series?.title ?? shortenId(campaignSeries.seriesId)}
+              </h4>
+              <p className="mt-2 text-sm font-semibold text-zinc-500">
+                {isSeriesError
+                  ? "Không tải được thông tin public series"
+                  : series?.creatorName
+                    ? `Creator: ${series.creatorName}`
+                    : `Series ID: ${shortenId(campaignSeries.seriesId)}`}
+              </p>
+            </div>
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37]">
+              <Megaphone className="h-5 w-5" />
+            </div>
+          </div>
+
+          {series?.description ? (
+            <p className="mt-4 line-clamp-2 text-sm font-semibold leading-6 text-zinc-400">
+              {series.description}
+            </p>
+          ) : null}
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            {categories.map((category) => (
+              <Badge
+                key={category.categoryId}
+                className="border-white/10 bg-white/[0.06] text-zinc-200"
+                variant="outline"
+              >
+                {category.categoryName}
+              </Badge>
+            ))}
+            {series?.ageRating ? (
+              <Badge
+                className="border-[#D4AF37]/25 bg-[#D4AF37]/10 text-[#F5D46E]"
+                variant="outline"
+              >
+                {series.ageRating}
+              </Badge>
+            ) : null}
+          </div>
+
+          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-2xl border border-[#D4AF37]/20 bg-[#D4AF37]/10 p-4">
+              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-zinc-500">
+                Impression
+              </p>
+              <p className="mt-1 text-xl font-black text-[#F5D46E]">
+                {formatNumber(campaignSeries.totalImpression)}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-white/[0.08] bg-black/20 p-4">
+              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-zinc-500">
+                Tổng view
+              </p>
+              <p className="mt-1 flex items-center gap-2 text-xl font-black text-white">
+                <Eye className="h-4 w-4 text-[#D4AF37]" />
+                {formatNumber(series?.totalViews)}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-white/[0.08] bg-black/20 p-4">
+              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-zinc-500">
+                Theo dõi
+              </p>
+              <p className="mt-1 text-xl font-black text-white">
+                {formatNumber(series?.totalSubscriptions)}
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {analytics.map((item) => (
+              <div
+                key={item.label}
+                className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-3"
+              >
+                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-zinc-500">
+                  {item.label}
+                </p>
+                <p className="mt-1 text-base font-black text-zinc-100">
+                  {formatNumber(item.value)}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function CampaignDetailDashboard({
   campaign,
   campaigns,
   getServiceName,
@@ -303,9 +572,6 @@ function CampaignDetailDashboard({
   const progress = getProgress(campaign);
   const remaining = getRemaining(campaign);
   const numericAnalytics = getNumericAnalytics(campaign);
-  const analyticEntries = Object.entries(campaign.analyticData ?? {}).filter(
-    ([, value]) => value !== undefined && value !== null,
-  );
   const chartMetrics = numericAnalytics.length
     ? numericAnalytics.slice(0, 6)
     : [
@@ -314,6 +580,7 @@ function CampaignDetailDashboard({
         { key: "comments", label: "Comments", value: getAnalyticNumber(campaign, "comments") },
         { key: "shares", label: "Shares", value: getAnalyticNumber(campaign, "shares") },
       ];
+  const chartPalette = ["#D4AF37", "#60A5FA", "#34D399", "#F472B6", "#A78BFA", "#FB923C"];
   const progressData = [
     { name: "Đã đạt", value: campaign.currentImpression ?? 0 },
     { name: "Còn lại", value: remaining },
@@ -325,12 +592,37 @@ function CampaignDetailDashboard({
         { name: "Còn lại", value: 1 },
       ];
   const selectorCampaigns = campaigns.length ? campaigns : [campaign];
+  const campaignSeriesQuery = useGetCreatorCampaignSeriesByCampaignId(
+    campaign.campaignId,
+  );
+  const campaignSeriesItems = useMemo(
+    () => campaignSeriesQuery.data ?? [],
+    [campaignSeriesQuery.data],
+  );
+  const seriesDetailQueries = useQueries({
+    queries: campaignSeriesItems.map((item) => ({
+      queryKey: ["creator-dashboard", "campaign-series-public-detail", item.seriesId],
+      queryFn: () => getPublicSeriesDetail(item.seriesId),
+      enabled: Boolean(item.seriesId),
+      staleTime: 5 * 60 * 1000,
+    })),
+  });
+  const campaignSeriesRows = useMemo<CampaignSeriesDashboardRow[]>(
+    () =>
+      campaignSeriesItems.map((item, index) => ({
+        campaignSeries: item,
+        series: seriesDetailQueries[index]?.data,
+        isSeriesLoading: Boolean(seriesDetailQueries[index]?.isLoading),
+        isSeriesError: Boolean(seriesDetailQueries[index]?.isError),
+      })),
+    [campaignSeriesItems, seriesDetailQueries],
+  );
 
   return (
-    <article className="relative overflow-hidden rounded-[32px] border border-white/10 bg-white/[0.045] p-6 shadow-[0_30px_90px_rgba(0,0,0,0.28)]">
+    <article className="relative overflow-hidden rounded-[34px] border border-white/10 bg-white/[0.045] p-6 shadow-[0_30px_90px_rgba(0,0,0,0.28)] md:p-8 lg:p-10">
       <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_18%_0%,rgba(212,175,55,0.17),transparent_30%),radial-gradient(circle_at_92%_20%,rgba(96,165,250,0.14),transparent_34%)]" />
 
-      <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+      <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
         <div className="min-w-0">
           <div className="mb-6 flex flex-wrap items-center gap-3">
             <Button
@@ -347,7 +639,7 @@ function CampaignDetailDashboard({
             </Badge>
           </div>
 
-          <h2 className="text-4xl font-black tracking-tight text-white">
+          <h2 className="text-4xl font-black tracking-tight text-white md:text-6xl">
             Chi tiết chiến dịch
           </h2>
           <p className="mt-2 break-all text-sm font-semibold text-zinc-500">
@@ -358,7 +650,7 @@ function CampaignDetailDashboard({
           </p>
         </div>
 
-        <div className={cn("rounded-3xl border px-6 py-5", getStatusClass(campaign.status))}>
+        <div className={cn("rounded-3xl border px-7 py-6 shadow-[0_18px_55px_rgba(0,0,0,0.2)]", getStatusClass(campaign.status))}>
           <p className="text-xs font-bold uppercase tracking-[0.18em] opacity-70">
             Trạng thái
           </p>
@@ -369,7 +661,7 @@ function CampaignDetailDashboard({
         </div>
       </div>
 
-      <section className="mt-7 rounded-3xl border border-white/10 bg-black/20 p-4">
+      <section className="mt-8 rounded-[28px] border border-white/10 bg-black/20 p-5 md:p-6">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
             <h3 className="text-lg font-black text-white">Chuyển chiến dịch</h3>
@@ -390,7 +682,7 @@ function CampaignDetailDashboard({
                 type="button"
                 onClick={() => onSelectCampaign(item.campaignId)}
                 className={cn(
-                  "min-w-[250px] rounded-2xl border p-4 text-left transition-colors",
+                  "min-w-[280px] rounded-2xl border p-5 text-left transition-colors",
                   isSelected
                     ? "border-[#D4AF37]/45 bg-[#D4AF37]/12"
                     : "border-white/10 bg-white/[0.035] hover:border-[#D4AF37]/25 hover:bg-white/[0.06]",
@@ -414,7 +706,7 @@ function CampaignDetailDashboard({
         </div>
       </section>
 
-      <section className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className="mt-7 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <DetailMetric
           icon={TrendingUp}
           label="Tiến độ"
@@ -437,8 +729,8 @@ function CampaignDetailDashboard({
         />
       </section>
 
-      <section className="mt-6 grid gap-5 xl:grid-cols-[0.9fr_1.4fr]">
-        <div className="rounded-3xl border border-white/10 bg-black/20 p-5">
+      <section className="mt-7 grid gap-5 xl:grid-cols-[0.85fr_1.4fr]">
+        <div className="rounded-[28px] border border-white/10 bg-black/20 p-5 md:p-6">
           <div className="flex items-center justify-between gap-3">
             <div>
               <h3 className="text-xl font-black text-white">Tỷ trọng tiến độ</h3>
@@ -448,7 +740,7 @@ function CampaignDetailDashboard({
             </div>
             <BarChart3 className="h-5 w-5 text-[#D4AF37]" />
           </div>
-          <div className="mt-4 h-[250px]">
+          <div className="mt-5 h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -491,7 +783,7 @@ function CampaignDetailDashboard({
           </div>
         </div>
 
-        <div className="rounded-3xl border border-white/10 bg-black/20 p-5">
+        <div className="rounded-[28px] border border-white/10 bg-black/20 p-5 md:p-6">
           <div className="flex items-center justify-between gap-3">
             <div>
               <h3 className="text-xl font-black text-white">Chỉ số tương tác</h3>
@@ -501,7 +793,7 @@ function CampaignDetailDashboard({
             </div>
             <TrendingUp className="h-5 w-5 text-[#D4AF37]" />
           </div>
-          <div className="mt-5 h-[300px]">
+          <div className="mt-5 h-[340px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartMetrics}>
                 <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
@@ -525,7 +817,14 @@ function CampaignDetailDashboard({
                   }}
                   formatter={(value) => formatNumber(Number(value))}
                 />
-                <Bar dataKey="value" radius={[10, 10, 0, 0]} fill="#D4AF37" />
+                <Bar dataKey="value" radius={[12, 12, 0, 0]}>
+                  {chartMetrics.map((entry, index) => (
+                    <Cell
+                      key={entry.key}
+                      fill={chartPalette[index % chartPalette.length]}
+                    />
+                  ))}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -565,41 +864,13 @@ function CampaignDetailDashboard({
         />
       </section>
 
-      <section className="mt-6 rounded-3xl border border-white/10 bg-black/20 p-5">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37]">
-            <BarChart3 className="h-5 w-5" />
-          </div>
-          <div>
-            <h3 className="text-xl font-black text-white">Dữ liệu phân tích</h3>
-            <p className="text-sm font-semibold text-zinc-500">
-              Hiển thị linh hoạt theo response `analyticData` từ backend.
-            </p>
-          </div>
-        </div>
+      <CampaignSeriesInsights
+        rows={campaignSeriesRows}
+        isLoading={campaignSeriesQuery.isLoading}
+        isError={campaignSeriesQuery.isError}
+        error={campaignSeriesQuery.error}
+      />
 
-        {analyticEntries.length > 0 ? (
-          <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {analyticEntries.map(([key, value]) => (
-              <div
-                key={key}
-                className="rounded-2xl border border-white/[0.08] bg-white/[0.035] p-4"
-              >
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-zinc-500">
-                  {formatAnalyticLabel(key)}
-                </p>
-                <p className="mt-2 break-words text-lg font-black text-zinc-100">
-                  {formatAnalyticValue(value)}
-                </p>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="mt-5 rounded-2xl border border-dashed border-white/12 bg-white/[0.025] p-6 text-sm font-semibold text-zinc-500">
-            Chưa có dữ liệu phân tích cho chiến dịch này.
-          </div>
-        )}
-      </section>
     </article>
   );
 }
@@ -627,8 +898,8 @@ export function CreatorCampaignsView() {
   const [selectedStatus, setSelectedStatus] = useState<CreatorCampaignStatus | "">("");
   const [sortBy, setSortBy] = useState<CreatorCampaignSortBy>("createdAt");
   const [sortDirection, setSortDirection] = useState<"ASC" | "DESC">("DESC");
-  const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
   const [campaignFilters, setCampaignFilters] =
     useState<CreatorCampaignFilterFields>({});
 
@@ -679,7 +950,6 @@ export function CreatorCampaignsView() {
   const selectedCampaign = campaigns.find(
     (campaign) => campaign.campaignId === selectedCampaignId,
   );
-
   const stats = useMemo(() => {
     const activeCount = campaigns.filter((campaign) =>
       campaign.status === "RUNNING",
@@ -735,6 +1005,20 @@ export function CreatorCampaignsView() {
     setSortDirection("DESC");
     setPage(1);
   };
+
+  if (selectedCampaign) {
+    return (
+      <section className="mx-auto w-full max-w-[1500px] space-y-6 px-0 pb-8">
+        <CampaignDetailDashboard
+          campaign={selectedCampaign}
+          campaigns={campaigns}
+          getServiceName={getServiceName}
+          onBack={() => setSelectedCampaignId(null)}
+          onSelectCampaign={setSelectedCampaignId}
+        />
+      </section>
+    );
+  }
 
   return (
     <section className="space-y-8">
@@ -965,16 +1249,7 @@ export function CreatorCampaignsView() {
         ) : null}
       </div>
 
-      {selectedCampaign ? (
-        <CampaignDetailDashboard
-          campaign={selectedCampaign}
-          campaigns={campaigns}
-          getServiceName={getServiceName}
-          onBack={() => setSelectedCampaignId(null)}
-          onSelectCampaign={setSelectedCampaignId}
-        />
-      ) : (
-        <section className="rounded-[28px] border border-white/10 bg-white/[0.035] p-5">
+      <section className="rounded-[28px] border border-white/10 bg-white/[0.035] p-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-2xl font-black text-white">Danh sách chiến dịch</h2>
@@ -1051,8 +1326,7 @@ export function CreatorCampaignsView() {
               </Button>
             </div>
           </div>
-        </section>
-      )}
+      </section>
     </section>
   );
 }

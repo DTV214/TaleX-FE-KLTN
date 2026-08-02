@@ -4,12 +4,15 @@ import type {
     CreateEngagementOrderRequest,
     CreateEngagementOrderResponse,
     CreatorCampaignFilterParams,
+    CreatorCampaignDetailResponse,
     CreatorCampaignListResponse,
     CreatorCampaignPageResponse,
     CreatorCampaignServiceFilterParams,
     CreatorCampaignServiceListResponse,
     CreatorCampaignServicePageResponse,
+    CreatorCampaignSeries,
     CreatorCampaignSeriesFilterParams,
+    CreatorCampaignSeriesListResponse,
     CreatorCampaignSeriesPageResponse,
 } from "@/features/creator-dashboard/types/creator-campaigns.types";
 import type { OrderResponse } from "@/features/payment/types/payment.types";
@@ -90,6 +93,26 @@ export async function getCreatorOwnCampaigns(
         {
             params: buildCampaignSearchParams(params),
         },
+    );
+
+    return response.data.data;
+}
+
+export async function getCreatorCampaignById(
+    campaignId: string,
+): Promise<CreatorCampaignDetailResponse["data"]> {
+    const response = await httpClient.get<CreatorCampaignDetailResponse>(
+        `/api/v1/campaigns/${campaignId}`,
+    );
+
+    return response.data.data;
+}
+
+export async function getCreatorCampaignSeriesByCampaignId(
+    campaignId: string,
+): Promise<CreatorCampaignSeries[]> {
+    const response = await httpClient.get<CreatorCampaignSeriesListResponse>(
+        `/api/v1/campaign-series/campaign/${campaignId}`,
     );
 
     return response.data.data;

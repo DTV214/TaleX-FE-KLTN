@@ -7,8 +7,6 @@ import { useGetEngagementServices } from "../hooks/use-engagement-services";
 import type {
   EngagementService,
   EngagementServiceFilterParams,
-  EngagementTarget,
-  EngagementType,
 } from "../types/engagement-services.types";
 import { EngagementServiceFormModal } from "./engagement-service-form-modal";
 import { EngagementServicesTable } from "./engagement-services-table";

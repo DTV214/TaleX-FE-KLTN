@@ -53,8 +53,9 @@ function getInitialFormValues(
   return {
     name: initialData.name,
     description: initialData.description,
-    engagementType: initialData.engagementType,
-    engagementTarget: initialData.engagementTarget,
+    engagementType: initialData.engagementType ?? emptyFormValues.engagementType,
+    engagementTarget:
+      initialData.engagementTarget ?? emptyFormValues.engagementTarget,
     price: initialData.price,
     targetValue: initialData.targetValue,
     isActive: initialData.isActive,
@@ -119,6 +120,11 @@ export function EngagementServiceFormModal({
         await createMutation.mutateAsync(payload);
         toast.success("Tạo dịch vụ tương tác thành công.");
       } else if (initialData) {
+        if (!initialData.engagementServiceId) {
+          toast.error("Không tìm thấy ID dịch vụ để cập nhật.");
+          return;
+        }
+
         await updateMutation.mutateAsync({
           engagementServiceId: initialData.engagementServiceId,
           payload,

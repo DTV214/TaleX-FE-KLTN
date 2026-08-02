@@ -88,7 +88,7 @@ export function EngagementServicesTable({
                 <th className="px-6 py-4">Giá tiền</th>
                 <th className="px-6 py-4">Target Value</th>
                 <th className="px-6 py-4">Trạng thái</th>
-                <th className="px-6 py-4 text-right">Hành động</th>
+                <th className="w-[240px] px-6 py-4 text-right">Hành động</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
@@ -137,24 +137,25 @@ export function EngagementServicesTable({
                           type="button"
                           variant="outline"
                           onClick={() => onEdit(service)}
-                          className="h-9 border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 hover:bg-slate-50"
+                          className="h-9 border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
                         >
                           <Edit2 className="h-4 w-4" />
                           Sửa
                         </Button>
                         <Button
                           type="button"
-                          variant="destructive"
+                          variant="outline"
                           disabled={deleteMutation.isPending}
                           onClick={() => void handleDelete(service)}
-                          className="h-9 px-3 text-xs font-bold"
+                          className="h-9 border-red-200 bg-red-50 px-3 text-xs font-bold text-red-700 hover:border-red-300 hover:bg-red-100 hover:text-red-800 disabled:opacity-70"
+                          aria-label={`Xóa dịch vụ ${service.name}`}
                         >
                           {isDeleting ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
                           ) : (
                             <Trash2 className="h-4 w-4" />
                           )}
-                          Xóa
+                          {isDeleting ? "Đang xóa" : "Xóa"}
                         </Button>
                       </div>
                     </td>

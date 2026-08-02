@@ -33,6 +33,35 @@ export type CreatorCampaignSeriesFilterParams = {
 
 export type CreatorCampaignSeriesPageResponse = BasePageResponse<SeriesResponse>;
 
+export type CreatorCampaignSeriesStatus =
+    | "RUNNING"
+    | "PAUSED"
+    | "COMPLETED"
+    | "CANCELLED"
+    | "UNAVAILABLE"
+    | string;
+
+export type CampaignSeriesAnalyticData = {
+    likes?: number;
+    views?: number;
+    comments?: number;
+    shares?: number;
+    bookmarks?: number;
+    watchTime?: number;
+    [key: string]: unknown;
+};
+
+export type CreatorCampaignSeries = {
+    campaignSeriesId: string;
+    campaignId: string;
+    seriesId: string;
+    status?: CreatorCampaignSeriesStatus | null;
+    analyticData?: CampaignSeriesAnalyticData | null;
+    totalImpression?: number | null;
+};
+
+export type CreatorCampaignSeriesListResponse = BaseResponse<CreatorCampaignSeries[]>;
+
 export type CreateEngagementOrderRequest = {
     engagementServiceId: string;
     seriesIds: string[];

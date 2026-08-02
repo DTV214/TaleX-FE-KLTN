@@ -1,16 +1,20 @@
 import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
 import {
     createEngagementOrder,
+    getCreatorCampaignById,
     getCreatorCampaignPlans,
+    getCreatorCampaignSeriesByCampaignId,
     getCreatorOwnCampaigns,
     getCreatorCampaignPublishedSeries,
 } from "@/features/creator-dashboard/api/creator-campaigns.api";
 import type {
     CreateEngagementOrderRequest,
     CreatorCampaignFilterParams,
+    CreatorCampaign,
     CreatorCampaignPageResponse,
     CreatorCampaignServiceFilterParams,
     CreatorCampaignServicePageResponse,
+    CreatorCampaignSeries,
     CreatorCampaignSeriesFilterParams,
     CreatorCampaignSeriesPageResponse,
 } from "@/features/creator-dashboard/types/creator-campaigns.types";
@@ -26,6 +30,11 @@ export const creatorCampaignQueryKeys = {
     ownLists: () => [...creatorCampaignQueryKeys.all, "own-list"] as const,
     ownList: (params: CreatorCampaignFilterParams) =>
         [...creatorCampaignQueryKeys.ownLists(), params] as const,
+    details: () => [...creatorCampaignQueryKeys.all, "detail"] as const,
+    detail: (campaignId: string) =>
+        [...creatorCampaignQueryKeys.details(), campaignId] as const,
+    campaignSeries: (campaignId: string) =>
+        [...creatorCampaignQueryKeys.all, "campaign-series", campaignId] as const,
 };
 
 export function useGetCreatorCampaignPlans(
@@ -76,5 +85,23 @@ export function useGetCreatorOwnCampaigns(
         queryFn: () => getCreatorOwnCampaigns(params),
         staleTime: 30 * 1000,
         placeholderData: keepPreviousData,
+    });
+}
+
+export function useGetCreatorCampaign(campaignId: string) {
+    return useQuery<CreatorCampaign>({
+        queryKey: creatorCampaignQueryKeys.detail(campaignId),
+        queryFn: () => getCreatorCampaignById(campaignId),
+        enabled: Boolean(campaignId),
+        staleTime: 30 * 1000,
+    });
+}
+
+export function useGetCreatorCampaignSeriesByCampaignId(campaignId?: string | null) {
+    return useQuery<CreatorCampaignSeries[]>({
+        queryKey: creatorCampaignQueryKeys.campaignSeries(campaignId ?? ""),
+        queryFn: () => getCreatorCampaignSeriesByCampaignId(campaignId ?? ""),
+        enabled: Boolean(campaignId),
+        staleTime: 30 * 1000,
     });
 }
