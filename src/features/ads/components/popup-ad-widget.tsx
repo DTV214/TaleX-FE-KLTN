@@ -36,6 +36,7 @@ export function PopupAdWidget() {
   const [skipCountdown, setSkipCountdown] = useState(SKIP_AFTER_SEC);
   const [canSkip, setCanSkip] = useState(false);
   const [impressionTracked, setImpressionTracked] = useState(false);
+  const [view6sTracked, setView6sTracked] = useState(false);
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -143,6 +144,18 @@ export function PopupAdWidget() {
     };
   }, [isVisible, ad, impressionTracked]);
 
+  // Track 6s view cho ảnh tĩnh (IMAGE)
+  useEffect(() => {
+    if (!isVisible || !ad || ad.mediaType === "VIDEO" || view6sTracked) return;
+
+    const timer = setTimeout(() => {
+      adsApi.track6sView(ad.campaignId).catch(console.error);
+      setView6sTracked(true);
+    }, 6000);
+
+    return () => clearTimeout(timer);
+  }, [isVisible, ad, view6sTracked]);
+
   // Dừng video khi chuyển tab
   useEffect(() => {
     if (!isVisible || !videoRef.current) return;
@@ -170,6 +183,15 @@ export function PopupAdWidget() {
     if (!ad) return;
     adsApi.trackClick(ad.campaignId).catch(console.error);
     window.open(ad.targetUrl, "_blank", "noopener,noreferrer");
+  };
+
+  const handleTimeUpdate = () => {
+    if (videoRef.current && ad && ad.mediaType === "VIDEO" && !view6sTracked) {
+      if (videoRef.current.currentTime >= 6) {
+        adsApi.track6sView(ad.campaignId).catch(console.error);
+        setView6sTracked(true);
+      }
+    }
   };
 
   if (!ad || !isVisible || isAdBlocked) return null;
@@ -224,6 +246,7 @@ export function PopupAdWidget() {
               muted
               loop
               playsInline
+              onTimeUpdate={handleTimeUpdate}
               className="w-full aspect-video object-cover"
             />
           ) : (

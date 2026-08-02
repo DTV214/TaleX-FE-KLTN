@@ -12,7 +12,7 @@ import { createPortal } from "react-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { adsApi, AdSlot } from "@/features/ads/api/ads-api";
 import { toast } from "sonner";
-import { Loader2, Plus, Search, Calendar, ChevronDown, Columns, RefreshCw, MoreVertical, X, Check, Tag, Megaphone, PlusCircle, Coins } from "lucide-react";
+import { Loader2, Plus, Search, Calendar, ChevronDown, Columns, RefreshCw, MoreVertical, X, Check, Tag, Megaphone, PlusCircle, Coins, HelpCircle } from "lucide-react";
 import { useAuthStore } from "@/features/auth/store/auth.store";
 import { useLabels, AdLabel } from "@/features/ads/hooks/use-labels";
 
@@ -255,17 +255,105 @@ function CampaignManagementView({ profile }: { profile: any }) {
               <th className="px-4 py-2 border-r border-slate-200">Status</th>
               <th className="px-4 py-2 border-r border-slate-200 text-right">Start Date</th>
               <th className="px-4 py-2 border-r border-slate-200 text-right">End Date</th>
-              <th className="px-4 py-2 border-r border-slate-200 text-right">Campaign Budget</th>
-              <th className="px-4 py-2 border-r border-slate-200 text-right">Spend</th>
-              <th className="px-4 py-2 border-r border-slate-200 text-right">CPM</th>
-              <th className="px-4 py-2 border-r border-slate-200 text-right">Cost per result</th>
-              <th className="px-4 py-2 border-r border-slate-200 text-right">6-second focused views</th>
-              <th className="px-4 py-2 border-r border-slate-200 text-right">Result rate</th>
-              <th className="px-4 py-2 border-r border-slate-200 text-right">6-second focused views (paid views)</th>
-              <th className="px-4 py-2 border-r border-slate-200 text-right">Focused view 6-second view rate (impression)</th>
-              <th className="px-4 py-2 border-r border-slate-200 text-right">Target Views</th>
-              <th className="px-4 py-2 border-r border-slate-200 text-right">Impressions</th>
-              <th className="px-4 py-2 text-right">Clicks</th>
+              <th className="px-4 py-2 border-r border-slate-200 text-right">
+                <div className="flex items-center justify-end gap-1 relative group cursor-help">
+                  Campaign Budget
+                  <HelpCircle className="h-3 w-3 text-slate-400" />
+                  <div className="absolute top-full right-0 mt-1 hidden group-hover:block w-48 p-2 bg-slate-800 text-white font-normal text-xs rounded shadow-lg z-50 text-left whitespace-normal">
+                    Tổng ngân sách tối đa được phép chi tiêu cho chiến dịch này.
+                  </div>
+                </div>
+              </th>
+              <th className="px-4 py-2 border-r border-slate-200 text-right">
+                <div className="flex items-center justify-end gap-1 relative group cursor-help">
+                  Spend
+                  <HelpCircle className="h-3 w-3 text-slate-400" />
+                  <div className="absolute top-full right-0 mt-1 hidden group-hover:block w-48 p-2 bg-slate-800 text-white font-normal text-xs rounded shadow-lg z-50 text-left whitespace-normal">
+                    Tổng số tiền đã chi tiêu thực tế tính đến thời điểm hiện tại.
+                  </div>
+                </div>
+              </th>
+              <th className="px-4 py-2 border-r border-slate-200 text-right">
+                <div className="flex items-center justify-end gap-1 relative group cursor-help">
+                  CPM
+                  <HelpCircle className="h-3 w-3 text-slate-400" />
+                  <div className="absolute top-full right-0 mt-1 hidden group-hover:block w-48 p-2 bg-slate-800 text-white font-normal text-xs rounded shadow-lg z-50 text-left whitespace-normal">
+                    Chi phí trung bình ước tính mà bạn trả cho mỗi 1.000 lượt hiển thị quảng cáo.
+                  </div>
+                </div>
+              </th>
+              <th className="px-4 py-2 border-r border-slate-200 text-right">
+                <div className="flex items-center justify-end gap-1 relative group cursor-help">
+                  Cost per result
+                  <HelpCircle className="h-3 w-3 text-slate-400" />
+                  <div className="absolute top-full right-0 mt-1 hidden group-hover:block w-48 p-2 bg-slate-800 text-white font-normal text-xs rounded shadow-lg z-50 text-left whitespace-normal">
+                    Chi phí trung bình để thu về một kết quả (ví dụ: một lượt click).
+                  </div>
+                </div>
+              </th>
+              <th className="px-4 py-2 border-r border-slate-200 text-right">
+                <div className="flex items-center justify-end gap-1 relative group cursor-help">
+                  6-second focused views
+                  <HelpCircle className="h-3 w-3 text-slate-400" />
+                  <div className="absolute top-full right-0 mt-1 hidden group-hover:block w-56 p-2 bg-slate-800 text-white font-normal text-xs rounded shadow-lg z-50 text-left whitespace-normal">
+                    Số lần người dùng nán lại xem quảng cáo của bạn liên tục trong ít nhất 6 giây.
+                  </div>
+                </div>
+              </th>
+              <th className="px-4 py-2 border-r border-slate-200 text-right">
+                <div className="flex items-center justify-end gap-1 relative group cursor-help">
+                  Result rate
+                  <HelpCircle className="h-3 w-3 text-slate-400" />
+                  <div className="absolute top-full right-0 mt-1 hidden group-hover:block w-56 p-2 bg-slate-800 text-white font-normal text-xs rounded shadow-lg z-50 text-left whitespace-normal">
+                    Tỉ lệ phần trăm người dùng thực hiện hành động (click) sau khi nhìn thấy quảng cáo.
+                  </div>
+                </div>
+              </th>
+              <th className="px-4 py-2 border-r border-slate-200 text-right">
+                <div className="flex items-center justify-end gap-1 relative group cursor-help">
+                  6-second focused views (paid views)
+                  <HelpCircle className="h-3 w-3 text-slate-400" />
+                  <div className="absolute top-full right-0 mt-1 hidden group-hover:block w-56 p-2 bg-slate-800 text-white font-normal text-xs rounded shadow-lg z-50 text-left whitespace-normal">
+                    Số lượt xem 6 giây mà bạn đã trả phí để có được.
+                  </div>
+                </div>
+              </th>
+              <th className="px-4 py-2 border-r border-slate-200 text-right">
+                <div className="flex items-center justify-end gap-1 relative group cursor-help">
+                  Focused view 6-second view rate (impression)
+                  <HelpCircle className="h-3 w-3 text-slate-400" />
+                  <div className="absolute top-full right-0 mt-1 hidden group-hover:block w-56 p-2 bg-slate-800 text-white font-normal text-xs rounded shadow-lg z-50 text-left whitespace-normal">
+                    Tỉ lệ người dùng xem quảng cáo ít nhất 6 giây trên tổng số lần hiển thị.
+                  </div>
+                </div>
+              </th>
+              <th className="px-4 py-2 border-r border-slate-200 text-right">
+                <div className="flex items-center justify-end gap-1 relative group cursor-help">
+                  Target Views
+                  <HelpCircle className="h-3 w-3 text-slate-400" />
+                  <div className="absolute top-full right-0 mt-1 hidden group-hover:block w-48 p-2 bg-slate-800 text-white font-normal text-xs rounded shadow-lg z-50 text-left whitespace-normal">
+                    Mục tiêu số lượt hiển thị mà chiến dịch cần đạt được.
+                  </div>
+                </div>
+              </th>
+              <th className="px-4 py-2 border-r border-slate-200 text-right">
+                <div className="flex items-center justify-end gap-1 relative group cursor-help">
+                  Impressions
+                  <HelpCircle className="h-3 w-3 text-slate-400" />
+                  <div className="absolute top-full right-0 mt-1 hidden group-hover:block w-48 p-2 bg-slate-800 text-white font-normal text-xs rounded shadow-lg z-50 text-left whitespace-normal">
+                    Tổng số lần quảng cáo của bạn đã được hiển thị trên màn hình người dùng.
+                  </div>
+                </div>
+              </th>
+              <th className="px-4 py-2 text-right">
+                <div className="flex items-center justify-end gap-1 relative group cursor-help">
+                  Clicks
+                  <HelpCircle className="h-3 w-3 text-slate-400" />
+                  <div className="absolute top-full right-0 mt-1 hidden group-hover:block w-48 p-2 bg-slate-800 text-white font-normal text-xs rounded shadow-lg z-50 text-left whitespace-normal">
+                    Tổng số lần người dùng đã bấm vào quảng cáo của bạn.
+                  </div>
+                </div>
+              </th>
             </tr>
           </thead>
           <tbody>

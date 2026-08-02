@@ -24,6 +24,7 @@ export function VideoPrerollAdWidget({ onAdFinished }: VideoPrerollAdWidgetProps
   const [canSkip, setCanSkip] = useState(false);
   const [skipCountdown, setSkipCountdown] = useState(SKIP_AFTER_SEC);
   const [impressionTracked, setImpressionTracked] = useState(false);
+  const [view6sTracked, setView6sTracked] = useState(false);
   
   const [isMuted, setIsMuted] = useState(false);
   const [isPlaying, setIsPlaying] = useState(true);
@@ -90,6 +91,18 @@ export function VideoPrerollAdWidget({ onAdFinished }: VideoPrerollAdWidgetProps
     return () => clearTimeout(timer);
   }, [ad, impressionTracked]);
 
+  // Track 6s view cho ảnh tĩnh (IMAGE)
+  useEffect(() => {
+    if (!ad || ad.mediaType === "VIDEO" || view6sTracked) return;
+
+    const timer = setTimeout(() => {
+      adsApi.track6sView(ad.campaignId).catch(console.error);
+      setView6sTracked(true);
+    }, 6000);
+
+    return () => clearTimeout(timer);
+  }, [ad, view6sTracked]);
+
   const handleSkip = () => {
     onAdFinished();
   };
@@ -138,6 +151,15 @@ export function VideoPrerollAdWidget({ onAdFinished }: VideoPrerollAdWidgetProps
     }
   };
 
+  const handleTimeUpdate = () => {
+    if (videoRef.current && ad && ad.mediaType === "VIDEO" && !view6sTracked) {
+      if (videoRef.current.currentTime >= 6) {
+        adsApi.track6sView(ad.campaignId).catch(console.error);
+        setView6sTracked(true);
+      }
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="w-full aspect-video bg-black flex flex-col items-center justify-center text-white/50">
@@ -162,6 +184,7 @@ export function VideoPrerollAdWidget({ onAdFinished }: VideoPrerollAdWidgetProps
           autoPlay
           playsInline
           onEnded={onAdFinished}
+          onTimeUpdate={handleTimeUpdate}
           className="w-full h-full object-contain"
         />
       ) : (

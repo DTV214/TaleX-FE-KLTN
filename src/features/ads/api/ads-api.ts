@@ -114,6 +114,9 @@ export const adsApi = {
   trackClick: (campaignId: string) =>
     api.post("/api/v1/ads/track/click", { campaignId }),
 
+  track6sView: (campaignId: string) =>
+    api.post("/api/v1/ads/track/view-6s", { campaignId }),
+
   getLabels: () =>
     api.get<{ data: AdLabel[] }>("/api/v1/ads/labels").then((res) => res.data.data),
 
