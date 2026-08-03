@@ -322,6 +322,15 @@ function PricingCard({
 }) {
   const benefits = getBenefits(subscription);
   const progress = getDurationProgress(subscription);
+  const [isNavigating, setIsNavigating] = React.useState(false);
+
+  function handleClick() {
+    if (isNavigating) {
+      return;
+    }
+    setIsNavigating(true);
+    onSelect(subscription);
+  }
 
   return (
     <article
@@ -413,8 +422,9 @@ function PricingCard({
 
         <Button
           type="button"
-          onClick={() => onSelect(subscription)}
-          className="mt-5 h-10 w-full rounded-xl bg-[#D4AF37] text-sm font-semibold text-black shadow-[0_0_16px_rgba(212,175,55,0.18)] hover:bg-[#F3CE5E]"
+          onClick={handleClick}
+          disabled={isNavigating}
+          className="mt-5 h-10 w-full rounded-xl bg-[#D4AF37] text-sm font-semibold text-black shadow-[0_0_16px_rgba(212,175,55,0.18)] hover:bg-[#F3CE5E] disabled:cursor-not-allowed disabled:opacity-60"
         >
           Chọn gói này
           <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover/button:translate-x-1" />

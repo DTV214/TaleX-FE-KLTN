@@ -212,7 +212,11 @@ function CheckoutPageContent() {
 
               {activeSubscriptionQuery.data && (
                 <motion.div {...motionProps} transition={{ ...motionProps.transition, delay: 0.08 }}>
-                  <SubscriptionStackingWarning activeSubscription={activeSubscriptionQuery.data} />
+                  <SubscriptionStackingWarning
+                    activeSubscription={activeSubscriptionQuery.data}
+                    newDuration={subscription?.duration}
+                    newDurationUnit={subscription?.durationUnit}
+                  />
                 </motion.div>
               )}
 
@@ -228,6 +232,10 @@ function CheckoutPageContent() {
                   type="info"
                   message={getApiErrorMessage(createOrderQuery.error)}
                 />
+              )}
+
+              {orderStatusQuery.isError && order && (
+                <PaymentWarningBanner message="Mất kết nối máy chủ, đang tự động thử lại..." />
               )}
 
               <PaymentFrame isHighlighted>
