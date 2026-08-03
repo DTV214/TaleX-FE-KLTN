@@ -531,3 +531,56 @@ export async function getTags() {
     httpClient.get('/api/v1/tags?pageSize=100')
   );
 }
+
+export type CreatorLogAnalyticData = {
+  likes: number;
+  views: number;
+  comments: number;
+  shares: number;
+  bookmarks: number;
+  watchTime: number;
+};
+
+export type CreatorLogItem = {
+  creatorLogId: string;
+  hourBucket: string;
+  analyticData: CreatorLogAnalyticData;
+  follows: number;
+};
+
+export async function getCreatorLogs(params?: { from?: string; to?: string }) {
+  return unwrapBaseResponse<CreatorLogItem[]>(
+    httpClient.get("/api/v1/creators/logs", { params })
+  );
+}
+
+export type SeriesLogItem = {
+  seriesLogId: string;
+  hourBucket: string;
+  seriesId: string;
+  analyticData: CreatorLogAnalyticData;
+};
+
+export async function getSeriesLogs(
+  seriesId: string,
+  params: { start: string; end: string }
+) {
+  return unwrapBaseResponse<SeriesLogItem[]>(
+    httpClient.get(`/api/v1/series/${seriesId}/logs`, { params })
+  );
+}
+
+export type EpisodeLogItem = {
+  episodeLogId: string;
+  hourBucket: string;
+  analyticData: CreatorLogAnalyticData;
+};
+
+export async function getEpisodeLogs(
+  episodeId: string,
+  params: { from: string; to: string }
+) {
+  return unwrapBaseResponse<EpisodeLogItem[]>(
+    httpClient.get(`/api/v1/episodes/${episodeId}/logs`, { params })
+  );
+}

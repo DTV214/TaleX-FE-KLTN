@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
-import { Plus, Edit3, Trash2, Eye, Film, Layers, Search, Filter } from "lucide-react";
+import { Plus, Edit3, Trash2, Eye, Film, Layers, Search, Filter, BarChart3 } from "lucide-react";
+import { SeriesAnalyticsModal } from "@/features/creator-dashboard/components/views/series-analytics-modal";
 
 interface CreatorSeriesListProps {
   seriesList: any[];
@@ -12,6 +13,7 @@ interface CreatorSeriesListProps {
 export function CreatorSeriesList({ seriesList, onSelect, onCreate, onEdit, onDelete }: CreatorSeriesListProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<string>("ALL");
+  const [selectedAnalyticsSeries, setSelectedAnalyticsSeries] = useState<any | null>(null);
 
   const filteredSeries = useMemo(() => {
     return seriesList.filter((series) => {
@@ -85,9 +87,9 @@ export function CreatorSeriesList({ seriesList, onSelect, onCreate, onEdit, onDe
         <div className="grid grid-cols-1 gap-7 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filteredSeries.map((series) => (
             <div
-              key={series.id}
+              key={series.id || series.seriesId}
               className="creator-shine-card group flex cursor-pointer flex-col overflow-hidden rounded-[26px] border border-white/10 bg-white/[0.035] shadow-[0_22px_70px_rgba(0,0,0,0.22)] transition-all duration-300 hover:-translate-y-1 hover:border-creator-gold/45 hover:bg-white/[0.055]"
-              onClick={() => onSelect(series.id)}
+              onClick={() => onSelect(series.id || series.seriesId)}
             >
               <div className="relative aspect-[3/4] w-full overflow-hidden border-b border-white/10 bg-black/45">
                 {series.coverUrl ? (
@@ -100,13 +102,25 @@ export function CreatorSeriesList({ seriesList, onSelect, onCreate, onEdit, onDe
                 <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent"></div>
                 <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedAnalyticsSeries(series);
+                    }}
+                    title="Thống kê Series"
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-black/65 text-[#D4AF37] transition-colors hover:bg-[#D4AF37] hover:text-black"
+                  >
+                    <BarChart3 size={14} />
+                  </button>
+                  <button
                     onClick={(e) => { e.stopPropagation(); onEdit(series); }}
+                    title="Chỉnh sửa"
                     className="flex h-8 w-8 items-center justify-center rounded-full bg-black/65 text-white transition-colors hover:bg-creator-gold hover:text-black"
                   >
                     <Edit3 size={14} />
                   </button>
                   <button
                     onClick={(e) => { e.stopPropagation(); onDelete(series); }}
+                    title="Xóa Series"
                     className="flex h-8 w-8 items-center justify-center rounded-full bg-black/65 text-white transition-colors hover:bg-red-500"
                   >
                     <Trash2 size={14} />
@@ -126,13 +140,30 @@ export function CreatorSeriesList({ seriesList, onSelect, onCreate, onEdit, onDe
                 <p className="text-sm text-creator-muted line-clamp-2 mb-4">{series.description || "No description provided."}</p>
                 <div className="flex items-center justify-between border-t border-white/10 pt-3 text-xs font-medium text-creator-muted">
                   <span className="flex items-center gap-1.5"><Layers size={14} /> {series.contentType === "COMIC" ? "Comic" : "Video"}</span>
-                  <span className="flex items-center gap-1.5"><Eye size={14} /> {series.views || "0"} Views</span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedAnalyticsSeries(series);
+                    }}
+                    className="flex items-center gap-1.5 text-zinc-300 hover:text-[#D4AF37] transition font-bold"
+                  >
+                    <BarChart3 size={14} className="text-[#D4AF37]" /> Thống kê
+                  </button>
                 </div>
               </div>
             </div>
           ))}
         </div>
       )}
+
+      {/* Series Analytics Modal */}
+      <SeriesAnalyticsModal
+        series={selectedAnalyticsSeries}
+        isOpen={Boolean(selectedAnalyticsSeries)}
+        onClose={() => setSelectedAnalyticsSeries(null)}
+      />
     </div>
   );
 }
+

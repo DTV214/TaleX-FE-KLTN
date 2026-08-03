@@ -2,11 +2,12 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { PlayCircle, ImagePlus, Video, ShieldAlert, AlertTriangle, Fingerprint } from "lucide-react";
+import { PlayCircle, ImagePlus, Video, ShieldAlert, AlertTriangle, Fingerprint, BarChart3 } from "lucide-react";
 import { CreatorSeasonsList } from "@/features/creator-dashboard/components/creator-seasons-list";
 import { CreatorEpisodesList } from "@/features/creator-dashboard/components/creator-episodes-list";
 import { CreatorBackButton } from "@/features/creator-dashboard/components/creator-back-button";
 import { CreatorSeriesList } from "@/features/creator-dashboard/components/creator-series-list";
+import { EpisodeAnalyticsModal } from "@/features/creator-dashboard/components/views/episode-analytics-modal";
 import { CreatorLayout } from "@/features/creator-dashboard/components/creator-layout";
 import { CreatorStepper, StepState } from "@/features/creator-dashboard/components/creator-stepper";
 import { CoreIdentityStep } from "@/features/creator-dashboard/components/steps/core-identity-step";
@@ -16,6 +17,7 @@ import { ReadyPublishStep } from "@/features/creator-dashboard/components/steps/
 import { FinalReviewStep } from "@/features/creator-dashboard/components/steps/final-review-step";
 import { FinalReviewComicStep } from "@/features/creator-dashboard/components/steps/final-review-comic-step";
 import { DashboardOverviewView } from "@/features/creator-dashboard/components/views/dashboard-overview-view";
+import { CreatorAnalyticsLogsView } from "@/features/creator-dashboard/components/views/creator-analytics-logs-view";
 
 import {
   useCallback,
@@ -2145,17 +2147,7 @@ function CreatorDashboardContent() {
                 initialTab="revenue"
               />
             ) : activeView === "analytics" ? (
-              <DashboardOverviewView
-                onNavigate={(view) =>
-                  setDashboardRouteState({
-                    view: view as any,
-                    seriesId: "",
-                    seasonId: "",
-                    episodeId: "",
-                  })
-                }
-                initialTab="overview"
-              />
+              <CreatorAnalyticsLogsView />
             ) : activeView === "combos" ? (
               <ComboManagementView />
             ) : activeView === "monetization" ? (
@@ -3335,6 +3327,8 @@ function EpisodeManagementView({
   onUpdateEpisode: (episode: EpisodeRow) => void;
   onDeleteEpisode: (episode: EpisodeRow) => void;
 }) {
+  const [analyticsEpisode, setAnalyticsEpisode] = useState<EpisodeRow | null>(null);
+
   return (
     <div className="w-full space-y-6 py-6 text-creator-text">
       {/* Header */}
@@ -3416,6 +3410,14 @@ function EpisodeManagementView({
 
                   {/* Actions Container */}
                   <div className="flex items-center gap-2 pl-14 transition-opacity sm:pl-0 sm:opacity-0 sm:group-hover:opacity-100">
+                    {/* Nút Thống kê tập */}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setAnalyticsEpisode(episode); }}
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-black/35 px-3 py-1.5 text-xs font-bold text-zinc-400 transition-colors hover:border-[#D4AF37]/40 hover:bg-[#D4AF37]/10 hover:text-[#D4AF37]"
+                      title="Xem thống kê tập"
+                    >
+                      <BarChart3 size={14} /> Thống kê
+                    </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); onUpdateEpisode(episode); }}
                       className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-black/35 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:border-white/20 hover:bg-white/10"
@@ -3444,6 +3446,38 @@ function EpisodeManagementView({
           )}
         </div>
       </div>
+
+      {/* Episode Analytics Modal */}
+      <EpisodeAnalyticsModal
+        episode={analyticsEpisode ? {
+          episodeId: analyticsEpisode.id,
+          seasonId: analyticsEpisode.seasonId,
+          creatorId: "",
+          episodeNumber: analyticsEpisode.episodeNumber,
+          title: analyticsEpisode.title,
+          description: analyticsEpisode.description,
+          thumbnail: analyticsEpisode.thumbnail,
+          contentType: analyticsEpisode.contentType,
+          status: analyticsEpisode.status,
+          scheduledPublishAt: analyticsEpisode.scheduledPublishAt || null,
+          publishedAt: "",
+          unlockType: analyticsEpisode.unlockType,
+          priceVnd: analyticsEpisode.priceVnd,
+          likes: 0,
+          views: Number(analyticsEpisode.views) || 0,
+          totalPage: analyticsEpisode.totalPage || null,
+          createdAt: "",
+          updatedAt: analyticsEpisode.updatedAt,
+          deletedAt: null,
+          createdBy: "",
+          updatedBy: "",
+          deletedBy: null,
+          isDeleted: false,
+        } : null}
+        seriesTitle={selectedSeries.title}
+        isOpen={Boolean(analyticsEpisode)}
+        onClose={() => setAnalyticsEpisode(null)}
+      />
     </div>
   );
 }
