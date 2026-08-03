@@ -34,11 +34,12 @@ import { Button } from "@/shared/ui/button";
 import { Progress } from "@/shared/ui/progress";
 import { getApiErrorMessage } from "@/shared/api/http-client";
 import { parseBackendDate } from "@/shared/utils/backend-date";
-
-const SEPAY_BANK_NAME = "Ngân Hàng VietinBank";
-const SEPAY_BANK_LOGO_URL = "https://api.vietqr.io/img/ICB.png";
-const SEPAY_ACCOUNT_NUMBER = "100881945065";
-const SEPAY_ACCOUNT_HOLDER = "NGUYEN GIA KHANH";
+import {
+  SEPAY_ACCOUNT_HOLDER,
+  SEPAY_ACCOUNT_NUMBER,
+  SEPAY_BANK_LOGO_URL,
+  SEPAY_BANK_NAME,
+} from "@/features/checkout/config/sepay-bank-info";
 
 const motionProps = {
   initial: { opacity: 0, y: 20 },

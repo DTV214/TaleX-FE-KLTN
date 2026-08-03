@@ -27,11 +27,13 @@ import {
 import type { ContentOrderItemType } from "@/features/payment/types/payment.types";
 import { getApiErrorCode, getApiErrorMessage } from "@/shared/api/http-client";
 import { parseBackendDate } from "@/shared/utils/backend-date";
+import {
+  SEPAY_ACCOUNT_HOLDER,
+  SEPAY_ACCOUNT_NUMBER,
+  SEPAY_BANK_LOGO_URL,
+  SEPAY_BANK_NAME,
+} from "@/features/checkout/config/sepay-bank-info";
 
-const SEPAY_BANK_NAME = "Ngân Hàng VietinBank";
-const SEPAY_BANK_LOGO_URL = "https://api.vietqr.io/img/ICB.png";
-const SEPAY_ACCOUNT_NUMBER = "100881945065";
-const SEPAY_ACCOUNT_HOLDER = "NGUYEN GIA KHANH";
 const COIN_DEBOUNCE_MS = 400;
 // Khớp PaymentErrorCode.CONTENT_ALREADY_OWNED ở BE
 const CONTENT_ALREADY_OWNED_CODE = 4003;
