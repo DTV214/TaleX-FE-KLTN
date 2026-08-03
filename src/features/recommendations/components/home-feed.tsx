@@ -26,6 +26,7 @@ import {
   Sparkles,
   Star,
   TrendingUp,
+  X,
 } from "lucide-react";
 import {
   DEFAULT_HOME_FEED_LIMITS,
@@ -415,6 +416,7 @@ export function HomeFeed({
 
         return (
           <Fragment key={section.id}>
+            {index > 0 ? <DecorativeSectionDivider /> : null}
             {content}
             {shouldRenderPromotedComicAfter ? promotedComicAfter : null}
             {shouldShowHomeAdBreak(index, channelSections.length) ? (
@@ -446,11 +448,27 @@ function HomeChannelAdBreak({ index }: { index: number }) {
   const slotId = index <= 1 ? "mock-home-feed-mid-1" : "mock-home-feed-mid-2";
 
   return (
-    <AdSlot
-      slotId={slotId}
-      format="horizontal"
-      className="min-h-[96px] rounded-2xl"
-    />
+    <div className="relative overflow-hidden rounded-[1.4rem] border border-[#D4AF37]/16 bg-[linear-gradient(120deg,rgba(212,175,55,0.11),rgba(255,255,255,0.05)_42%,rgba(90,118,205,0.1))] p-1 shadow-[0_18px_54px_rgba(0,0,0,0.24)]">
+      <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[#D4AF37]/55 to-transparent" />
+      <AdSlot
+        slotId={slotId}
+        format="horizontal"
+        className="min-h-[92px] rounded-[1.15rem]"
+      />
+    </div>
+  );
+}
+
+function DecorativeSectionDivider() {
+  return (
+    <div className="pointer-events-none -my-3 flex items-center justify-center px-6">
+      <div className="relative h-8 w-full max-w-5xl">
+        <div className="absolute left-0 right-0 top-1/2 h-px -translate-y-1/2 bg-gradient-to-r from-transparent via-[#D4AF37]/45 to-transparent" />
+        <div className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rotate-45 rounded-[3px] border border-[#D4AF37]/45 bg-black/70 shadow-[0_0_22px_rgba(212,175,55,0.24)]" />
+        <div className="absolute left-[44%] top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-[#D4AF37]/45" />
+        <div className="absolute right-[44%] top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-[#D4AF37]/45" />
+      </div>
+    </div>
   );
 }
 
@@ -459,6 +477,7 @@ function HomeFeedNav({
 }: {
   sections: Array<{ id: string; title: string }>;
 }) {
+  const [isExpanded, setIsExpanded] = useState(false);
   const navItems = [
     { id: "home-feed-top", label: "Tất cả" },
     ...sections.map((section) => ({
@@ -466,6 +485,9 @@ function HomeFeedNav({
       label: section.title,
     })),
   ];
+  const filterItems = navItems.slice(1);
+  const visibleItems = isExpanded ? filterItems : filterItems.slice(0, 4);
+  const hiddenCount = filterItems.length - visibleItems.length;
 
   const scrollToSection = (id: string) => {
     document.getElementById(id)?.scrollIntoView({
@@ -480,12 +502,17 @@ function HomeFeedNav({
         <Sparkles className="pointer-events-none absolute left-8 top-1 h-5 w-5 rotate-12 text-[#D4AF37]/25" />
         <Clapperboard className="pointer-events-none absolute right-24 top-1/2 h-7 w-7 -translate-y-1/2 rotate-12 text-white/10" />
         <BookOpen className="pointer-events-none absolute bottom-1 right-8 h-5 w-5 -rotate-12 text-[#D4AF37]/18" />
-        <div className="relative flex items-center gap-3 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-          <div className="inline-flex shrink-0 items-center gap-2 rounded-full border border-[#D4AF37]/25 bg-black/30 px-4 py-2.5 text-sm font-black uppercase tracking-[0.16em] text-[#F2D76B] shadow-[0_0_22px_rgba(212,175,55,0.12)]">
-            <Filter className="h-4 w-4" />
+        <div className={`relative flex gap-3 ${isExpanded ? "flex-wrap items-center" : "items-center overflow-hidden"}`}>
+          <button
+            type="button"
+            onClick={() => setIsExpanded((value) => !value)}
+            aria-expanded={isExpanded}
+            className="inline-flex shrink-0 cursor-pointer items-center gap-2 rounded-full border border-[#D4AF37]/35 bg-black/40 px-4 py-2.5 text-sm font-black uppercase tracking-[0.16em] text-[#F2D76B] shadow-[0_0_24px_rgba(212,175,55,0.18)] transition duration-300 hover:border-[#F5D65E]/70 hover:bg-[#D4AF37]/18 hover:text-[#FFE88A]"
+          >
+            {isExpanded ? <X className="h-4 w-4" /> : <Filter className="h-4 w-4" />}
             Bộ lọc
-          </div>
-        {navItems.slice(1).map((item, index) => (
+          </button>
+        {visibleItems.map((item, index) => (
           <button
             key={`${item.id}-${index}`}
             type="button"
@@ -495,6 +522,15 @@ function HomeFeedNav({
             {item.label}
           </button>
         ))}
+        {!isExpanded && hiddenCount > 0 ? (
+          <button
+            type="button"
+            onClick={() => setIsExpanded(true)}
+            className="shrink-0 cursor-pointer rounded-full border border-[#D4AF37]/24 bg-black/25 px-4 py-2.5 text-sm font-black text-[#F2D76B] transition hover:border-[#D4AF37]/55 hover:bg-[#D4AF37]/14"
+          >
+            +{hiddenCount}
+          </button>
+        ) : null}
         </div>
       </div>
     </div>
@@ -1212,30 +1248,32 @@ function TypedSpotlightSection({ section }: { section: TypedHomeSection }) {
   return (
     <section
       id={section.id}
-      className="scroll-mt-24 overflow-hidden rounded-3xl border border-white/10 bg-[#131315]"
+      className="relative scroll-mt-24 overflow-hidden rounded-[1.6rem] border border-[#D4AF37]/14 bg-[linear-gradient(125deg,rgba(212,175,55,0.1),rgba(19,19,21,0.92)_36%,rgba(88,112,190,0.11))] shadow-[0_22px_70px_rgba(0,0,0,0.3)]"
     >
-      <div className="grid lg:grid-cols-[minmax(0,0.65fr)_minmax(360px,1fr)]">
-        <div className="flex flex-col justify-center p-6 md:p-9">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_16%_18%,rgba(212,175,55,0.16),transparent_28%),radial-gradient(circle_at_84%_18%,rgba(151,176,255,0.12),transparent_30%)]" />
+      <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[#D4AF37]/50 to-transparent" />
+      <div className="relative grid lg:grid-cols-[minmax(0,0.58fr)_minmax(360px,0.92fr)]">
+        <div className="flex flex-col justify-center p-5 md:p-7">
           <SectionHeading
             section={section}
             icon={<Clapperboard className="h-5 w-5" />}
             compact
           />
-          <h3 className="mt-5 bg-[linear-gradient(110deg,rgba(255,255,255,0.82),rgba(255,255,255,0.82),rgba(212,175,55,0.92),rgba(255,255,255,0.82))] bg-[length:220%_100%] bg-clip-text font-sans text-3xl font-semibold leading-tight text-white/86 transition-[color,filter] duration-300 hover:text-transparent hover:drop-shadow-[0_0_20px_rgba(212,175,55,0.18)] md:text-5xl">
+          <h3 className="mt-4 bg-[linear-gradient(110deg,rgba(255,255,255,0.86),rgba(255,255,255,0.86),rgba(212,175,55,0.92),rgba(255,255,255,0.82))] bg-[length:220%_100%] bg-clip-text font-sans text-3xl font-semibold leading-tight text-white/88 transition-[color,filter] duration-300 hover:text-transparent hover:drop-shadow-[0_0_20px_rgba(212,175,55,0.18)] md:text-4xl">
             {featured.title}
           </h3>
-          <p className="mt-4 line-clamp-4 max-w-xl text-sm font-medium leading-relaxed text-white/48 md:text-base">
+          <p className="mt-3 line-clamp-3 max-w-xl text-sm font-medium leading-relaxed text-white/50 md:text-[15px]">
             {featured.description || section.description}
           </p>
           <Link
             href={seriesHref(featured)}
-            className="mt-7 inline-flex w-fit cursor-pointer items-center gap-2 rounded-full bg-[#D4AF37] px-5 py-3 text-sm font-black text-black transition hover:bg-[#f1d766]"
+            className="mt-6 inline-flex w-fit cursor-pointer items-center gap-2 rounded-full bg-[#D4AF37] px-5 py-2.5 text-sm font-black text-black shadow-[0_0_24px_rgba(212,175,55,0.24)] transition hover:bg-[#f1d766] hover:shadow-[0_0_34px_rgba(212,175,55,0.38)]"
           >
             Khám phá
             <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
-        <div className="grid min-h-[360px] grid-cols-2 gap-2 p-2">
+        <div className="grid min-h-[280px] grid-cols-2 gap-2 p-2 md:min-h-[320px]">
           {[featured, ...rest].slice(0, 5).map((series, index) => (
             <Link
               key={`${series.seriesId}-${index}`}
