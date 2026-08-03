@@ -21,11 +21,12 @@ import { Button } from "@/shared/ui/button";
 import { Progress } from "@/shared/ui/progress";
 import { getApiErrorMessage } from "@/shared/api/http-client";
 import { parseBackendDate } from "@/shared/utils/backend-date";
-
-const SEPAY_BANK_NAME = "Ngân Hàng VietinBank";
-const SEPAY_BANK_LOGO_URL = "https://api.vietqr.io/img/ICB.png";
-const SEPAY_ACCOUNT_NUMBER = "100881945065";
-const SEPAY_ACCOUNT_HOLDER = "NGUYEN GIA KHANH";
+import {
+  SEPAY_ACCOUNT_HOLDER,
+  SEPAY_ACCOUNT_NUMBER,
+  SEPAY_BANK_LOGO_URL,
+  SEPAY_BANK_NAME,
+} from "@/features/checkout/config/sepay-bank-info";
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat("vi-VN", {
@@ -284,7 +285,7 @@ function CheckoutEngagementContent() {
           <div className="mt-6 grid gap-3">
             <div className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] py-3 text-sm font-bold text-zinc-300">
               <Building2 className="h-4 w-4 text-[#D4AF37]" />
-              VietinBank
+              {SEPAY_BANK_NAME}
             </div>
             <div className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] py-3 text-sm font-bold text-zinc-300">
               <WalletCards className="h-4 w-4 text-[#D4AF37]" />

@@ -96,6 +96,9 @@ export function CompleteProfileForm() {
         <p className="mt-2 text-sm text-gray-500">
           Thêm số điện thoại và ngày sinh để kích hoạt tài khoản
         </p>
+        <p className="mt-1 text-xs text-gray-600">
+          Vui lòng hoàn tất trong vòng 30 phút kể từ khi đăng nhập Google.
+        </p>
       </div>
 
       {errorMsg && (

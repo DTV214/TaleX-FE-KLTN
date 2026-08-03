@@ -2,6 +2,7 @@
 
 import { Check, HelpCircle, Loader2, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import {
   type PublicCombo,
   type PublicComboEpisode,
@@ -69,8 +70,13 @@ export function ComboCard({
   const originalPrice = combo.originalPriceVnd ?? combo.priceVnd;
   const shouldShowOriginalPrice = originalPrice > combo.priceVnd;
   const isPurchasable = combo.priceVnd > 0;
+  const [isNavigating, setIsNavigating] = useState(false);
 
   function handlePurchase() {
+    if (isNavigating) {
+      return;
+    }
+    setIsNavigating(true);
     // Tất cả episode trong 1 combo luôn thuộc cùng 1 series (BE validate khi tạo combo)
     // — dùng seriesId của tập đầu tiên để sau khi mua xong quay lại đúng trang Series.
     const seriesId = combo.episodes?.[0]?.seriesId;
@@ -145,7 +151,7 @@ export function ComboCard({
 
         <button
           type="button"
-          disabled={!isPurchasable}
+          disabled={!isPurchasable || isNavigating}
           onClick={handlePurchase}
           className="mt-8 w-full rounded-lg bg-[#D4AF37] py-3 text-sm font-bold text-black transition hover:bg-[#F3CE5E] active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-[#D4AF37]"
         >

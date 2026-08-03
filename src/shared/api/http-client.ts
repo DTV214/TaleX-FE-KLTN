@@ -157,6 +157,25 @@ export function getApiErrorCode(error: unknown): number | undefined {
   return undefined;
 }
 
+/**
+ * Giữ lại HTTP status khi wrap lỗi — caller cần phân biệt lỗi auth thật (401/403,
+ * request tới được server và bị từ chối) khỏi lỗi mạng/5xx thuần túy (không có
+ * `status`, request có thể chưa từng tới server). Không giữ status thì caller như
+ * AuthProvider buộc phải xử lý MỌI lỗi giống nhau, dẫn tới clear session oan khi
+ * chỉ là network glitch.
+ */
+export class ApiError extends Error {
+  status?: number;
+  code?: number;
+
+  constructor(message: string, opts?: { status?: number; code?: number }) {
+    super(message);
+    this.name = "ApiError";
+    this.status = opts?.status;
+    this.code = opts?.code;
+  }
+}
+
 export async function unwrapBaseResponse<T>(
   promise: Promise<{ data: BaseResponse<T> }>,
 ) {
@@ -164,6 +183,7 @@ export async function unwrapBaseResponse<T>(
     const response = await promise;
     return response.data.data;
   } catch (error) {
-    throw new Error(getApiErrorMessage(error));
+    const status = axios.isAxiosError(error) ? error.response?.status : undefined;
+    throw new ApiError(getApiErrorMessage(error), { status, code: getApiErrorCode(error) });
   }
 }

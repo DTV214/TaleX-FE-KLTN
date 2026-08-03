@@ -34,11 +34,12 @@ import { Button } from "@/shared/ui/button";
 import { Progress } from "@/shared/ui/progress";
 import { getApiErrorMessage } from "@/shared/api/http-client";
 import { parseBackendDate } from "@/shared/utils/backend-date";
-
-const SEPAY_BANK_NAME = "Ngân Hàng VietinBank";
-const SEPAY_BANK_LOGO_URL = "https://api.vietqr.io/img/ICB.png";
-const SEPAY_ACCOUNT_NUMBER = "100881945065";
-const SEPAY_ACCOUNT_HOLDER = "NGUYEN GIA KHANH";
+import {
+  SEPAY_ACCOUNT_HOLDER,
+  SEPAY_ACCOUNT_NUMBER,
+  SEPAY_BANK_LOGO_URL,
+  SEPAY_BANK_NAME,
+} from "@/features/checkout/config/sepay-bank-info";
 
 const motionProps = {
   initial: { opacity: 0, y: 20 },
@@ -212,7 +213,11 @@ function CheckoutPageContent() {
 
               {activeSubscriptionQuery.data && (
                 <motion.div {...motionProps} transition={{ ...motionProps.transition, delay: 0.08 }}>
-                  <SubscriptionStackingWarning activeSubscription={activeSubscriptionQuery.data} />
+                  <SubscriptionStackingWarning
+                    activeSubscription={activeSubscriptionQuery.data}
+                    newDuration={subscription?.duration}
+                    newDurationUnit={subscription?.durationUnit}
+                  />
                 </motion.div>
               )}
 
@@ -228,6 +233,10 @@ function CheckoutPageContent() {
                   type="info"
                   message={getApiErrorMessage(createOrderQuery.error)}
                 />
+              )}
+
+              {orderStatusQuery.isError && order && (
+                <PaymentWarningBanner message="Mất kết nối máy chủ, đang tự động thử lại..." />
               )}
 
               <PaymentFrame isHighlighted>
@@ -280,7 +289,7 @@ function CheckoutPageContent() {
 
                     <div className="flex flex-wrap gap-2">
                       {[
-                        { label: "VietinBank", icon: Landmark },
+                        { label: SEPAY_BANK_NAME, icon: Landmark },
                         { label: "VietQR", icon: CreditCard },
                         { label: "SePay", icon: WalletCards },
                       ].map((item) => {
@@ -421,7 +430,7 @@ function CheckoutPageContent() {
                     </div>
                     <div className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-xs font-medium text-slate-300">
                       <Building2 className="h-4 w-4 text-[#D4AF37]" />
-                      VietinBank
+                      {SEPAY_BANK_NAME}
                     </div>
                   </div>
 

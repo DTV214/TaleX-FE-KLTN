@@ -27,14 +27,19 @@ import {
 import type { ContentOrderItemType } from "@/features/payment/types/payment.types";
 import { getApiErrorCode, getApiErrorMessage } from "@/shared/api/http-client";
 import { parseBackendDate } from "@/shared/utils/backend-date";
+import {
+  SEPAY_ACCOUNT_HOLDER,
+  SEPAY_ACCOUNT_NUMBER,
+  SEPAY_BANK_LOGO_URL,
+  SEPAY_BANK_NAME,
+} from "@/features/checkout/config/sepay-bank-info";
 
-const SEPAY_BANK_NAME = "Ngân Hàng VietinBank";
-const SEPAY_BANK_LOGO_URL = "https://api.vietqr.io/img/ICB.png";
-const SEPAY_ACCOUNT_NUMBER = "100881945065";
-const SEPAY_ACCOUNT_HOLDER = "NGUYEN GIA KHANH";
 const COIN_DEBOUNCE_MS = 400;
 // Khớp PaymentErrorCode.CONTENT_ALREADY_OWNED ở BE
 const CONTENT_ALREADY_OWNED_CODE = 4003;
+// Khớp PaymentErrorCode.ORDER_NOT_FULLY_COVERED_BY_COIN ở BE
+const ORDER_NOT_FULLY_COVERED_BY_COIN_CODE = 4006;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const backgroundImageUrl =
   "https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=2025&auto=format&fit=crop";
@@ -53,6 +58,10 @@ function isValidItemType(value: string | null): value is ContentOrderItemType {
   return value === "EPISODE" || value === "COMBO";
 }
 
+function isValidUuid(value: string): boolean {
+  return UUID_PATTERN.test(value);
+}
+
 function CheckoutContentPageBody() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -61,14 +70,20 @@ function CheckoutContentPageBody() {
   const itemType: ContentOrderItemType = isValidItemType(rawItemType) ? rawItemType : "EPISODE";
   const title = searchParams.get("title") ?? "Nội dung TaleX";
   const returnTo = searchParams.get("returnTo") || "/";
+  const isInvalidLink = !isValidItemType(rawItemType) || itemId.length === 0 || !isValidUuid(itemId);
 
   const [useCoin, setUseCoin] = useState(false);
   const [debouncedCoin, setDebouncedCoin] = useState(0);
   const [remainingSeconds, setRemainingSeconds] = useState(0);
+  const [cancelError, setCancelError] = useState<string | null>(null);
 
   const walletQuery = useCoinWallet();
   const walletBalance = walletQuery.data?.balance ?? 0;
-  const createOrderQuery = useEnsureContentOrder(itemId || undefined, itemType, debouncedCoin);
+  const createOrderQuery = useEnsureContentOrder(
+    isInvalidLink ? undefined : itemId,
+    itemType,
+    debouncedCoin,
+  );
   const orderId = createOrderQuery.data?.orderId;
   const orderStatusQuery = useOrderStatus(orderId);
   const order = orderStatusQuery.data ?? createOrderQuery.data;
@@ -80,12 +95,6 @@ function CheckoutContentPageBody() {
   // walletBalance đang biến động làm target thì effect bên dưới sẽ tự kích hoạt lại
   // liên tục theo mỗi lần trừ/hoàn Coin (vòng lặp vô hạn).
   const maxUsableCoin = walletBalance + (order?.coinAmountUsed ?? 0);
-
-  useEffect(() => {
-    if (!itemId) {
-      router.replace("/");
-    }
-  }, [itemId, router]);
 
   useEffect(() => {
     const targetCoin = useCoin ? maxUsableCoin : 0;
@@ -118,6 +127,9 @@ function CheckoutContentPageBody() {
     createOrderQuery.isError && getApiErrorCode(createOrderQuery.error) === CONTENT_ALREADY_OWNED_CODE;
   const isFullyCoveredByCoin =
     order != null && !isCompleted && !isExpired && order.fiatAmount === 0;
+  const isAnyActionPending = confirmCoinPaymentMutation.isPending || cancelOrderMutation.isPending;
+  const isCoinNotFullyCoveredError =
+    getApiErrorCode(confirmCoinPaymentMutation.error) === ORDER_NOT_FULLY_COVERED_BY_COIN_CODE;
 
   function handleConfirmCoinPayment() {
     if (!orderId) {
@@ -130,7 +142,11 @@ function CheckoutContentPageBody() {
     if (!orderId) {
       return;
     }
-    cancelOrderMutation.mutate(orderId);
+    setCancelError(null);
+    cancelOrderMutation.mutate(orderId, {
+      onSuccess: () => router.replace(returnTo),
+      onError: (error) => setCancelError(getApiErrorMessage(error)),
+    });
   }
 
   const displayStatus: "PENDING" | "SUCCESS" | "OUT_OF_TIME" = isCompleted
@@ -138,6 +154,31 @@ function CheckoutContentPageBody() {
     : isExpired
       ? "OUT_OF_TIME"
       : "PENDING";
+
+  if (isInvalidLink) {
+    return (
+      <main className="relative flex min-h-screen w-full items-center justify-center bg-[#0B0B0C] px-4 text-white">
+        <div className="flex w-full max-w-sm flex-col items-center gap-4 rounded-[28px] border border-white/8 bg-[#121214]/92 p-8 text-center shadow-[0_20px_60px_rgba(0,0,0,0.48)]">
+          <span className="flex h-14 w-14 items-center justify-center rounded-full border border-red-400/30 bg-red-400/10 text-red-300">
+            <X className="h-7 w-7" />
+          </span>
+          <div className="space-y-1.5">
+            <p className="text-base font-bold text-white">Liên kết không hợp lệ</p>
+            <p className="text-sm font-medium text-white/50">
+              Đường dẫn thanh toán này bị thiếu hoặc sai thông tin. Vui lòng quay lại và thử lại.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => router.replace(returnTo)}
+            className="mt-2 inline-flex h-11 w-full items-center justify-center rounded-xl bg-[#D4AF37] px-4 text-sm font-bold text-black transition hover:bg-[#E5C158]"
+          >
+            Quay lại
+          </button>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="relative min-h-screen w-full overflow-y-auto bg-[#0B0B0C] text-white">
@@ -182,6 +223,10 @@ function CheckoutContentPageBody() {
                   type="info"
                   message={getApiErrorMessage(createOrderQuery.error)}
                 />
+              )}
+
+              {orderStatusQuery.isError && order && (
+                <PaymentWarningBanner message="Mất kết nối máy chủ, đang tự động thử lại..." />
               )}
 
               {!walletQuery.isLoading && !createOrderQuery.isError && (
@@ -352,10 +397,20 @@ function CheckoutContentPageBody() {
                         Xác nhận để dùng Coin mở khóa ngay
                       </p>
                     </div>
+                    {confirmCoinPaymentMutation.isError && (
+                      <PaymentWarningBanner
+                        type={isCoinNotFullyCoveredError ? "info" : "warning"}
+                        message={
+                          isCoinNotFullyCoveredError
+                            ? "Coin chưa đủ trả hết đơn này, vui lòng chuyển khoản phần còn lại."
+                            : getApiErrorMessage(confirmCoinPaymentMutation.error)
+                        }
+                      />
+                    )}
                     <button
                       type="button"
                       onClick={handleConfirmCoinPayment}
-                      disabled={confirmCoinPaymentMutation.isPending}
+                      disabled={isAnyActionPending}
                       className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#D4AF37] px-4 text-sm font-bold text-black transition hover:bg-[#E5C158] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {confirmCoinPaymentMutation.isPending && (
@@ -385,14 +440,15 @@ function CheckoutContentPageBody() {
                 </div>
 
                 <div className="mt-7 space-y-3">
+                  {cancelError && (
+                    <PaymentWarningBanner message={cancelError} />
+                  )}
+
                   {canCancel && (
                     <button
                       type="button"
-                      onClick={() => {
-                        handleCancelOrder();
-                        router.replace(returnTo);
-                      }}
-                      disabled={cancelOrderMutation.isPending}
+                      onClick={handleCancelOrder}
+                      disabled={isAnyActionPending}
                       className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-red-300/15 bg-red-400/[0.06] px-5 text-sm font-semibold text-red-100/80 transition hover:border-red-300/35 hover:bg-red-400/[0.1] hover:text-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {cancelOrderMutation.isPending ? (

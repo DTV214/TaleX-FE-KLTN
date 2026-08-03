@@ -1,24 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-  Eye,
-  EyeOff,
-  Loader2,
-  AlertCircle,
-  ArrowLeft,
-  Mail,
-  CheckCircle2,
-} from "lucide-react";
-import {
-  registerAction,
-  verifyEmailAction,
-  resendOtpAction,
-} from "@/features/auth/api/auth.actions";
+import { Eye, EyeOff, Loader2, AlertCircle, ArrowLeft } from "lucide-react";
+import { registerAction } from "@/features/auth/api/auth.actions";
 import { AuthErrorCode } from "@/features/auth/api/auth.dto";
 import { useAuthStore } from "@/features/auth/store/auth.store";
+import { OtpVerificationStep } from "@/features/auth/components/otp-verification-step";
 
 export function RegisterForm() {
   const router = useRouter();
@@ -33,19 +22,6 @@ export function RegisterForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
-
-  // State đếm ngược gửi lại OTP
-  const [countdown, setCountdown] = useState(60);
-
-  // Hook đếm ngược cho OTP
-  useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (step === 2 && countdown > 0) {
-      timer = setTimeout(() => setCountdown(countdown - 1), 1000);
-    }
-    return () => clearTimeout(timer);
-  }, [step, countdown]);
 
   // ==========================================
   // XỬ LÝ BƯỚC 1: ĐĂNG KÝ THÔNG TIN
@@ -97,71 +73,6 @@ export function RegisterForm() {
     setVerificationToken(res.data);
     setUserEmail(email);
     setStep(2);
-    setCountdown(60); // Reset bộ đếm 60s
-    setIsLoading(false);
-  }
-
-  // ==========================================
-  // XỬ LÝ BƯỚC 2: XÁC THỰC OTP
-  // ==========================================
-  async function handleVerifyOtp(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setIsLoading(true);
-    setErrorMsg(null);
-    setSuccessMsg(null);
-
-    const formData = new FormData(e.currentTarget);
-    const otpCode = formData.get("otpCode") as string;
-
-    const res = await verifyEmailAction({ verificationToken, otpCode });
-
-    if (!res.success) {
-      const errorCode = res.error?.data?.errorCode;
-      if (errorCode === AuthErrorCode.INVALID_OTP) {
-        setErrorMsg("Mã OTP không chính xác.");
-      } else if (errorCode === AuthErrorCode.INVALID_VERIFICATION_TOKEN) {
-        setErrorMsg("Phiên xác thực đã hết hạn. Vui lòng đăng ký lại.");
-      } else {
-        setErrorMsg(res.error?.message || "Xác thực thất bại.");
-      }
-      setIsLoading(false);
-      return;
-    }
-
-    // Đăng ký và xác thực thành công tuyệt đối!
-    if (res.data?.user) {
-      setUser(res.data.user);
-    }
-
-    setSuccessMsg("Xác thực thành công! Đang chuyển hướng...");
-    setTimeout(() => {
-      router.push("/");
-      router.refresh();
-    }, 1500);
-  }
-
-  // ==========================================
-  // XỬ LÝ: GỬI LẠI MÃ OTP
-  // ==========================================
-  async function handleResendOtp() {
-    if (countdown > 0) return;
-
-    setIsLoading(true);
-    setErrorMsg(null);
-    setSuccessMsg(null);
-
-    const res = await resendOtpAction({ verificationToken });
-
-    if (!res.success) {
-      if (res.error?.data?.errorCode === AuthErrorCode.OTP_RATE_LIMITED) {
-        setErrorMsg("Vui lòng đợi trước khi gửi yêu cầu mới.");
-      } else {
-        setErrorMsg("Không thể gửi lại mã. Vui lòng thử lại sau.");
-      }
-    } else {
-      setSuccessMsg("Đã gửi lại mã OTP mới vào email của bạn.");
-      setCountdown(60); // Reset countdown
-    }
     setIsLoading(false);
   }
 
@@ -187,29 +98,19 @@ export function RegisterForm() {
         </button>
       )}
 
-      <div className="mb-8 text-center mt-2">
-        <h1 className="text-lg sm:text-xl font-medium text-gray-200 tracking-wide">
-          {step === 1 ? "Tạo Tài Khoản Mới" : "Xác Thực Email"}
-        </h1>
-        {step === 2 && (
-          <p className="text-xs text-gray-400 mt-2">
-            Mã OTP 6 số đã được gửi tới{" "}
-            <span className="text-[#D4AF37] font-semibold">{userEmail}</span>
-          </p>
-        )}
-      </div>
+      {step === 1 && (
+        <div className="mb-8 text-center mt-2">
+          <h1 className="text-lg sm:text-xl font-medium text-gray-200 tracking-wide">
+            Tạo Tài Khoản Mới
+          </h1>
+        </div>
+      )}
 
-      {/* Cảnh báo lỗi & Thành công */}
-      {errorMsg && (
+      {/* Cảnh báo lỗi (chỉ dùng cho bước 1 — OtpVerificationStep tự render lỗi/thành công riêng) */}
+      {step === 1 && errorMsg && (
         <div className="mb-6 p-4 rounded-xl bg-[#E50914]/10 border border-[#E50914]/20 flex items-start gap-3">
           <AlertCircle className="w-5 h-5 text-[#E50914] shrink-0 mt-0.5" />
           <p className="text-sm font-medium text-[#E50914]">{errorMsg}</p>
-        </div>
-      )}
-      {successMsg && (
-        <div className="mb-6 p-4 rounded-xl bg-[#10B981]/10 border border-[#10B981]/20 flex items-start gap-3">
-          <CheckCircle2 className="w-5 h-5 text-[#10B981] shrink-0 mt-0.5" />
-          <p className="text-sm font-medium text-[#10B981]">{successMsg}</p>
         </div>
       )}
 
@@ -335,48 +236,19 @@ export function RegisterForm() {
         </form>
       )}
 
-      {/* ================= BƯỚC 2: FORM NHẬP OTP ================= */}
+      {/* ================= BƯỚC 2: XÁC THỰC OTP ================= */}
       {step === 2 && (
-        <form onSubmit={handleVerifyOtp} className="space-y-6">
-          <div className="space-y-2">
-            <label className="text-xs text-gray-400 font-medium flex items-center justify-between">
-              <span>Mã OTP (6 chữ số)</span>
-              <button
-                type="button"
-                onClick={handleResendOtp}
-                disabled={countdown > 0 || isLoading}
-                className="text-[#D4AF37] hover:text-[#E5C158] transition-colors disabled:text-gray-600 disabled:cursor-not-allowed"
-              >
-                {countdown > 0 ? `Gửi lại sau ${countdown}s` : "Gửi lại mã"}
-              </button>
-            </label>
-            <div className="relative">
-              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
-              <input
-                type="text"
-                name="otpCode"
-                required
-                maxLength={6}
-                placeholder="Ví dụ: 123456"
-                className="w-full text-center tracking-[0.5em] text-lg font-bold rounded-xl border border-white/10 bg-[#121214] p-3.5 text-white focus:border-[#D4AF37]/50 focus:bg-black/50 focus:outline-none focus:ring-1 focus:ring-[#D4AF37]/50 transition-all shadow-inner"
-              />
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full rounded-lg bg-[#D4AF37] py-3.5 text-sm font-bold text-black shadow-[0_4px_20px_rgba(212,175,55,0.3)] transition-all hover:bg-[#E5C158] hover:shadow-[0_4px_25px_rgba(212,175,55,0.5)] active:scale-[0.98] tracking-widest uppercase disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center gap-2"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin" /> Đang kiểm tra...
-              </>
-            ) : (
-              "Xác Thực Email"
-            )}
-          </button>
-        </form>
+        <OtpVerificationStep
+          verificationToken={verificationToken}
+          email={userEmail}
+          onSuccess={(data) => {
+            if (data.user) {
+              setUser(data.user);
+            }
+            router.push("/");
+            router.refresh();
+          }}
+        />
       )}
 
       {/* Footer chung */}

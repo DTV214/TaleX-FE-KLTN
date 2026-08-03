@@ -32,6 +32,7 @@ export function  LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isGsiReady, setIsGsiReady] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const googleRendered = useRef(false);
 
@@ -77,6 +78,10 @@ export function  LoginForm() {
         setUser(data.user);
         router.replace(getLoginDestination(data.user.roleName));
         router.refresh();
+      } else if (data.status === "VERIFYING") {
+        router.push(
+          `/verify-otp?token=${encodeURIComponent(data.verificationToken)}`,
+        );
       } else {
         router.push(
           `/complete-profile?token=${encodeURIComponent(data.verificationToken)}`,
@@ -105,6 +110,7 @@ export function  LoginForm() {
           width: container.offsetWidth,
         });
         googleRendered.current = true;
+        setIsGsiReady(true);
       }
     };
 
@@ -116,7 +122,7 @@ export function  LoginForm() {
     const existing = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
     if (existing) {
       existing.addEventListener("load", initGoogle);
-      return;
+      return () => existing.removeEventListener("load", initGoogle);
     }
 
     const script = document.createElement("script");
@@ -125,6 +131,9 @@ export function  LoginForm() {
     script.defer = true;
     script.onload = initGoogle;
     document.head.appendChild(script);
+    return () => {
+      script.onload = null;
+    };
   }, [handleGoogleCallback]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -258,11 +267,20 @@ export function  LoginForm() {
       </div>
 
       <div className="relative w-full">
-        <div className="flex w-full items-center justify-center gap-3 rounded-lg border border-white/10 bg-[#121214] p-3.5 text-sm font-medium text-gray-300 pointer-events-none">
+        <div
+          className={`flex w-full items-center justify-center gap-3 rounded-lg border border-white/10 bg-[#121214] p-3.5 text-sm font-medium text-gray-300 pointer-events-none ${
+            !isGsiReady && !isGoogleLoading ? "opacity-60" : ""
+          }`}
+        >
           {isGoogleLoading ? (
             <>
               <Loader2 className="w-5 h-5 animate-spin" />
               Đang xử lý Google...
+            </>
+          ) : !isGsiReady ? (
+            <>
+              <Loader2 className="w-5 h-5 animate-spin" />
+              Đang tải Google...
             </>
           ) : (
             <>
@@ -274,7 +292,7 @@ export function  LoginForm() {
         <div
           id="google-btn-container"
           className="absolute inset-0 overflow-hidden"
-          style={{ opacity: 0.01, cursor: "pointer" }}
+          style={{ opacity: 0.01, cursor: isGsiReady ? "pointer" : "default" }}
         />
       </div>
 
