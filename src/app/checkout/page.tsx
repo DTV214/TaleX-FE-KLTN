@@ -289,7 +289,7 @@ function CheckoutPageContent() {
 
                     <div className="flex flex-wrap gap-2">
                       {[
-                        { label: "VietinBank", icon: Landmark },
+                        { label: SEPAY_BANK_NAME, icon: Landmark },
                         { label: "VietQR", icon: CreditCard },
                         { label: "SePay", icon: WalletCards },
                       ].map((item) => {
@@ -430,7 +430,7 @@ function CheckoutPageContent() {
                     </div>
                     <div className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-xs font-medium text-slate-300">
                       <Building2 className="h-4 w-4 text-[#D4AF37]" />
-                      VietinBank
+                      {SEPAY_BANK_NAME}
                     </div>
                   </div>
 

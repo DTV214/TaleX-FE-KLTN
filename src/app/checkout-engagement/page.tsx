@@ -285,7 +285,7 @@ function CheckoutEngagementContent() {
           <div className="mt-6 grid gap-3">
             <div className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] py-3 text-sm font-bold text-zinc-300">
               <Building2 className="h-4 w-4 text-[#D4AF37]" />
-              VietinBank
+              {SEPAY_BANK_NAME}
             </div>
             <div className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] py-3 text-sm font-bold text-zinc-300">
               <WalletCards className="h-4 w-4 text-[#D4AF37]" />
