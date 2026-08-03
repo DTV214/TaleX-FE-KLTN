@@ -4,6 +4,7 @@ import {
     getCreatorCampaignById,
     getCreatorCampaignPlans,
     getCreatorCampaignSeriesByCampaignId,
+    getCreatorCampaignSeriesLogs,
     getCreatorOwnCampaigns,
     getCreatorCampaignPublishedSeries,
 } from "@/features/creator-dashboard/api/creator-campaigns.api";
@@ -16,6 +17,8 @@ import type {
     CreatorCampaignServicePageResponse,
     CreatorCampaignSeries,
     CreatorCampaignSeriesFilterParams,
+    CreatorCampaignSeriesLog,
+    CreatorCampaignSeriesLogParams,
     CreatorCampaignSeriesPageResponse,
 } from "@/features/creator-dashboard/types/creator-campaigns.types";
 
@@ -35,6 +38,16 @@ export const creatorCampaignQueryKeys = {
         [...creatorCampaignQueryKeys.details(), campaignId] as const,
     campaignSeries: (campaignId: string) =>
         [...creatorCampaignQueryKeys.all, "campaign-series", campaignId] as const,
+    campaignSeriesLogs: (
+        campaignSeriesId: string,
+        params: CreatorCampaignSeriesLogParams,
+    ) =>
+        [
+            ...creatorCampaignQueryKeys.all,
+            "campaign-series-logs",
+            campaignSeriesId,
+            params,
+        ] as const,
 };
 
 export function useGetCreatorCampaignPlans(
@@ -102,6 +115,33 @@ export function useGetCreatorCampaignSeriesByCampaignId(campaignId?: string | nu
         queryKey: creatorCampaignQueryKeys.campaignSeries(campaignId ?? ""),
         queryFn: () => getCreatorCampaignSeriesByCampaignId(campaignId ?? ""),
         enabled: Boolean(campaignId),
+        staleTime: 30 * 1000,
+    });
+}
+
+export function useGetCreatorCampaignSeriesLogs(
+    campaignSeriesId?: string | null,
+    params?: CreatorCampaignSeriesLogParams,
+    enabled = true,
+) {
+    const fallbackParams: CreatorCampaignSeriesLogParams = {
+        startTime: "",
+        endTime: "",
+    };
+    const queryParams = params ?? fallbackParams;
+
+    return useQuery<CreatorCampaignSeriesLog[]>({
+        queryKey: creatorCampaignQueryKeys.campaignSeriesLogs(
+            campaignSeriesId ?? "",
+            queryParams,
+        ),
+        queryFn: () =>
+            getCreatorCampaignSeriesLogs(campaignSeriesId ?? "", queryParams),
+        enabled:
+            Boolean(campaignSeriesId) &&
+            Boolean(queryParams.startTime) &&
+            Boolean(queryParams.endTime) &&
+            enabled,
         staleTime: 30 * 1000,
     });
 }

@@ -242,4 +242,18 @@
     right: 0;
     width: 3rem;
   }
+
+  .campaign-log-date-input {
+    position: relative;
+    color-scheme: dark;
+  }
+
+  .campaign-log-date-input::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    height: 100%;
+    opacity: 0;
+    position: absolute;
+    right: 0;
+    width: 3rem;
+  }
 }

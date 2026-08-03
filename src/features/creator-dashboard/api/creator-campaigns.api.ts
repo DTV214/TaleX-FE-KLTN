@@ -12,6 +12,9 @@ import type {
     CreatorCampaignServicePageResponse,
     CreatorCampaignSeries,
     CreatorCampaignSeriesFilterParams,
+    CreatorCampaignSeriesLog,
+    CreatorCampaignSeriesLogListResponse,
+    CreatorCampaignSeriesLogParams,
     CreatorCampaignSeriesListResponse,
     CreatorCampaignSeriesPageResponse,
 } from "@/features/creator-dashboard/types/creator-campaigns.types";
@@ -113,6 +116,18 @@ export async function getCreatorCampaignSeriesByCampaignId(
 ): Promise<CreatorCampaignSeries[]> {
     const response = await httpClient.get<CreatorCampaignSeriesListResponse>(
         `/api/v1/campaign-series/campaign/${campaignId}`,
+    );
+
+    return response.data.data;
+}
+
+export async function getCreatorCampaignSeriesLogs(
+    campaignSeriesId: string,
+    params: CreatorCampaignSeriesLogParams,
+): Promise<CreatorCampaignSeriesLog[]> {
+    const response = await httpClient.get<CreatorCampaignSeriesLogListResponse>(
+        `/api/v1/campaign-series/${campaignSeriesId}/logs`,
+        { params },
     );
 
     return response.data.data;

@@ -2,10 +2,12 @@
 
 import { useMemo, useState } from "react";
 import {
+  Activity,
   ArrowLeft,
   ArrowRight,
   BarChart3,
   BookOpen,
+  Bookmark,
   Calendar,
   CalendarClock,
   CheckCircle2,
@@ -21,15 +23,21 @@ import {
   RefreshCw,
   Sparkles,
   Target,
+  ThumbsUp,
   TrendingUp,
   WalletCards,
   type LucideIcon,
 } from "lucide-react";
 import {
+  Area,
+  AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
   Cell,
+  Legend,
+  Line,
+  LineChart,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -47,12 +55,15 @@ import { getApiErrorMessage } from "@/shared/api/http-client";
 import {
   useGetCreatorCampaignPlans,
   useGetCreatorCampaignSeriesByCampaignId,
+  useGetCreatorCampaignSeriesLogs,
   useGetCreatorOwnCampaigns,
 } from "@/features/creator-dashboard/hooks/use-creator-campaigns";
 import type {
   CreatorCampaign,
   CreatorCampaignFilterFields,
   CreatorCampaignSeries,
+  CreatorCampaignSeriesLog,
+  CreatorCampaignSeriesLogParams,
   CreatorCampaignSortBy,
   CreatorCampaignStatus,
 } from "@/features/creator-dashboard/types/creator-campaigns.types";
@@ -201,6 +212,114 @@ function getCampaignSeriesMetric(item: CreatorCampaignSeries, key: string) {
   return 0;
 }
 
+function toApiDateTime(value: Date) {
+  const pad = (input: number) => String(input).padStart(2, "0");
+
+  return [
+    value.getFullYear(),
+    pad(value.getMonth() + 1),
+    pad(value.getDate()),
+  ].join("-") + `T${pad(value.getHours())}:${pad(value.getMinutes())}:00`;
+}
+
+function startOfDay(value: Date) {
+  const next = new Date(value);
+  next.setHours(0, 0, 0, 0);
+  return next;
+}
+
+function endOfDay(value: Date) {
+  const next = new Date(value);
+  next.setHours(23, 59, 59, 999);
+  return next;
+}
+
+function isValidDate(value: Date) {
+  return !Number.isNaN(value.getTime());
+}
+
+function toDateTimeInputValue(value?: string | null) {
+  return value ? value.slice(0, 16) : "";
+}
+
+function fromDateTimeInputValue(value: string) {
+  return value ? `${value}:00` : "";
+}
+
+function isValidLogRange(range: CreatorCampaignSeriesLogParams) {
+  const start = parseBackendDate(range.startTime);
+  const end = parseBackendDate(range.endTime);
+
+  return isValidDate(start) && isValidDate(end) && start <= end;
+}
+
+function getCampaignSeriesLogRange(campaign: CreatorCampaign) {
+  const now = new Date();
+  const fallbackStart = new Date(now);
+  fallbackStart.setDate(fallbackStart.getDate() - 30);
+
+  const start = campaign.startAt
+    ? parseBackendDate(campaign.startAt)
+    : campaign.createdAt
+      ? parseBackendDate(campaign.createdAt)
+      : fallbackStart;
+  const end = campaign.endAt ? parseBackendDate(campaign.endAt) : now;
+  const normalizedStart = isValidDate(start) ? startOfDay(start) : startOfDay(fallbackStart);
+  const normalizedEnd = campaign.endAt
+    ? isValidDate(end)
+      ? endOfDay(end)
+      : endOfDay(now)
+    : now;
+
+  return {
+    startTime: toApiDateTime(normalizedStart),
+    endTime: toApiDateTime(isValidDate(normalizedEnd) ? normalizedEnd : now),
+  };
+}
+
+function formatHourBucket(value?: string | null) {
+  if (!value) return "";
+
+  const parsed = parseBackendDate(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+
+  return new Intl.DateTimeFormat("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(parsed);
+}
+
+function getCampaignSeriesLogMetric(log: CreatorCampaignSeriesLog, key: string) {
+  const value = log.analyticData?.[key];
+
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  return 0;
+}
+
+function sumLogMetric(logs: CreatorCampaignSeriesLog[], key: string) {
+  return logs.reduce((sum, log) => sum + getCampaignSeriesLogMetric(log, key), 0);
+}
+
+function buildCampaignSeriesLogChartData(logs: CreatorCampaignSeriesLog[]) {
+  return logs.map((log) => ({
+    hour: formatHourBucket(log.hourBucket),
+    impression: log.totalImpression ?? 0,
+    views: getCampaignSeriesLogMetric(log, "views"),
+    likes: getCampaignSeriesLogMetric(log, "likes"),
+    comments: getCampaignSeriesLogMetric(log, "comments"),
+    shares: getCampaignSeriesLogMetric(log, "shares"),
+    bookmarks: getCampaignSeriesLogMetric(log, "bookmarks"),
+    watchTime: getCampaignSeriesLogMetric(log, "watchTime"),
+  }));
+}
+
 type CampaignSeriesDashboardRow = {
   campaignSeries: CreatorCampaignSeries;
   series?: PublicSeriesItem;
@@ -318,16 +437,37 @@ function CampaignCard({
 }
 
 function CampaignSeriesInsights({
+  campaign,
   rows,
   isLoading,
   isError,
   error,
 }: {
+  campaign: CreatorCampaign;
   rows: CampaignSeriesDashboardRow[];
   isLoading: boolean;
   isError: boolean;
   error: unknown;
 }) {
+  const [selectedCampaignSeriesId, setSelectedCampaignSeriesId] = useState("");
+  const isShowingAllSeries = selectedCampaignSeriesId === "__all";
+  const selectedRow =
+    isShowingAllSeries
+      ? null
+      : rows.find(
+          (row) => row.campaignSeries.campaignSeriesId === selectedCampaignSeriesId,
+        ) ?? rows[0];
+  const defaultLogRange = useMemo(() => getCampaignSeriesLogRange(campaign), [campaign]);
+  const [logRange, setLogRange] =
+    useState<CreatorCampaignSeriesLogParams>(defaultLogRange);
+  const canLoadLogs = isValidLogRange(logRange);
+
+  const logsQuery = useGetCreatorCampaignSeriesLogs(
+    selectedRow?.campaignSeries.campaignSeriesId,
+    logRange,
+    Boolean(selectedRow) && !isShowingAllSeries && canLoadLogs,
+  );
+
   return (
     <section className="mt-7 rounded-[30px] border border-white/10 bg-black/20 p-5 md:p-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -338,8 +478,8 @@ function CampaignSeriesInsights({
           <div>
             <h3 className="text-2xl font-black text-white">Series trong chiến dịch</h3>
             <p className="mt-1 max-w-2xl text-sm font-semibold leading-6 text-zinc-500">
-              Nội dung đang được phân phối trong campaign, ghép từ Campaign Series
-              và thông tin public của từng series.
+              Chọn một series để xem tổng quan phân phối trước khi mở dashboard
+              chi tiết theo thời gian.
             </p>
           </div>
         </div>
@@ -397,13 +537,922 @@ function CampaignSeriesInsights({
           Chưa có series nào được gắn với chiến dịch này.
         </div>
       ) : (
-        <div className="mt-6 grid gap-5 xl:grid-cols-2">
+        <>
+          <div className="mt-6 rounded-[26px] border border-white/10 bg-white/[0.035] p-4">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#D4AF37]">
+                  Danh sách series
+                </p>
+                <p className="mt-1 text-sm font-semibold text-zinc-500">
+                  Bấm vào một series để đổi nội dung tổng quan bên dưới.
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setSelectedCampaignSeriesId("__all")}
+                className="h-10 border-white/10 bg-white/[0.05] px-4 text-sm font-bold text-zinc-200 hover:bg-white/[0.08] hover:text-white"
+              >
+                Xem tất cả
+              </Button>
+            </div>
+            <div className="mt-4 flex gap-3 overflow-x-auto pb-1">
+              {rows.map((row) => {
+                const isSelected =
+                  row.campaignSeries.campaignSeriesId ===
+                  selectedRow?.campaignSeries.campaignSeriesId;
+
+                return (
+                  <CampaignSeriesPickerItem
+                    key={row.campaignSeries.campaignSeriesId}
+                    row={row}
+                    isSelected={isSelected}
+                    onClick={() =>
+                      setSelectedCampaignSeriesId(
+                        row.campaignSeries.campaignSeriesId,
+                      )
+                    }
+                  />
+                );
+              })}
+            </div>
+          </div>
+
+          {isShowingAllSeries ? (
+            <div className="mt-6 grid gap-5 xl:grid-cols-2">
+              {rows.map((row) => (
+                <CampaignSeriesCard
+                  key={row.campaignSeries.campaignSeriesId}
+                  row={row}
+                />
+              ))}
+            </div>
+          ) : selectedRow ? (
+            <CampaignSeriesOverviewPanelV2
+              row={selectedRow}
+              rows={rows}
+              logs={canLoadLogs ? logsQuery.data ?? [] : []}
+              isLogsLoading={canLoadLogs && logsQuery.isLoading}
+              isLogsError={canLoadLogs && logsQuery.isError}
+              logsError={logsQuery.error}
+              range={logRange}
+              isRangeValid={canLoadLogs}
+              onRangeChange={setLogRange}
+            />
+          ) : null}
+        </>
+      )}
+    </section>
+  );
+}
+
+function CampaignSeriesPickerItem({
+  row,
+  isSelected,
+  onClick,
+}: {
+  row: CampaignSeriesDashboardRow;
+  isSelected: boolean;
+  onClick: () => void;
+}) {
+  const { campaignSeries, series, isSeriesLoading, isSeriesError } = row;
+  const artwork = getSeriesArtwork(series);
+  const isVideo = series?.contentType?.toUpperCase() === "VIDEO";
+  const title = isSeriesLoading
+    ? "Đang tải series..."
+    : series?.title ?? shortenId(campaignSeries.seriesId);
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "group flex min-w-[260px] items-center gap-3 rounded-2xl border p-3 text-left transition-colors",
+        isSelected
+          ? "border-[#D4AF37]/45 bg-[#D4AF37]/12"
+          : "border-white/10 bg-black/20 hover:border-[#D4AF37]/25 hover:bg-white/[0.055]",
+      )}
+    >
+      <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-xl bg-white/[0.04]">
+        {artwork ? (
+          <div
+            className="h-full w-full bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
+            style={{ backgroundImage: `url(${artwork})` }}
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center">
+            <ImageIcon className="h-5 w-5 text-[#D4AF37]" />
+          </div>
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="line-clamp-1 text-sm font-black text-white">{title}</p>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <Badge
+            className={cn("px-2 py-0.5 text-[10px]", getStatusClass(campaignSeries.status))}
+            variant="outline"
+          >
+            {getStatusLabel(campaignSeries.status)}
+          </Badge>
+          <span className="text-xs font-bold text-zinc-500">
+            {formatNumber(campaignSeries.totalImpression)} impression
+          </span>
+        </div>
+        <p className="mt-1 text-xs font-semibold text-zinc-600">
+          {isSeriesError
+            ? "Không tải được thông tin"
+            : getContentTypeLabel(series?.contentType)}
+        </p>
+      </div>
+      {isVideo ? (
+        <Film className="h-4 w-4 shrink-0 text-sky-200" />
+      ) : (
+        <BookOpen className="h-4 w-4 shrink-0 text-[#D4AF37]" />
+      )}
+    </button>
+  );
+}
+
+function SeriesMiniMetric({
+  icon: Icon,
+  label,
+  value,
+  tone,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: string;
+  tone: "gold" | "blue" | "green" | "pink";
+}) {
+  const toneClass = {
+    gold: "border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#F5D46E]",
+    blue: "border-sky-300/20 bg-sky-400/10 text-sky-100",
+    green: "border-emerald-300/20 bg-emerald-400/10 text-emerald-100",
+    pink: "border-fuchsia-300/20 bg-fuchsia-400/10 text-fuchsia-100",
+  }[tone];
+
+  return (
+    <div className="rounded-2xl border border-white/[0.08] bg-black/20 p-4">
+      <div className={cn("flex h-10 w-10 items-center justify-center rounded-xl", toneClass)}>
+        <Icon className="h-4 w-4" />
+      </div>
+      <p className="mt-3 text-[11px] font-bold uppercase tracking-[0.16em] text-zinc-500">
+        {label}
+      </p>
+      <p className="mt-1 text-xl font-black text-white">{value}</p>
+    </div>
+  );
+}
+
+function CampaignSeriesOverviewPanelV2({
+  row,
+  rows,
+  logs,
+  isLogsLoading,
+  isLogsError,
+  logsError,
+  range,
+  isRangeValid,
+  onRangeChange,
+}: {
+  row: CampaignSeriesDashboardRow;
+  rows: CampaignSeriesDashboardRow[];
+  logs: CreatorCampaignSeriesLog[];
+  isLogsLoading: boolean;
+  isLogsError: boolean;
+  logsError: unknown;
+  range: CreatorCampaignSeriesLogParams;
+  isRangeValid: boolean;
+  onRangeChange: (range: CreatorCampaignSeriesLogParams) => void;
+}) {
+  const { campaignSeries, series, isSeriesLoading, isSeriesError } = row;
+  const artwork = getSeriesArtwork(series);
+  const isVideo = series?.contentType?.toUpperCase() === "VIDEO";
+  const chartData = useMemo(() => buildCampaignSeriesLogChartData(logs), [logs]);
+  const categories = series?.categories?.slice(0, 2) ?? [];
+  const tags = series?.tags?.slice(0, 3) ?? [];
+  const totalSeriesImpression = rows.reduce(
+    (sum, item) => sum + (item.campaignSeries.totalImpression ?? 0),
+    0,
+  );
+  const sharePercent =
+    totalSeriesImpression > 0
+      ? Math.round(((campaignSeries.totalImpression ?? 0) / totalSeriesImpression) * 100)
+      : 0;
+  const snapshotMetrics = [
+    { key: "views", label: "Views", value: getCampaignSeriesMetric(campaignSeries, "views"), color: "#60A5FA" },
+    { key: "likes", label: "Likes", value: getCampaignSeriesMetric(campaignSeries, "likes"), color: "#D4AF37" },
+    { key: "comments", label: "Comments", value: getCampaignSeriesMetric(campaignSeries, "comments"), color: "#34D399" },
+    { key: "shares", label: "Shares", value: getCampaignSeriesMetric(campaignSeries, "shares"), color: "#F472B6" },
+  ];
+  const logMetrics = [
+    { key: "views", label: "Views", value: sumLogMetric(logs, "views"), color: "#60A5FA" },
+    { key: "likes", label: "Likes", value: sumLogMetric(logs, "likes"), color: "#D4AF37" },
+    { key: "comments", label: "Comments", value: sumLogMetric(logs, "comments"), color: "#34D399" },
+    { key: "shares", label: "Shares", value: sumLogMetric(logs, "shares"), color: "#F472B6" },
+  ];
+  const logImpression = logs.reduce(
+    (sum, log) => sum + (log.totalImpression ?? 0),
+    0,
+  );
+  const maxLogMetric = Math.max(...logMetrics.map((metric) => metric.value), 1);
+
+  return (
+    <div className="mt-6 space-y-5">
+      <div className="group relative min-h-[360px] cursor-pointer overflow-hidden rounded-[30px] border border-white/10 bg-white/[0.04] shadow-[0_24px_70px_rgba(0,0,0,0.24)] transition-colors duration-300 hover:border-[#D4AF37]/30">
+        <div className="pointer-events-none absolute inset-x-8 top-0 z-20 h-px bg-gradient-to-r from-transparent via-[#F5D46E]/70 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+        <div className="pointer-events-none absolute -right-24 top-0 z-20 h-full w-32 rotate-12 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 blur-sm transition-all duration-700 group-hover:right-[115%] group-hover:opacity-100" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_12%,rgba(212,175,55,0.22),transparent_30%),radial-gradient(circle_at_86%_16%,rgba(96,165,250,0.15),transparent_32%)]" />
+        {artwork ? (
+          <div
+            className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
+            role="img"
+            aria-label={series?.title ?? campaignSeries.seriesId}
+            style={{ backgroundImage: `url(${artwork})` }}
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center bg-[linear-gradient(135deg,rgba(39,39,42,0.9),rgba(9,9,11,0.95))]">
+            <ImageIcon className="h-10 w-10 text-[#D4AF37]" />
+          </div>
+        )}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/62 to-black/20" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/88 via-transparent to-black/20" />
+        <div className="relative z-10 flex min-h-[360px] max-w-4xl flex-col justify-end p-6 md:p-8">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge className="border-white/10 bg-black/45 text-white backdrop-blur" variant="outline">
+              {isVideo ? <Film className="h-3.5 w-3.5" /> : <BookOpen className="h-3.5 w-3.5" />}
+              {getContentTypeLabel(series?.contentType)}
+            </Badge>
+            <Badge className={getStatusClass(campaignSeries.status)} variant="outline">
+              {getStatusLabel(campaignSeries.status)}
+            </Badge>
+            {series?.ageRating ? (
+              <Badge className="border-[#D4AF37]/25 bg-[#D4AF37]/15 text-[#F5D46E]" variant="outline">
+                {series.ageRating}
+              </Badge>
+            ) : null}
+          </div>
+          <h4 className="mt-4 line-clamp-2 text-4xl font-black tracking-tight text-white md:text-6xl">
+            {isSeriesLoading
+              ? "Đang tải thông tin series..."
+              : series?.title ?? shortenId(campaignSeries.seriesId)}
+          </h4>
+          <p className="mt-4 text-base font-bold text-zinc-300">
+            {isSeriesError
+              ? "Không tải được thông tin public series"
+              : series?.creatorName
+                ? `Creator: ${series.creatorName}`
+                : `Series ID: ${shortenId(campaignSeries.seriesId)}`}
+          </p>
+          {series?.description ? (
+            <p className="mt-4 line-clamp-3 max-w-3xl text-sm font-semibold leading-7 text-zinc-300 md:text-base">
+              {series.description}
+            </p>
+          ) : null}
+          <div className="mt-5 flex flex-wrap gap-2">
+            {categories.map((category) => (
+              <Badge key={category.categoryId} className="border-white/10 bg-white/[0.10] text-zinc-100" variant="outline">
+                {category.categoryName}
+              </Badge>
+            ))}
+            {tags.map((tag) => (
+              <Badge key={tag.tagId} className="border-sky-300/20 bg-sky-400/10 text-sky-100" variant="outline">
+                #{tag.tagName}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-5 xl:grid-cols-[0.8fr_1.2fr]">
+        <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5 md:p-6">
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#D4AF37]">
+            Tổng quan phân phối
+          </p>
+          <h4 className="mt-2 text-2xl font-black text-white">
+            Hiệu suất series đang chọn
+          </h4>
+          <p className="mt-1 text-sm font-semibold text-zinc-500">
+            Snapshot hiện tại từ Campaign Series.
+          </p>
+
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            <SeriesMiniMetric icon={Megaphone} label="Impression" value={formatNumber(campaignSeries.totalImpression)} tone="gold" />
+            <SeriesMiniMetric icon={Eye} label="Total views" value={formatNumber(series?.totalViews)} tone="blue" />
+            <SeriesMiniMetric icon={Bookmark} label="Subscriptions" value={formatNumber(series?.totalSubscriptions)} tone="green" />
+            <SeriesMiniMetric icon={Activity} label="Tỷ trọng" value={`${sharePercent}%`} tone="pink" />
+          </div>
+
+          <div className="mt-5 rounded-2xl border border-white/[0.08] bg-black/20 p-4">
+            <div className="mb-3 flex items-center justify-between">
+              <p className="text-sm font-black text-white">Tỷ trọng series</p>
+              <span className="text-sm font-black text-[#F5D46E]">{sharePercent}%</span>
+            </div>
+            <Progress value={sharePercent} />
+            <p className="mt-3 text-xs font-semibold leading-5 text-zinc-500">
+              So với tổng impression của các series trong chiến dịch này.
+            </p>
+          </div>
+
+          <div className="mt-5 rounded-2xl border border-white/[0.08] bg-black/20 p-4">
+            <p className="text-sm font-black text-white">Tương tác snapshot</p>
+            <div className="mt-3 h-[230px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={snapshotMetrics}>
+                  <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
+                  <XAxis dataKey="label" tick={{ fill: "#a1a1aa", fontSize: 11 }} tickLine={false} axisLine={false} />
+                  <YAxis tick={{ fill: "#71717a", fontSize: 11 }} tickLine={false} axisLine={false} />
+                  <Tooltip
+                    contentStyle={{
+                      background: "rgba(15, 15, 18, 0.95)",
+                      border: "1px solid rgba(255,255,255,0.12)",
+                      borderRadius: 12,
+                      color: "#fff",
+                    }}
+                    formatter={(value) => formatNumber(Number(value))}
+                  />
+                  <Bar dataKey="value" radius={[10, 10, 0, 0]}>
+                    {snapshotMetrics.map((item) => (
+                      <Cell key={item.key} fill={item.color} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5 md:p-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#D4AF37]">
+                Chi tiết theo thời gian
+              </p>
+              <h4 className="mt-2 text-2xl font-black text-white">
+                Biểu đồ log phân phối
+              </h4>
+              <p className="mt-1 text-sm font-semibold text-zinc-500">
+                {range.startTime} - {range.endTime}
+              </p>
+            </div>
+            <Badge className="border-white/10 bg-white/[0.06] text-zinc-200" variant="outline">
+              {formatNumber(logs.length)} điểm dữ liệu
+            </Badge>
+          </div>
+
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            <label className="block cursor-pointer">
+              <span className="mb-2 block text-[11px] font-bold uppercase tracking-[0.16em] text-zinc-500">
+                Bắt đầu
+              </span>
+              <div className="relative">
+                <input
+                  type="datetime-local"
+                  value={toDateTimeInputValue(range.startTime)}
+                  onChange={(event) =>
+                    onRangeChange({
+                      ...range,
+                      startTime: fromDateTimeInputValue(event.target.value),
+                    })
+                  }
+                  className="campaign-log-date-input h-12 w-full cursor-pointer rounded-2xl border border-white/10 bg-black/30 px-4 pr-12 text-sm font-bold text-zinc-100 outline-none transition placeholder:text-zinc-600 focus:border-[#D4AF37]/45 focus:ring-4 focus:ring-[#D4AF37]/10"
+                />
+                <Calendar className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/90" />
+              </div>
+            </label>
+            <label className="block cursor-pointer">
+              <span className="mb-2 block text-[11px] font-bold uppercase tracking-[0.16em] text-zinc-500">
+                Kết thúc
+              </span>
+              <div className="relative">
+                <input
+                  type="datetime-local"
+                  value={toDateTimeInputValue(range.endTime)}
+                  onChange={(event) =>
+                    onRangeChange({
+                      ...range,
+                      endTime: fromDateTimeInputValue(event.target.value),
+                    })
+                  }
+                  className="campaign-log-date-input h-12 w-full cursor-pointer rounded-2xl border border-white/10 bg-black/30 px-4 pr-12 text-sm font-bold text-zinc-100 outline-none transition placeholder:text-zinc-600 focus:border-[#D4AF37]/45 focus:ring-4 focus:ring-[#D4AF37]/10"
+                />
+                <Calendar className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/90" />
+              </div>
+            </label>
+          </div>
+
+          {!isRangeValid ? (
+            <div className="mt-3 rounded-2xl border border-red-300/20 bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-100">
+              Khoảng thời gian chưa hợp lệ. Vui lòng chọn thời gian bắt đầu
+              nhỏ hơn thời gian kết thúc.
+            </div>
+          ) : null}
+
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <SeriesMiniMetric icon={Megaphone} label="Log impression" value={formatNumber(logImpression)} tone="gold" />
+            <SeriesMiniMetric icon={Eye} label="Views" value={formatNumber(sumLogMetric(logs, "views"))} tone="blue" />
+            <SeriesMiniMetric icon={ThumbsUp} label="Likes" value={formatNumber(sumLogMetric(logs, "likes"))} tone="green" />
+            <SeriesMiniMetric icon={Clock3} label="Watch time" value={formatNumber(sumLogMetric(logs, "watchTime"))} tone="pink" />
+          </div>
+
+          {isLogsLoading ? (
+            <div className="mt-5 h-[520px] animate-pulse rounded-[24px] border border-white/10 bg-white/[0.035]" />
+          ) : isLogsError ? (
+            <div className="mt-5 rounded-2xl border border-red-300/20 bg-red-500/10 p-5 text-sm font-semibold text-red-100">
+              {getApiErrorMessage(logsError)}
+            </div>
+          ) : logs.length === 0 ? (
+            <div className="mt-5 rounded-2xl border border-dashed border-white/12 bg-white/[0.025] p-6 text-sm font-semibold text-zinc-500">
+              Chưa có log theo thời gian cho series này trong khoảng đã chọn.
+            </div>
+          ) : (
+            <div className="mt-5 grid gap-5">
+              <div className="rounded-2xl border border-white/[0.08] bg-black/20 p-4">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-black text-white">Impression theo giờ</p>
+                  <Activity className="h-4 w-4 text-[#D4AF37]" />
+                </div>
+                <div className="mt-4 h-[280px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={chartData}>
+                      <defs>
+                        <linearGradient id="overviewImpressionGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#D4AF37" stopOpacity={0.5} />
+                          <stop offset="95%" stopColor="#D4AF37" stopOpacity={0.02} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
+                      <XAxis dataKey="hour" tick={{ fill: "#a1a1aa", fontSize: 11 }} tickLine={false} axisLine={false} />
+                      <YAxis tick={{ fill: "#71717a", fontSize: 11 }} tickLine={false} axisLine={false} />
+                      <Tooltip
+                        contentStyle={{
+                          background: "rgba(15, 15, 18, 0.95)",
+                          border: "1px solid rgba(255,255,255,0.12)",
+                          borderRadius: 12,
+                          color: "#fff",
+                        }}
+                        formatter={(value) => formatNumber(Number(value))}
+                      />
+                      <Area type="monotone" dataKey="impression" stroke="#D4AF37" strokeWidth={3} fill="url(#overviewImpressionGradient)" name="Impression" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              <div className="grid gap-5 lg:grid-cols-[1fr_0.8fr]">
+                <div className="rounded-2xl border border-white/[0.08] bg-black/20 p-4">
+                  <p className="text-sm font-black text-white">Tương tác theo thời gian</p>
+                  <div className="mt-4 h-[260px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={chartData}>
+                        <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
+                        <XAxis dataKey="hour" tick={{ fill: "#a1a1aa", fontSize: 11 }} tickLine={false} axisLine={false} />
+                        <YAxis tick={{ fill: "#71717a", fontSize: 11 }} tickLine={false} axisLine={false} />
+                        <Tooltip
+                          contentStyle={{
+                            background: "rgba(15, 15, 18, 0.95)",
+                            border: "1px solid rgba(255,255,255,0.12)",
+                            borderRadius: 12,
+                            color: "#fff",
+                          }}
+                          formatter={(value) => formatNumber(Number(value))}
+                        />
+                        <Legend wrapperStyle={{ color: "#d4d4d8", fontSize: 12 }} />
+                        <Line type="monotone" dataKey="views" stroke="#60A5FA" strokeWidth={3} dot={false} name="Views" />
+                        <Line type="monotone" dataKey="likes" stroke="#D4AF37" strokeWidth={3} dot={false} name="Likes" />
+                        <Line type="monotone" dataKey="comments" stroke="#34D399" strokeWidth={3} dot={false} name="Comments" />
+                        <Line type="monotone" dataKey="shares" stroke="#F472B6" strokeWidth={3} dot={false} name="Shares" />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-white/[0.08] bg-black/20 p-4">
+                  <p className="text-sm font-black text-white">Tổng log</p>
+                  <div className="mt-4 space-y-3">
+                    {logMetrics.map((metric) => (
+                      <div key={metric.key}>
+                        <div className="mb-1 flex items-center justify-between text-xs font-bold">
+                          <span className="text-zinc-500">{metric.label}</span>
+                          <span className="text-white">{formatNumber(metric.value)}</span>
+                        </div>
+                        <div className="h-2 overflow-hidden rounded-full bg-white/[0.08]">
+                          <div
+                            className="h-full rounded-full"
+                            style={{
+                              width: `${Math.min(100, (metric.value / maxLogMetric) * 100)}%`,
+                              backgroundColor: metric.color,
+                            }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function CampaignSeriesOverviewPanel({
+  row,
+  rows,
+  onOpenDetail,
+}: {
+  row: CampaignSeriesDashboardRow;
+  rows: CampaignSeriesDashboardRow[];
+  onOpenDetail: () => void;
+}) {
+  const { campaignSeries, series, isSeriesLoading, isSeriesError } = row;
+  const artwork = getSeriesArtwork(series);
+  const isVideo = series?.contentType?.toUpperCase() === "VIDEO";
+  const analytics = [
+    { key: "views", label: "Views", value: getCampaignSeriesMetric(campaignSeries, "views"), color: "#60A5FA" },
+    { key: "likes", label: "Likes", value: getCampaignSeriesMetric(campaignSeries, "likes"), color: "#D4AF37" },
+    { key: "comments", label: "Comments", value: getCampaignSeriesMetric(campaignSeries, "comments"), color: "#34D399" },
+    { key: "shares", label: "Shares", value: getCampaignSeriesMetric(campaignSeries, "shares"), color: "#F472B6" },
+  ];
+  const categories = series?.categories?.slice(0, 2) ?? [];
+  const totalSeriesImpression = rows.reduce(
+    (sum, item) => sum + (item.campaignSeries.totalImpression ?? 0),
+    0,
+  );
+  const sharePercent =
+    totalSeriesImpression > 0
+      ? Math.round(((campaignSeries.totalImpression ?? 0) / totalSeriesImpression) * 100)
+      : 0;
+  const overviewChartData = analytics.map((item) => ({
+    name: item.label,
+    value: item.value,
+  }));
+
+  return (
+    <div className="mt-6 grid gap-5 xl:grid-cols-[1fr_1.05fr]">
+      <div className="overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.04]">
+        <div className="relative min-h-[320px] overflow-hidden bg-white/[0.035]">
+          {artwork ? (
+            <div
+              className="absolute inset-0 bg-cover bg-center"
+              role="img"
+              aria-label={series?.title ?? campaignSeries.seriesId}
+              style={{ backgroundImage: `url(${artwork})` }}
+            />
+          ) : (
+            <div className="flex h-full min-h-[320px] items-center justify-center bg-[radial-gradient(circle_at_30%_15%,rgba(212,175,55,0.24),transparent_30%),linear-gradient(135deg,rgba(39,39,42,0.9),rgba(9,9,11,0.95))]">
+              <ImageIcon className="h-10 w-10 text-[#D4AF37]" />
+            </div>
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/10" />
+          <div className="relative flex min-h-[320px] flex-col justify-end p-6">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge className="border-white/10 bg-black/45 text-white backdrop-blur" variant="outline">
+                {isVideo ? <Film className="h-3.5 w-3.5" /> : <BookOpen className="h-3.5 w-3.5" />}
+                {getContentTypeLabel(series?.contentType)}
+              </Badge>
+              <Badge className={getStatusClass(campaignSeries.status)} variant="outline">
+                {getStatusLabel(campaignSeries.status)}
+              </Badge>
+            </div>
+            <h4 className="mt-4 line-clamp-2 text-3xl font-black text-white md:text-4xl">
+              {isSeriesLoading
+                ? "Đang tải thông tin series..."
+                : series?.title ?? shortenId(campaignSeries.seriesId)}
+            </h4>
+            <p className="mt-3 text-sm font-semibold text-zinc-400">
+              {isSeriesError
+                ? "Không tải được thông tin public series"
+                : series?.creatorName
+                  ? `Creator: ${series.creatorName}`
+                  : `Series ID: ${shortenId(campaignSeries.seriesId)}`}
+            </p>
+            {series?.description ? (
+              <p className="mt-4 line-clamp-2 max-w-2xl text-sm font-semibold leading-6 text-zinc-300">
+                {series.description}
+              </p>
+            ) : null}
+            <div className="mt-5 flex flex-wrap gap-2">
+              {categories.map((category) => (
+                <Badge
+                  key={category.categoryId}
+                  className="border-white/10 bg-white/[0.10] text-zinc-100"
+                  variant="outline"
+                >
+                  {category.categoryName}
+                </Badge>
+              ))}
+              {series?.ageRating ? (
+                <Badge
+                  className="border-[#D4AF37]/25 bg-[#D4AF37]/15 text-[#F5D46E]"
+                  variant="outline"
+                >
+                  {series.ageRating}
+                </Badge>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5 md:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#D4AF37]">
+              Tổng quan phân phối
+            </p>
+            <h4 className="mt-2 text-2xl font-black text-white">
+              Hiệu suất series đang chọn
+            </h4>
+            <p className="mt-1 text-sm font-semibold text-zinc-500">
+              Dữ liệu snapshot từ Campaign Series hiện tại.
+            </p>
+          </div>
+          <Button
+            type="button"
+            onClick={onOpenDetail}
+            className="h-11 rounded-2xl bg-[#D4AF37] px-5 font-black text-black hover:bg-[#F5D46E]"
+          >
+            Xem chi tiết
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+        </div>
+
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <SeriesMiniMetric icon={Megaphone} label="Impression" value={formatNumber(campaignSeries.totalImpression)} tone="gold" />
+          <SeriesMiniMetric icon={Eye} label="Total views" value={formatNumber(series?.totalViews)} tone="blue" />
+          <SeriesMiniMetric icon={Bookmark} label="Subscriptions" value={formatNumber(series?.totalSubscriptions)} tone="green" />
+          <SeriesMiniMetric icon={Activity} label="Tỷ trọng" value={`${sharePercent}%`} tone="pink" />
+        </div>
+
+        <div className="mt-5 grid gap-5 lg:grid-cols-[0.8fr_1fr]">
+          <div className="rounded-2xl border border-white/[0.08] bg-black/20 p-4">
+            <div className="mb-3 flex items-center justify-between">
+              <p className="text-sm font-black text-white">Tỷ trọng series</p>
+              <span className="text-sm font-black text-[#F5D46E]">{sharePercent}%</span>
+            </div>
+            <Progress value={sharePercent} />
+            <p className="mt-3 text-xs font-semibold leading-5 text-zinc-500">
+              So với tổng impression của các series trong chiến dịch này.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-white/[0.08] bg-black/20 p-4">
+            <p className="text-sm font-black text-white">Tương tác snapshot</p>
+            <div className="mt-3 h-[220px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={overviewChartData}>
+                  <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
+                  <XAxis dataKey="name" tick={{ fill: "#a1a1aa", fontSize: 11 }} tickLine={false} axisLine={false} />
+                  <YAxis tick={{ fill: "#71717a", fontSize: 11 }} tickLine={false} axisLine={false} />
+                  <Tooltip
+                    contentStyle={{
+                      background: "rgba(15, 15, 18, 0.95)",
+                      border: "1px solid rgba(255,255,255,0.12)",
+                      borderRadius: 12,
+                      color: "#fff",
+                    }}
+                    formatter={(value) => formatNumber(Number(value))}
+                  />
+                  <Bar dataKey="value" radius={[10, 10, 0, 0]}>
+                    {analytics.map((item) => (
+                      <Cell key={item.key} fill={item.color} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function CampaignSeriesDetailDashboard({
+  rows,
+  activeRow,
+  logs,
+  isLoading,
+  isError,
+  error,
+  range,
+  onBack,
+  onSelectSeries,
+}: {
+  rows: CampaignSeriesDashboardRow[];
+  activeRow: CampaignSeriesDashboardRow;
+  logs: CreatorCampaignSeriesLog[];
+  isLoading: boolean;
+  isError: boolean;
+  error: unknown;
+  range: { startTime: string; endTime: string };
+  onBack: () => void;
+  onSelectSeries: (campaignSeriesId: string) => void;
+}) {
+  const { campaignSeries, series } = activeRow;
+  const chartData = useMemo(() => buildCampaignSeriesLogChartData(logs), [logs]);
+  const totalImpression = logs.reduce(
+    (sum, log) => sum + (log.totalImpression ?? 0),
+    0,
+  );
+  const metricTotals = [
+    { key: "views", label: "Views", value: sumLogMetric(logs, "views"), color: "#60A5FA" },
+    { key: "likes", label: "Likes", value: sumLogMetric(logs, "likes"), color: "#D4AF37" },
+    { key: "comments", label: "Comments", value: sumLogMetric(logs, "comments"), color: "#34D399" },
+    { key: "shares", label: "Shares", value: sumLogMetric(logs, "shares"), color: "#F472B6" },
+    { key: "bookmarks", label: "Bookmarks", value: sumLogMetric(logs, "bookmarks"), color: "#A78BFA" },
+    { key: "watchTime", label: "Watch time", value: sumLogMetric(logs, "watchTime"), color: "#FB923C" },
+  ];
+  const detailPieData = metricTotals.filter((item) => item.value > 0);
+  const safePieData = detailPieData.length
+    ? detailPieData
+    : [{ key: "empty", label: "Chưa có dữ liệu", value: 1, color: "#334155" }];
+
+  return (
+    <section className="mt-7 rounded-[30px] border border-white/10 bg-black/20 p-5 md:p-6">
+      <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+        <div>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onBack}
+            className="h-10 border-[#D4AF37]/25 bg-[#D4AF37]/10 px-4 text-sm font-bold text-[#F5D46E] hover:bg-[#D4AF37]/15"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Tổng quan series
+          </Button>
+          <p className="mt-5 text-xs font-bold uppercase tracking-[0.18em] text-[#D4AF37]">
+            Series dashboard
+          </p>
+          <h3 className="mt-2 text-3xl font-black text-white md:text-5xl">
+            {series?.title ?? shortenId(campaignSeries.seriesId)}
+          </h3>
+          <p className="mt-3 text-sm font-semibold text-zinc-500">
+            Dữ liệu log theo giờ từ {range.startTime} đến {range.endTime}
+          </p>
+        </div>
+        <Badge className={getStatusClass(campaignSeries.status)} variant="outline">
+          {getStatusLabel(campaignSeries.status)}
+        </Badge>
+      </div>
+
+      <div className="mt-6 rounded-[26px] border border-white/10 bg-white/[0.035] p-4">
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#D4AF37]">
+          Chuyển series nhanh
+        </p>
+        <div className="mt-4 flex gap-3 overflow-x-auto pb-1">
           {rows.map((row) => (
-            <CampaignSeriesCard
+            <CampaignSeriesPickerItem
               key={row.campaignSeries.campaignSeriesId}
               row={row}
+              isSelected={
+                row.campaignSeries.campaignSeriesId ===
+                campaignSeries.campaignSeriesId
+              }
+              onClick={() =>
+                onSelectSeries(row.campaignSeries.campaignSeriesId)
+              }
             />
           ))}
+        </div>
+      </div>
+
+      <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <SeriesMiniMetric icon={Megaphone} label="Log impression" value={formatNumber(totalImpression)} tone="gold" />
+        <SeriesMiniMetric icon={Eye} label="Views" value={formatNumber(sumLogMetric(logs, "views"))} tone="blue" />
+        <SeriesMiniMetric icon={ThumbsUp} label="Likes" value={formatNumber(sumLogMetric(logs, "likes"))} tone="green" />
+        <SeriesMiniMetric icon={Clock3} label="Điểm dữ liệu" value={formatNumber(logs.length)} tone="pink" />
+      </div>
+
+      {isLoading ? (
+        <div className="mt-6 h-[520px] animate-pulse rounded-[28px] border border-white/10 bg-white/[0.035]" />
+      ) : isError ? (
+        <div className="mt-6 rounded-2xl border border-red-300/20 bg-red-500/10 p-5 text-sm font-semibold text-red-100">
+          {getApiErrorMessage(error)}
+        </div>
+      ) : logs.length === 0 ? (
+        <div className="mt-6 rounded-2xl border border-dashed border-white/12 bg-white/[0.025] p-6 text-sm font-semibold text-zinc-500">
+          Chưa có log theo thời gian cho series này trong khoảng đã chọn.
+        </div>
+      ) : (
+        <div className="mt-6 grid gap-5 xl:grid-cols-[1.35fr_0.85fr]">
+          <div className="rounded-[28px] border border-white/10 bg-white/[0.035] p-5">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h4 className="text-xl font-black text-white">Impression theo giờ</h4>
+                <p className="text-sm font-semibold text-zinc-500">
+                  Đường phân phối impression theo `hourBucket`.
+                </p>
+              </div>
+              <Activity className="h-5 w-5 text-[#D4AF37]" />
+            </div>
+            <div className="mt-5 h-[340px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData}>
+                  <defs>
+                    <linearGradient id="impressionGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#D4AF37" stopOpacity={0.5} />
+                      <stop offset="95%" stopColor="#D4AF37" stopOpacity={0.02} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
+                  <XAxis dataKey="hour" tick={{ fill: "#a1a1aa", fontSize: 11 }} tickLine={false} axisLine={false} />
+                  <YAxis tick={{ fill: "#71717a", fontSize: 11 }} tickLine={false} axisLine={false} />
+                  <Tooltip
+                    contentStyle={{
+                      background: "rgba(15, 15, 18, 0.95)",
+                      border: "1px solid rgba(255,255,255,0.12)",
+                      borderRadius: 12,
+                      color: "#fff",
+                    }}
+                    formatter={(value) => formatNumber(Number(value))}
+                  />
+                  <Area type="monotone" dataKey="impression" stroke="#D4AF37" strokeWidth={3} fill="url(#impressionGradient)" name="Impression" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="rounded-[28px] border border-white/10 bg-white/[0.035] p-5">
+            <h4 className="text-xl font-black text-white">Tỷ trọng tương tác</h4>
+            <p className="text-sm font-semibold text-zinc-500">
+              Tổng các field trong `analyticData`.
+            </p>
+            <div className="mt-5 h-[260px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={safePieData} dataKey="value" nameKey="label" innerRadius={58} outerRadius={92} paddingAngle={4}>
+                    {safePieData.map((item) => (
+                      <Cell key={item.key} fill={item.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{
+                      background: "rgba(15, 15, 18, 0.95)",
+                      border: "1px solid rgba(255,255,255,0.12)",
+                      borderRadius: 12,
+                      color: "#fff",
+                    }}
+                    formatter={(value) => formatNumber(Number(value))}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {metricTotals.slice(0, 4).map((metric) => (
+                <div key={metric.key} className="rounded-2xl border border-white/[0.08] bg-black/20 p-3">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-zinc-500">
+                    {metric.label}
+                  </p>
+                  <p className="mt-1 text-base font-black text-white">
+                    {formatNumber(metric.value)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-[28px] border border-white/10 bg-white/[0.035] p-5 xl:col-span-2">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h4 className="text-xl font-black text-white">Tương tác theo thời gian</h4>
+                <p className="text-sm font-semibold text-zinc-500">
+                  So sánh views, likes, comments và shares theo từng giờ.
+                </p>
+              </div>
+              <TrendingUp className="h-5 w-5 text-[#D4AF37]" />
+            </div>
+            <div className="mt-5 h-[360px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData}>
+                  <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
+                  <XAxis dataKey="hour" tick={{ fill: "#a1a1aa", fontSize: 11 }} tickLine={false} axisLine={false} />
+                  <YAxis tick={{ fill: "#71717a", fontSize: 11 }} tickLine={false} axisLine={false} />
+                  <Tooltip
+                    contentStyle={{
+                      background: "rgba(15, 15, 18, 0.95)",
+                      border: "1px solid rgba(255,255,255,0.12)",
+                      borderRadius: 12,
+                      color: "#fff",
+                    }}
+                    formatter={(value) => formatNumber(Number(value))}
+                  />
+                  <Legend wrapperStyle={{ color: "#d4d4d8", fontSize: 12 }} />
+                  <Line type="monotone" dataKey="views" stroke="#60A5FA" strokeWidth={3} dot={false} name="Views" />
+                  <Line type="monotone" dataKey="likes" stroke="#D4AF37" strokeWidth={3} dot={false} name="Likes" />
+                  <Line type="monotone" dataKey="comments" stroke="#34D399" strokeWidth={3} dot={false} name="Comments" />
+                  <Line type="monotone" dataKey="shares" stroke="#F472B6" strokeWidth={3} dot={false} name="Shares" />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
         </div>
       )}
     </section>
@@ -865,6 +1914,8 @@ export function CampaignDetailDashboard({
       </section>
 
       <CampaignSeriesInsights
+        key={campaign.campaignId}
+        campaign={campaign}
         rows={campaignSeriesRows}
         isLoading={campaignSeriesQuery.isLoading}
         isError={campaignSeriesQuery.isError}

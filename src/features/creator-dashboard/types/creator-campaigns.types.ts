@@ -62,6 +62,22 @@ export type CreatorCampaignSeries = {
 
 export type CreatorCampaignSeriesListResponse = BaseResponse<CreatorCampaignSeries[]>;
 
+export type CreatorCampaignSeriesLog = {
+    campaignSeriesLogId: string;
+    campaignSeriesId: string;
+    hourBucket: string;
+    analyticData?: CampaignSeriesAnalyticData | null;
+    totalImpression?: number | null;
+};
+
+export type CreatorCampaignSeriesLogParams = {
+    startTime: string;
+    endTime: string;
+};
+
+export type CreatorCampaignSeriesLogListResponse =
+    BaseResponse<CreatorCampaignSeriesLog[]>;
+
 export type CreateEngagementOrderRequest = {
     engagementServiceId: string;
     seriesIds: string[];
