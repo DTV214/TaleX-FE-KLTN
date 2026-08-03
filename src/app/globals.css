@@ -101,6 +101,26 @@
 }
 
 @layer utilities {
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
+  }
+
+  .animate__animated {
+    animation-duration: var(--animate-duration, 720ms);
+    animation-fill-mode: both;
+  }
+
+  .animate__fadeIn {
+    animation-name: fadeIn;
+    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
   .creator-studio-shell {
     position: relative;
     isolation: isolate;

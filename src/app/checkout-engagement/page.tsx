@@ -77,12 +77,17 @@ function CheckoutEngagementContent() {
   }, [orderId, router]);
 
   useEffect(() => {
-    setTimeLeft(getTimeLeftSeconds(order?.expiresAt));
+    const timeoutId = window.setTimeout(() => {
+      setTimeLeft(getTimeLeftSeconds(order?.expiresAt));
+    }, 0);
     const intervalId = window.setInterval(() => {
       setTimeLeft(getTimeLeftSeconds(order?.expiresAt));
     }, 1000);
 
-    return () => window.clearInterval(intervalId);
+    return () => {
+      window.clearTimeout(timeoutId);
+      window.clearInterval(intervalId);
+    };
   }, [order?.expiresAt]);
 
   useEffect(() => {
@@ -157,6 +162,21 @@ function CheckoutEngagementContent() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#070708] px-4 py-8 text-white md:px-8">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_8%,rgba(212,175,55,0.15),transparent_34%),radial-gradient(circle_at_82%_12%,rgba(59,130,246,0.12),transparent_36%),linear-gradient(180deg,rgba(255,255,255,0.03),transparent_30%)]" />
+      <div className="relative mx-auto max-w-7xl">
+        <button
+          type="button"
+          onClick={handleCancel}
+          disabled={cancelOrder.isPending}
+          className="mb-4 inline-flex h-11 cursor-pointer items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-4 text-sm font-bold text-white/78 shadow-[0_0_24px_rgba(212,175,55,0.08)] transition hover:border-[#D4AF37]/45 hover:bg-[#D4AF37]/12 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {cancelOrder.isPending ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <ArrowLeft className="h-4 w-4" />
+          )}
+          Quay lại / Hủy thanh toán
+        </button>
+      </div>
       <div className="relative mx-auto grid max-w-7xl gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
         <div className="space-y-5">
           <PaymentFrame>

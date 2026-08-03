@@ -62,7 +62,10 @@ export function CreatorCampaignCheckoutModal({
         open,
     );
 
-    const seriesList = seriesQuery.data?.content ?? [];
+    const seriesList = useMemo(
+        () => seriesQuery.data?.content ?? [],
+        [seriesQuery.data?.content],
+    );
     const totalPages = Math.max(seriesQuery.data?.totalPages ?? 1, 1);
     const selectedCount = selectedSeriesIds.length;
 
@@ -124,21 +127,21 @@ export function CreatorCampaignCheckoutModal({
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 px-4 py-6 backdrop-blur-xl">
-            <div className="relative flex max-h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-[30px] border border-white/10 bg-[#0d0d0f] shadow-[0_30px_100px_rgba(0,0,0,0.55)]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-2 backdrop-blur-xl sm:p-4 lg:p-6">
+            <div className="relative flex max-h-[calc(100dvh-1rem)] w-[min(1120px,calc(100vw-1rem))] max-w-full flex-col overflow-hidden rounded-[22px] border border-white/10 bg-[#0d0d0f] shadow-[0_30px_100px_rgba(0,0,0,0.55)] sm:max-h-[calc(100dvh-2rem)] sm:rounded-[30px]">
                 <div className="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full bg-yellow-400/10 blur-3xl" />
                 <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(212,175,55,0.08),transparent_38%,rgba(59,130,246,0.06))]" />
 
-                <div className="relative flex items-start justify-between gap-5 border-b border-white/10 p-5 md:p-6">
-                    <div className="flex items-start gap-4">
-                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-yellow-400/25 bg-yellow-400/10 text-yellow-300">
+                <div className="relative flex items-start justify-between gap-3 border-b border-white/10 p-4 sm:gap-5 md:p-6">
+                    <div className="flex min-w-0 items-start gap-3 sm:gap-4">
+                        <div className="hidden h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-yellow-400/25 bg-yellow-400/10 text-yellow-300 sm:flex">
                             <ReceiptText className="h-6 w-6" />
                         </div>
                         <div>
                             <Badge className="border-yellow-400/30 bg-yellow-400/10 text-yellow-200">
                                 Gói tăng tương tác
                             </Badge>
-                            <h2 className="mt-3 text-2xl font-black text-white md:text-3xl">
+                            <h2 className="mt-3 text-xl font-black text-white sm:text-2xl md:text-3xl">
                                 {plan.name}
                             </h2>
                             <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-zinc-400">
@@ -156,8 +159,8 @@ export function CreatorCampaignCheckoutModal({
                     </button>
                 </div>
 
-                <div className="relative grid min-h-0 flex-1 gap-5 overflow-y-auto p-5 md:p-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-                    <section className="min-h-0 rounded-[24px] border border-white/10 bg-white/[0.035] p-4">
+                <div className="relative grid min-h-0 flex-1 gap-4 overflow-y-auto p-3 sm:p-5 md:p-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+                    <section className="min-h-0 rounded-[20px] border border-white/10 bg-white/[0.035] p-3 sm:rounded-[24px] sm:p-4">
                         <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                             <div>
                                 <h3 className="text-lg font-black text-white">
@@ -173,7 +176,7 @@ export function CreatorCampaignCheckoutModal({
                         </div>
 
                         {seriesQuery.isLoading ? (
-                            <div className="grid gap-3 md:grid-cols-2">
+                            <div className="grid gap-3 sm:grid-cols-2">
                                 {Array.from({ length: 6 }).map((_, index) => (
                                     <div
                                         key={index}
@@ -191,7 +194,7 @@ export function CreatorCampaignCheckoutModal({
                                 Bạn chưa có series nào đang xuất bản.
                             </div>
                         ) : (
-                            <div className="grid gap-3 md:grid-cols-2">
+                            <div className="grid gap-3 sm:grid-cols-2">
                                 {seriesList.map((series) => {
                                     const isSelected = selectedSeriesIds.includes(
                                         series.seriesId,
@@ -212,7 +215,7 @@ export function CreatorCampaignCheckoutModal({
                                             }`}
                                         >
                                             <div className="flex gap-3">
-                                                <div className="relative h-20 w-28 shrink-0 overflow-hidden rounded-xl bg-white/[0.06]">
+                                                <div className="relative h-20 w-24 shrink-0 overflow-hidden rounded-xl bg-white/[0.06] sm:w-28">
                                                     {imageUrl ? (
                                                         // eslint-disable-next-line @next/next/no-img-element
                                                         <img
@@ -291,7 +294,7 @@ export function CreatorCampaignCheckoutModal({
                         </div>
                     </section>
 
-                    <aside className="rounded-[24px] border border-yellow-400/20 bg-black/30 p-5">
+                    <aside className="rounded-[20px] border border-yellow-400/20 bg-black/30 p-4 sm:rounded-[24px] sm:p-5 xl:sticky xl:top-0 xl:self-start">
                         <p className="text-xs font-black uppercase tracking-[0.28em] text-yellow-300">
                             Tóm tắt đơn hàng
                         </p>

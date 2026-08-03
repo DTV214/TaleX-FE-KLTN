@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
+  ArrowLeft,
   CheckCircle2,
   CircleDollarSign,
   Clock3,
@@ -189,7 +190,22 @@ function CheckoutContentPageBody() {
       <div className="fixed inset-0 bg-gradient-to-br from-[#0B0B0C]/90 via-[#0B0B0C]/95 to-[#121214]" />
       <div className="fixed inset-0 bg-[radial-gradient(circle_at_18%_10%,rgba(212,175,55,0.14),transparent_28%),radial-gradient(circle_at_82%_18%,rgba(255,255,255,0.07),transparent_24%)]" />
 
-      <div className="relative flex min-h-screen flex-col items-center justify-start px-4 py-24 md:py-32">
+      <div className="relative flex min-h-screen flex-col items-center justify-start px-4 py-8 md:py-12">
+        <div className="mx-auto mb-4 w-full max-w-6xl">
+          <button
+            type="button"
+            onClick={canCancel ? handleCancelOrder : () => router.replace(returnTo)}
+            disabled={isAnyActionPending}
+            className="inline-flex h-11 cursor-pointer items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-4 text-sm font-bold text-white/78 shadow-[0_0_24px_rgba(212,175,55,0.08)] transition hover:border-[#D4AF37]/45 hover:bg-[#D4AF37]/12 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {cancelOrderMutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <ArrowLeft className="h-4 w-4" />
+            )}
+            Quay lại / Hủy thanh toán
+          </button>
+        </div>
         <section className="mx-auto w-full max-w-6xl rounded-[2rem] border border-white/5 bg-[#0B0B0C]/85 shadow-[0_20px_60px_rgba(0,0,0,0.6)] backdrop-blur-3xl">
           <div className="grid grid-cols-1 gap-8 p-6 lg:grid-cols-12 lg:gap-12 lg:p-10">
             <motion.div {...motionProps} className="space-y-6 lg:col-span-7">

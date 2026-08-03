@@ -44,9 +44,11 @@ const hiddenChromeRoutes = [
   "/staff",
   "/watch",
   "/read",
+  "/checkout",
   "/advertiser-dashboard",
 ] as const;
 const hiddenHeaderRoutes = ["/read", "/onboarding", "/advertiser-dashboard"] as const;
+const hiddenCheckoutHeaderRoutes = ["/checkout"] as const;
 
 function shouldShowPublicSidebar(pathname: string) {
   return sidebarRoutes.some((route) => {
@@ -60,7 +62,10 @@ function shouldOffsetFixedHeader(pathname: string) {
 }
 
 function shouldShowSiteHeader(pathname: string) {
-  return !hiddenHeaderRoutes.some((route) => pathname.startsWith(route));
+  return (
+    !hiddenHeaderRoutes.some((route) => pathname.startsWith(route)) &&
+    !hiddenCheckoutHeaderRoutes.some((route) => pathname.startsWith(route))
+  );
 }
 
 export function PublicLayoutShell({ children }: PublicLayoutShellProps) {

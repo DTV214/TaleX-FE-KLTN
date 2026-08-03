@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useQueryClient } from "@tanstack/react-query";
 import {
+  ArrowLeft,
   Building2,
   CreditCard,
   Landmark,
@@ -172,6 +173,19 @@ function CheckoutPageContent() {
       <div className="pointer-events-none fixed inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#D4AF37]/45 to-transparent" />
 
       <div className="relative z-10 mx-auto w-full max-w-6xl px-4 py-4 sm:px-6 lg:px-8">
+        <button
+          type="button"
+          onClick={handleCancelOrder}
+          disabled={cancelOrderMutation.isPending || !canCancel}
+          className="mb-4 inline-flex h-11 cursor-pointer items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-4 text-sm font-bold text-white/78 shadow-[0_0_24px_rgba(212,175,55,0.08)] transition hover:border-[#D4AF37]/45 hover:bg-[#D4AF37]/12 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {cancelOrderMutation.isPending ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <ArrowLeft className="h-4 w-4" />
+          )}
+          Quay lại / Hủy thanh toán
+        </button>
         <div className="mx-auto flex w-full flex-col gap-3">
           <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
             <motion.div {...motionProps} className="space-y-3">

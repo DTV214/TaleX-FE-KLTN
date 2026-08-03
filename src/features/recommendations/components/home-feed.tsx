@@ -20,6 +20,7 @@ import {
   Crown,
   Eye,
   Film,
+  Filter,
   Play,
   RefreshCw,
   Sparkles,
@@ -65,8 +66,8 @@ const RECOMMENDATION_POOLS: HomeFeedPoolKey[] = [
   "communityChoice",
 ];
 
-const MIXED_RECOMMENDATION_LIMIT = 48;
-const MIXED_INITIAL_VISIBLE = 12;
+const MIXED_RECOMMENDATION_LIMIT = 10;
+const MIXED_INITIAL_VISIBLE = 10;
 const MIXED_LOAD_STEP = 8;
 const MIN_RECOMMENDATION_AFTER_DEDUPE = 8;
 
@@ -271,7 +272,11 @@ function contentLabel(kind: FeedKind) {
   return kind === "COMIC" ? "Truyện tranh" : "Phim bộ";
 }
 
-export function HomeFeed() {
+export function HomeFeed({
+  promotedComicAfter,
+}: {
+  promotedComicAfter?: ReactNode;
+}) {
   const [visibleRecommendationCount, setVisibleRecommendationCount] = useState(
     MIXED_INITIAL_VISIBLE,
   );
@@ -403,9 +408,15 @@ export function HomeFeed() {
           content = <TypedRowSection section={section} />;
         }
 
+        const shouldRenderPromotedComicAfter =
+          promotedComicAfter &&
+          section.poolKey === "promoted" &&
+          section.kind === "COMIC";
+
         return (
           <Fragment key={section.id}>
             {content}
+            {shouldRenderPromotedComicAfter ? promotedComicAfter : null}
             {shouldShowHomeAdBreak(index, channelSections.length) ? (
               <HomeChannelAdBreak index={index} />
             ) : null}
@@ -464,22 +475,27 @@ function HomeFeedNav({
   };
 
   return (
-    <div className="sticky top-0 z-30 -mx-4 bg-[#0d0c0a]/78 px-4 py-3 backdrop-blur-xl md:-mx-6 md:px-6">
-      <div className="flex gap-3 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-        {navItems.map((item, index) => (
+    <div className="sticky top-0 z-30 -mx-4 px-4 py-3 md:-mx-6 md:px-6">
+      <div className="relative overflow-hidden rounded-[1.35rem] border border-[#D4AF37]/18 bg-[linear-gradient(115deg,rgba(212,175,55,0.18),rgba(255,255,255,0.07)_38%,rgba(79,103,176,0.14)_72%,rgba(10,10,12,0.86))] px-3 py-3 shadow-[0_18px_46px_rgba(0,0,0,0.28),0_0_34px_rgba(212,175,55,0.08)] backdrop-blur-xl">
+        <Sparkles className="pointer-events-none absolute left-8 top-1 h-5 w-5 rotate-12 text-[#D4AF37]/25" />
+        <Clapperboard className="pointer-events-none absolute right-24 top-1/2 h-7 w-7 -translate-y-1/2 rotate-12 text-white/10" />
+        <BookOpen className="pointer-events-none absolute bottom-1 right-8 h-5 w-5 -rotate-12 text-[#D4AF37]/18" />
+        <div className="relative flex items-center gap-3 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          <div className="inline-flex shrink-0 items-center gap-2 rounded-full border border-[#D4AF37]/25 bg-black/30 px-4 py-2.5 text-sm font-black uppercase tracking-[0.16em] text-[#F2D76B] shadow-[0_0_22px_rgba(212,175,55,0.12)]">
+            <Filter className="h-4 w-4" />
+            Bộ lọc
+          </div>
+        {navItems.slice(1).map((item, index) => (
           <button
             key={`${item.id}-${index}`}
             type="button"
             onClick={() => scrollToSection(item.id)}
-            className={`shrink-0 cursor-pointer rounded-xl px-4 py-2.5 font-sans text-sm font-semibold transition md:text-base ${
-              index === 0
-                ? "bg-white/90 text-black/88 hover:bg-white"
-                : "bg-white/[0.08] text-white/58 hover:bg-white/[0.12] hover:text-white/76"
-            }`}
+            className="shrink-0 cursor-pointer rounded-full border border-white/10 bg-white/[0.08] px-4 py-2.5 font-sans text-sm font-bold text-white/70 shadow-[0_0_18px_rgba(255,255,255,0.04)] transition duration-300 hover:-translate-y-0.5 hover:border-[#D4AF37]/45 hover:bg-[#D4AF37]/15 hover:text-white hover:shadow-[0_0_26px_rgba(212,175,55,0.22)] md:text-base"
           >
             {item.label}
           </button>
         ))}
+        </div>
       </div>
     </div>
   );
@@ -487,30 +503,41 @@ function HomeFeedNav({
 
 function TypedHeroSection({ section }: { section: TypedHomeSection }) {
   const featured = section.items[0];
-  const supporting = section.items.slice(1, 5);
+  const supporting = section.items.slice(1, 10);
   if (!featured) return null;
+  const heroItems = section.items.slice(0, 10);
+
+  if (section.kind === "COMIC") {
+    return <ComicFeaturedShowcase section={section} items={heroItems} />;
+  }
+
+  if (section.kind === "VIDEO") {
+    return <VideoFeaturedShowcase section={section} items={heroItems} />;
+  }
 
   return (
     <section
       id={section.id}
-      className="scroll-mt-24 overflow-hidden rounded-3xl border border-white/10 bg-[#111113] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.35)] md:p-7"
+      className="relative scroll-mt-24 overflow-hidden rounded-[2rem] border border-white/10 bg-[#0b0b0d] p-4 shadow-[0_30px_90px_rgba(0,0,0,0.42)] md:p-6"
     >
-      <div className="relative grid gap-7 lg:grid-cols-[minmax(0,0.9fr)_minmax(360px,0.8fr)] lg:items-center">
+      <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[#D4AF37]/50 to-transparent" />
+      <div className="pointer-events-none absolute -right-24 top-10 h-72 w-72 rounded-full border border-[#D4AF37]/12" />
+      <div className="relative grid gap-7 lg:grid-cols-[minmax(300px,0.52fr)_minmax(560px,1fr)] lg:items-center">
         <div
           className="absolute inset-0 -m-7 bg-cover bg-center opacity-20 blur-[1px]"
           style={{ backgroundImage: `url(${imageFor(featured, 0)})` }}
         />
-        <div className="absolute inset-0 -m-7 bg-[radial-gradient(circle_at_20%_20%,rgba(212,175,55,0.2),transparent_30%),linear-gradient(90deg,#111113_0%,rgba(17,17,19,0.9)_45%,rgba(17,17,19,0.55)_100%)]" />
+        <div className="absolute inset-0 -m-7 bg-[radial-gradient(circle_at_15%_18%,rgba(212,175,55,0.22),transparent_30%),radial-gradient(circle_at_90%_20%,rgba(99,137,255,0.16),transparent_32%),linear-gradient(90deg,rgba(9,9,10,0.98),rgba(9,9,10,0.86)_48%,rgba(9,9,10,0.96))]" />
 
-        <div className="relative max-w-3xl">
+        <div className="relative z-10 max-w-2xl py-4 lg:py-8">
           <SectionHeading
             section={section}
             icon={<Crown className="h-5 w-5" />}
           />
-          <h3 className="mt-5 bg-[linear-gradient(110deg,rgba(255,255,255,0.82),rgba(255,255,255,0.82),rgba(212,175,55,0.92),rgba(255,255,255,0.82))] bg-[length:220%_100%] bg-clip-text font-sans text-4xl font-semibold leading-tight tracking-tight text-white/86 transition-[color,filter] duration-300 hover:text-transparent hover:drop-shadow-[0_0_20px_rgba(212,175,55,0.18)] md:text-6xl">
+          <h3 className="mt-8 line-clamp-2 bg-[linear-gradient(110deg,rgba(255,255,255,0.92),rgba(255,255,255,0.92),rgba(212,175,55,0.85),rgba(255,255,255,0.86))] bg-[length:220%_100%] bg-clip-text font-sans text-4xl font-semibold leading-[1.03] tracking-normal text-white/92 transition-[color,filter] duration-300 hover:text-transparent hover:drop-shadow-[0_0_20px_rgba(212,175,55,0.18)] md:text-5xl">
             {featured.title}
           </h3>
-          <p className="mt-5 line-clamp-3 max-w-2xl text-base font-medium leading-relaxed text-white/50 md:text-lg">
+          <p className="mt-5 line-clamp-3 max-w-xl text-base font-medium leading-relaxed text-white/52">
             {featured.description || section.description}
           </p>
 
@@ -547,18 +574,468 @@ function TypedHeroSection({ section }: { section: TypedHomeSection }) {
           </div>
         </div>
 
-        <div className="relative grid grid-cols-2 gap-3">
-          {[featured, ...supporting].slice(0, 5).map((series, index) => (
-            <HeroMiniCard
-              key={`${series.seriesId}-${index}`}
-              series={series}
-              kind={section.kind}
-              index={index}
-            />
-          ))}
+        <HeroFeatureDeck
+          featured={featured}
+          supporting={supporting}
+          kind={section.kind}
+        />
+      </div>
+    </section>
+  );
+}
+
+function ComicFeaturedShowcase({
+  section,
+  items,
+}: {
+  section: TypedHomeSection;
+  items: HomeFeedSeries[];
+}) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const featured = items[activeIndex] ?? items[0];
+  if (!featured) return null;
+  const count = items.length;
+  const stageItems = count
+    ? [-2, -1, 0, 1, 2].map((offset) => ({
+        series: items[(activeIndex + offset + count) % count],
+        offset,
+      }))
+    : [];
+  const goTo = (direction: -1 | 1) => {
+    if (count <= 1) return;
+    setActiveIndex((current) => (current + direction + count) % count);
+  };
+
+  return (
+    <section
+      id={section.id}
+      className="relative scroll-mt-24 overflow-hidden rounded-[1.75rem] border border-[#D4AF37]/18 bg-[#11100f] px-4 py-5 shadow-[0_24px_80px_rgba(0,0,0,0.42),0_0_34px_rgba(212,175,55,0.12)] md:px-7 md:py-6"
+    >
+      <div
+        className="absolute inset-0 bg-cover bg-center opacity-[0.42] transition duration-700"
+        style={{ backgroundImage: `url(${imageFor(featured, 0, "banner")})` }}
+      />
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(13,12,12,0.46),rgba(10,10,12,0.74)_56%,rgba(8,8,10,0.9)),radial-gradient(circle_at_50%_12%,rgba(245,205,75,0.34),transparent_30%),radial-gradient(circle_at_18%_70%,rgba(112,143,255,0.18),transparent_32%),radial-gradient(circle_at_88%_56%,rgba(255,255,255,0.1),transparent_28%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:58px_58px] opacity-[0.42]" />
+      <div className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-[#F5D65E]/80 to-transparent" />
+      <div className="pointer-events-none absolute inset-x-16 bottom-0 h-px bg-gradient-to-r from-transparent via-[#8CA6FF]/45 to-transparent" />
+      <div className="pointer-events-none absolute left-0 top-8 h-28 w-px bg-gradient-to-b from-transparent via-[#D4AF37]/60 to-transparent" />
+      <div className="pointer-events-none absolute right-0 bottom-10 h-32 w-px bg-gradient-to-b from-transparent via-[#F5D65E]/50 to-transparent" />
+      <div className="pointer-events-none absolute -left-16 -top-16 h-44 w-44 rounded-full bg-[#D4AF37]/16 blur-3xl" />
+      <div className="pointer-events-none absolute -right-14 top-1/3 h-52 w-52 rounded-full bg-[#7F9DFF]/14 blur-3xl" />
+
+      <div className="relative z-10 mx-auto max-w-6xl">
+        <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <SectionHeading
+            section={section}
+            icon={<Crown className="h-5 w-5" />}
+            compact
+          />
+          <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-[#D4AF37]/20 bg-[#D4AF37]/10 px-3 py-1 text-xs font-black text-[#D4AF37]">
+            <Eye className="h-3.5 w-3.5" />
+            {formatViews(featured.totalViews)}
+          </span>
+        </div>
+        <div className="space-y-4">
+          <div className="hidden">
+          <SectionHeading
+            section={section}
+            icon={<Crown className="h-5 w-5" />}
+            compact
+          />
+          <h3 className="mt-5 line-clamp-2 font-sans text-3xl font-semibold leading-[1.04] text-white md:text-4xl">
+            {featured.title}
+          </h3>
+          <p className="mt-3 line-clamp-3 max-w-md text-sm font-medium leading-relaxed text-white/50">
+            {featured.description || section.description}
+          </p>
+          <div className="mt-4 flex flex-wrap items-center gap-3 text-sm font-bold text-white/62">
+            <span className="inline-flex items-center gap-1.5">
+              <Eye className="h-4 w-4 text-[#D4AF37]" />
+              {formatViews(featured.totalViews)}
+            </span>
+            <span className="rounded-full bg-white/10 px-3 py-1">
+              {contentLabel(section.kind)}
+            </span>
+            {featured.ageRating ? (
+              <span className="rounded-full bg-[#D4AF37]/16 px-3 py-1 text-[#D4AF37]">
+                {featured.ageRating}
+              </span>
+            ) : null}
+          </div>
+          <div className="mt-5 flex flex-wrap gap-3">
+            <Link
+              href={seriesHref(featured)}
+              className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-[#D4AF37] px-5 py-3 text-sm font-black text-black shadow-[0_0_26px_rgba(212,175,55,0.28)] transition hover:bg-[#f1d766] hover:shadow-[0_0_38px_rgba(212,175,55,0.42)]"
+            >
+              <Play className="h-4 w-4 fill-black" />
+              Xem chi tiết
+            </Link>
+            <button
+              type="button"
+              className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-[#D4AF37]/20 bg-white/8 px-5 py-3 text-sm font-bold text-white shadow-[0_0_24px_rgba(255,255,255,0.08)] transition hover:border-[#D4AF37]/36 hover:bg-white/14 hover:shadow-[0_0_30px_rgba(212,175,55,0.18)]"
+            >
+              <BookmarkPlus className="h-4 w-4" />
+              Lưu vào thư viện
+            </button>
+          </div>
+        </div>
+
+          <div className="relative min-h-[300px] overflow-hidden rounded-[1.35rem] border border-white/10 bg-black/20 sm:min-h-[340px] lg:min-h-[380px]">
+            <button
+              type="button"
+              aria-label="Truyện trước"
+              onClick={() => goTo(-1)}
+              className="absolute left-3 top-1/2 z-50 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-white/12 bg-black/55 text-white shadow-[0_0_24px_rgba(0,0,0,0.35)] backdrop-blur-md transition hover:border-[#D4AF37]/50 hover:bg-[#D4AF37] hover:text-black"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              aria-label="Truyện tiếp theo"
+              onClick={() => goTo(1)}
+              className="absolute right-3 top-1/2 z-50 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-white/12 bg-black/55 text-white shadow-[0_0_24px_rgba(0,0,0,0.35)] backdrop-blur-md transition hover:border-[#D4AF37]/50 hover:bg-[#D4AF37] hover:text-black"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+
+            <div className="absolute inset-0 [perspective:1200px]">
+              {stageItems.map(({ series, offset }) => (
+                <ComicStagePoster
+                  key={`${series.seriesId}-${offset}`}
+                  series={series}
+                  offset={offset}
+                  active={offset === 0}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div
+            key={`${featured.seriesId}-comic-copy`}
+            className="animate__animated animate__fadeIn mx-auto max-w-xl text-center [--animate-duration:760ms]"
+          >
+            <h3 className="line-clamp-1 font-sans text-3xl font-semibold leading-tight text-white md:text-5xl">
+              {featured.title}
+            </h3>
+            <p className="mx-auto mt-2 line-clamp-2 max-w-lg text-sm font-medium leading-relaxed text-white/46">
+              {featured.description || section.description}
+            </p>
+            <div className="mt-4 flex flex-wrap justify-center gap-3">
+              <Link
+                href={seriesHref(featured)}
+                className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-[#D4AF37] px-5 py-2.5 text-sm font-black text-black shadow-[0_0_26px_rgba(212,175,55,0.28)] transition hover:bg-[#f1d766] hover:shadow-[0_0_38px_rgba(212,175,55,0.42)]"
+              >
+                <Play className="h-4 w-4 fill-black" />
+                Xem chi tiết
+              </Link>
+              <button
+                type="button"
+                className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-[#D4AF37]/20 bg-white/8 px-5 py-2.5 text-sm font-bold text-white shadow-[0_0_24px_rgba(255,255,255,0.08)] transition hover:border-[#D4AF37]/36 hover:bg-white/14 hover:shadow-[0_0_30px_rgba(212,175,55,0.18)]"
+              >
+                <BookmarkPlus className="h-4 w-4" />
+                Lưu vào thư viện
+              </button>
+            </div>
+          </div>
+
+          {items.length > 1 ? (
+            <div className="mt-4 flex justify-center gap-2">
+              {items.slice(0, Math.min(items.length, 8)).map((series, index) => (
+                <button
+                  key={`${series.seriesId}-dot`}
+                  type="button"
+                  aria-label={`Chọn ${series.title}`}
+                  onClick={() => setActiveIndex(index)}
+                  className={`h-1.5 cursor-pointer rounded-full transition ${
+                    index === activeIndex
+                      ? "w-8 bg-[#D4AF37] shadow-[0_0_18px_rgba(212,175,55,0.55)]"
+                      : "w-3 bg-white/20 hover:bg-white/38"
+                  }`}
+                />
+              ))}
+            </div>
+          ) : null}
         </div>
       </div>
     </section>
+  );
+}
+
+function ComicStagePoster({
+  series,
+  offset,
+  active,
+}: {
+  series: HomeFeedSeries;
+  offset: number;
+  active: boolean;
+}) {
+  const abs = Math.abs(offset);
+  const x = offset * 46;
+  const rotate = offset * -24;
+  const scale = active ? 1 : abs === 1 ? 0.8 : 0.64;
+  const opacity = active ? 1 : abs === 1 ? 0.74 : 0.34;
+
+  return (
+    <Link
+      href={seriesHref(series)}
+      className={`group absolute left-1/2 top-1/2 block aspect-[2/3] w-[195px] cursor-pointer overflow-hidden rounded-[1.35rem] border border-white/14 bg-white/[0.05] shadow-[0_30px_80px_rgba(0,0,0,0.55)] transition-all duration-500 ease-out hover:border-[#D4AF37]/55 sm:w-[225px] lg:w-[270px] ${
+        active ? "animate__animated animate__fadeIn z-40 [--animate-duration:760ms]" : abs === 1 ? "z-30 hidden md:block" : "z-20 hidden lg:block"
+      }`}
+      style={{
+        opacity,
+        transform: `translate(-50%, -50%) translateX(${x}%) rotateY(${rotate}deg) scale(${scale})`,
+        transformStyle: "preserve-3d",
+      }}
+    >
+      <div
+        className="absolute inset-0 bg-cover bg-center transition duration-500 group-hover:scale-105"
+        style={{
+          backgroundImage: `url(${imageFor(series, Math.abs(offset), "cover")})`,
+        }}
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/86 via-transparent to-black/8" />
+      <CardSunSheen />
+      {active ? (
+        <span className="absolute left-3 top-3 rounded-full bg-[#D4AF37] px-3 py-1 text-xs font-black text-black shadow-[0_0_18px_rgba(212,175,55,0.45)]">
+          Nổi bật
+        </span>
+      ) : null}
+      <div className="absolute bottom-3 left-3 right-3">
+        <p className="line-clamp-2 text-sm font-black leading-tight text-white">
+          {series.title}
+        </p>
+      </div>
+    </Link>
+  );
+}
+
+function VideoFeaturedShowcase({
+  section,
+  items,
+}: {
+  section: TypedHomeSection;
+  items: HomeFeedSeries[];
+}) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const featured = items[activeIndex] ?? items[0];
+  if (!featured) return null;
+  const count = items.length;
+  const goTo = (direction: -1 | 1) => {
+    if (count <= 1) return;
+    setActiveIndex((current) => (current + direction + count) % count);
+  };
+
+  return (
+    <section
+      id={section.id}
+      className="relative scroll-mt-24 overflow-hidden rounded-[2rem] border border-white/10 bg-[#080b10] shadow-[0_34px_100px_rgba(0,0,0,0.48)]"
+    >
+      <div
+        className="absolute inset-0 bg-cover bg-center"
+        style={{ backgroundImage: `url(${imageFor(featured, 0, "banner")})` }}
+      />
+      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(5,7,10,0.96),rgba(5,7,10,0.72)_44%,rgba(5,7,10,0.38)),linear-gradient(180deg,rgba(5,7,10,0.22),rgba(5,7,10,0.98)_78%)]" />
+      <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[#D4AF37]/55 to-transparent" />
+
+      <div className="relative z-10 px-5 py-8 md:px-9 md:py-10">
+        <div className="grid min-h-[420px] gap-7 lg:grid-cols-[minmax(300px,0.56fr)_minmax(460px,0.74fr)] lg:items-center">
+          <div
+            key={`${featured.seriesId}-copy`}
+            className="animate-in fade-in slide-in-from-left-4 duration-500"
+          >
+            <SectionHeading
+              section={section}
+              icon={<Crown className="h-5 w-5" />}
+              compact
+            />
+            <h3 className="mt-8 line-clamp-2 max-w-2xl font-sans text-4xl font-semibold leading-[1.03] text-white md:text-6xl">
+              {featured.title}
+            </h3>
+            <p className="mt-5 line-clamp-3 max-w-xl text-base font-medium leading-relaxed text-white/54">
+              {featured.description || section.description}
+            </p>
+            <div className="mt-5 flex flex-wrap items-center gap-3 text-sm font-bold text-white/65">
+              <span className="inline-flex items-center gap-1.5">
+                <Eye className="h-4 w-4 text-[#D4AF37]" />
+                {formatViews(featured.totalViews)}
+              </span>
+              <span className="rounded-full bg-white/10 px-3 py-1">
+                {contentLabel(section.kind)}
+              </span>
+              {featured.ageRating ? (
+                <span className="rounded-full bg-[#D4AF37]/16 px-3 py-1 text-[#D4AF37]">
+                  {featured.ageRating}
+                </span>
+              ) : null}
+            </div>
+            <div className="mt-7 flex flex-wrap gap-3">
+              <Link
+                href={seriesHref(featured)}
+                className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-[#D4AF37] px-5 py-3 text-sm font-black text-black transition hover:bg-[#f1d766]"
+              >
+                <Play className="h-4 w-4 fill-black" />
+                Xem chi tiết
+              </Link>
+              <button
+                type="button"
+                className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-white/10 bg-white/8 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/14"
+              >
+                <BookmarkPlus className="h-4 w-4" />
+                Lưu vào thư viện
+              </button>
+            </div>
+          </div>
+
+          <Link
+            key={`${featured.seriesId}-preview`}
+            href={seriesHref(featured)}
+            className="group relative block aspect-video cursor-pointer overflow-hidden rounded-[1.55rem] border border-white/12 bg-white/[0.04] shadow-[0_28px_80px_rgba(0,0,0,0.46)] transition duration-300 animate-in fade-in zoom-in-95 slide-in-from-right-4 hover:-translate-y-1 hover:border-[#D4AF37]/45"
+          >
+            <div
+              className="absolute inset-0 bg-cover bg-center transition duration-700 group-hover:scale-105"
+              style={{
+                backgroundImage: `url(${imageFor(featured, 0, "banner")})`,
+              }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/88 via-black/20 to-transparent" />
+            <CardSunSheen />
+            {count > 1 ? (
+              <>
+                <button
+                  type="button"
+                  aria-label="Phim trước"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    goTo(-1);
+                  }}
+                  className="absolute left-4 top-1/2 z-30 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-white/12 bg-black/55 text-white shadow-[0_0_24px_rgba(0,0,0,0.35)] backdrop-blur-md transition hover:border-[#D4AF37]/50 hover:bg-[#D4AF37] hover:text-black"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Phim tiếp theo"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    goTo(1);
+                  }}
+                  className="absolute right-4 top-1/2 z-30 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-white/12 bg-black/55 text-white shadow-[0_0_24px_rgba(0,0,0,0.35)] backdrop-blur-md transition hover:border-[#D4AF37]/50 hover:bg-[#D4AF37] hover:text-black"
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+              </>
+            ) : null}
+            <div className="absolute bottom-5 left-5 right-5">
+              <p className="line-clamp-1 text-xl font-black text-white">
+                {featured.title}
+              </p>
+              <p className="mt-1 text-sm font-bold text-[#D4AF37]">
+                {contentLabel(section.kind)}
+              </p>
+            </div>
+          </Link>
+        </div>
+
+        {items.length > 1 ? (
+          <div className="mt-2">
+            <ScrollableRow>
+              {items.map((series, index) => (
+                <VideoStripCard
+                  key={series.seriesId}
+                  series={series}
+                  index={index}
+                  active={index === activeIndex}
+                  onSelect={() => setActiveIndex(index)}
+                />
+              ))}
+            </ScrollableRow>
+          </div>
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
+function VideoStripCard({
+  series,
+  index,
+  active,
+  onSelect,
+}: {
+  series: HomeFeedSeries;
+  index: number;
+  active: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className="group w-[240px] shrink-0 cursor-pointer text-left sm:w-[285px] lg:w-[320px]"
+    >
+      <div
+        className={`relative aspect-video overflow-hidden rounded-xl border bg-white/[0.04] transition duration-300 group-hover:-translate-y-1 ${
+          active
+            ? "border-[#D4AF37]/70 shadow-[0_0_28px_rgba(212,175,55,0.22)]"
+            : "border-white/10 group-hover:border-[#D4AF37]/45"
+        }`}
+      >
+        <div
+          className="absolute inset-0 bg-cover bg-center transition duration-500 group-hover:scale-105"
+          style={{
+            backgroundImage: `url(${imageFor(series, index, "banner")})`,
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/84 via-black/12 to-transparent" />
+        <CardSunSheen />
+        <CardNumber value={index + 1} />
+        <TypeBadge kind="VIDEO" />
+      </div>
+      <h4 className="mt-2 line-clamp-1 text-sm font-black text-white">
+        {series.title}
+      </h4>
+    </button>
+  );
+}
+
+function HeroFeatureDeck({
+  featured,
+  supporting,
+  kind,
+}: {
+  featured: HomeFeedSeries;
+  supporting: HomeFeedSeries[];
+  kind: FeedKind;
+}) {
+  const isComic = kind === "COMIC";
+
+  return (
+    <div className="relative z-10 min-w-0">
+      <HeroMiniCard series={featured} kind={kind} index={0} />
+      {supporting.length > 0 ? (
+        <div className="-mx-1 mt-5">
+          <ScrollableRow>
+            {supporting.map((series, index) =>
+              isComic ? (
+                <PosterShelfCard
+                  key={series.seriesId}
+                  series={series}
+                  index={index + 1}
+                />
+              ) : (
+                <CinematicShelfCard
+                  key={series.seriesId}
+                  series={series}
+                  index={index + 1}
+                />
+              ),
+            )}
+          </ScrollableRow>
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -574,27 +1051,27 @@ function HeroMiniCard({
   return (
     <Link
       href={seriesHref(series)}
-      className={`group relative min-h-[130px] overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] transition hover:border-[#D4AF37]/45 ${
-        index === 0
-          ? "col-span-2 aspect-[16/7]"
-          : kind === "COMIC"
-            ? "aspect-[3/4]"
-            : "aspect-video"
+      className={`group relative block cursor-pointer overflow-hidden rounded-[1.6rem] border border-white/12 bg-white/[0.04] shadow-[0_28px_70px_rgba(0,0,0,0.38)] transition duration-300 hover:-translate-y-1 hover:border-[#D4AF37]/45 ${
+        kind === "COMIC"
+          ? "aspect-[16/6.2] min-h-[260px]"
+          : "aspect-[16/7] min-h-[280px]"
       }`}
     >
       <div
         className="absolute inset-0 bg-cover bg-center transition duration-500 group-hover:scale-105"
         style={{
-          backgroundImage: `url(${imageFor(series, index, kind === "COMIC" ? "cover" : "banner")})`,
+          backgroundImage: `url(${imageFor(series, index, "banner")})`,
         }}
       />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/88 via-black/24 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/28 to-black/4" />
+      <div className="absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-black/40 to-transparent" />
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#D4AF37]/65 to-transparent" />
       <CardSunSheen />
-      <div className="absolute bottom-3 left-3 right-3">
-        <p className="line-clamp-1 text-sm font-black text-white">
+      <div className="absolute bottom-5 left-5 right-5">
+        <p className="line-clamp-1 text-xl font-black text-white">
           {series.title}
         </p>
-        <p className="mt-1 text-xs font-bold text-[#D4AF37]">
+        <p className="mt-1 text-sm font-bold text-[#D4AF37]">
           {contentLabel(kind)}
         </p>
       </div>
@@ -602,39 +1079,105 @@ function HeroMiniCard({
   );
 }
 
+function PosterShelfCard({
+  series,
+  index,
+}: {
+  series: HomeFeedSeries;
+  index: number;
+}) {
+  return (
+    <Link
+      href={seriesHref(series)}
+      className="group w-[148px] shrink-0 cursor-pointer sm:w-[166px] lg:w-[184px] [&>p:last-child]:hidden"
+    >
+      <div className="relative aspect-[2/3] overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] transition duration-300 group-hover:-translate-y-1 group-hover:border-[#D4AF37]/45">
+        <div
+          className="absolute inset-0 bg-cover bg-center transition duration-500 group-hover:scale-105"
+          style={{ backgroundImage: `url(${imageFor(series, index, "cover")})` }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/86 via-black/12 to-black/12" />
+        <CardSunSheen />
+        <CardNumber value={index + 1} />
+        <TypeBadge kind="COMIC" />
+      </div>
+      <h4 className="mt-2 line-clamp-1 text-sm font-black text-white">
+        {series.title}
+      </h4>
+      <p className="mt-0.5 text-xs font-bold text-white/42">Truyá»‡n tranh</p>
+    </Link>
+  );
+}
+
+function CinematicShelfCard({
+  series,
+  index,
+}: {
+  series: HomeFeedSeries;
+  index: number;
+}) {
+  return (
+    <Link
+      href={seriesHref(series)}
+      className="group w-[270px] shrink-0 cursor-pointer sm:w-[320px] lg:w-[360px] [&>p:last-child]:hidden"
+    >
+      <div className="relative aspect-video overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] transition duration-300 group-hover:-translate-y-1 group-hover:border-[#D4AF37]/45">
+        <div
+          className="absolute inset-0 bg-cover bg-center transition duration-500 group-hover:scale-105"
+          style={{
+            backgroundImage: `url(${imageFor(series, index, "banner")})`,
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/84 via-black/16 to-black/8" />
+        <CardSunSheen />
+        <CardNumber value={index + 1} />
+        <TypeBadge kind="VIDEO" />
+      </div>
+      <h4 className="mt-2 line-clamp-1 text-sm font-black text-white">
+        {series.title}
+      </h4>
+      <p className="mt-0.5 text-xs font-bold text-white/42">Phim bá»™</p>
+    </Link>
+  );
+}
+
 function TypedRankingSection({ section }: { section: TypedHomeSection }) {
   return (
-    <section id={section.id} className="scroll-mt-24">
+    <section
+      id={section.id}
+      className="relative scroll-mt-24 overflow-hidden rounded-[1.75rem] border border-white/10 bg-white/[0.035] p-5 shadow-[0_22px_70px_rgba(0,0,0,0.28)] md:p-6"
+    >
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_8%_20%,rgba(212,175,55,0.14),transparent_28%),radial-gradient(circle_at_88%_12%,rgba(84,118,255,0.12),transparent_30%)]" />
+      <div className="relative">
       <SectionHeading
         section={section}
         icon={<TrendingUp className="h-5 w-5" />}
       />
       <ScrollableRow>
-        {section.items.slice(0, 12).map((series, index) =>
-          section.kind === "COMIC" ? (
-            <PortraitCard
-              key={series.seriesId}
-              series={series}
-              index={index}
-              rank={index + 1}
-            />
-          ) : (
-            <RankingLandscapeCard
-              key={series.seriesId}
-              series={series}
-              index={index}
-              rank={index + 1}
-            />
-          ),
-        )}
+        {section.items.slice(0, 10).map((series, index) => (
+          <NetflixRankCard
+            key={series.seriesId}
+            series={series}
+            index={index}
+            kind={section.kind}
+            rank={index + 1}
+          />
+        ))}
       </ScrollableRow>
+      </div>
     </section>
   );
 }
 
 function TypedRowSection({ section }: { section: TypedHomeSection }) {
   return (
-    <section id={section.id} className="scroll-mt-24">
+    <section
+      id={section.id}
+      className="relative scroll-mt-24 overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#101012]/86 p-5 md:p-6"
+    >
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(120deg,rgba(212,175,55,0.12),transparent_34%),radial-gradient(circle_at_90%_18%,rgba(255,255,255,0.08),transparent_28%)]" />
+      <div className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-white/18 to-transparent" />
+      <div className="relative">
       <SectionHeading
         section={section}
         icon={
@@ -654,6 +1197,7 @@ function TypedRowSection({ section }: { section: TypedHomeSection }) {
           ),
         )}
       </ScrollableRow>
+      </div>
     </section>
   );
 }
@@ -842,6 +1386,60 @@ function ScrollableRow({ children }: { children: ReactNode }) {
   );
 }
 
+function NetflixRankCard({
+  series,
+  index,
+  kind,
+  rank,
+}: {
+  series: HomeFeedSeries;
+  index: number;
+  kind: FeedKind;
+  rank: number;
+}) {
+  const isComic = kind === "COMIC";
+
+  return (
+    <Link
+      href={seriesHref(series)}
+      className={`group relative shrink-0 cursor-pointer ${
+        isComic ? "w-[240px] sm:w-[270px]" : "w-[320px] sm:w-[380px]"
+      }`}
+    >
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute -left-2 top-1/2 z-0 -translate-y-1/2 font-heading text-[8.5rem] font-black leading-none text-white/[0.055] transition duration-300 group-hover:text-[#D4AF37]/12 sm:text-[10rem]"
+      >
+        {rank}
+      </span>
+      <div
+        className={`relative z-10 ml-14 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.045] shadow-[0_18px_50px_rgba(0,0,0,0.3)] transition duration-300 group-hover:-translate-y-1 group-hover:border-[#D4AF37]/45 ${
+          isComic ? "aspect-[2/3]" : "aspect-video"
+        }`}
+      >
+        <div
+          className="absolute inset-0 bg-cover bg-center transition duration-500 group-hover:scale-105"
+          style={{
+            backgroundImage: `url(${imageFor(series, index, isComic ? "cover" : "banner")})`,
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/86 via-black/18 to-black/10" />
+        <CardSunSheen />
+        <CardStar />
+        <TypeBadge kind={kind} />
+        <div className="absolute bottom-3 left-3 right-3">
+          <p className="line-clamp-2 text-sm font-black leading-tight text-white sm:text-base">
+            {series.title}
+          </p>
+          <p className="mt-1 text-xs font-bold text-[#D4AF37]">
+            {formatViews(series.totalViews)}
+          </p>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
 function LandscapeCard({
   series,
   index,
@@ -867,42 +1465,6 @@ function LandscapeCard({
         {series.ageRating ? <AgeBadge value={series.ageRating} /> : null}
       </div>
       <SeriesMeta series={series} />
-    </Link>
-  );
-}
-
-function RankingLandscapeCard({
-  series,
-  index,
-  rank,
-}: {
-  series: HomeFeedSeries;
-  index: number;
-  rank: number;
-}) {
-  return (
-    <Link
-      href={seriesHref(series)}
-      className="group relative h-[190px] w-[250px] shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] transition hover:border-[#D4AF37]/45 sm:w-[300px]"
-    >
-      <div
-        className="absolute inset-0 bg-cover bg-center transition duration-500 group-hover:scale-105"
-        style={{ backgroundImage: `url(${imageFor(series, index)})` }}
-      />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
-      <CardSunSheen />
-      <CardStar />
-      <span className="absolute left-3 top-3 font-heading text-5xl font-black text-white/18">
-        {String(rank).padStart(2, "0")}
-      </span>
-      <div className="absolute bottom-4 left-4 right-4">
-        <p className="line-clamp-2 text-lg font-black leading-tight text-white">
-          {series.title}
-        </p>
-        <p className="mt-1 text-sm font-bold text-[#D4AF37]">
-          {formatViews(series.totalViews)}
-        </p>
-      </div>
     </Link>
   );
 }

@@ -27,6 +27,10 @@ function readFormValue(formData: FormData, key: string) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function normalizeOtpCode(value: string) {
+  return value.replace(/\D/g, "").slice(0, 6);
+}
+
 function getResetPasswordErrorMessage(errorCode?: AuthErrorCode, message?: string) {
   switch (errorCode) {
     case AuthErrorCode.INVALID_OTP:
@@ -175,6 +179,15 @@ export function ResetPasswordForm({
             maxLength={6}
             placeholder="123456"
             autoComplete="one-time-code"
+            onInput={(event) => {
+              event.currentTarget.value = normalizeOtpCode(event.currentTarget.value);
+            }}
+            onPaste={(event) => {
+              event.preventDefault();
+              event.currentTarget.value = normalizeOtpCode(
+                event.clipboardData.getData("text"),
+              );
+            }}
             className="w-full rounded-xl border border-white/10 bg-[#121214] p-3.5 text-center text-lg font-bold tracking-[0.5em] text-white shadow-inner transition-all placeholder:text-gray-700 focus:border-[#D4AF37]/50 focus:bg-black/50 focus:outline-none focus:ring-1 focus:ring-[#D4AF37]/50"
           />
         </div>

@@ -20,9 +20,10 @@ export default function Home() {
     <div className="relative flex h-[calc(100vh-64px)] w-full overflow-hidden bg-[#12100d] text-white md:h-[calc(100vh-80px)]">
       <HomeAtmosphere />
       <main className="relative z-10 h-full min-w-0 flex-1 overflow-y-auto p-4 transition-all duration-300 ease-in-out md:p-6 no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-        <AdImageCarousel />
-        <SponsoredRecommendationSection />
-        <HomeFeed />
+        <div className="mx-auto w-full max-w-[1680px]">
+          <AdImageCarousel />
+          <HomeFeed promotedComicAfter={<SponsoredRecommendationSection />} />
+        </div>
       </main>
     </div>
   );
