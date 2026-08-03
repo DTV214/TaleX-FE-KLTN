@@ -681,7 +681,9 @@ function ComicFeaturedShowcase({
           </div>
         </div>
 
-          <div className="relative min-h-[300px] overflow-hidden rounded-[1.35rem] border border-white/10 bg-black/20 sm:min-h-[340px] lg:min-h-[380px]">
+          <div className="relative min-h-[300px] overflow-hidden rounded-[1.35rem] border border-white/10 bg-[linear-gradient(90deg,rgba(0,0,0,0.58),rgba(255,255,255,0.035)_18%,rgba(212,175,55,0.08)_50%,rgba(255,255,255,0.035)_82%,rgba(0,0,0,0.58))] sm:min-h-[360px] lg:min-h-[420px]">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(245,214,94,0.16),transparent_34%),linear-gradient(90deg,rgba(0,0,0,0.74),transparent_18%,transparent_82%,rgba(0,0,0,0.74))]" />
+            <div className="pointer-events-none absolute inset-x-8 top-1/2 h-px bg-gradient-to-r from-transparent via-white/12 to-transparent" />
             <button
               type="button"
               aria-label="Truyện trước"
@@ -699,7 +701,7 @@ function ComicFeaturedShowcase({
               <ChevronRight className="h-5 w-5" />
             </button>
 
-            <div className="absolute inset-0 [perspective:1200px]">
+            <div className="absolute inset-0 [perspective:1500px]">
               {stageItems.map(({ series, offset }) => (
                 <ComicStagePoster
                   key={`${series.seriesId}-${offset}`}
@@ -772,10 +774,10 @@ function ComicStagePoster({
   active: boolean;
 }) {
   const abs = Math.abs(offset);
-  const x = offset * 46;
-  const rotate = offset * -24;
-  const scale = active ? 1 : abs === 1 ? 0.8 : 0.64;
-  const opacity = active ? 1 : abs === 1 ? 0.74 : 0.34;
+  const x = offset * 62;
+  const rotate = offset * -18;
+  const scale = active ? 1 : abs === 1 ? 0.82 : 0.64;
+  const opacity = active ? 1 : abs === 1 ? 0.78 : 0.38;
 
   return (
     <Link
