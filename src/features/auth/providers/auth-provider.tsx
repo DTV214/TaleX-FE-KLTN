@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { getMyProfile } from "../api/auth.api";
 import { useAuthStore, isFullProfile } from "../store/auth.store";
 import { clearAuthCookies } from "@/features/auth/api/auth.actions";
+import { ApiError } from "@/shared/api/http-client";
 // Đảm bảo import đúng đường dẫn Server Action của bạn
 
 
@@ -25,10 +26,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Vì khi F5, store đang rỗng (user = null), setUser sẽ khởi tạo lại toàn bộ data.
         setUser(fullProfile);
       } catch (error) {
-        console.error(
-          "Phiên đăng nhập không hợp lệ, chưa đăng nhập, hoặc tài khoản bị khóa:",
-          error,
-        );
+        // Chỉ coi là hết phiên khi request THỰC SỰ tới được server và bị từ chối
+        // (401/403). Lỗi mạng/timeout/5xx không có status này — request có thể
+        // chưa từng tới server, cookie vẫn còn hợp lệ. Xóa session trong trường
+        // hợp đó là false-positive: user vừa login xong bị "logout giả" chỉ vì
+        // mạng chập chờn đúng lúc fetch profile.
+        const isAuthError =
+          error instanceof ApiError && (error.status === 401 || error.status === 403);
+
+        if (!isAuthError) {
+          console.error("Không tải được profile (lỗi mạng/server), giữ nguyên phiên:", error);
+          return;
+        }
+
+        console.error("Phiên đăng nhập không hợp lệ hoặc đã hết hạn:", error);
 
         // 1. Xóa cookie an toàn bằng Server Action
         await clearAuthCookies();
