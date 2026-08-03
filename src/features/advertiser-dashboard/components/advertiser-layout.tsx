@@ -72,12 +72,6 @@ export function AdvertiserLayout({
               </Link>
             </div>
 
-            <div className="px-2">
-              <Link href="/advertiser-dashboard?view=report" className={`flex items-center gap-3 rounded-md p-2 hover:bg-slate-100 ${activeView === 'report' ? 'bg-teal-50 text-teal-600 font-bold' : 'text-slate-500 hover:text-[#161823]'}`}>
-                <BarChart2 className={`h-5 w-5 shrink-0 ${activeView === 'report' ? 'text-teal-500' : ''}`} />
-                <span className="opacity-0 transition-opacity duration-300 group-hover:opacity-100 whitespace-nowrap">Customer report</span>
-              </Link>
-            </div>
 
             <div className="px-2 mt-4 pt-4 border-t border-slate-200">
               <Link href="/" className="flex items-center gap-3 rounded-md p-2 text-slate-500 hover:bg-slate-100 hover:text-[#161823] cursor-pointer group">

@@ -64,6 +64,16 @@ export interface PopupConfig {
   cooldownMinutes: number;
 }
 
+export interface AdMetricResponse {
+  reportDate: string;
+  impressions: number;
+  clicks: number;
+  focusedViews6s: number;
+  paidFocusedViews6s: number;
+  spend: number;
+  ctr: number;
+}
+
 export const adsApi = {
   // ... other methods ...
   getWalletBalance: () =>
@@ -80,7 +90,7 @@ export const adsApi = {
   },
 
   getCampaignMetrics: (campaignId: string) =>
-    api.get(`/api/v1/ads/campaigns/${campaignId}/metrics`).then((res) => res.data.data),
+    api.get<{ data: AdMetricResponse[] }>(`/api/v1/ads/campaigns/${campaignId}/metrics`).then((res) => res.data.data),
 
   getCampaignTransactions: (campaignId: string) =>
     api.get(`/api/v1/ads/campaigns/${campaignId}/transactions`).then((res) => res.data.data),
@@ -113,6 +123,9 @@ export const adsApi = {
 
   trackClick: (campaignId: string) =>
     api.post("/api/v1/ads/track/click", { campaignId }),
+
+  track6sView: (campaignId: string) =>
+    api.post("/api/v1/ads/track/view-6s", { campaignId }),
 
   getLabels: () =>
     api.get<{ data: AdLabel[] }>("/api/v1/ads/labels").then((res) => res.data.data),

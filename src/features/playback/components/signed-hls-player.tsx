@@ -18,6 +18,7 @@ import { LikedUsersModal } from "@/features/series/components/liked-users-modal"
 import { EpisodeShareButton } from "@/features/series/components/episode-share-button";
 import { useEpisodeLikes } from "@/features/series/hooks/use-episode-likes";
 import { HlsVideoPlayer } from "@/features/playback/components/hls-video-player";
+import { VideoPrerollAdWidget } from "@/features/ads/components/video-preroll-ad-widget";
 import { ContentPaywallGate } from "@/features/checkout-content/components/content-paywall-gate";
 import { isNotEntitledError } from "@/features/checkout-content/utils/is-not-entitled-error";
 import { useAuthStore } from "@/features/auth/store/auth.store";
@@ -92,6 +93,7 @@ export function SignedHlsPlayer({
   const [playerError, setPlayerError] = useState<PlayerErrorState | null>(null);
   const [processingRetryCount, setProcessingRetryCount] = useState(0);
   const [previewEnded, setPreviewEnded] = useState(false);
+  const [isAdFinished, setIsAdFinished] = useState(false);
 
   const fetchPlayback = creatorMode
     ? getCreatorEpisodePlayback
@@ -290,27 +292,31 @@ export function SignedHlsPlayer({
             />
           ) : manifestUrl ? (
             <div className="relative w-full">
-              <HlsVideoPlayer
-                episodeId={episodeId}
-                manifestUrl={manifestUrl}
-                posterUrl={playbackQuery.data?.thumbnailUrl}
-                realDuration={playbackQuery.data?.duration}
-                isLocked={playbackQuery.data?.isLocked ?? false}
-                blurVideo={previewEnded}
-                compact={compact}
-                storageKey={storageKey}
-                onFatalError={handleFatalPlayerError}
-                onEnded={() => {
-                  if (playbackQuery.data?.isLocked) {
-                    setPreviewEnded(true);
-                  }
-                }}
-                onTimeUpdate={(time) => {
-                  if (previewEnded && time < 9.9) {
-                    setPreviewEnded(false);
-                  }
-                }}
-              />
+              {!isAdFinished && !creatorMode ? (
+                <VideoPrerollAdWidget onAdFinished={() => setIsAdFinished(true)} />
+              ) : (
+                <HlsVideoPlayer
+                  episodeId={episodeId}
+                  manifestUrl={manifestUrl}
+                  posterUrl={playbackQuery.data?.thumbnailUrl}
+                  realDuration={playbackQuery.data?.duration}
+                  isLocked={playbackQuery.data?.isLocked ?? false}
+                  blurVideo={previewEnded}
+                  compact={compact}
+                  storageKey={storageKey}
+                  onFatalError={handleFatalPlayerError}
+                  onEnded={() => {
+                    if (playbackQuery.data?.isLocked) {
+                      setPreviewEnded(true);
+                    }
+                  }}
+                  onTimeUpdate={(time) => {
+                    if (previewEnded && time < 9.9) {
+                      setPreviewEnded(false);
+                    }
+                  }}
+                />
+              )}
               {previewEnded && playbackQuery.data?.isLocked && (
                 <div className="absolute inset-0 z-10 flex flex-col items-center justify-center overflow-hidden rounded-2xl pointer-events-none">
                   <div className="w-full bg-black/80 backdrop-blur-md px-6 py-8 shadow-2xl flex flex-col items-center justify-center pointer-events-auto">
