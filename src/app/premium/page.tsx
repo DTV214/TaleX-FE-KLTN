@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 
 import { useGetPremiumPackages } from "@/features/premium/api/premium.api";
+import { useAuthStore } from "@/features/auth/store/auth.store";
 import type { Subscription } from "@/features/admin/subscriptions/types/subscriptions.types";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
@@ -426,6 +427,7 @@ function PricingCard({
 
 function PricingSection() {
   const router = useRouter();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const packagesQuery = useGetPremiumPackages();
   const packages = packagesQuery.data?.data.content ?? [];
   const rankedPackages = [...packages]
@@ -438,7 +440,14 @@ function PricingSection() {
   const popularPackageId = rankedPackages[0]?.subscriptionId ?? "";
 
   const handleSelectSubscription = (subscription: Subscription) => {
-    router.push(`/checkout?subscriptionId=${subscription.subscriptionId}`);
+    const checkoutUrl = `/checkout?subscriptionId=${subscription.subscriptionId}`;
+
+    if (!isAuthenticated) {
+      router.push(`/login?callbackUrl=${encodeURIComponent(checkoutUrl)}`);
+      return;
+    }
+
+    router.push(checkoutUrl);
   };
 
   return (

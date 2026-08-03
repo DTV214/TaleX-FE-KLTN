@@ -17,7 +17,8 @@ export function useComicHeartbeat(
   episodeId: string,
   currentPage: number,
   totalPages: number,
-  readingMode: "vertical" | "horizontal"
+  readingMode: "vertical" | "horizontal",
+  enabled = true,
 ) {
   const currentPageRef = useRef(currentPage);
   const totalPagesRef = useRef(totalPages);
@@ -31,7 +32,7 @@ export function useComicHeartbeat(
   }, [currentPage, totalPages, readingMode]);
 
   useEffect(() => {
-    if (!episodeId) return;
+    if (!enabled || !episodeId) return;
 
     // Use closure-scoped local variables for tracking states (removes redundant react ref hooks)
     const sessionId = generateSessionId();
@@ -108,5 +109,5 @@ export function useComicHeartbeat(
         void sendWatchProgress("last_event", estimatedPage, accumulated);
       }
     };
-  }, [episodeId]);
+  }, [enabled, episodeId]);
 }

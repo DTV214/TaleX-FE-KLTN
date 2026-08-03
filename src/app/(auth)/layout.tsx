@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import Link from "next/link";
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
@@ -14,9 +15,13 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#0B0B0C]/40 to-[#0B0B0C]" />
 
         <div className="relative z-10 p-8 lg:p-12">
-          <span className="font-heading text-3xl font-extrabold tracking-widest text-[#D4AF37] drop-shadow-lg">
+          <Link
+            href="/"
+            aria-label="Về trang chủ TaleX"
+            className="font-heading text-3xl font-extrabold tracking-widest text-[#D4AF37] drop-shadow-lg transition-colors hover:text-[#F5D46E]"
+          >
             TaleX
-          </span>
+          </Link>
         </div>
 
         <div className="relative z-10 p-8 lg:p-12">
@@ -29,9 +34,13 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
 
       <div className="relative flex w-full flex-col md:w-1/2">
         <div className="flex items-center p-6 md:hidden">
-          <span className="font-heading text-2xl font-extrabold tracking-widest text-[#D4AF37]">
+          <Link
+            href="/"
+            aria-label="Về trang chủ TaleX"
+            className="font-heading text-2xl font-extrabold tracking-widest text-[#D4AF37] transition-colors hover:text-[#F5D46E]"
+          >
             TaleX
-          </span>
+          </Link>
         </div>
 
         <div className="flex flex-1 items-center justify-center p-4 sm:p-8">

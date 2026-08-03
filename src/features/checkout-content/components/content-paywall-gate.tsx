@@ -2,6 +2,7 @@
 
 import { Flame, Lock, Unlock } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/features/auth/store/auth.store";
 import { useGetPublicCombos } from "@/features/public/hooks/use-public-combos";
 
 type ContentPaywallGateProps = {
@@ -18,6 +19,7 @@ export function ContentPaywallGate({
   inline = false,
 }: ContentPaywallGateProps) {
   const router = useRouter();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const actionLabel = contentKind === "COMIC" ? "đọc" : "xem";
   const backgroundImageUrl =
     "https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=1000&auto=format&fit=crop";
@@ -31,6 +33,15 @@ export function ContentPaywallGate({
     if (!combo.episodes) return false;
     return combo.episodes.some((ep) => ep.episodeId === episodeId);
   });
+
+  const goToCheckout = (checkoutUrl: string) => {
+    if (!isAuthenticated) {
+      router.replace(`/login?callbackUrl=${encodeURIComponent(checkoutUrl)}`);
+      return;
+    }
+
+    router.replace(checkoutUrl);
+  };
 
   return (
     <div
@@ -74,7 +85,7 @@ export function ContentPaywallGate({
             // replace, không push — nếu không trang paywall này (cùng URL /read hoặc
             // /watch) sẽ chồng thêm 1 entry lịch sử, khiến nút "Quay lại" ở trang đọc/xem
             // phải bấm 2 lần mới thật sự lùi về trang Series.
-            router.replace(`/checkout-content?${params.toString()}`);
+            goToCheckout(`/checkout-content?${params.toString()}`);
           }}
           className="inline-flex min-h-12 items-center gap-3 rounded-xl bg-gradient-to-r from-[#F56565] to-[#D4AF37] px-6 py-3 text-sm font-black text-white shadow-[0_12px_30px_rgba(245,101,101,0.24)] transition-transform hover:scale-105 cursor-pointer"
         >
@@ -98,7 +109,7 @@ export function ContentPaywallGate({
                 title: matchingCombo.title,
                 ...(seriesId ? { returnTo: `/series/${seriesId}` } : {}),
               });
-              router.replace(`/checkout-content?${params.toString()}`);
+              goToCheckout(`/checkout-content?${params.toString()}`);
             }}
             className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-4 text-xs font-bold text-[#D4AF37] transition hover:bg-[#D4AF37]/15 cursor-pointer"
           >

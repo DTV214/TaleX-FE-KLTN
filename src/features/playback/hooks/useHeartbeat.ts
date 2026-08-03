@@ -15,11 +15,12 @@ function generateSessionId(): string {
 
 export function useHeartbeat(
   episodeId: string,
-  videoRef: React.RefObject<HTMLVideoElement | null>
+  videoRef: React.RefObject<HTMLVideoElement | null>,
+  enabled = true,
 ) {
   useEffect(() => {
     const video = videoRef.current;
-    if (!video || !episodeId) return;
+    if (!enabled || !video || !episodeId) return;
 
     // Use closure-scoped local variables for session state tracking (replaces React refs)
     const sessionId = generateSessionId();
@@ -134,5 +135,5 @@ export function useHeartbeat(
         void sendWatchProgress("last_event", video.currentTime, accumulated);
       }
     };
-  }, [episodeId, videoRef]);
+  }, [enabled, episodeId, videoRef]);
 }

@@ -47,6 +47,7 @@ type HlsVideoPlayerProps = {
   realDuration?: number;
   isLocked?: boolean;
   blurVideo?: boolean;
+  enableHeartbeat?: boolean;
   onFatalError?: (message: string) => void;
   onEnded?: () => void;
   onTimeUpdate?: (time: number) => void;
@@ -344,6 +345,7 @@ export function HlsVideoPlayer({
   realDuration,
   isLocked,
   blurVideo,
+  enableHeartbeat = true,
   onFatalError,
   onEnded,
   onTimeUpdate,
@@ -352,7 +354,7 @@ export function HlsVideoPlayer({
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   // Hook into video element for views & watch progress tracking
-  useHeartbeat(episodeId, videoRef);
+  useHeartbeat(episodeId, videoRef, enableHeartbeat);
   const hlsRef = useRef<Hls | null>(null);
   const onFatalErrorRef = useRef(onFatalError);
   const selectedQualityRef = useRef<QualitySelection>("auto");

@@ -246,7 +246,13 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
   }, [episodeId, totalPages]);
 
   // Track reading views and progress updates for comic chapters
-  useComicHeartbeat(episodeId, currentPage, totalPages, readingMode);
+  useComicHeartbeat(
+    episodeId,
+    currentPage,
+    totalPages,
+    readingMode,
+    Boolean(authUser),
+  );
 
   // Auto-hide controls sau 3 giây
   const resetHideTimer = useCallback(() => {

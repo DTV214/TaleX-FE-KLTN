@@ -304,6 +304,7 @@ export function SignedHlsPlayer({
                   blurVideo={previewEnded}
                   compact={compact}
                   storageKey={storageKey}
+                  enableHeartbeat={Boolean(authUser)}
                   onFatalError={handleFatalPlayerError}
                   onEnded={() => {
                     if (playbackQuery.data?.isLocked) {

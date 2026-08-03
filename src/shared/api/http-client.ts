@@ -20,6 +20,30 @@ export type BasePageResponse<T> = {
 const HTTP_CLIENT_BASE_URL =
   typeof window === "undefined" ? API_BASE_URL : "";
 
+const PUBLIC_ROUTE_PREFIXES = [
+  "/login",
+  "/register",
+  "/forgot-password",
+  "/complete-profile",
+  "/intro",
+  "/series",
+  "/comics",
+  "/movies",
+  "/watch",
+  "/read",
+  "/public-channel",
+  "/premium",
+];
+
+function isPublicRoute(pathname: string) {
+  return (
+    pathname === "/" ||
+    PUBLIC_ROUTE_PREFIXES.some(
+      (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+    )
+  );
+}
+
 // Browser requests stay on the Next.js origin and are rewritten to the
 // selected backend. Server-side requests can call the backend directly.
 export const httpClient = axios.create({
@@ -98,11 +122,7 @@ httpClient.interceptors.response.use(
         if (typeof window !== "undefined") {
           const currentPath = window.location.pathname;
           // Chỉ định những trang được phép truy cập mà KHÔNG CẦN đăng nhập
-          const isPublicPage =
-            currentPath === "/" ||
-            currentPath.startsWith("/login") ||
-            currentPath.startsWith("/register") ||
-            currentPath.startsWith("/forgot-password");
+          const isPublicPage = isPublicRoute(currentPath);
 
           // Chỉ đá văng về login nếu user đang ở các trang cần bảo vệ (VD: /admin, /staff)
           if (!isPublicPage) {
