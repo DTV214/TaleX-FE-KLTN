@@ -191,28 +191,17 @@ function buildChannelSections(
 ) {
   if (!feed) return [];
 
-  return CHANNEL_POOL_ORDER.flatMap((poolKey) => {
+  const videoSections: TypedHomeSection[] = [];
+  const comicSections: TypedHomeSection[] = [];
+
+  CHANNEL_POOL_ORDER.forEach((poolKey) => {
     const config = poolCopy[poolKey];
     const items = uniqueSeries(feed[poolKey] ?? []);
     const comics = items.filter((item) => normalizeKind(item) === "COMIC");
     const videos = items.filter((item) => normalizeKind(item) === "VIDEO");
-    const sections: TypedHomeSection[] = [];
-
-    if (comics.length > 0) {
-      sections.push({
-        id: `${poolKey}-comic`,
-        poolKey,
-        kind: "COMIC",
-        eyebrow: config.eyebrow,
-        title: config.comicTitle,
-        description: config.description,
-        items: comics,
-        variant: config.variant,
-      });
-    }
 
     if (videos.length > 0) {
-      sections.push({
+      videoSections.push({
         id: `${poolKey}-video`,
         poolKey,
         kind: "VIDEO",
@@ -224,8 +213,21 @@ function buildChannelSections(
       });
     }
 
-    return sections;
+    if (comics.length > 0) {
+      comicSections.push({
+        id: `${poolKey}-comic`,
+        poolKey,
+        kind: "COMIC",
+        eyebrow: config.eyebrow,
+        title: config.comicTitle,
+        description: config.description,
+        items: comics,
+        variant: config.variant,
+      });
+    }
   });
+
+  return [...videoSections, ...comicSections];
 }
 
 function buildMixedRecommendations(
@@ -295,6 +297,12 @@ export function HomeFeed({
   );
   const { data: feed, isError, isLoading, refetch } = useHomeFeed(queryParams);
   const channelSections = useMemo(() => buildChannelSections(feed), [feed]);
+  const firstVideoSectionIndex = channelSections.findIndex(
+    (section) => section.kind === "VIDEO",
+  );
+  const firstComicSectionIndex = channelSections.findIndex(
+    (section) => section.kind === "COMIC",
+  );
   const mixedRecommendations = useMemo(
     () => buildMixedRecommendations(feed, channelSections),
     [feed, channelSections],
@@ -398,6 +406,8 @@ export function HomeFeed({
 
       {channelSections.map((section, index) => {
         let content: ReactNode;
+        const isFirstVideoSection = index === firstVideoSectionIndex;
+        const isFirstComicSection = index === firstComicSectionIndex;
 
         if (section.variant === "hero") {
           content = <TypedHeroSection section={section} />;
@@ -409,16 +419,27 @@ export function HomeFeed({
           content = <TypedRowSection section={section} />;
         }
 
-        const shouldRenderPromotedComicAfter =
-          promotedComicAfter &&
-          section.poolKey === "promoted" &&
-          section.kind === "COMIC";
-
         return (
           <Fragment key={section.id}>
             {index > 0 ? <DecorativeSectionDivider /> : null}
+            {isFirstVideoSection ? (
+              <HomeFeedZoneTitle
+                icon={<Film className="h-5 w-5" />}
+                title="Khu vực phim bộ"
+                description="Các nội dung video đang nổi bật, thịnh hành và mới cập nhật trên TaleX."
+              />
+            ) : null}
+            {isFirstComicSection && promotedComicAfter ? (
+              <CompactSponsorFrame>{promotedComicAfter}</CompactSponsorFrame>
+            ) : null}
+            {isFirstComicSection ? (
+              <HomeFeedZoneTitle
+                icon={<BookOpen className="h-5 w-5" />}
+                title="Khu vực truyện tranh"
+                description="Các series truyện được sắp xếp riêng để người đọc dễ khám phá hơn."
+              />
+            ) : null}
             {content}
-            {shouldRenderPromotedComicAfter ? promotedComicAfter : null}
             {shouldShowHomeAdBreak(index, channelSections.length) ? (
               <HomeChannelAdBreak index={index} />
             ) : null}
@@ -442,6 +463,52 @@ function shouldShowHomeAdBreak(index: number, total: number) {
   if (total <= 1) return index === 0;
   if (index === 1) return true;
   return total >= 5 && index === 3;
+}
+
+function HomeFeedZoneTitle({
+  icon,
+  title,
+  description,
+}: {
+  icon: ReactNode;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="relative overflow-hidden rounded-[1.35rem] border border-[#D4AF37]/16 bg-[linear-gradient(115deg,rgba(212,175,55,0.14),rgba(255,255,255,0.055)_38%,rgba(91,112,184,0.12)_74%,rgba(12,12,14,0.9))] px-5 py-4 shadow-[0_16px_44px_rgba(0,0,0,0.24)]">
+      <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[#D4AF37]/55 to-transparent" />
+      <div className="pointer-events-none absolute -right-8 -top-10 h-28 w-28 rounded-full bg-[#D4AF37]/12 blur-3xl" />
+      <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-3">
+          <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[#D4AF37]/24 bg-[#D4AF37]/12 text-[#F4D663] shadow-[0_0_22px_rgba(212,175,55,0.12)]">
+            {icon}
+          </span>
+          <div>
+            <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#D4AF37]">
+              TaleX zone
+            </p>
+            <h2 className="mt-1 bg-[linear-gradient(110deg,rgba(255,255,255,0.9),rgba(255,255,255,0.72),rgba(212,175,55,0.95))] bg-clip-text text-2xl font-black text-transparent md:text-3xl">
+              {title}
+            </h2>
+            <p className="mt-1 max-w-3xl text-sm font-semibold leading-relaxed text-white/46">
+              {description}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CompactSponsorFrame({ children }: { children: ReactNode }) {
+  return (
+    <div className="relative overflow-hidden rounded-[1.3rem] border border-[#D4AF37]/14 bg-[linear-gradient(120deg,rgba(212,175,55,0.08),rgba(255,255,255,0.045)_42%,rgba(91,112,184,0.08))] p-1 shadow-[0_16px_48px_rgba(0,0,0,0.22)]">
+      <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[#D4AF37]/45 to-transparent" />
+      <div className="relative [&>section]:my-0 [&>section]:border-0 [&>section]:bg-transparent [&>section]:p-0 [&>section]:shadow-none">
+        {children}
+      </div>
+    </div>
+  );
 }
 
 function HomeChannelAdBreak({ index }: { index: number }) {
@@ -1243,7 +1310,108 @@ function TypedRowSection({ section }: { section: TypedHomeSection }) {
 function TypedSpotlightSection({ section }: { section: TypedHomeSection }) {
   const featured = section.items[0];
   const rest = section.items.slice(1, 5);
+  const isComicSpotlight = section.kind === "COMIC";
+  const usePosterSpotlight = section.variant === "spotlight";
   if (!featured) return null;
+
+  if (usePosterSpotlight) {
+    return (
+      <section
+        id={section.id}
+        className="group relative scroll-mt-24 overflow-hidden rounded-[1.6rem] border border-[#D4AF37]/18 bg-[#101012] shadow-[0_24px_80px_rgba(0,0,0,0.34)]"
+      >
+        <div
+          className="absolute inset-0 bg-cover bg-center opacity-58 transition duration-700 group-hover:scale-[1.02]"
+          style={{
+            backgroundImage: `url(${imageFor(featured, 0, "banner")})`,
+          }}
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(0,0,0,0.9)_0%,rgba(0,0,0,0.68)_38%,rgba(0,0,0,0.28)_72%,rgba(0,0,0,0.76)_100%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(11,11,13,0.14)_0%,rgba(11,11,13,0.5)_52%,rgba(11,11,13,0.96)_100%)]" />
+        <div className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-[#D4AF37]/70 to-transparent" />
+        <div className="pointer-events-none absolute -left-24 top-10 h-52 w-52 rounded-full bg-[#D4AF37]/18 blur-3xl" />
+        <div className="relative min-h-[520px] p-5 md:p-7 lg:p-9">
+          <div className="max-w-2xl pt-6 md:pt-10">
+            <SectionHeading
+              section={section}
+              icon={
+                isComicSpotlight ? (
+                  <BookOpen className="h-5 w-5" />
+                ) : (
+                  <Clapperboard className="h-5 w-5" />
+                )
+              }
+              compact
+            />
+            <h3 className="mt-5 max-w-3xl text-4xl font-black leading-[0.96] text-white drop-shadow-[0_12px_32px_rgba(0,0,0,0.62)] md:text-6xl">
+              {featured.title}
+            </h3>
+            <div className="mt-5 flex flex-wrap items-center gap-3 text-sm font-black text-white">
+              {featured.ageRating ? (
+                <span className="rounded-md bg-[#D4AF37] px-3 py-1 text-black">
+                  {featured.ageRating}
+                </span>
+              ) : null}
+              <span>{contentLabel(section.kind)}</span>
+              {featured.language ? <span>{featured.language}</span> : null}
+            </div>
+            <p className="mt-4 line-clamp-3 max-w-xl text-sm font-semibold leading-relaxed text-white/70 md:text-base">
+              {featured.description || section.description}
+            </p>
+            <div className="mt-6 flex flex-wrap items-center gap-3">
+              <Link
+                href={seriesHref(featured)}
+                className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-[#D4AF37] px-5 py-2.5 text-sm font-black text-black shadow-[0_0_28px_rgba(212,175,55,0.34)] transition hover:bg-[#f2d761] hover:shadow-[0_0_42px_rgba(212,175,55,0.48)]"
+              >
+                <Play className="h-4 w-4 fill-current" />
+                Khám phá
+              </Link>
+              <Link
+                href={seriesHref(featured)}
+                className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-white/18 bg-white/[0.08] px-5 py-2.5 text-sm font-black text-white backdrop-blur transition hover:border-white/32 hover:bg-white/[0.14]"
+              >
+                <BookmarkPlus className="h-4 w-4" />
+                Lưu lại
+              </Link>
+            </div>
+          </div>
+
+          <div className="mt-10 grid gap-4 lg:grid-cols-2 xl:max-w-5xl">
+            {rest.map((series, index) => (
+              <Link
+                key={`${series.seriesId}-${index}`}
+                href={seriesHref(series)}
+                className="group/card grid cursor-pointer grid-cols-[112px_minmax(0,1fr)] overflow-hidden rounded-2xl border border-white/10 bg-white/[0.07] shadow-[0_18px_42px_rgba(0,0,0,0.24)] backdrop-blur transition duration-300 hover:-translate-y-1 hover:border-[#D4AF37]/45 hover:bg-white/[0.1]"
+              >
+                <div className="relative min-h-[92px] overflow-hidden">
+                  <div
+                    className="absolute inset-0 bg-cover bg-center transition duration-500 group-hover/card:scale-110"
+                    style={{
+                      backgroundImage: `url(${imageFor(series, index + 1, isComicSpotlight ? "cover" : "banner")})`,
+                    }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/55 to-transparent" />
+                </div>
+                <div className="flex min-w-0 flex-col justify-center px-4 py-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <h4 className="line-clamp-1 text-base font-black text-white">
+                      {series.title}
+                    </h4>
+                    <span className="shrink-0 text-xs font-black text-white/58">
+                      {series.totalViews ?? 0} view
+                    </span>
+                  </div>
+                  <p className="mt-1 line-clamp-2 text-xs font-semibold leading-relaxed text-white/48">
+                    {series.description || contentLabel(section.kind)}
+                  </p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section
@@ -1252,11 +1420,27 @@ function TypedSpotlightSection({ section }: { section: TypedHomeSection }) {
     >
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_16%_18%,rgba(212,175,55,0.16),transparent_28%),radial-gradient(circle_at_84%_18%,rgba(151,176,255,0.12),transparent_30%)]" />
       <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[#D4AF37]/50 to-transparent" />
-      <div className="relative grid lg:grid-cols-[minmax(0,0.58fr)_minmax(360px,0.92fr)]">
-        <div className="flex flex-col justify-center p-5 md:p-7">
+      <div
+        className={`relative grid lg:items-center ${
+          isComicSpotlight
+            ? "lg:grid-cols-[minmax(340px,0.82fr)_minmax(280px,0.56fr)]"
+            : "lg:grid-cols-[minmax(0,0.58fr)_minmax(360px,0.92fr)]"
+        }`}
+      >
+        <div
+          className={`flex flex-col justify-center p-5 md:p-7 ${
+            isComicSpotlight ? "lg:order-2 lg:pl-6" : ""
+          }`}
+        >
           <SectionHeading
             section={section}
-            icon={<Clapperboard className="h-5 w-5" />}
+            icon={
+              isComicSpotlight ? (
+                <BookOpen className="h-5 w-5" />
+              ) : (
+                <Clapperboard className="h-5 w-5" />
+              )
+            }
             compact
           />
           <h3 className="mt-4 bg-[linear-gradient(110deg,rgba(255,255,255,0.86),rgba(255,255,255,0.86),rgba(212,175,55,0.92),rgba(255,255,255,0.82))] bg-[length:220%_100%] bg-clip-text font-sans text-3xl font-semibold leading-tight text-white/88 transition-[color,filter] duration-300 hover:text-transparent hover:drop-shadow-[0_0_20px_rgba(212,175,55,0.18)] md:text-4xl">
@@ -1273,7 +1457,13 @@ function TypedSpotlightSection({ section }: { section: TypedHomeSection }) {
             <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
-        <div className="grid min-h-[280px] grid-cols-2 gap-2 p-2 md:min-h-[320px]">
+        <div
+          className={`grid grid-cols-2 gap-2 p-2 ${
+            isComicSpotlight
+              ? "min-h-[230px] md:min-h-[270px] lg:order-1"
+              : "min-h-[280px] md:min-h-[320px]"
+          }`}
+        >
           {[featured, ...rest].slice(0, 5).map((series, index) => (
             <Link
               key={`${series.seriesId}-${index}`}
@@ -1281,8 +1471,8 @@ function TypedSpotlightSection({ section }: { section: TypedHomeSection }) {
               className={`group relative overflow-hidden rounded-2xl bg-white/[0.04] ${
                 index === 0
                   ? "col-span-2"
-                  : section.kind === "COMIC"
-                    ? "aspect-[3/4]"
+                  : isComicSpotlight
+                    ? "aspect-[5/4]"
                     : "aspect-video"
               }`}
             >

@@ -21,8 +21,7 @@ export default function Home() {
       <HomeAtmosphere />
       <main className="relative z-10 h-full min-w-0 flex-1 overflow-y-auto p-4 transition-all duration-300 ease-in-out md:p-6 no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         <div className="mx-auto w-full max-w-[1680px]">
-          <AdImageCarousel />
-          <HomeFeed promotedComicAfter={<SponsoredRecommendationSection />} />
+          <HomeFeed promotedComicAfter={<AdImageCarousel />} />
         </div>
       </main>
     </div>
@@ -79,9 +78,9 @@ function AdImageCarousel() {
       : ads;
 
   return (
-    <section className="relative mt-5 overflow-hidden rounded-2xl border border-white/5 bg-[#111113] p-2 shadow-[0_18px_60px_rgba(0,0,0,0.35)]">
-      <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-20 bg-gradient-to-r from-[#111113] to-transparent" />
-      <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-20 bg-gradient-to-l from-[#111113] to-transparent" />
+    <section className="relative overflow-hidden rounded-[1.15rem] border border-white/7 bg-[#111113]/92 p-1.5 shadow-[0_14px_42px_rgba(0,0,0,0.26)]">
+      <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-[#111113] to-transparent" />
+      <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-[#111113] to-transparent" />
 
       {displayAds.length > 1 ? (
         <>
@@ -89,7 +88,7 @@ function AdImageCarousel() {
             type="button"
             aria-label="Quảng cáo trước"
             onClick={() => scrollCarousel(-1)}
-            className="absolute left-3 top-1/2 z-20 flex h-9 w-9 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-black/55 text-white/80 shadow-lg backdrop-blur-md transition hover:border-[#D4AF37]/40 hover:bg-[#D4AF37] hover:text-black"
+            className="absolute left-2 top-1/2 z-20 flex h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-black/55 text-white/80 shadow-lg backdrop-blur-md transition hover:border-[#D4AF37]/40 hover:bg-[#D4AF37] hover:text-black"
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
@@ -97,7 +96,7 @@ function AdImageCarousel() {
             type="button"
             aria-label="Quảng cáo tiếp theo"
             onClick={() => scrollCarousel(1)}
-            className="absolute right-3 top-1/2 z-20 flex h-9 w-9 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-black/55 text-white/80 shadow-lg backdrop-blur-md transition hover:border-[#D4AF37]/40 hover:bg-[#D4AF37] hover:text-black"
+            className="absolute right-2 top-1/2 z-20 flex h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-black/55 text-white/80 shadow-lg backdrop-blur-md transition hover:border-[#D4AF37]/40 hover:bg-[#D4AF37] hover:text-black"
           >
             <ChevronRight className="h-4 w-4" />
           </button>
@@ -106,12 +105,12 @@ function AdImageCarousel() {
 
       <div
         ref={scrollRef}
-        className="flex h-[230px] snap-x snap-mandatory gap-2 overflow-x-auto scroll-smooth pr-12 [scrollbar-width:none] md:h-[270px] lg:h-[310px] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+        className="flex h-[118px] snap-x snap-mandatory gap-2 overflow-x-auto scroll-smooth pr-10 [scrollbar-width:none] md:h-[140px] lg:h-[158px] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
       >
         {displayAds.map((ad: AdServeResponse, index) => (
           <div
             key={`${ad.campaignId}-${index}`}
-            className="group relative ml-2 h-full w-[78vw] shrink-0 snap-start overflow-hidden rounded-xl border border-white/5 bg-white/[0.04] md:w-[360px] lg:w-[430px]"
+            className="group relative ml-1 h-full w-[76vw] shrink-0 snap-start overflow-hidden rounded-[0.95rem] border border-white/5 bg-white/[0.04] md:w-[330px] lg:w-[410px]"
           >
             <SunSheen />
             <AdSlot
@@ -125,6 +124,7 @@ function AdImageCarousel() {
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function SponsoredRecommendationSection() {
   const sponsorCards = [
     {
