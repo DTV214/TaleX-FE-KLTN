@@ -16,6 +16,7 @@ import {
   Menu,
   Search,
   Sparkles,
+  Star,
   User as UserIcon,
 } from "lucide-react";
 import { DropdownMenu } from "radix-ui";
@@ -233,6 +234,16 @@ export function SiteHeader() {
                       >
                         <UserIcon className="h-4 w-4" />
                         Hồ sơ cá nhân
+                      </Link>
+                    </DropdownMenu.Item>
+
+                    <DropdownMenu.Item asChild>
+                      <Link
+                        href="/my-ratings"
+                        className="flex cursor-pointer select-none items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium outline-none transition-colors hover:bg-white/5 hover:text-primary focus:bg-white/5 focus:text-primary"
+                      >
+                        <Star className="h-4 w-4 text-[#D4AF37]" />
+                        Đánh giá của tôi
                       </Link>
                     </DropdownMenu.Item>
 

@@ -42,7 +42,7 @@ export function CreatorLayout({
 
   const navItems = [
     { label: "Tổng quan", view: "dashboard", icon: LayoutDashboard },
-    { label: "Series của tôi", view: "series", icon: Film },
+    { label: "Tác phẩm của tôi", view: "series", icon: Film },
     { label: "Thống kê", view: "analytics", icon: BarChart2 },
     { label: "Doanh thu", view: "revenue", icon: DollarSign },
     { label: "Kiếm tiền", view: "monetization", icon: BadgeDollarSign },

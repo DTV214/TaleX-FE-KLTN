@@ -39,6 +39,14 @@ export function useGetCreatorTier(creatorTierId: string) {
   });
 }
 
+export function useGetNextCreatorTier(currentTierLevel: number = 0) {
+  return useQuery({
+    queryKey: [...creatorTierKeys.all, "next", currentTierLevel],
+    queryFn: () => creatorTiersApi.getNextCreatorTier(currentTierLevel),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
 export function useCreateTier() {
   const queryClient = useQueryClient();
 

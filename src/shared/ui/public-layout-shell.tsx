@@ -26,6 +26,7 @@ const sidebarRoutes = [
   "/premium-history",
   "/purchase-history",
   "/liked",
+  "/my-ratings",
   "/bookmarks",
   "/subscriptions",
   "/creator-channel",

@@ -30,7 +30,10 @@ import {
   shouldRetryOwnCreatorQuery,
   isCreatorNotFoundError,
 } from "@/features/creator-dashboard/api/creator-onboarding-api";
-import { listSeriesByCreator } from "@/features/creator-dashboard/api/creator-content-api";
+import {
+  listSeriesByCreator,
+  getCreatorLogs,
+} from "@/features/creator-dashboard/api/creator-content-api";
 import { ComboCard } from "@/features/public/components/combo-packages";
 import { useGetPublicCombos } from "@/features/public/hooks/use-public-combos";
 import {
@@ -41,6 +44,7 @@ import {
 import { getPublicSeriesList } from "@/features/series/api/series-api";
 import { FollowButton } from "@/features/series/components/follow-button";
 import { useCreatorFollow } from "@/features/series/hooks/use-creator-follow";
+import { CreatorTierHoverModal } from "@/features/admin/creator-tiers/components/creator-tier-hover-modal";
 
 type TabType = "home" | "comics" | "movies" | "about" | "combo" | "followers";
 
@@ -196,6 +200,21 @@ function CreatorChannelContent() {
     creator?.followerCount || 0,
     (followersData as any)?.numberOfElements || followersList.length || 0,
   );
+  const logsQuery = useQuery({
+    queryKey: ["creator-channel-logs"],
+    queryFn: () => getCreatorLogs(),
+    enabled: isAuthenticated && isTargetOwnCreator,
+    staleTime: 60 * 1000,
+  });
+
+  const totalWatchTime = useMemo(() => {
+    const logs = logsQuery.data || [];
+    return logs.reduce(
+      (acc, item) => acc + (item.analyticData?.watchTime || 0),
+      0,
+    );
+  }, [logsQuery.data]);
+
   const totalViews = series.reduce(
     (acc, item) => acc + (item.totalViews || 0),
     0,
@@ -340,9 +359,30 @@ function CreatorChannelContent() {
                       profileUser?.fullName ||
                       "Kênh sáng tạo"}
                   </h1>
-                  <span className="flex items-center gap-1 px-3 py-1 rounded-full text-[9px] font-black tracking-wider uppercase border bg-yellow-400/10 border-yellow-400/20 text-[#FACC15] shadow-sm shrink-0">
-                    <Sparkles className="h-3 w-3 text-[#FACC15]" /> Creator
-                  </span>
+                  <CreatorTierHoverModal
+                    currentTierLevel={
+                      (creator as any)?.tierLevel ||
+                      (ownCreator as any)?.tierLevel ||
+                      0
+                    }
+                    currentFollowers={followerCount}
+                    currentViews={totalViews}
+                    currentWatchTime={totalWatchTime}
+                  >
+                    <span className="flex cursor-pointer items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[9.5px] font-black tracking-wider uppercase border bg-yellow-400/10 border-yellow-400/30 text-[#FACC15] shadow-md shrink-0 hover:bg-yellow-400/20 hover:border-yellow-400/50 transition-all hover:scale-[1.03] active:scale-95">
+                      <Sparkles className="h-3.5 w-3.5 text-[#FACC15]" />
+                      <span>CREATOR</span>
+                      <span className="text-yellow-400/40 font-normal">
+                        &bull;
+                      </span>
+                      <span className="text-white font-black tracking-normal bg-yellow-400/20 px-1.5 py-0.5 rounded-md text-[9px]">
+                        LVL{" "}
+                        {(creator as any)?.tierLevel ||
+                          (ownCreator as any)?.tierLevel ||
+                          0}
+                      </span>
+                    </span>
+                  </CreatorTierHoverModal>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-semibold text-[#A1A1AA] mt-2.5">

@@ -169,9 +169,66 @@ export function EpisodeAnalyticsModal({
         comments: data.comments || 0,
         shares: data.shares || 0,
         bookmarks: data.bookmarks || 0,
+        engagement: (data.likes || 0) + (data.comments || 0) + (data.shares || 0) + (data.bookmarks || 0),
       };
     });
   }, [logs]);
+
+  // Custom Hover Tooltip cho Episode Analytics
+  const CustomEpisodeTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0]?.payload;
+      if (!data) return null;
+      return (
+        <div className="rounded-2xl border border-white/15 bg-zinc-950/95 p-3.5 shadow-2xl backdrop-blur-md text-xs font-semibold text-white space-y-2 min-w-[210px] z-50">
+          <div className="border-b border-white/10 pb-1.5 font-bold text-[#D4AF37] flex items-center justify-between">
+            <span>{label}</span>
+            <span className="text-[10px] text-zinc-400 font-normal">Chi tiết tập</span>
+          </div>
+          <div className="space-y-1">
+            <div className="flex items-center justify-between text-zinc-300">
+              <span className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-[#D4AF37]" />
+                Lượt xem:
+              </span>
+              <span className="font-bold text-[#D4AF37]">{data.views?.toLocaleString("vi-VN") || 0}</span>
+            </div>
+            <div className="flex items-center justify-between text-zinc-300">
+              <span className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-indigo-400" />
+                Thời gian xem:
+              </span>
+              <span className="font-bold text-indigo-300">{formatWatchTime(data.watchTime || 0)}</span>
+            </div>
+            <div className="pt-1.5 border-t border-white/10">
+              <span className="text-[11px] font-bold text-purple-400 block mb-1">
+                Tương tác (Tổng: {data.engagement || 0})
+              </span>
+              <div className="pl-2.5 space-y-0.5 text-[11px] text-zinc-400 border-l border-white/10">
+                <div className="flex justify-between">
+                  <span>• Lượt thích:</span>
+                  <span className="text-zinc-200">{data.likes || 0}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>• Bình luận:</span>
+                  <span className="text-zinc-200">{data.comments || 0}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>• Lưu tác phẩm:</span>
+                  <span className="text-zinc-200">{data.bookmarks || 0}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>• Chia sẻ:</span>
+                  <span className="text-zinc-200">{data.shares || 0}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
 
   if (!episode) return null;
 
@@ -403,19 +460,7 @@ export function EpisodeAnalyticsModal({
                       <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
                       <XAxis dataKey="time" stroke="#a1a1aa" fontSize={10} tickLine={false} />
                       <YAxis stroke="#a1a1aa" fontSize={10} tickLine={false} />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: "#18181b",
-                          borderColor: "#3f3f46",
-                          borderRadius: "12px",
-                          color: "#fff",
-                          fontSize: "12px",
-                        }}
-                        formatter={(value: any, name: any) => [
-                          name === "Thời gian xem" ? formatWatchTime(Number(value)) : value,
-                          name,
-                        ]}
-                      />
+                      <Tooltip content={<CustomEpisodeTooltip />} />
                       <Legend wrapperStyle={{ fontSize: "11px", paddingTop: "8px" }} />
                       <Area type="monotone" dataKey="views" stroke="#D4AF37" strokeWidth={2} fillOpacity={1} fill="url(#epViews)" name="Lượt xem" />
                       <Area type="monotone" dataKey="watchTime" stroke="#818cf8" strokeWidth={2} fillOpacity={1} fill="url(#epWatch)" name="Thời gian xem" />
@@ -429,15 +474,7 @@ export function EpisodeAnalyticsModal({
                       <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
                       <XAxis dataKey="time" stroke="#a1a1aa" fontSize={10} tickLine={false} />
                       <YAxis stroke="#a1a1aa" fontSize={10} tickLine={false} />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: "#18181b",
-                          borderColor: "#3f3f46",
-                          borderRadius: "12px",
-                          color: "#fff",
-                          fontSize: "12px",
-                        }}
-                      />
+                      <Tooltip content={<CustomEpisodeTooltip />} />
                       <Legend wrapperStyle={{ fontSize: "11px", paddingTop: "8px" }} />
                       <Bar dataKey="likes" fill="#f43f5e" name="Lượt thích" radius={[4, 4, 0, 0]} />
                       <Bar dataKey="comments" fill="#3b82f6" name="Bình luận" radius={[4, 4, 0, 0]} />

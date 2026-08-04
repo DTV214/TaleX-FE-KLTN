@@ -19,6 +19,9 @@ import {
   Activity,
   ArrowUpRight,
   Filter,
+  Zap,
+  Sparkles,
+  Award,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -31,6 +34,9 @@ import {
   Tooltip,
   CartesianGrid,
   Legend,
+  PieChart,
+  Pie,
+  Cell,
 } from "recharts";
 import { cn } from "@/shared/utils/utils";
 import {
@@ -88,8 +94,10 @@ export function CreatorAnalyticsLogsView({
       fromDate.setHours(now.getHours() - 24);
     } else if (rangePreset === "7d") {
       fromDate.setDate(now.getDate() - 7);
+      fromDate.setHours(0, 0, 0, 0);
     } else if (rangePreset === "30d") {
       fromDate.setDate(now.getDate() - 30);
+      fromDate.setHours(0, 0, 0, 0);
     }
 
     return {
@@ -154,6 +162,114 @@ export function CreatorAnalyticsLogsView({
       };
     });
   }, [logs, rangePreset]);
+
+  // Thống kê Phân tích Khung Giờ Vàng (0h -> 23h)
+  const hourlyPeakData = useMemo(() => {
+    const hours = Array.from({ length: 24 }, (_, i) => ({
+      hour: `${i.toString().padStart(2, "0")}h`,
+      views: 0,
+      engagement: 0,
+      follows: 0,
+    }));
+
+    for (const item of logs) {
+      const d = new Date(item.hourBucket);
+      const h = d.getHours();
+      if (h >= 0 && h < 24) {
+        const data = item.analyticData || {};
+        const eng = (data.likes || 0) + (data.comments || 0) + (data.bookmarks || 0) + (data.shares || 0);
+        hours[h].views += data.views || 0;
+        hours[h].engagement += eng;
+        hours[h].follows += item.follows || 0;
+      }
+    }
+    return hours;
+  }, [logs]);
+
+  // Tìm giờ cao điểm nhất
+  const peakHourItem = useMemo(() => {
+    if (!hourlyPeakData.length) return null;
+    return [...hourlyPeakData].sort((a, b) => b.views - a.views)[0];
+  }, [hourlyPeakData]);
+
+  // Donut chart items cho trang Thống kê
+  const analyticsDonutItems = [
+    { name: "Lượt thích (Likes)", value: totals.likes, color: "#f43f5e" },
+    { name: "Bình luận (Comments)", value: totals.comments, color: "#3b82f6" },
+    { name: "Lưu tác phẩm (Bookmarks)", value: totals.bookmarks, color: "#D4AF37" },
+    { name: "Chia sẻ (Shares)", value: totals.shares, color: "#a855f7" },
+    { name: "Đăng ký mới (Follows)", value: totals.follows, color: "#10b981" },
+  ];
+
+  const validAnalyticsDonut = analyticsDonutItems.filter((d) => d.value > 0);
+
+  // Chỉ số đo lường hiệu suất chất lượng
+  const avgWatchSecondsPerView = totals.views > 0 ? Math.round(totals.watchTime / totals.views) : 0;
+  const engagementRate = totals.views > 0 ? ((totalEngagement / totals.views) * 100).toFixed(1) : "0.0";
+  const followConversionRate = totals.views > 0 ? ((totals.follows / totals.views) * 100).toFixed(2) : "0.00";
+
+  // Custom Hover Tooltip cho Biểu đồ Log Chi tiết
+  const CustomLogTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0]?.payload;
+      if (!data) return null;
+      return (
+        <div className="rounded-2xl border border-white/15 bg-zinc-950/95 p-3.5 shadow-2xl backdrop-blur-md text-xs font-semibold text-white space-y-2 min-w-[210px] z-50">
+          <div className="border-b border-white/10 pb-1.5 font-bold text-[#D4AF37] flex items-center justify-between">
+            <span>{label}</span>
+            <span className="text-[10px] text-zinc-400 font-normal">Chi tiết khung giờ</span>
+          </div>
+          <div className="space-y-1">
+            <div className="flex items-center justify-between text-zinc-300">
+              <span className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-[#D4AF37]" />
+                Lượt xem:
+              </span>
+              <span className="font-bold text-[#D4AF37]">{data.views?.toLocaleString("vi-VN") || 0}</span>
+            </div>
+            <div className="flex items-center justify-between text-zinc-300">
+              <span className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-indigo-400" />
+                Thời gian xem:
+              </span>
+              <span className="font-bold text-indigo-300">{formatWatchTime(data.watchTime || 0)}</span>
+            </div>
+            <div className="flex items-center justify-between text-zinc-300">
+              <span className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                Đăng ký mới:
+              </span>
+              <span className="font-bold text-emerald-400">+{data.follows || 0}</span>
+            </div>
+            <div className="pt-1.5 border-t border-white/10">
+              <span className="text-[11px] font-bold text-rose-400 block mb-1">
+                Chi tiết tương tác (Tổng: {data.engagement || 0})
+              </span>
+              <div className="pl-2.5 space-y-0.5 text-[11px] text-zinc-400 border-l border-white/10">
+                <div className="flex justify-between">
+                  <span>• Lượt thích:</span>
+                  <span className="text-zinc-200">{data.likes || 0}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>• Bình luận:</span>
+                  <span className="text-zinc-200">{data.comments || 0}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>• Lưu tác phẩm:</span>
+                  <span className="text-zinc-200">{data.bookmarks || 0}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>• Chia sẻ:</span>
+                  <span className="text-zinc-200">{data.shares || 0}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
 
   // Nút reload dữ liệu
   const handleRefresh = () => {
@@ -230,9 +346,7 @@ export function CreatorAnalyticsLogsView({
                   </linearGradient>
                 </defs>
                 <XAxis dataKey="time" stroke="#71717a" fontSize={10} tickLine={false} />
-                <Tooltip
-                  contentStyle={{ backgroundColor: "#18181b", borderColor: "#3f3f46", borderRadius: "12px", color: "#fff", fontSize: "12px" }}
-                />
+                <Tooltip content={<CustomLogTooltip />} />
                 <Area type="monotone" dataKey="views" stroke="#D4AF37" strokeWidth={2} fillOpacity={1} fill="url(#widgetViews)" name="Lượt xem" />
               </AreaChart>
             </ResponsiveContainer>
@@ -244,7 +358,7 @@ export function CreatorAnalyticsLogsView({
 
   // Giao diện đầy đủ trong Tab Thống kê
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 -mt-6">
       {/* Header & Bộ lọc thời gian */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-white/10 bg-black/40 p-4">
         <div>
@@ -473,19 +587,7 @@ export function CreatorAnalyticsLogsView({
                 <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
                 <XAxis dataKey="time" stroke="#a1a1aa" fontSize={11} tickLine={false} />
                 <YAxis stroke="#a1a1aa" fontSize={11} tickLine={false} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "#18181b",
-                    borderColor: "#3f3f46",
-                    borderRadius: "16px",
-                    color: "#fff",
-                    boxShadow: "0 10px 25px rgba(0,0,0,0.5)",
-                  }}
-                  formatter={(value: any, name: any) => [
-                    name === "Thời gian xem (giây)" ? formatWatchTime(Number(value)) : value,
-                    name,
-                  ]}
-                />
+                <Tooltip content={<CustomLogTooltip />} />
                 <Legend wrapperStyle={{ paddingTop: "10px", fontSize: "12px" }} />
                 <Area
                   type="monotone"
@@ -515,14 +617,7 @@ export function CreatorAnalyticsLogsView({
                 <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
                 <XAxis dataKey="time" stroke="#a1a1aa" fontSize={11} tickLine={false} />
                 <YAxis stroke="#a1a1aa" fontSize={11} tickLine={false} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "#18181b",
-                    borderColor: "#3f3f46",
-                    borderRadius: "16px",
-                    color: "#fff",
-                  }}
-                />
+                <Tooltip content={<CustomLogTooltip />} />
                 <Legend wrapperStyle={{ paddingTop: "10px", fontSize: "12px" }} />
                 <Bar dataKey="likes" fill="#f43f5e" name="Lượt thích" radius={[4, 4, 0, 0]} />
                 <Bar dataKey="comments" fill="#3b82f6" name="Bình luận" radius={[4, 4, 0, 0]} />
@@ -534,6 +629,174 @@ export function CreatorAnalyticsLogsView({
           </div>
         )}
       </div>
+
+      {/* SECTION 1: PHÂN TÍCH KHUNG GIỜ VÀNG & CHỈ SỐ CHẤT LƯỢNG GIỮ CHÂN KHÁN GIẢ */}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+        {/* Left 2/3: Biểu đồ Khung giờ vàng (Bar Chart 24h) */}
+        <div className="creator-shine-card rounded-[24px] border border-white/10 bg-[#141416] p-6 shadow-xl lg:col-span-2 flex flex-col justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2 mb-4">
+            <div>
+              <h3 className="text-base font-black text-white flex items-center gap-2">
+                <Zap size={18} className="text-amber-400" />
+                Phân Tích "Khung Giờ Vàng" (24 Hours Activity Heatmap)
+              </h3>
+              <p className="text-xs text-zinc-400 font-medium mt-0.5">
+                Phân bổ lượt xem và tương tác theo từng giờ trong ngày để chọn thời điểm xuất bản tối ưu
+              </p>
+            </div>
+            {peakHourItem && peakHourItem.views > 0 && (
+              <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-bold text-amber-300 flex items-center gap-1.5">
+                <Sparkles size={14} className="text-amber-400" />
+                Giờ sôi nổi nhất: <span className="font-black text-white">{peakHourItem.hour}</span> ({peakHourItem.views.toLocaleString("vi-VN")} views)
+              </div>
+            )}
+          </div>
+
+          {logsQuery.isLoading ? (
+            <div className="flex h-56 items-center justify-center text-zinc-500 gap-2">
+              <Loader2 className="h-5 w-5 animate-spin text-amber-400" /> Đang tải phân tích khung giờ...
+            </div>
+          ) : (
+            <div className="h-60 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={hourlyPeakData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
+                  <XAxis dataKey="hour" stroke="#71717a" fontSize={10} tickLine={false} />
+                  <YAxis stroke="#71717a" fontSize={10} tickLine={false} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#18181b",
+                      borderColor: "#3f3f46",
+                      borderRadius: "14px",
+                      color: "#fff",
+                      fontSize: "12px",
+                    }}
+                    formatter={(val: any, name: any) => [val.toLocaleString("vi-VN"), name]}
+                  />
+                  <Bar dataKey="views" fill="#D4AF37" radius={[4, 4, 0, 0]} name="Lượt xem" />
+                  <Bar dataKey="engagement" fill="#f43f5e" radius={[4, 4, 0, 0]} name="Tổng tương tác" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
+
+        {/* Right 1/3: 3 Thẻ Chỉ số Chất lượng & Giữ chân khán giả */}
+        <div className="flex flex-col gap-3.5 justify-between">
+          <div className="rounded-[22px] border border-white/10 bg-[#17171a] p-5 shadow-lg space-y-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+              <Clock size={14} className="text-indigo-400" /> Thời gian xem TB / lượt xem
+            </span>
+            <div className="text-2xl font-black text-white pt-1">
+              {formatWatchTime(avgWatchSecondsPerView)}
+            </div>
+            <p className="text-[11px] text-zinc-500 font-medium">Mỗi lượt xem khán giả dành thời gian đọc/xem</p>
+          </div>
+
+          <div className="rounded-[22px] border border-white/10 bg-[#17171a] p-5 shadow-lg space-y-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+              <Heart size={14} className="text-rose-400" /> Tỷ lệ Tương tác / Views
+            </span>
+            <div className="text-2xl font-black text-rose-400 pt-1">
+              {engagementRate}%
+            </div>
+            <p className="text-[11px] text-zinc-500 font-medium">Tỷ lệ khán giả để lại Thích/Bình luận/Lưu khi xem</p>
+          </div>
+
+          <div className="rounded-[22px] border border-white/10 bg-[#17171a] p-5 shadow-lg space-y-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+              <UserPlus size={14} className="text-emerald-400" /> Tỷ lệ Chuyển đổi Đăng ký
+            </span>
+            <div className="text-2xl font-black text-emerald-400 pt-1">
+              {followConversionRate}%
+            </div>
+            <p className="text-[11px] text-zinc-500 font-medium">Tỷ lệ người xem nhấn Đăng ký kênh sau khi xem</p>
+          </div>
+        </div>
+      </div>
+
+      {/* SECTION 2: CƠ CẤU TƯƠNG TÁC CHI TIẾT */}
+      {validAnalyticsDonut.length > 0 && (
+        <div className="creator-shine-card rounded-[24px] border border-white/10 bg-[#141416] p-6 shadow-xl">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-base font-black text-white flex items-center gap-2">
+                <Activity size={18} className="text-[#D4AF37]" />
+                Tỷ Trọng Tương Tác Khán Giả
+              </h3>
+              <p className="text-xs text-zinc-400 font-medium mt-0.5">
+                Phân tích tỷ lệ từng hình thức tương tác thu hút được trong khoảng thời gian đã chọn
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+            <div className="relative h-60 w-full flex items-center justify-center">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={validAnalyticsDonut}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius="60%"
+                    outerRadius="85%"
+                    paddingAngle={5}
+                    dataKey="value"
+                    stroke="none"
+                  >
+                    {validAnalyticsDonut.map((entry, index) => (
+                      <Cell key={index} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        const item = payload[0];
+                        const total = validAnalyticsDonut.reduce((a, b) => a + b.value, 0);
+                        const pct = total > 0 ? Math.round((Number(item.value) / total) * 100) : 0;
+                        return (
+                          <div className="rounded-xl border border-white/15 bg-zinc-900/95 p-2.5 px-3.5 shadow-2xl backdrop-blur-md text-xs font-semibold text-white">
+                            <div className="flex items-center gap-2">
+                              <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: item.payload.color }} />
+                              <span className="text-zinc-300">{item.name}:</span>
+                              <span className="font-bold text-[#D4AF37]">{item.value?.toLocaleString("vi-VN")}</span>
+                              <span className="text-zinc-400 text-[11px]">({pct}%)</span>
+                            </div>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">Tổng tương tác</span>
+                <span className="text-2xl font-black text-white">{(totalEngagement + totals.follows).toLocaleString("vi-VN")}</span>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {analyticsDonutItems.map((item) => {
+                const totalAll = totalEngagement + totals.follows;
+                const pct = totalAll > 0 ? ((item.value / totalAll) * 100).toFixed(1) : "0.0";
+                return (
+                  <div key={item.name} className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.02] p-3">
+                    <div className="flex items-center gap-2.5">
+                      <span className="h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
+                      <span className="text-xs font-bold text-zinc-300">{item.name}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs font-black text-white">{item.value.toLocaleString("vi-VN")}</span>
+                      <span className="text-[11px] font-semibold text-zinc-500 w-12 text-right">{pct}%</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Table Data view chi tiết */}
       {showTable && (

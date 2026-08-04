@@ -1,24 +1,51 @@
 import React, { useState, useMemo } from "react";
-import { Plus, Edit3, Trash2, Eye, Film, Layers, Search, Filter, BarChart3 } from "lucide-react";
+import {
+  Plus,
+  Edit3,
+  Trash2,
+  Eye,
+  Film,
+  Layers,
+  Search,
+  Filter,
+  BarChart3,
+  Clapperboard,
+  BookOpen,
+} from "lucide-react";
 import { SeriesAnalyticsModal } from "@/features/creator-dashboard/components/views/series-analytics-modal";
 
 interface CreatorSeriesListProps {
   seriesList: any[];
   onSelect: (seriesId: string) => void;
-  onCreate: () => void;
+  onCreate?: () => void;
+  onCreateComic?: () => void;
+  onCreateVideo?: () => void;
   onEdit: (series: any) => void;
   onDelete: (series: any) => void;
 }
 
-export function CreatorSeriesList({ seriesList, onSelect, onCreate, onEdit, onDelete }: CreatorSeriesListProps) {
+export function CreatorSeriesList({
+  seriesList,
+  onSelect,
+  onCreate,
+  onCreateComic,
+  onCreateVideo,
+  onEdit,
+  onDelete,
+}: CreatorSeriesListProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<string>("ALL");
-  const [selectedAnalyticsSeries, setSelectedAnalyticsSeries] = useState<any | null>(null);
+  const [selectedAnalyticsSeries, setSelectedAnalyticsSeries] = useState<
+    any | null
+  >(null);
 
   const filteredSeries = useMemo(() => {
     return seriesList.filter((series) => {
-      const matchesSearch = series.title?.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesFilter = filterType === "ALL" || series.contentType === filterType;
+      const matchesSearch = series.title
+        ?.toLowerCase()
+        .includes(searchQuery.toLowerCase());
+      const matchesFilter =
+        filterType === "ALL" || series.contentType === filterType;
       return matchesSearch && matchesFilter;
     });
   }, [seriesList, searchQuery, filterType]);
@@ -27,20 +54,29 @@ export function CreatorSeriesList({ seriesList, onSelect, onCreate, onEdit, onDe
     <div className="w-full py-6 text-creator-text">
       <div className="mb-8 flex flex-col gap-4 rounded-[28px] border border-white/10 bg-white/[0.035] p-6 shadow-[0_24px_70px_rgba(0,0,0,0.22)] md:flex-row md:items-end md:justify-between">
         <div>
-          <h2 className="creator-spotlight-text mb-2 text-3xl font-bold text-white">Series của tôi</h2>
-          <p className="text-creator-muted">Quản lý series, mùa và tập của bạn.</p>
+          <h2 className="creator-spotlight-text mb-2 text-3xl font-bold text-white">
+            Tác phẩm của tôi
+          </h2>
+          <p className="text-creator-muted">
+            Quản lý các bộ truyện, phim ngắn, mùa và tập của bạn.
+          </p>
         </div>
         <button
-          onClick={onCreate}
+          onClick={() => {
+            if (onCreate) onCreate();
+          }}
           className="creator-shine-card flex shrink-0 items-center gap-2 rounded-2xl bg-creator-gold px-6 py-3 text-sm font-black text-black shadow-[0_16px_40px_rgba(226,177,60,0.18)] transition-all hover:-translate-y-0.5 hover:bg-creator-gold-hover"
         >
-          <Plus size={18} /> Tạo Series Mới
+          <Plus size={18} /> Tạo Tác Phẩm Mới
         </button>
       </div>
 
       <div className="mb-8 flex flex-col items-center gap-4 rounded-2xl border border-white/10 bg-black/35 p-3 backdrop-blur-sm sm:flex-row">
         <div className="relative flex-1 w-full">
-          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-creator-muted" />
+          <Search
+            size={18}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-creator-muted"
+          />
           <input
             type="text"
             placeholder="Tìm kiếm series theo tiêu đề..."
@@ -79,7 +115,7 @@ export function CreatorSeriesList({ seriesList, onSelect, onCreate, onEdit, onDe
               onClick={onCreate}
               className="creator-shine-card flex items-center gap-2 rounded-2xl bg-creator-gold px-6 py-3 text-sm font-black text-black transition-colors hover:bg-creator-gold-hover"
             >
-              <Plus size={18} /> Tạo Series Mới
+              <Plus size={18} /> Tạo Tác Phẩm Mới
             </button>
           )}
         </div>
@@ -93,7 +129,11 @@ export function CreatorSeriesList({ seriesList, onSelect, onCreate, onEdit, onDe
             >
               <div className="relative aspect-[3/4] w-full overflow-hidden border-b border-white/10 bg-black/45">
                 {series.coverUrl ? (
-                  <img src={series.coverUrl} alt={series.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  <img
+                    src={series.coverUrl}
+                    alt={series.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
                     <Film size={40} className="text-creator-muted/30" />
@@ -112,14 +152,20 @@ export function CreatorSeriesList({ seriesList, onSelect, onCreate, onEdit, onDe
                     <BarChart3 size={14} />
                   </button>
                   <button
-                    onClick={(e) => { e.stopPropagation(); onEdit(series); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEdit(series);
+                    }}
                     title="Chỉnh sửa"
                     className="flex h-8 w-8 items-center justify-center rounded-full bg-black/65 text-white transition-colors hover:bg-creator-gold hover:text-black"
                   >
                     <Edit3 size={14} />
                   </button>
                   <button
-                    onClick={(e) => { e.stopPropagation(); onDelete(series); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(series);
+                    }}
                     title="Xóa Series"
                     className="flex h-8 w-8 items-center justify-center rounded-full bg-black/65 text-white transition-colors hover:bg-red-500"
                   >
@@ -127,19 +173,31 @@ export function CreatorSeriesList({ seriesList, onSelect, onCreate, onEdit, onDe
                   </button>
                 </div>
                 <div className="absolute bottom-3 left-3 right-3">
-                  <span className={`inline-block px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider mb-2 ${series.status === "PUBLISHED" ? "bg-green-500/20 text-green-500 border border-green-500/20" :
-                    series.status === "DRAFT" ? "bg-creator-muted/20 text-creator-muted border border-creator-muted/20" :
-                      "bg-creator-gold/20 text-creator-gold border border-creator-gold/20"
-                    }`}>
+                  <span
+                    className={`inline-block px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider mb-2 ${
+                      series.status === "PUBLISHED"
+                        ? "bg-green-500/20 text-green-500 border border-green-500/20"
+                        : series.status === "DRAFT"
+                          ? "bg-creator-muted/20 text-creator-muted border border-creator-muted/20"
+                          : "bg-creator-gold/20 text-creator-gold border border-creator-gold/20"
+                    }`}
+                  >
                     {series.status}
                   </span>
-                  <h3 className="text-lg font-bold text-white line-clamp-1">{series.title}</h3>
+                  <h3 className="text-lg font-bold text-white line-clamp-1">
+                    {series.title}
+                  </h3>
                 </div>
               </div>
               <div className="flex flex-1 flex-col justify-between p-4">
-                <p className="text-sm text-creator-muted line-clamp-2 mb-4">{series.description || "No description provided."}</p>
+                <p className="text-sm text-creator-muted line-clamp-2 mb-4">
+                  {series.description || "No description provided."}
+                </p>
                 <div className="flex items-center justify-between border-t border-white/10 pt-3 text-xs font-medium text-creator-muted">
-                  <span className="flex items-center gap-1.5"><Layers size={14} /> {series.contentType === "COMIC" ? "Comic" : "Video"}</span>
+                  <span className="flex items-center gap-1.5">
+                    <Layers size={14} />{" "}
+                    {series.contentType === "COMIC" ? "Comic" : "Video"}
+                  </span>
                   <button
                     type="button"
                     onClick={(e) => {
@@ -166,4 +224,3 @@ export function CreatorSeriesList({ seriesList, onSelect, onCreate, onEdit, onDe
     </div>
   );
 }
-

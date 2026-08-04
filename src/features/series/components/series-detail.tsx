@@ -17,6 +17,7 @@ import {
   BookOpen,
   ChevronRight,
   Heart,
+  Star,
 } from "lucide-react";
 import {
   getPublicSeriesDetail,
@@ -33,6 +34,8 @@ import { getFollowers } from "../api/creator-follows-api";
 import { FollowButton } from "./follow-button";
 import { EpisodeBookmarkButton } from "./episode-bookmark-button";
 import { EpisodeShareButton } from "./episode-share-button";
+import { InteractiveStarRating } from "./interactive-star-rating";
+import { useGetSeriesRatings } from "../hooks/use-series-ratings";
 import { useAuthStore } from "@/features/auth/store/auth.store";
 import { AdSlot } from "@/shared/ui/ad-slot";
 
@@ -59,6 +62,30 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
     queryKey: ["publicSeriesDetail", seriesId],
     queryFn: () => getPublicSeriesDetail(seriesId),
   });
+
+  // 1.2 Fetch Ratings realtime của Series này
+  const { data: seriesRatingsData } = useGetSeriesRatings(seriesId, {
+    size: 100,
+  });
+
+  const calculatedAverageRating = useMemo(() => {
+    const ratings = seriesRatingsData?.content || [];
+    if (ratings.length === 0) {
+      return (series as any)?.averageRating || (series as any)?.rating || 0;
+    }
+    const sum = ratings.reduce((acc, r) => acc + (r.rate || 0), 0);
+    return sum / ratings.length;
+  }, [seriesRatingsData, series]);
+
+  const calculatedRatingsCount = useMemo(() => {
+    return (
+      seriesRatingsData?.totalElements ??
+      seriesRatingsData?.content?.length ??
+      (series as any)?.totalRatingsCount ??
+      (series as any)?.ratingCount ??
+      0
+    );
+  }, [seriesRatingsData, series]);
 
   const isComic = series?.contentType
     ? String(series.contentType).toUpperCase() === "COMIC"
@@ -256,7 +283,8 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
     series.coverUrl ||
     "https://images.unsplash.com/photo-1612036782180-6f0b6cd846fe?q=80&w=1600&auto=format&fit=crop";
   const descriptionText =
-    series.description || "Chưa có nội dung giới thiệu chi tiết cho tác phẩm này.";
+    series.description ||
+    "Chưa có nội dung giới thiệu chi tiết cho tác phẩm này.";
   const canToggleDescription = descriptionText.length > 180;
 
   return (
@@ -267,7 +295,8 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
           className="h-full w-full scale-105 bg-cover bg-center opacity-15 blur-[2px]"
           style={{
             backgroundImage: `url(${cinematicBackdropUrl})`,
-            maskImage: "linear-gradient(to bottom, black 30%, transparent 100%)",
+            maskImage:
+              "linear-gradient(to bottom, black 30%, transparent 100%)",
             WebkitMaskImage:
               "linear-gradient(to bottom, black 30%, transparent 100%)",
           }}
@@ -323,6 +352,20 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
                 {!isComic ? "Phim bộ" : "Truyện tranh"}
               </span>
             </div>
+
+            {/* Thẻ Đánh Giá 5 Sao Interactive */}
+            <InteractiveStarRating
+              seriesId={seriesId}
+              averageRating={
+                (series as any)?.averageRating || (series as any)?.rating || 0
+              }
+              totalRatingsCount={
+                (series as any)?.totalRatingsCount ||
+                (series as any)?.ratingCount ||
+                0
+              }
+              className="mt-4"
+            />
           </motion.div>
 
           {/* Cột Phải: Các thông tin văn bản */}
@@ -403,6 +446,24 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
                   </div>
                 </>
               )}
+
+              <div className="flex items-center gap-2 font-medium text-slate-400">
+                <Star className="h-4 w-4 text-amber-400 fill-amber-400" /> Đánh
+                giá
+              </div>
+              <div className="font-bold text-[#D4AF37] flex items-center gap-1.5">
+                <span>
+                  {calculatedAverageRating > 0
+                    ? calculatedAverageRating.toFixed(1)
+                    : "0.0"}
+                </span>
+                <span className="text-zinc-500 font-normal text-xs">/ 5.0</span>
+                {calculatedRatingsCount > 0 && (
+                  <span className="text-zinc-400 font-normal text-xs">
+                    ({calculatedRatingsCount.toLocaleString("vi-VN")} lượt)
+                  </span>
+                )}
+              </div>
 
               <div className="flex items-center gap-2 font-medium text-slate-400">
                 <Eye className="h-4 w-4" /> Lượt xem
@@ -516,12 +577,12 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
               )}
             </div>
 
-            {/* Nút hành động chính */}
+            {/* Nút hành động chính & Thanh Đánh Giá Sao Inline */}
             <div className="flex flex-wrap gap-4 items-center">
               {firstEpisodeId ? (
                 <Link
                   href={`/${isComic ? "read" : "watch"}/${firstEpisodeId}`}
-                  className="px-8 py-3.5 bg-[#D4AF37] hover:bg-[#E5C158] text-black font-extrabold rounded-2xl flex items-center justify-center gap-2 shadow-[0_6px_25px_rgba(212,175,55,0.3)] transition-all duration-300 hover:scale-[1.02]"
+                  className="h-12 px-8 bg-[#D4AF37] hover:bg-[#E5C158] text-black font-extrabold rounded-2xl flex items-center justify-center gap-2 shadow-[0_6px_25px_rgba(212,175,55,0.3)] transition-all duration-300 hover:scale-[1.02]"
                 >
                   <Play className="w-5 h-5 fill-current" />{" "}
                   {isComic ? "Đọc tập đầu tiên" : "Xem tập đầu tiên"}
@@ -529,11 +590,19 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
               ) : (
                 <button
                   disabled
-                  className="px-8 py-3.5 bg-white/10 text-white/50 font-bold rounded-2xl cursor-not-allowed flex items-center gap-2"
+                  className="h-12 px-8 bg-white/10 text-white/50 font-bold rounded-2xl cursor-not-allowed flex items-center gap-2"
                 >
                   Chưa có tập phim
                 </button>
               )}
+
+              {/* Thẻ Đánh Giá 5 Sao Interactive Inline */}
+              <InteractiveStarRating
+                seriesId={seriesId}
+                averageRating={calculatedAverageRating}
+                totalRatingsCount={calculatedRatingsCount}
+                variant="inline"
+              />
             </div>
           </motion.div>
         </div>

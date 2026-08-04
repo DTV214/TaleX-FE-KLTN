@@ -56,6 +56,17 @@ export const creatorTiersApi = {
     return response.data;
   },
 
+  async getNextCreatorTier(
+    currentTierLevel: number = 0,
+  ): Promise<CreatorTierDetailResponse["data"]> {
+    const response = await httpClient.get<CreatorTierDetailResponse>(
+      `${CREATOR_TIERS_ENDPOINT}/next`,
+      { params: { currentTierLevel } },
+    );
+
+    return response.data.data;
+  },
+
   async deleteCreatorTier(
     creatorTierId: string,
   ): Promise<DeleteCreatorTierResponse> {

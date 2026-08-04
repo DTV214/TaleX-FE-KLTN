@@ -1,15 +1,25 @@
-
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { PlayCircle, ImagePlus, Video, ShieldAlert, AlertTriangle, Fingerprint, BarChart3 } from "lucide-react";
+import {
+  PlayCircle,
+  ImagePlus,
+  Video,
+  ShieldAlert,
+  AlertTriangle,
+  Fingerprint,
+  BarChart3,
+} from "lucide-react";
 import { CreatorSeasonsList } from "@/features/creator-dashboard/components/creator-seasons-list";
 import { CreatorEpisodesList } from "@/features/creator-dashboard/components/creator-episodes-list";
 import { CreatorBackButton } from "@/features/creator-dashboard/components/creator-back-button";
 import { CreatorSeriesList } from "@/features/creator-dashboard/components/creator-series-list";
 import { EpisodeAnalyticsModal } from "@/features/creator-dashboard/components/views/episode-analytics-modal";
 import { CreatorLayout } from "@/features/creator-dashboard/components/creator-layout";
-import { CreatorStepper, StepState } from "@/features/creator-dashboard/components/creator-stepper";
+import {
+  CreatorStepper,
+  StepState,
+} from "@/features/creator-dashboard/components/creator-stepper";
 import { CoreIdentityStep } from "@/features/creator-dashboard/components/steps/core-identity-step";
 import { SeasonStructureStep } from "@/features/creator-dashboard/components/steps/season-structure-step";
 import { MediaUploadStep } from "@/features/creator-dashboard/components/steps/media-upload-step";
@@ -105,7 +115,10 @@ import { uploadImageToS3 } from "@/features/creator-dashboard/api/s3-upload-api"
 import { toast } from "sonner";
 import { ResumableVideoUploader } from "@/features/creator-dashboard/components/resumable-video-uploader";
 import { ViolationDetailDialog } from "@/features/creator-dashboard/components/violation-detail-dialog";
-import { usePipelineSSE, pipelineToastId } from "@/features/creator-dashboard/hooks/use-pipeline-sse";
+import {
+  usePipelineSSE,
+  pipelineToastId,
+} from "@/features/creator-dashboard/hooks/use-pipeline-sse";
 import { SignedHlsPlayer } from "@/features/playback/components/signed-hls-player";
 import { ComboManagementView } from "@/features/creator-dashboard/components/combo-management";
 import { CreatorMonetizationView } from "@/features/creator-dashboard/components/views/creator-monetization-view";
@@ -216,7 +229,13 @@ function writeDashboardRouteState(nextState: DashboardRouteState) {
 }
 
 type ContentType = "COMIC" | "VIDEO";
-type ApiLifecycleStatus = "DRAFT" | "PUBLISHED" | "HIDDEN" | "DELETED" | "SCHEDULED" | "FORCE_HIDDEN";
+type ApiLifecycleStatus =
+  | "DRAFT"
+  | "PUBLISHED"
+  | "HIDDEN"
+  | "DELETED"
+  | "SCHEDULED"
+  | "FORCE_HIDDEN";
 type SeriesStatus = ApiLifecycleStatus | "ACTION_REQUIRED";
 type SeasonStatus = ApiLifecycleStatus;
 type EpisodeStatus = ApiLifecycleStatus | "REVIEW";
@@ -231,11 +250,11 @@ type EditModalState =
 
 type EditSubmitState =
   | {
-    kind: "series";
-    value: SeriesRow;
-    coverFile?: File;
-    bannerFile?: File;
-  }
+      kind: "series";
+      value: SeriesRow;
+      coverFile?: File;
+      bannerFile?: File;
+    }
   | { kind: "season"; value: SeasonRow }
   | { kind: "episode"; value: EpisodeRow };
 
@@ -259,9 +278,7 @@ type DeleteModalState =
   | { kind: "media"; value: ComicPage | MediaResponse }
   | null;
 
-type ScheduleModalState =
-  | { kind: "episode"; value: EpisodeRow }
-  | null;
+type ScheduleModalState = { kind: "episode"; value: EpisodeRow } | null;
 
 type ActiveScheduleModal = Exclude<ScheduleModalState, null>;
 
@@ -361,7 +378,8 @@ const viewMeta: Record<
   },
   create: {
     title: "Tạo Series mới",
-    description: "Thiết lập series truyện tranh hoặc video theo mô hình Series.",
+    description:
+      "Thiết lập series truyện tranh hoặc video theo mô hình Series.",
   },
   comic: {
     title: "Tải lên truyện tranh",
@@ -377,7 +395,8 @@ const viewMeta: Record<
   },
   monetization: {
     title: "Kiếm tiền",
-    description: "Hoàn thành các bước điều khoản, thuế và thanh toán để bật doanh thu Creator.",
+    description:
+      "Hoàn thành các bước điều khoản, thuế và thanh toán để bật doanh thu Creator.",
   },
   publish: {
     title: "Xuất bản",
@@ -385,7 +404,8 @@ const viewMeta: Record<
   },
   campaign: {
     title: "Đẩy mạnh tương tác",
-    description: "Tiếp cận hàng ngàn độc giả và khán giả mới bằng các gói đẩy xu hướng.",
+    description:
+      "Tiếp cận hàng ngàn độc giả và khán giả mới bằng các gói đẩy xu hướng.",
   },
   campaigns: {
     title: "Chiến dịch",
@@ -444,7 +464,7 @@ function normalizeAssetUrl(value: string | undefined, fallback = "") {
 }
 
 function subscribeToClientMount() {
-  return () => { };
+  return () => {};
 }
 
 function getClientSnapshot() {
@@ -487,7 +507,9 @@ function formatApprovalStatusLabel(status: ContentApprovalStatus) {
   }
 }
 
-function formatStatusLabel(status: SeriesStatus | SeasonStatus | EpisodeStatus) {
+function formatStatusLabel(
+  status: SeriesStatus | SeasonStatus | EpisodeStatus,
+) {
   if (status === "ACTION_REQUIRED") {
     return "Cần xử lý";
   }
@@ -546,7 +568,9 @@ function formatDateTime(value?: string) {
 }
 
 function toDateTimeLocalValue(value?: string) {
-  const source = value ? new Date(value) : new Date(Date.now() + 60 * 60 * 1000);
+  const source = value
+    ? new Date(value)
+    : new Date(Date.now() + 60 * 60 * 1000);
   const date = Number.isNaN(source.getTime())
     ? new Date(Date.now() + 60 * 60 * 1000)
     : source;
@@ -568,7 +592,9 @@ function combineDateAndTimeLocalValue(date: string, time: string) {
 function isPastDateTimeLocalValue(dateTime: string) {
   const selectedDate = new Date(dateTime);
 
-  return Number.isNaN(selectedDate.getTime()) || selectedDate.getTime() <= Date.now();
+  return (
+    Number.isNaN(selectedDate.getTime()) || selectedDate.getTime() <= Date.now()
+  );
 }
 
 function openNativePicker(input: HTMLInputElement) {
@@ -642,7 +668,8 @@ async function uploadSeriesArtwork(
     const result = await uploadImageToS3(file, imageContext);
     return result.publicUrl;
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Tải lên thất bại.";
+    const message =
+      error instanceof Error ? error.message : "Tải lên thất bại.";
     throw new Error(`${label} upload failed: ${message}`);
   }
 }
@@ -665,7 +692,8 @@ function mapSeriesResponse(series: SeriesResponse): SeriesRow {
     visibility: series.visibility || "PUBLIC",
     ageRating: series.ageRating || "",
     language: series.language || "",
-    categoryIds: series.categories?.map((category) => category.categoryId) ?? [],
+    categoryIds:
+      series.categories?.map((category) => category.categoryId) ?? [],
     tagIds: series.tags?.map((tag) => tag.tagId) ?? [],
     views: formatNumber(series.totalViews),
     episodes: 0,
@@ -701,7 +729,9 @@ function mapEpisodeResponse(episode: EpisodeResponse): EpisodeRow {
     mediaCount: episode.totalPage ?? 0,
     totalPage: episode.totalPage,
     views: formatNumber(episode.views),
-    thumbnail: episode.thumbnail ? normalizeAssetUrl(episode.thumbnail) : undefined,
+    thumbnail: episode.thumbnail
+      ? normalizeAssetUrl(episode.thumbnail)
+      : undefined,
     updatedAt: episode.updatedAt || episode.createdAt || "-",
   };
 }
@@ -726,7 +756,6 @@ function mapMediaResponseToComicPage(media: MediaResponse): ComicPage {
 }
 
 export function CreatorDashboard() {
-
   const isMounted = useSyncExternalStore(
     subscribeToClientMount,
     getClientSnapshot,
@@ -740,27 +769,37 @@ export function CreatorDashboard() {
   return <CreatorDashboardContent />;
 }
 
-
-function MultiSelectField({ name, options, initialValues }: { name: string, options: { id: string, name: string }[], initialValues: string[] }) {
+function MultiSelectField({
+  name,
+  options,
+  initialValues,
+}: {
+  name: string;
+  options: { id: string; name: string }[];
+  initialValues: string[];
+}) {
   const [selected, setSelected] = useState<string[]>(initialValues);
 
   const toggle = (id: string) => {
-    setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+    setSelected((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
   };
 
   return (
     <div>
-      <input type="hidden" name={name} value={selected.join(',')} />
+      <input type="hidden" name={name} value={selected.join(",")} />
       <div className="flex flex-wrap gap-2 mt-2">
-        {options.map(opt => (
+        {options.map((opt) => (
           <button
             key={opt.id}
             type="button"
             onClick={() => toggle(opt.id)}
-            className={`px-3 py-1.5 rounded-md text-sm transition-colors border ${selected.includes(opt.id)
-              ? "bg-creator-gold text-black border-creator-gold font-medium"
-              : "bg-creator-sidebar border-creator-border text-creator-muted hover:border-white/30"
-              }`}
+            className={`px-3 py-1.5 rounded-md text-sm transition-colors border ${
+              selected.includes(opt.id)
+                ? "bg-creator-gold text-black border-creator-gold font-medium"
+                : "bg-creator-sidebar border-creator-border text-creator-muted hover:border-white/30"
+            }`}
           >
             {opt.name}
           </button>
@@ -770,22 +809,28 @@ function MultiSelectField({ name, options, initialValues }: { name: string, opti
   );
 }
 
-
 function CreatorDashboardContent() {
   const categoriesQuery = useQuery({
-    queryKey: ['categories'],
+    queryKey: ["categories"],
     queryFn: async () => {
       const res = await getCategories();
-      return res.content?.map((c: any) => ({ id: c.categoryId, name: c.categoryName })) || [];
+      return (
+        res.content?.map((c: any) => ({
+          id: c.categoryId,
+          name: c.categoryName,
+        })) || []
+      );
     },
     staleTime: 5 * 60 * 1000,
   });
 
   const tagsQuery = useQuery({
-    queryKey: ['tags'],
+    queryKey: ["tags"],
     queryFn: async () => {
       const res = await getTags();
-      return res.content?.map((t: any) => ({ id: t.tagId, name: t.tagName })) || [];
+      return (
+        res.content?.map((t: any) => ({ id: t.tagId, name: t.tagName })) || []
+      );
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -804,11 +849,17 @@ function CreatorDashboardContent() {
     const list = suppressionMediaListRef.current;
     const target = list.find((m) => m.mediaId === mediaId);
     if (!target || target.mediaType !== "IMAGE") return false;
-    return list.filter((m) => m.mediaType === "IMAGE" && !m.isDeleted).length > 1;
+    return (
+      list.filter((m) => m.mediaType === "IMAGE" && !m.isDeleted).length > 1
+    );
   }, []);
   // dismissOnChangeOf: đóng toast pipeline khi Creator chuyển sang view khác (vd rời
   // màn hình MEDIA để qua SEASON/EPISODE khác), không để tồn tại xuyên suốt dashboard.
-  usePipelineSSE({ enabled: true, dismissOnChangeOf: activeView, shouldSuppressSuccessToast });
+  usePipelineSSE({
+    enabled: true,
+    dismissOnChangeOf: activeView,
+    shouldSuppressSuccessToast,
+  });
   // Toast tổng kết đợt xử lý (bắn từ effect polling-fallback bên dưới, không đi qua
   // usePipelineSSE) cần tự dọn dẹp riêng theo cùng quy tắc "đổi view thì đóng toast".
   // Dùng ref thay vì đọc selectedEpisode trực tiếp trong cleanup — effect chỉ phụ thuộc
@@ -816,7 +867,8 @@ function CreatorDashboardContent() {
   const lastBatchToastIdRef = useRef<string | null>(null);
   useEffect(() => {
     return () => {
-      if (lastBatchToastIdRef.current) toast.dismiss(lastBatchToastIdRef.current);
+      if (lastBatchToastIdRef.current)
+        toast.dismiss(lastBatchToastIdRef.current);
     };
   }, [activeView]);
   const [selectedSeriesId, setSelectedSeriesId] = useState(
@@ -842,7 +894,6 @@ function CreatorDashboardContent() {
     setSelectedSeasonId(nextState.seasonId);
     setSelectedEpisodeId(nextState.episodeId);
     writeDashboardRouteState(nextState);
-
   }
 
   const seriesQuery = useQuery({
@@ -894,10 +945,17 @@ function CreatorDashboardContent() {
     queryFn: () => listMediaByEpisode(selectedEpisode!.id),
     enabled:
       Boolean(selectedEpisode?.id) &&
-      (activeView === "comic" || activeView === "video" || activeView === "publish"),
+      (activeView === "comic" ||
+        activeView === "video" ||
+        activeView === "publish"),
     refetchInterval: (query) => {
       const data = query.state.data as MediaResponse[] | undefined;
-      const hasPending = data?.some((m) => m.status === "PENDING" || m.status === "HLS_PROCESSING" || m.status === "PROCESSING");
+      const hasPending = data?.some(
+        (m) =>
+          m.status === "PENDING" ||
+          m.status === "HLS_PROCESSING" ||
+          m.status === "PROCESSING",
+      );
       return hasPending ? 5000 : false;
     },
   });
@@ -917,7 +975,9 @@ function CreatorDashboardContent() {
     suppressionMediaListRef.current = mediaList;
     // Tính trước để dùng cả trong vòng lặp per-item (ẩn toast xanh riêng lẻ khi đang ở
     // đợt nhiều trang) lẫn toast tổng kết cả đợt bên dưới.
-    const imagePages = mediaList.filter((m) => m.mediaType === "IMAGE" && !m.isDeleted);
+    const imagePages = mediaList.filter(
+      (m) => m.mediaType === "IMAGE" && !m.isDeleted,
+    );
     const isMultiPageImageBatch = imagePages.length > 1;
     const prev = prevMediaStatusRef.current;
     for (const media of mediaList) {
@@ -943,7 +1003,8 @@ function CreatorDashboardContent() {
           if (!(media.mediaType === "IMAGE" && isMultiPageImageBatch)) {
             toast.success("Nội dung đã qua kiểm duyệt", {
               id: pipelineToastId("moderation-ok", media.mediaId),
-              description: "Trang đã kiểm duyệt thành công, sẵn sàng để xuất bản. Nhấn Xuất bản ở bước cuối để công khai.",
+              description:
+                "Trang đã kiểm duyệt thành công, sẵn sàng để xuất bản. Nhấn Xuất bản ở bước cuối để công khai.",
               duration: Infinity,
             });
           }
@@ -951,20 +1012,24 @@ function CreatorDashboardContent() {
           if (media.approvalStatus === "PENDING_REVIEW") {
             toast.warning("Nội dung đang chờ đội kiểm duyệt xác nhận", {
               id: pipelineToastId("moderation-review", media.mediaId),
-              description: "Cần đội kiểm duyệt xác nhận thủ công trước khi xuất bản.",
+              description:
+                "Cần đội kiểm duyệt xác nhận thủ công trước khi xuất bản.",
               duration: Infinity,
             });
           } else {
             toast.error("Nội dung chưa đạt yêu cầu kiểm duyệt", {
               id: pipelineToastId("moderation-rejected", media.mediaId),
-              description: "Nội dung đã bị tạm ẩn — vui lòng xem chi tiết vi phạm và chỉnh sửa hoặc thay thế nội dung trước khi tải lên lại.",
+              description:
+                "Nội dung đã bị tạm ẩn — vui lòng xem chi tiết vi phạm và chỉnh sửa hoặc thay thế nội dung trước khi tải lên lại.",
               duration: Infinity,
             });
           }
         } else if (media.status === "FAILED") {
           toast.error("Xử lý nội dung thất bại", {
             id: pipelineToastId("failed", media.mediaId),
-            description: media.errorMessage || "Đã xảy ra lỗi trong quá trình xử lý. Vui lòng thử đăng tải lại hoặc liên hệ hỗ trợ.",
+            description:
+              media.errorMessage ||
+              "Đã xảy ra lỗi trong quá trình xử lý. Vui lòng thử đăng tải lại hoặc liên hệ hỗ trợ.",
             duration: Infinity,
           });
         }
@@ -977,29 +1042,50 @@ function CreatorDashboardContent() {
     // Toast tổng kết cho đợt xử lý nhiều trang comic (chỉ IMAGE — video chỉ có 1 file/tập
     // nên toast per-item ở trên đã đủ, không cần tổng kết thêm).
     const isBatchPending = imagePages.some(
-      (m) => m.status === "PENDING" || m.status === "PROCESSING" || m.status === "HLS_PROCESSING",
+      (m) =>
+        m.status === "PENDING" ||
+        m.status === "PROCESSING" ||
+        m.status === "HLS_PROCESSING",
     );
-    if (wasBatchPendingRef.current && !isBatchPending && isMultiPageImageBatch) {
-      const readyCount = imagePages.filter((m) => m.status === "ACTIVE" || m.status === "HLS_READY").length;
+    if (
+      wasBatchPendingRef.current &&
+      !isBatchPending &&
+      isMultiPageImageBatch
+    ) {
+      const readyCount = imagePages.filter(
+        (m) => m.status === "ACTIVE" || m.status === "HLS_READY",
+      ).length;
       const pendingReviewCount = imagePages.filter(
         (m) => m.status === "INACTIVE" && m.approvalStatus === "PENDING_REVIEW",
       ).length;
-      const rejectedCount = imagePages.filter((m) => m.status === "INACTIVE" && m.approvalStatus === "REJECTED").length;
-      const failedCount = imagePages.filter((m) => m.status === "FAILED").length;
+      const rejectedCount = imagePages.filter(
+        (m) => m.status === "INACTIVE" && m.approvalStatus === "REJECTED",
+      ).length;
+      const failedCount = imagePages.filter(
+        (m) => m.status === "FAILED",
+      ).length;
       const total = imagePages.length;
       const parts: string[] = [];
       if (readyCount > 0) parts.push(`${readyCount} đạt`);
-      if (pendingReviewCount > 0) parts.push(`${pendingReviewCount} chờ đội kiểm duyệt`);
+      if (pendingReviewCount > 0)
+        parts.push(`${pendingReviewCount} chờ đội kiểm duyệt`);
       if (rejectedCount > 0) parts.push(`${rejectedCount} bị từ chối`);
       if (failedCount > 0) parts.push(`${failedCount} lỗi hệ thống`);
-      const hasIssue = rejectedCount > 0 || failedCount > 0 || pendingReviewCount > 0;
-      const batchToastId = pipelineToastId("batch-summary", selectedEpisode?.id ?? "unknown");
+      const hasIssue =
+        rejectedCount > 0 || failedCount > 0 || pendingReviewCount > 0;
+      const batchToastId = pipelineToastId(
+        "batch-summary",
+        selectedEpisode?.id ?? "unknown",
+      );
       lastBatchToastIdRef.current = batchToastId;
-      (hasIssue ? toast.warning : toast.success)(`Đã xử lý xong ${total} trang`, {
-        id: batchToastId,
-        description: parts.join(", "),
-        duration: Infinity,
-      });
+      (hasIssue ? toast.warning : toast.success)(
+        `Đã xử lý xong ${total} trang`,
+        {
+          id: batchToastId,
+          description: parts.join(", "),
+          duration: Infinity,
+        },
+      );
     }
     wasBatchPendingRef.current = isBatchPending;
   }, [mediaQuery.data, selectedEpisode?.id]);
@@ -1018,7 +1104,9 @@ function CreatorDashboardContent() {
   // mới nhất) suốt phiên làm việc, kể cả khi đã qua bước XUẤT BẢN. Nếu không đồng bộ lại
   // các field trạng thái pipeline, panel sẽ hiện dữ liệu cũ dù server đã xử lý xong.
   useEffect(() => {
-    const freshById = new Map((mediaQuery.data ?? []).map((m) => [m.mediaId, m]));
+    const freshById = new Map(
+      (mediaQuery.data ?? []).map((m) => [m.mediaId, m]),
+    );
     setComicPages((prev) => {
       let changed = false;
       const next = prev.map((page) => {
@@ -1048,16 +1136,13 @@ function CreatorDashboardContent() {
   const displayComicPages =
     comicPages.length > 0 ? comicPages : existingMediaPages;
 
-  const hasApprovedComicMedia = useMemo(
-    () => {
-      const comicMedia = (mediaQuery.data ?? []).filter(
-        (media) => media.mediaType === "IMAGE" && !media.isDeleted,
-      );
+  const hasApprovedComicMedia = useMemo(() => {
+    const comicMedia = (mediaQuery.data ?? []).filter(
+      (media) => media.mediaType === "IMAGE" && !media.isDeleted,
+    );
 
-      return comicMedia.length > 0 && comicMedia.every(isMediaReadyForPublish);
-    },
-    [mediaQuery.data],
-  );
+    return comicMedia.length > 0 && comicMedia.every(isMediaReadyForPublish);
+  }, [mediaQuery.data]);
 
   const existingVideoMedia = useMemo(
     () =>
@@ -1076,7 +1161,11 @@ function CreatorDashboardContent() {
   );
 
   useEffect(() => {
-    if (activeView !== "video" || !selectedEpisode?.id || !hasProcessingVideoMedia) {
+    if (
+      activeView !== "video" ||
+      !selectedEpisode?.id ||
+      !hasProcessingVideoMedia
+    ) {
       return;
     }
 
@@ -1085,17 +1174,20 @@ function CreatorDashboardContent() {
     }, 5000);
 
     return () => window.clearInterval(intervalId);
-  }, [
-    activeView,
-    hasProcessingVideoMedia,
-    mediaQuery,
-    selectedEpisode?.id,
-  ]);
+  }, [activeView, hasProcessingVideoMedia, mediaQuery, selectedEpisode?.id]);
 
   const createSeriesMutation = useMutation({
     mutationFn: async (input: CreateSeriesInput) => {
-      const coverUrl = await uploadSeriesArtwork(input.coverFile, "Cover", "cover");
-      const bannerUrl = await uploadSeriesArtwork(input.bannerFile, "Banner", "banner");
+      const coverUrl = await uploadSeriesArtwork(
+        input.coverFile,
+        "Cover",
+        "cover",
+      );
+      const bannerUrl = await uploadSeriesArtwork(
+        input.bannerFile,
+        "Banner",
+        "banner",
+      );
 
       return createSeries({
         title: input.title,
@@ -1203,8 +1295,16 @@ function CreatorDashboardContent() {
       coverFile?: File;
       bannerFile?: File;
     }) => {
-      const uploadedCoverUrl = await uploadSeriesArtwork(coverFile, "Cover", "cover");
-      const uploadedBannerUrl = await uploadSeriesArtwork(bannerFile, "Banner", "banner");
+      const uploadedCoverUrl = await uploadSeriesArtwork(
+        coverFile,
+        "Cover",
+        "cover",
+      );
+      const uploadedBannerUrl = await uploadSeriesArtwork(
+        bannerFile,
+        "Banner",
+        "banner",
+      );
 
       return updateSeries(series.id, {
         title: series.title,
@@ -1257,10 +1357,14 @@ function CreatorDashboardContent() {
     mutationFn: (series: SeriesRow) => hideSeries(series.id),
     onSuccess: () => {
       setUploadMessage("Đã ẩn Series.");
-      queryClient.invalidateQueries({ queryKey: ["creator-dashboard", "series"] });
+      queryClient.invalidateQueries({
+        queryKey: ["creator-dashboard", "series"],
+      });
     },
     onError: (error) => {
-      setUploadMessage(error instanceof Error ? error.message : "Không thể ẩn series.");
+      setUploadMessage(
+        error instanceof Error ? error.message : "Không thể ẩn series.",
+      );
     },
   });
 
@@ -1268,10 +1372,14 @@ function CreatorDashboardContent() {
     mutationFn: (series: SeriesRow) => unhideSeries(series.id),
     onSuccess: () => {
       setUploadMessage("Đã hiện Series.");
-      queryClient.invalidateQueries({ queryKey: ["creator-dashboard", "series"] });
+      queryClient.invalidateQueries({
+        queryKey: ["creator-dashboard", "series"],
+      });
     },
     onError: (error) => {
-      setUploadMessage(error instanceof Error ? error.message : "Không thể hiện series.");
+      setUploadMessage(
+        error instanceof Error ? error.message : "Không thể hiện series.",
+      );
     },
   });
 
@@ -1326,10 +1434,14 @@ function CreatorDashboardContent() {
     mutationFn: (season: SeasonRow) => hideSeason(season.id),
     onSuccess: () => {
       setUploadMessage("Đã ẩn Mùa.");
-      queryClient.invalidateQueries({ queryKey: ["creator-dashboard", "seasons", selectedSeries?.id] });
+      queryClient.invalidateQueries({
+        queryKey: ["creator-dashboard", "seasons", selectedSeries?.id],
+      });
     },
     onError: (error) => {
-      setUploadMessage(error instanceof Error ? error.message : "Không thể ẩn mùa.");
+      setUploadMessage(
+        error instanceof Error ? error.message : "Không thể ẩn mùa.",
+      );
     },
   });
 
@@ -1337,10 +1449,14 @@ function CreatorDashboardContent() {
     mutationFn: (season: SeasonRow) => unhideSeason(season.id),
     onSuccess: () => {
       setUploadMessage("Đã hiện Mùa.");
-      queryClient.invalidateQueries({ queryKey: ["creator-dashboard", "seasons", selectedSeries?.id] });
+      queryClient.invalidateQueries({
+        queryKey: ["creator-dashboard", "seasons", selectedSeries?.id],
+      });
     },
     onError: (error) => {
-      setUploadMessage(error instanceof Error ? error.message : "Không thể hiện mùa.");
+      setUploadMessage(
+        error instanceof Error ? error.message : "Không thể hiện mùa.",
+      );
     },
   });
 
@@ -1435,10 +1551,14 @@ function CreatorDashboardContent() {
     mutationFn: (episode: EpisodeRow) => hideEpisode(episode.id),
     onSuccess: () => {
       setUploadMessage("Đã ẩn Tập.");
-      queryClient.invalidateQueries({ queryKey: ["creator-dashboard", "episodes", selectedSeason?.id] });
+      queryClient.invalidateQueries({
+        queryKey: ["creator-dashboard", "episodes", selectedSeason?.id],
+      });
     },
     onError: (error) => {
-      setUploadMessage(error instanceof Error ? error.message : "Không thể ẩn tập.");
+      setUploadMessage(
+        error instanceof Error ? error.message : "Không thể ẩn tập.",
+      );
     },
   });
 
@@ -1446,10 +1566,14 @@ function CreatorDashboardContent() {
     mutationFn: (episode: EpisodeRow) => unhideEpisode(episode.id),
     onSuccess: () => {
       setUploadMessage("Đã hiện Tập.");
-      queryClient.invalidateQueries({ queryKey: ["creator-dashboard", "episodes", selectedSeason?.id] });
+      queryClient.invalidateQueries({
+        queryKey: ["creator-dashboard", "episodes", selectedSeason?.id],
+      });
     },
     onError: (error) => {
-      setUploadMessage(error instanceof Error ? error.message : "Không thể hiện tập.");
+      setUploadMessage(
+        error instanceof Error ? error.message : "Không thể hiện tập.",
+      );
     },
   });
 
@@ -1487,8 +1611,12 @@ function CreatorDashboardContent() {
       queryClient.invalidateQueries({
         queryKey: ["creator-dashboard", "episodes", selectedSeason?.id],
       });
-      queryClient.invalidateQueries({ queryKey: ["creator-dashboard", "series"] });
-      queryClient.invalidateQueries({ queryKey: ["creator-dashboard", "seasons", selectedSeries?.id] });
+      queryClient.invalidateQueries({
+        queryKey: ["creator-dashboard", "series"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["creator-dashboard", "seasons", selectedSeries?.id],
+      });
     },
     onError: (error) => {
       setUploadMessage(
@@ -1504,8 +1632,12 @@ function CreatorDashboardContent() {
       queryClient.invalidateQueries({
         queryKey: ["creator-dashboard", "episodes", selectedSeason?.id],
       });
-      queryClient.invalidateQueries({ queryKey: ["creator-dashboard", "series"] });
-      queryClient.invalidateQueries({ queryKey: ["creator-dashboard", "seasons", selectedSeries?.id] });
+      queryClient.invalidateQueries({
+        queryKey: ["creator-dashboard", "series"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["creator-dashboard", "seasons", selectedSeries?.id],
+      });
     },
     onError: (error) => {
       setUploadMessage(
@@ -1524,9 +1656,7 @@ function CreatorDashboardContent() {
         ...page,
         displayOrder: index + 1,
       }));
-      const savedPages = pagesToSave.filter(
-        (page) => !isLocalPageId(page.id),
-      );
+      const savedPages = pagesToSave.filter((page) => !isLocalPageId(page.id));
       const localPages = pagesToSave.filter((page) => page.file);
 
       if (savedPages.length === 0 && localPages.length === 0) {
@@ -1589,11 +1719,7 @@ function CreatorDashboardContent() {
         }),
       );
 
-      return createComicPageMedia(
-        selectedEpisode.id,
-        uploadedPages,
-        accountId,
-      );
+      return createComicPageMedia(selectedEpisode.id, uploadedPages, accountId);
     },
     onSuccess: (createdPages) => {
       setUploadMessage(
@@ -1611,7 +1737,9 @@ function CreatorDashboardContent() {
     },
     onError: (error) => {
       setUploadMessage(
-        error instanceof Error ? error.message : "Không thể lưu thứ tự hiển thị.",
+        error instanceof Error
+          ? error.message
+          : "Không thể lưu thứ tự hiển thị.",
       );
     },
   });
@@ -1905,18 +2033,77 @@ function CreatorDashboardContent() {
 
   // ===== NEW CREATOR DASHBOARD UI =====
   const stepperSteps = [
-    { id: "core", label: "Series", state: (activeView === "create" || activeView === "series") ? "current" : (["seasons", "episodes", "comic", "video", "publish"].includes(activeView) ? "completed" : "upcoming") as any },
-    { id: "structure", label: "Season", state: activeView === "seasons" ? "current" : (["episodes", "comic", "video", "publish"].includes(activeView) ? "completed" : "upcoming") as any },
-    { id: "content", label: "Episode", state: activeView === "episodes" ? "current" : (["comic", "video", "publish"].includes(activeView) ? "completed" : "upcoming") as any },
-    { id: "moderation", label: "Media", state: (activeView === "comic" || activeView === "video") ? "current" : (activeView === "publish" ? "completed" : "upcoming") as any },
-    { id: "publishing", label: "Xuất bản", state: activeView === "publish" ? "current" : "upcoming" as any },
+    {
+      id: "core",
+      label: "Series",
+      state:
+        activeView === "create" || activeView === "series"
+          ? "current"
+          : ((["seasons", "episodes", "comic", "video", "publish"].includes(
+              activeView,
+            )
+              ? "completed"
+              : "upcoming") as any),
+    },
+    {
+      id: "structure",
+      label: "Season",
+      state:
+        activeView === "seasons"
+          ? "current"
+          : ((["episodes", "comic", "video", "publish"].includes(activeView)
+              ? "completed"
+              : "upcoming") as any),
+    },
+    {
+      id: "content",
+      label: "Episode",
+      state:
+        activeView === "episodes"
+          ? "current"
+          : ((["comic", "video", "publish"].includes(activeView)
+              ? "completed"
+              : "upcoming") as any),
+    },
+    {
+      id: "moderation",
+      label: "Media",
+      state:
+        activeView === "comic" || activeView === "video"
+          ? "current"
+          : ((activeView === "publish" ? "completed" : "upcoming") as any),
+    },
+    {
+      id: "publishing",
+      label: "Xuất bản",
+      state: activeView === "publish" ? "current" : ("upcoming" as any),
+    },
   ];
 
-  const isSeriesFlow = ["series", "create", "seasons", "episodes", "comic", "video", "publish"].includes(activeView);
+  const isSeriesFlow = [
+    "series",
+    "create",
+    "seasons",
+    "episodes",
+    "comic",
+    "video",
+    "publish",
+  ].includes(activeView);
 
   return (
     <>
-      <CreatorLayout activeView={activeView} onNavigate={(view) => { clearUploadDrafts(); setDashboardRouteState({ view: view as any, seriesId: "", seasonId: "", episodeId: "" }); }}>
+      <CreatorLayout
+        activeView={activeView}
+        onNavigate={(view) => {
+          clearUploadDrafts();
+          setDashboardRouteState({
+            view: view as any,
+            seriesId: "",
+            seasonId: "",
+            episodeId: "",
+          });
+        }}
+      >
         <div className="w-full">
           {isSeriesFlow && <CreatorStepper steps={stepperSteps} />}
 
@@ -1926,7 +2113,12 @@ function CreatorDashboardContent() {
                 seriesList={displaySeriesRows}
                 onSelect={(seriesId) => {
                   setSelectedSeriesId(seriesId);
-                  setDashboardRouteState({ view: "seasons", seriesId, seasonId: "", episodeId: "" });
+                  setDashboardRouteState({
+                    view: "seasons",
+                    seriesId,
+                    seasonId: "",
+                    episodeId: "",
+                  });
                 }}
                 onCreate={() => openCreateSeries()}
                 onEdit={(series) => {
@@ -1952,10 +2144,18 @@ function CreatorDashboardContent() {
                 categories={categoriesQuery.data || []}
                 tags={tagsQuery.data || []}
                 onSave={(data) => {
-                  if (!selectedSeriesId || activeView === "create" && !selectedSeries) {
+                  if (
+                    !selectedSeriesId ||
+                    (activeView === "create" && !selectedSeries)
+                  ) {
                     createSeriesMutation.mutate(data as any);
                   } else if (selectedSeries) {
-                    handleSubmitEdit({ kind: "series", value: { ...selectedSeries, ...data } as any, coverFile: data.coverFile, bannerFile: data.bannerFile });
+                    handleSubmitEdit({
+                      kind: "series",
+                      value: { ...selectedSeries, ...data } as any,
+                      coverFile: data.coverFile,
+                      bannerFile: data.bannerFile,
+                    });
                   }
                 }}
                 onCancel={() => openSeriesManagement()}
@@ -1965,21 +2165,40 @@ function CreatorDashboardContent() {
                 seasons={displaySeasonRows}
                 onSelect={(seasonId) => {
                   setSelectedSeasonId(seasonId);
-                  setDashboardRouteState({ view: "episodes", seriesId: selectedSeriesId, seasonId, episodeId: "" });
+                  setDashboardRouteState({
+                    view: "episodes",
+                    seriesId: selectedSeriesId,
+                    seasonId,
+                    episodeId: "",
+                  });
                 }}
                 onCreate={() => createSeasonMutation.mutate()}
                 onEdit={(season) => handleUpdateSeason(season)}
                 onDelete={handleDeleteSeason}
-                onBack={() => setDashboardRouteState({ view: "series", seriesId: "", seasonId: "", episodeId: "" })}
+                onBack={() =>
+                  setDashboardRouteState({
+                    view: "series",
+                    seriesId: "",
+                    seasonId: "",
+                    episodeId: "",
+                  })
+                }
               />
             ) : activeView === "episodes" ? (
-              (selectedSeries && selectedSeason ? (
+              selectedSeries && selectedSeason ? (
                 <EpisodeManagementView
                   selectedSeries={selectedSeries}
                   selectedSeason={selectedSeason}
                   episodes={displayEpisodeRows}
                   isLoading={episodesQuery.isLoading}
-                  onBack={() => setDashboardRouteState({ view: "seasons", seriesId: selectedSeries.id, seasonId: "", episodeId: "" })}
+                  onBack={() =>
+                    setDashboardRouteState({
+                      view: "seasons",
+                      seriesId: selectedSeries.id,
+                      seasonId: "",
+                      episodeId: "",
+                    })
+                  }
                   onCreateEpisode={() => createEpisodeMutation.mutate()}
                   isCreatingEpisode={createEpisodeMutation.isPending}
                   onOpenUpload={openEpisodeUpload}
@@ -1988,11 +2207,13 @@ function CreatorDashboardContent() {
                 />
               ) : (
                 <div className="p-8 text-white flex flex-col items-center justify-center min-h-[50vh]">
-                  <h2 className="text-xl font-bold mb-4">No season selected.</h2>
+                  <h2 className="text-xl font-bold mb-4">
+                    No season selected.
+                  </h2>
                 </div>
-              ))
+              )
             ) : activeView === "comic" ? (
-              (selectedSeries && selectedSeason && selectedEpisode ? (
+              selectedSeries && selectedSeason && selectedEpisode ? (
                 <ComicUploadView
                   selectedSeries={selectedSeries}
                   selectedSeason={selectedSeason}
@@ -2010,30 +2231,63 @@ function CreatorDashboardContent() {
                   onDeletePage={handleDeleteComicPage}
                   isLoadingMedia={mediaQuery.isLoading}
                   uploadMessage={uploadMessage}
-                  onSaveEpisode={(episode) => updateEpisodeMutation.mutate(episode)}
+                  onSaveEpisode={(episode) =>
+                    updateEpisodeMutation.mutate(episode)
+                  }
                   isSavingEpisode={updateEpisodeMutation.isPending}
                   onSaveUnlockSettings={handleSaveEpisodeUnlockSettings}
-                  isSavingUnlockSettings={updateEpisodeUnlockSettingsMutation.isPending}
+                  isSavingUnlockSettings={
+                    updateEpisodeUnlockSettingsMutation.isPending
+                  }
                   canManageUnlockSettings={canManageEpisodePricing}
-                  onGoToPublishing={() => setDashboardRouteState({ view: "publish", seriesId: selectedSeries.id, seasonId: selectedSeason.id, episodeId: selectedEpisode.id })}
+                  onGoToPublishing={() =>
+                    setDashboardRouteState({
+                      view: "publish",
+                      seriesId: selectedSeries.id,
+                      seasonId: selectedSeason.id,
+                      episodeId: selectedEpisode.id,
+                    })
+                  }
                   canSchedulePublish={hasApprovedComicMedia}
-                  onSchedulePublish={(episode) => handleSchedulePublish({ kind: "episode", value: episode })}
-                  onHideEpisode={(episode) => hideEpisodeMutation.mutate(episode)}
-                  onUnhideEpisode={(episode) => unhideEpisodeMutation.mutate(episode)}
-                  isHidingEpisode={hideEpisodeMutation.isPending || unhideEpisodeMutation.isPending}
-                  onCancelSchedule={(episode) => cancelScheduleMutation.mutate(episode.id)}
+                  onSchedulePublish={(episode) =>
+                    handleSchedulePublish({ kind: "episode", value: episode })
+                  }
+                  onHideEpisode={(episode) =>
+                    hideEpisodeMutation.mutate(episode)
+                  }
+                  onUnhideEpisode={(episode) =>
+                    unhideEpisodeMutation.mutate(episode)
+                  }
+                  isHidingEpisode={
+                    hideEpisodeMutation.isPending ||
+                    unhideEpisodeMutation.isPending
+                  }
+                  onCancelSchedule={(episode) =>
+                    cancelScheduleMutation.mutate(episode.id)
+                  }
                   isCancelingSchedule={cancelScheduleMutation.isPending}
-                  onPublishNow={(episode) => publishEpisodeMutation.mutate(episode.id)}
+                  onPublishNow={(episode) =>
+                    publishEpisodeMutation.mutate(episode.id)
+                  }
                   isPublishingNow={publishEpisodeMutation.isPending}
-                  onBack={() => setDashboardRouteState({ view: "episodes", seriesId: selectedSeries.id, seasonId: selectedSeason.id, episodeId: "" })}
+                  onBack={() =>
+                    setDashboardRouteState({
+                      view: "episodes",
+                      seriesId: selectedSeries.id,
+                      seasonId: selectedSeason.id,
+                      episodeId: "",
+                    })
+                  }
                 />
               ) : (
                 <div className="p-8 text-white flex flex-col items-center justify-center min-h-[50vh]">
-                  <h2 className="text-xl font-bold mb-4">Chưa chọn episode nào.</h2>
+                  <h2 className="text-xl font-bold mb-4">
+                    Chưa chọn episode nào.
+                  </h2>
                 </div>
-              ))
+              )
             ) : activeView === "video" ? (
-              (selectedSeries && selectedSeason && selectedEpisode ? (
+              selectedSeries && selectedSeason && selectedEpisode ? (
                 <VideoUploadView
                   selectedSeries={selectedSeries}
                   selectedSeason={selectedSeason}
@@ -2043,83 +2297,170 @@ function CreatorDashboardContent() {
                   uploadMessage={uploadMessage}
                   onUploadCompleted={handleVideoUploadCompleted}
                   onDeleteVideo={handleDeleteVideo}
-                  onSaveEpisode={(episode) => updateEpisodeMutation.mutate(episode)}
+                  onSaveEpisode={(episode) =>
+                    updateEpisodeMutation.mutate(episode)
+                  }
                   isSavingEpisode={updateEpisodeMutation.isPending}
                   onSaveUnlockSettings={handleSaveEpisodeUnlockSettings}
-                  isSavingUnlockSettings={updateEpisodeUnlockSettingsMutation.isPending}
+                  isSavingUnlockSettings={
+                    updateEpisodeUnlockSettingsMutation.isPending
+                  }
                   canManageUnlockSettings={canManageEpisodePricing}
-                  onGoToPublishing={() => setDashboardRouteState({ view: "publish", seriesId: selectedSeries.id, seasonId: selectedSeason.id, episodeId: selectedEpisode.id })}
+                  onGoToPublishing={() =>
+                    setDashboardRouteState({
+                      view: "publish",
+                      seriesId: selectedSeries.id,
+                      seasonId: selectedSeason.id,
+                      episodeId: selectedEpisode.id,
+                    })
+                  }
                   accountId={accountId}
-                  onSchedulePublish={(episode) => handleSchedulePublish({ kind: "episode", value: episode })}
-                  onHideEpisode={(episode) => hideEpisodeMutation.mutate(episode)}
-                  onUnhideEpisode={(episode) => unhideEpisodeMutation.mutate(episode)}
-                  isHidingEpisode={hideEpisodeMutation.isPending || unhideEpisodeMutation.isPending}
-                  onCancelSchedule={(episode) => cancelScheduleMutation.mutate(episode.id)}
+                  onSchedulePublish={(episode) =>
+                    handleSchedulePublish({ kind: "episode", value: episode })
+                  }
+                  onHideEpisode={(episode) =>
+                    hideEpisodeMutation.mutate(episode)
+                  }
+                  onUnhideEpisode={(episode) =>
+                    unhideEpisodeMutation.mutate(episode)
+                  }
+                  isHidingEpisode={
+                    hideEpisodeMutation.isPending ||
+                    unhideEpisodeMutation.isPending
+                  }
+                  onCancelSchedule={(episode) =>
+                    cancelScheduleMutation.mutate(episode.id)
+                  }
                   isCancelingSchedule={cancelScheduleMutation.isPending}
-                  onPublishNow={(episode) => publishEpisodeMutation.mutate(episode.id)}
+                  onPublishNow={(episode) =>
+                    publishEpisodeMutation.mutate(episode.id)
+                  }
                   isPublishingNow={publishEpisodeMutation.isPending}
-                  onBack={() => setDashboardRouteState({ view: "episodes", seriesId: selectedSeries.id, seasonId: selectedSeason.id, episodeId: "" })}
+                  onBack={() =>
+                    setDashboardRouteState({
+                      view: "episodes",
+                      seriesId: selectedSeries.id,
+                      seasonId: selectedSeason.id,
+                      episodeId: "",
+                    })
+                  }
                 />
               ) : (
                 <div className="p-8 text-white flex flex-col items-center justify-center min-h-[50vh]">
-                  <h2 className="text-xl font-bold mb-4">Chưa chọn episode nào.</h2>
+                  <h2 className="text-xl font-bold mb-4">
+                    Chưa chọn episode nào.
+                  </h2>
                 </div>
-              ))
-            ) : activeView === "publish" as any ? (
+              )
+            ) : activeView === ("publish" as any) ? (
               selectedEpisode?.contentType === "COMIC" ? (
                 <FinalReviewComicStep
                   pages={displayComicPages}
                   isPublishing={publishEpisodeMutation.isPending}
-                  onPublish={() => publishEpisodeMutation.mutate(selectedEpisodeId)}
-                  onSchedulePublish={() => handleSchedulePublish({ kind: "episode", value: selectedEpisode! })}
+                  onPublish={() =>
+                    publishEpisodeMutation.mutate(selectedEpisodeId)
+                  }
+                  onSchedulePublish={() =>
+                    handleSchedulePublish({
+                      kind: "episode",
+                      value: selectedEpisode!,
+                    })
+                  }
                   onSaveDraft={() => openSeriesManagement()}
                   onBack={() => {
                     if (selectedEpisode?.status === "PUBLISHED") {
-                      setDashboardRouteState({ view: "episodes", seriesId: selectedSeriesId, seasonId: selectedSeasonId, episodeId: "" });
+                      setDashboardRouteState({
+                        view: "episodes",
+                        seriesId: selectedSeriesId,
+                        seasonId: selectedSeasonId,
+                        episodeId: "",
+                      });
                     } else {
-                      setDashboardRouteState({ view: "comic", seriesId: selectedSeriesId, seasonId: selectedSeasonId, episodeId: selectedEpisodeId });
+                      setDashboardRouteState({
+                        view: "comic",
+                        seriesId: selectedSeriesId,
+                        seasonId: selectedSeasonId,
+                        episodeId: selectedEpisodeId,
+                      });
                     }
                   }}
                   selectedEpisode={selectedEpisode}
-                  onSaveEpisode={(episode) => updateEpisodeMutation.mutate(episode)}
+                  onSaveEpisode={(episode) =>
+                    updateEpisodeMutation.mutate(episode)
+                  }
                   isSavingEpisode={updateEpisodeMutation.isPending}
                   onSaveUnlockSettings={handleSaveEpisodeUnlockSettings}
-                  isSavingUnlockSettings={updateEpisodeUnlockSettingsMutation.isPending}
+                  isSavingUnlockSettings={
+                    updateEpisodeUnlockSettingsMutation.isPending
+                  }
                   canManageUnlockSettings={canManageEpisodePricing}
-                  onHideEpisode={(episode) => hideEpisodeMutation.mutate(episode)}
+                  onHideEpisode={(episode) =>
+                    hideEpisodeMutation.mutate(episode)
+                  }
                   isHidingEpisode={hideEpisodeMutation.isPending}
-                  onCancelSchedule={(episode) => cancelScheduleMutation.mutate(episode.id)}
+                  onCancelSchedule={(episode) =>
+                    cancelScheduleMutation.mutate(episode.id)
+                  }
                   isCancelingSchedule={cancelScheduleMutation.isPending}
                 />
               ) : (
                 <FinalReviewStep
                   mediaId={existingVideoMedia[0]?.mediaId}
-                  mediaUrl={existingVideoMedia[0]?.fileUrl || existingVideoMedia[0]?.originalUrl || ""}
+                  mediaUrl={
+                    existingVideoMedia[0]?.fileUrl ||
+                    existingVideoMedia[0]?.originalUrl ||
+                    ""
+                  }
                   mediaType={existingVideoMedia[0]?.mediaType}
                   mediaStatus={existingVideoMedia[0]?.status}
                   approvalStatus={existingVideoMedia[0]?.approvalStatus}
                   errorMessage={existingVideoMedia[0]?.errorMessage}
                   contentId={existingVideoMedia[0]?.contentId}
                   isPublishing={publishEpisodeMutation.isPending}
-                  onPublish={() => publishEpisodeMutation.mutate(selectedEpisodeId)}
-                  onSchedulePublish={() => handleSchedulePublish({ kind: "episode", value: selectedEpisode! })}
+                  onPublish={() =>
+                    publishEpisodeMutation.mutate(selectedEpisodeId)
+                  }
+                  onSchedulePublish={() =>
+                    handleSchedulePublish({
+                      kind: "episode",
+                      value: selectedEpisode!,
+                    })
+                  }
                   onSaveDraft={() => openSeriesManagement()}
                   onBack={() => {
                     if (selectedEpisode?.status === "PUBLISHED") {
-                      setDashboardRouteState({ view: "episodes", seriesId: selectedSeriesId, seasonId: selectedSeasonId, episodeId: "" });
+                      setDashboardRouteState({
+                        view: "episodes",
+                        seriesId: selectedSeriesId,
+                        seasonId: selectedSeasonId,
+                        episodeId: "",
+                      });
                     } else {
-                      setDashboardRouteState({ view: "video", seriesId: selectedSeriesId, seasonId: selectedSeasonId, episodeId: selectedEpisodeId });
+                      setDashboardRouteState({
+                        view: "video",
+                        seriesId: selectedSeriesId,
+                        seasonId: selectedSeasonId,
+                        episodeId: selectedEpisodeId,
+                      });
                     }
                   }}
                   selectedEpisode={selectedEpisode}
-                  onSaveEpisode={(episode) => updateEpisodeMutation.mutate(episode)}
+                  onSaveEpisode={(episode) =>
+                    updateEpisodeMutation.mutate(episode)
+                  }
                   isSavingEpisode={updateEpisodeMutation.isPending}
                   onSaveUnlockSettings={handleSaveEpisodeUnlockSettings}
-                  isSavingUnlockSettings={updateEpisodeUnlockSettingsMutation.isPending}
+                  isSavingUnlockSettings={
+                    updateEpisodeUnlockSettingsMutation.isPending
+                  }
                   canManageUnlockSettings={canManageEpisodePricing}
-                  onHideEpisode={(episode) => hideEpisodeMutation.mutate(episode)}
+                  onHideEpisode={(episode) =>
+                    hideEpisodeMutation.mutate(episode)
+                  }
                   isHidingEpisode={hideEpisodeMutation.isPending}
-                  onCancelSchedule={(episode) => cancelScheduleMutation.mutate(episode.id)}
+                  onCancelSchedule={(episode) =>
+                    cancelScheduleMutation.mutate(episode.id)
+                  }
                   isCancelingSchedule={cancelScheduleMutation.isPending}
                 />
               )
@@ -2167,7 +2508,9 @@ function CreatorDashboardContent() {
               <CreatorCampaignsView />
             ) : (
               <div className="p-8 text-white flex flex-col items-center justify-center min-h-[50vh]">
-                <h2 className="text-xl font-bold mb-4">View not mapped yet ({activeView})</h2>
+                <h2 className="text-xl font-bold mb-4">
+                  View not mapped yet ({activeView})
+                </h2>
                 <button
                   onClick={openSeriesManagement}
                   className="px-6 py-2 bg-creator-gold text-black rounded"
@@ -2183,7 +2526,11 @@ function CreatorDashboardContent() {
       {editModal && (
         <EditEntityModal
           modal={editModal}
-          isSaving={updateSeriesMutation.isPending || updateSeasonMutation.isPending || updateEpisodeMutation.isPending}
+          isSaving={
+            updateSeriesMutation.isPending ||
+            updateSeasonMutation.isPending ||
+            updateEpisodeMutation.isPending
+          }
           uploadMessage={uploadMessage}
           onClose={() => setEditModal(null)}
           onSubmit={handleSubmitEdit}
@@ -2195,7 +2542,12 @@ function CreatorDashboardContent() {
       {deleteModal && (
         <DeleteEntityModal
           modal={deleteModal}
-          isDeleting={deleteSeriesMutation.isPending || deleteSeasonMutation.isPending || deleteEpisodeMutation.isPending || deleteMediaMutation.isPending}
+          isDeleting={
+            deleteSeriesMutation.isPending ||
+            deleteSeasonMutation.isPending ||
+            deleteEpisodeMutation.isPending ||
+            deleteMediaMutation.isPending
+          }
           onClose={() => setDeleteModal(null)}
           onConfirm={handleConfirmDelete}
         />
@@ -2338,7 +2690,6 @@ function EditEntityModal({
         ? "Cập Nhập Mùa"
         : "Cập Nhập Tập";
 
-
   if (modal.kind === "series") {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 px-4 py-6 overflow-y-auto">
@@ -2380,7 +2731,7 @@ function EditEntityModal({
                   kind: "series",
                   value: { ...modal.value, ...data } as any,
                   coverFile: data.coverFile,
-                  bannerFile: data.bannerFile
+                  bannerFile: data.bannerFile,
                 });
               }}
             />
@@ -2392,7 +2743,6 @@ function EditEntityModal({
 
   return (
     <ModalShell title={title} subtitle="" onClose={onClose}>
-
       {modal.kind === "season" && (
         <form onSubmit={handleSeasonSubmit} className="space-y-5">
           <Field label="Số Mùa">
@@ -2512,7 +2862,9 @@ function SchedulePublishModal({
   }
 
   const title = modal.value.title;
-  const defaultSchedule = splitDateTimeLocalValue(modal.value.scheduledPublishAt);
+  const defaultSchedule = splitDateTimeLocalValue(
+    modal.value.scheduledPublishAt,
+  );
   const minimumSchedule = splitDateTimeLocalValue();
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -2526,7 +2878,10 @@ function SchedulePublishModal({
       return;
     }
 
-    const scheduledPublishAt = combineDateAndTimeLocalValue(publishDate, publishTime);
+    const scheduledPublishAt = combineDateAndTimeLocalValue(
+      publishDate,
+      publishTime,
+    );
 
     if (isPastDateTimeLocalValue(scheduledPublishAt)) {
       setScheduleError("Thoi gian phat hanh phai nam trong tuong lai.");
@@ -2641,12 +2996,8 @@ function DeleteEntityModal({
     >
       <div className="space-y-5">
         <div className="rounded-2xl border border-red-500/50 bg-red-500/10 p-4">
-          <p className="text-sm font-bold text-creator-muted">
-            Bạn đang xóa:
-          </p>
-          <p className="mt-1 text-lg font-black text-red-400">
-            {entityLabel}
-          </p>
+          <p className="text-sm font-bold text-creator-muted">Bạn đang xóa:</p>
+          <p className="mt-1 text-lg font-black text-red-400">{entityLabel}</p>
         </div>
         <div className="flex justify-end gap-3">
           <button
@@ -2784,7 +3135,9 @@ function MobileTab({
       onClick={onClick}
       className={cx(
         "h-9 rounded-full px-4 text-xs font-black transition",
-        active ? "bg-[#151A23] text-white" : "bg-creator-sidebar text-creator-muted",
+        active
+          ? "bg-[#151A23] text-white"
+          : "bg-creator-sidebar text-creator-muted",
       )}
     >
       {label}
@@ -2821,9 +3174,7 @@ function SeriesManagementView({
   const [filter, setFilter] = useState<"ALL" | ContentType>("ALL");
 
   const filteredRows =
-    filter === "ALL"
-      ? rows
-      : rows.filter((row) => row.contentType === filter);
+    filter === "ALL" ? rows : rows.filter((row) => row.contentType === filter);
 
   return (
     <div className="space-y-7">
@@ -2929,11 +3280,7 @@ function FilterTab({
   );
 }
 
-function ApiStateNote({
-  isLoading,
-}: {
-  isLoading: boolean;
-}) {
+function ApiStateNote({ isLoading }: { isLoading: boolean }) {
   if (!isLoading) {
     return null;
   }
@@ -3028,7 +3375,9 @@ function SeriesTableRow({
         <span
           className={cx(
             "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-black",
-            isComic ? "bg-[#E9D3FF] text-[#5E1AA3]" : "bg-[#CDEEFF] text-[#075985]",
+            isComic
+              ? "bg-[#E9D3FF] text-[#5E1AA3]"
+              : "bg-[#CDEEFF] text-[#075985]",
           )}
         >
           {isComic ? (
@@ -3044,7 +3393,7 @@ function SeriesTableRow({
         <span
           className={cx(
             "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-black",
-            getStatusBadgeStyle(series.status)
+            getStatusBadgeStyle(series.status),
           )}
         >
           {formatStatusLabel(series.status)}
@@ -3300,7 +3649,6 @@ function SeasonCard({
   );
 }
 
-
 // ============================================================================
 // EPISODE MANAGEMENT VIEW
 // ============================================================================
@@ -3327,7 +3675,9 @@ function EpisodeManagementView({
   onUpdateEpisode: (episode: EpisodeRow) => void;
   onDeleteEpisode: (episode: EpisodeRow) => void;
 }) {
-  const [analyticsEpisode, setAnalyticsEpisode] = useState<EpisodeRow | null>(null);
+  const [analyticsEpisode, setAnalyticsEpisode] = useState<EpisodeRow | null>(
+    null,
+  );
 
   return (
     <div className="w-full space-y-6 py-6 text-creator-text">
@@ -3348,17 +3698,23 @@ function EpisodeManagementView({
 
       {/* Season Card matching Mockup */}
 
-
       <div className="overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.035] shadow-[0_24px_70px_rgba(0,0,0,0.22)]">
         <div className="flex flex-col items-start justify-between gap-4 border-b border-white/10 bg-black/25 p-6 sm:flex-row sm:items-center">
           <div>
             <div className="flex items-center gap-3 mb-1">
               <span className="text-xs font-bold px-2.5 py-1 bg-creator-gold/10 text-creator-gold rounded border border-creator-gold/20">
-                SEASON {selectedSeason.seasonNumber < 10 ? `0${selectedSeason.seasonNumber}` : selectedSeason.seasonNumber}
+                SEASON{" "}
+                {selectedSeason.seasonNumber < 10
+                  ? `0${selectedSeason.seasonNumber}`
+                  : selectedSeason.seasonNumber}
               </span>
-              <h3 className="text-xl font-bold text-white">{selectedSeason.title}</h3>
+              <h3 className="text-xl font-bold text-white">
+                {selectedSeason.title}
+              </h3>
             </div>
-            <p className="text-sm text-creator-muted mt-2 max-w-2xl">{selectedSeason.description}</p>
+            <p className="text-sm text-creator-muted mt-2 max-w-2xl">
+              {selectedSeason.description}
+            </p>
           </div>
           <button
             type="button"
@@ -3377,33 +3733,58 @@ function EpisodeManagementView({
               <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-creator-gold/25 bg-creator-gold/10 shadow-[0_16px_40px_rgba(212,175,55,0.10)]">
                 <PlayCircle size={32} className="text-creator-muted" />
               </div>
-              <h3 className="text-lg font-medium text-white mb-2">Chưa có tập nào</h3>
-              <p className="text-sm text-creator-muted">Nhấn "Thêm Tập" để bắt đầu xây dựng mùa này.</p>
+              <h3 className="text-lg font-medium text-white mb-2">
+                Chưa có tập nào
+              </h3>
+              <p className="text-sm text-creator-muted">
+                Nhấn "Thêm Tập" để bắt đầu xây dựng mùa này.
+              </p>
             </div>
           ) : (
             <ul className="divide-y divide-white/10">
               {episodes.map((episode) => (
-                <li key={episode.id} className="creator-shine-card group flex flex-col gap-4 p-5 transition-all duration-300 hover:bg-white/[0.055] sm:flex-row sm:items-center">
-                  <div className="flex flex-1 cursor-pointer items-center gap-4" onClick={() => onOpenUpload(episode)}>
-                    <GripVertical size={18} className="text-creator-border group-hover:text-creator-muted cursor-grab hidden sm:block" />
+                <li
+                  key={episode.id}
+                  className="creator-shine-card group flex flex-col gap-4 p-5 transition-all duration-300 hover:bg-white/[0.055] sm:flex-row sm:items-center"
+                >
+                  <div
+                    className="flex flex-1 cursor-pointer items-center gap-4"
+                    onClick={() => onOpenUpload(episode)}
+                  >
+                    <GripVertical
+                      size={18}
+                      className="text-creator-border group-hover:text-creator-muted cursor-grab hidden sm:block"
+                    />
                     <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-black/35 text-sm font-bold text-creator-gold shadow-inner">
                       {episode.episodeNumber}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h4 className="text-base font-bold text-white truncate">{episode.title}</h4>
+                      <h4 className="text-base font-bold text-white truncate">
+                        {episode.title}
+                      </h4>
                       <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-creator-muted font-medium">
                         <span className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-creator-bg border border-creator-border">
-                          {episode.contentType === "COMIC" ? <BookOpen size={12} /> : <Clapperboard size={12} />}
-                          {episode.contentType === "COMIC" ? `${episode.totalPage ?? episode.mediaCount} pages` : `${episode.mediaCount} video`}
+                          {episode.contentType === "COMIC" ? (
+                            <BookOpen size={12} />
+                          ) : (
+                            <Clapperboard size={12} />
+                          )}
+                          {episode.contentType === "COMIC"
+                            ? `${episode.totalPage ?? episode.mediaCount} pages`
+                            : `${episode.mediaCount} video`}
                         </span>
                         <span>•</span>
-                        <span className={cx(
-                          "px-2 py-0.5 rounded border text-[10px] uppercase font-bold",
-                          getStatusBadgeStyle(episode.status)
-                        )}>
+                        <span
+                          className={cx(
+                            "px-2 py-0.5 rounded border text-[10px] uppercase font-bold",
+                            getStatusBadgeStyle(episode.status),
+                          )}
+                        >
                           {formatStatusLabel(episode.status)}
                         </span>
-                        <span className="truncate max-w-[200px]">{episode.description}</span>
+                        <span className="truncate max-w-[200px]">
+                          {episode.description}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -3412,28 +3793,45 @@ function EpisodeManagementView({
                   <div className="flex items-center gap-2 pl-14 transition-opacity sm:pl-0 sm:opacity-0 sm:group-hover:opacity-100">
                     {/* Nút Thống kê tập */}
                     <button
-                      onClick={(e) => { e.stopPropagation(); setAnalyticsEpisode(episode); }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setAnalyticsEpisode(episode);
+                      }}
                       className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-black/35 px-3 py-1.5 text-xs font-bold text-zinc-400 transition-colors hover:border-[#D4AF37]/40 hover:bg-[#D4AF37]/10 hover:text-[#D4AF37]"
                       title="Xem thống kê tập"
                     >
                       <BarChart3 size={14} /> Thống kê
                     </button>
                     <button
-                      onClick={(e) => { e.stopPropagation(); onUpdateEpisode(episode); }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onUpdateEpisode(episode);
+                      }}
                       className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-black/35 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:border-white/20 hover:bg-white/10"
                       title="Settings (Unlock, Schedule)"
                     >
                       <Edit3 size={14} /> Settings
                     </button>
                     <button
-                      onClick={(e) => { e.stopPropagation(); onOpenUpload(episode); }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onOpenUpload(episode);
+                      }}
                       className="inline-flex items-center gap-1.5 rounded-xl bg-creator-gold px-3 py-1.5 text-xs font-bold text-black transition-colors hover:bg-creator-gold-hover"
                       title="Upload Media"
                     >
-                      {episode.contentType === "COMIC" ? <ImagePlus size={14} /> : <Video size={14} />} Media
+                      {episode.contentType === "COMIC" ? (
+                        <ImagePlus size={14} />
+                      ) : (
+                        <Video size={14} />
+                      )}{" "}
+                      Media
                     </button>
                     <button
-                      onClick={(e) => { e.stopPropagation(); onDeleteEpisode(episode); }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteEpisode(episode);
+                      }}
                       className="p-1.5 text-creator-muted hover:text-red-400 rounded hover:bg-red-400/10 transition-colors ml-1"
                       title="Delete Episode"
                     >
@@ -3449,31 +3847,35 @@ function EpisodeManagementView({
 
       {/* Episode Analytics Modal */}
       <EpisodeAnalyticsModal
-        episode={analyticsEpisode ? {
-          episodeId: analyticsEpisode.id,
-          seasonId: analyticsEpisode.seasonId,
-          creatorId: "",
-          episodeNumber: analyticsEpisode.episodeNumber,
-          title: analyticsEpisode.title,
-          description: analyticsEpisode.description,
-          thumbnail: analyticsEpisode.thumbnail,
-          contentType: analyticsEpisode.contentType,
-          status: analyticsEpisode.status,
-          scheduledPublishAt: analyticsEpisode.scheduledPublishAt || null,
-          publishedAt: "",
-          unlockType: analyticsEpisode.unlockType,
-          priceVnd: analyticsEpisode.priceVnd,
-          likes: 0,
-          views: Number(analyticsEpisode.views) || 0,
-          totalPage: analyticsEpisode.totalPage || null,
-          createdAt: "",
-          updatedAt: analyticsEpisode.updatedAt,
-          deletedAt: null,
-          createdBy: "",
-          updatedBy: "",
-          deletedBy: null,
-          isDeleted: false,
-        } : null}
+        episode={
+          analyticsEpisode
+            ? {
+                episodeId: analyticsEpisode.id,
+                seasonId: analyticsEpisode.seasonId,
+                creatorId: "",
+                episodeNumber: analyticsEpisode.episodeNumber,
+                title: analyticsEpisode.title,
+                description: analyticsEpisode.description,
+                thumbnail: analyticsEpisode.thumbnail,
+                contentType: analyticsEpisode.contentType,
+                status: analyticsEpisode.status,
+                scheduledPublishAt: analyticsEpisode.scheduledPublishAt || null,
+                publishedAt: "",
+                unlockType: analyticsEpisode.unlockType,
+                priceVnd: analyticsEpisode.priceVnd,
+                likes: 0,
+                views: Number(analyticsEpisode.views) || 0,
+                totalPage: analyticsEpisode.totalPage || null,
+                createdAt: "",
+                updatedAt: analyticsEpisode.updatedAt,
+                deletedAt: null,
+                createdBy: "",
+                updatedBy: "",
+                deletedBy: null,
+                isDeleted: false,
+              }
+            : null
+        }
         seriesTitle={selectedSeries.title}
         isOpen={Boolean(analyticsEpisode)}
         onClose={() => setAnalyticsEpisode(null)}
@@ -3505,13 +3907,17 @@ function EpisodeTableRow({
         <p className="mt-1 text-sm font-semibold text-creator-muted">
           {episode.description}
         </p>
-        <p className="mt-1 text-xs font-bold text-creator-muted">{episode.id}</p>
+        <p className="mt-1 text-xs font-bold text-creator-muted">
+          {episode.id}
+        </p>
       </div>
       <div>
         <span
           className={cx(
             "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-black",
-            isComic ? "bg-[#E9D3FF] text-[#5E1AA3]" : "bg-[#CDEEFF] text-[#075985]",
+            isComic
+              ? "bg-[#E9D3FF] text-[#5E1AA3]"
+              : "bg-[#CDEEFF] text-[#075985]",
           )}
         >
           {isComic ? (
@@ -3576,7 +3982,6 @@ function MetricBox({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
-
 
 // ============================================================================
 // COMIC UPLOAD VIEW
@@ -3652,8 +4057,12 @@ function ComicUploadView({
   const isCreator = user?.roleName === "CREATOR";
 
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
-  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(selectedEpisode.thumbnail || null);
-  const [thumbnailFile, setThumbnailFile] = useState<File | undefined>(undefined);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(
+    selectedEpisode.thumbnail || null,
+  );
+  const [thumbnailFile, setThumbnailFile] = useState<File | undefined>(
+    undefined,
+  );
 
   const handleThumbnailUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -3664,22 +4073,31 @@ function ComicUploadView({
     }
   };
 
-  const [editForm, setEditForm] = useState({ episodeNumber: selectedEpisode.episodeNumber, title: selectedEpisode.title, description: selectedEpisode.description || "", unlockType: selectedEpisode.unlockType || "FREE", priceVnd: selectedEpisode.priceVnd || 0 });
+  const [editForm, setEditForm] = useState({
+    episodeNumber: selectedEpisode.episodeNumber,
+    title: selectedEpisode.title,
+    description: selectedEpisode.description || "",
+    unlockType: selectedEpisode.unlockType || "FREE",
+    priceVnd: selectedEpisode.priceVnd || 0,
+  });
   return (
     <div className="w-full py-6 text-creator-text space-y-8">
       {/* Header matching mockup */}
       <div>
         <CreatorBackButton onClick={onBack} className="mb-6" />
-        <h2 className="text-4xl font-bold text-white mb-3">Đang kiểm duyệt nội dung cuối cùng</h2>
+        <h2 className="text-4xl font-bold text-white mb-3">
+          Đang kiểm duyệt nội dung cuối cùng
+        </h2>
         <p className="text-creator-muted max-w-2xl text-sm leading-relaxed">
-          Tải lên các tài nguyên điện ảnh chất lượng cao của bạn và để TaleX AI đảm bảo việc tuân thủ chính sách cũng như xác thực tính nguyên bản của nội dung.
+          Tải lên các tài nguyên điện ảnh chất lượng cao của bạn và để TaleX AI
+          đảm bảo việc tuân thủ chính sách cũng như xác thực tính nguyên bản của
+          nội dung.
         </p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
         {/* Left Column: Upload Workspace */}
         <div className="space-y-6">
-
           <div className="bg-creator-sidebar border border-creator-border rounded-xl p-8 shadow-xl mb-6">
             <div className="mb-6 flex items-center justify-between">
               <h3 className="text-lg font-bold text-white">Chi tiết Tập</h3>
@@ -3688,33 +4106,48 @@ function ComicUploadView({
               <div className="space-y-5">
                 <div className="grid gap-5 md:grid-cols-2">
                   <div>
-                    <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Số thứ tự Tập</label>
+                    <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">
+                      Số thứ tự Tập
+                    </label>
                     <input
                       type="number"
                       min={1}
                       value={editForm.episodeNumber}
-                      onChange={(e) => setEditForm({ ...editForm, episodeNumber: Number(e.target.value) })}
+                      onChange={(e) =>
+                        setEditForm({
+                          ...editForm,
+                          episodeNumber: Number(e.target.value),
+                        })
+                      }
                       className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Tiêu đề Tập *</label>
+                    <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">
+                      Tiêu đề Tập *
+                    </label>
                     <input
                       type="text"
                       required
                       value={editForm.title}
-                      onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, title: e.target.value })
+                      }
                       className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Mô tả</label>
+                  <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">
+                    Mô tả
+                  </label>
                   <textarea
                     rows={3}
                     value={editForm.description}
-                    onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, description: e.target.value })
+                    }
                     className="w-full resize-none rounded-md border border-creator-border bg-creator-bg p-3 text-sm text-white outline-none focus:border-creator-gold"
                   />
                 </div>
@@ -3722,10 +4155,17 @@ function ComicUploadView({
                 {isCreator && (
                   <div className="grid gap-5 md:grid-cols-2 mt-4 pt-4 border-t border-creator-border">
                     <div>
-                      <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Kiểu mở khóa</label>
+                      <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">
+                        Kiểu mở khóa
+                      </label>
                       <select
                         value={editForm.unlockType}
-                        onChange={(e) => setEditForm({ ...editForm, unlockType: e.target.value as EpisodeUnlockType })}
+                        onChange={(e) =>
+                          setEditForm({
+                            ...editForm,
+                            unlockType: e.target.value as EpisodeUnlockType,
+                          })
+                        }
                         disabled={!canManageUnlockSettings}
                         className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
                       >
@@ -3736,13 +4176,20 @@ function ComicUploadView({
 
                     {editForm.unlockType === "PAID" && (
                       <div>
-                        <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Giá (VNĐ) *</label>
+                        <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">
+                          Giá (VNĐ) *
+                        </label>
                         <input
                           type="number"
                           min={1}
                           max={99999}
                           value={editForm.priceVnd}
-                          onChange={(e) => setEditForm({ ...editForm, priceVnd: Number(e.target.value) })}
+                          onChange={(e) =>
+                            setEditForm({
+                              ...editForm,
+                              priceVnd: Number(e.target.value),
+                            })
+                          }
                           disabled={!canManageUnlockSettings}
                           className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
                         />
@@ -3754,18 +4201,29 @@ function ComicUploadView({
 
               {/* Right: Thumbnail upload */}
               <div className="flex flex-col">
-                <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Ảnh Thumbnail Tập *</label>
+                <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">
+                  Ảnh Thumbnail Tập *
+                </label>
                 <div
                   onClick={() => thumbnailInputRef.current?.click()}
-                  className={`relative w-full aspect-video rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors overflow-hidden group ${thumbnailPreview ? "border-creator-gold" : "border-creator-border hover:border-creator-gold/50"
-                    }`}
+                  className={`relative w-full aspect-video rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors overflow-hidden group ${
+                    thumbnailPreview
+                      ? "border-creator-gold"
+                      : "border-creator-border hover:border-creator-gold/50"
+                  }`}
                 >
                   {thumbnailPreview ? (
                     <>
-                      <img src={thumbnailPreview} alt="Thumbnail Preview" className="w-full h-full object-cover" />
+                      <img
+                        src={thumbnailPreview}
+                        alt="Thumbnail Preview"
+                        className="w-full h-full object-cover"
+                      />
                       <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                         <UploadCloud size={20} className="text-white mb-1" />
-                        <span className="text-xs font-medium text-white">Đổi Thumbnail</span>
+                        <span className="text-xs font-medium text-white">
+                          Đổi Thumbnail
+                        </span>
                       </div>
                     </>
                   ) : (
@@ -3773,7 +4231,9 @@ function ComicUploadView({
                       <div className="w-10 h-10 bg-creator-border rounded-full flex items-center justify-center mb-2">
                         <ImageIcon size={18} className="text-creator-muted" />
                       </div>
-                      <span className="text-xs text-creator-muted px-4 text-center">Tải Thumbnail</span>
+                      <span className="text-xs text-creator-muted px-4 text-center">
+                        Tải Thumbnail
+                      </span>
                     </>
                   )}
                   <input
@@ -3788,7 +4248,13 @@ function ComicUploadView({
             </div>
             <div className="mt-6 flex flex-wrap justify-end gap-3">
               <button
-                onClick={() => onSaveEpisode({ ...selectedEpisode, ...editForm, thumbnailFile })}
+                onClick={() =>
+                  onSaveEpisode({
+                    ...selectedEpisode,
+                    ...editForm,
+                    thumbnailFile,
+                  })
+                }
                 disabled={isSavingEpisode}
                 className="inline-flex h-10 items-center justify-center rounded bg-creator-bg px-5 text-sm font-bold text-white border border-creator-border hover:bg-white/10 disabled:opacity-50"
               >
@@ -3796,7 +4262,14 @@ function ComicUploadView({
               </button>
               {isCreator && (
                 <button
-                  onClick={() => onSaveUnlockSettings({ ...selectedEpisode, unlockType: editForm.unlockType, priceVnd: editForm.unlockType === "PAID" ? editForm.priceVnd : 0 })}
+                  onClick={() =>
+                    onSaveUnlockSettings({
+                      ...selectedEpisode,
+                      unlockType: editForm.unlockType,
+                      priceVnd:
+                        editForm.unlockType === "PAID" ? editForm.priceVnd : 0,
+                    })
+                  }
                   disabled={!canManageUnlockSettings || isSavingUnlockSettings}
                   className="inline-flex h-10 items-center justify-center rounded bg-creator-gold px-5 text-sm font-bold text-black hover:bg-creator-gold-hover disabled:opacity-50"
                 >
@@ -3807,7 +4280,9 @@ function ComicUploadView({
           </div>
           <div className="bg-creator-sidebar border border-creator-border rounded-xl p-8 shadow-xl">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-lg font-bold text-white">Upload Truyện và Chỉnh sửa vị trí</h3>
+              <h3 className="text-lg font-bold text-white">
+                Upload Truyện và Chỉnh sửa vị trí
+              </h3>
               <span className="text-xs font-bold px-3 py-1.5 bg-creator-bg border border-creator-border rounded text-creator-muted uppercase tracking-wider">
                 Chấp nhận: JPG, PNG, WEBP, BMP, JFIF
               </span>
@@ -3826,8 +4301,12 @@ function ComicUploadView({
               <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-creator-gold/10 text-creator-gold group-hover:bg-creator-gold/20 transition-colors">
                 <UploadCloud className="h-6 w-6" />
               </div>
-              <p className="text-sm font-bold text-white mb-2">Kéo & thả tài nguyên vào đây</p>
-              <p className="text-xs font-medium text-creator-muted">Kích thước tối đa: 10MB mỗi trang</p>
+              <p className="text-sm font-bold text-white mb-2">
+                Kéo & thả tài nguyên vào đây
+              </p>
+              <p className="text-xs font-medium text-creator-muted">
+                Kích thước tối đa: 10MB mỗi trang
+              </p>
             </label>
 
             {uploadMessage && (
@@ -3843,7 +4322,9 @@ function ComicUploadView({
             {pages.length > 0 && (
               <div className="space-y-4 pt-6 border-t border-creator-border">
                 <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-sm font-bold text-white">Trang đã tải lên ({pages.length})</h4>
+                  <h4 className="text-sm font-bold text-white">
+                    Trang đã tải lên ({pages.length})
+                  </h4>
                   <button
                     onClick={onSaveOrder}
                     disabled={isSavingOrder}
@@ -3882,7 +4363,9 @@ function ComicUploadView({
                 <Info className="h-3 w-3 text-black" />
               </div>
               <p className="text-sm font-medium text-creator-muted max-w-md leading-relaxed">
-                Thời gian kiểm duyệt phụ thuộc vào số lượng trang. Bạn có thể rời trang này và quay lại sau, hệ thống sẽ tự động cập nhật tiến trình.
+                Thời gian kiểm duyệt phụ thuộc vào số lượng trang. Bạn có thể
+                rời trang này và quay lại sau, hệ thống sẽ tự động cập nhật tiến
+                trình.
               </p>
             </div>
             {canSchedulePublish ? (
@@ -3894,14 +4377,19 @@ function ComicUploadView({
               </button>
             ) : (
               (() => {
-                const persistedPages = pages.filter((p) => !p.id.startsWith("LOCAL-"));
+                const persistedPages = pages.filter(
+                  (p) => !p.id.startsWith("LOCAL-"),
+                );
                 if (persistedPages.length === 0) return null;
                 const readyCount = persistedPages.filter(
-                  (p) => p.approvalStatus === "APPROVED" && (p.status === "ACTIVE" || p.status === "HLS_READY"),
+                  (p) =>
+                    p.approvalStatus === "APPROVED" &&
+                    (p.status === "ACTIVE" || p.status === "HLS_READY"),
                 ).length;
                 return (
                   <p className="text-xs font-bold text-creator-muted shrink-0">
-                    Đang xử lý {readyCount}/{persistedPages.length} trang — nút xuất bản sẽ hiện khi tất cả trang hoàn tất.
+                    Đang xử lý {readyCount}/{persistedPages.length} trang — nút
+                    xuất bản sẽ hiện khi tất cả trang hoàn tất.
                   </p>
                 );
               })()
@@ -3913,10 +4401,18 @@ function ComicUploadView({
         <AIPolicyAndCopyright
           mediaId={pages.find((page) => !page.id.startsWith("LOCAL-"))?.id}
           mediaType="IMAGE"
-          mediaStatus={pages.find((page) => !page.id.startsWith("LOCAL-"))?.status}
-          approvalStatus={pages.find((page) => !page.id.startsWith("LOCAL-"))?.approvalStatus}
-          errorMessage={pages.find((page) => !page.id.startsWith("LOCAL-"))?.errorMessage}
-          contentId={pages.find((page) => !page.id.startsWith("LOCAL-"))?.contentId}
+          mediaStatus={
+            pages.find((page) => !page.id.startsWith("LOCAL-"))?.status
+          }
+          approvalStatus={
+            pages.find((page) => !page.id.startsWith("LOCAL-"))?.approvalStatus
+          }
+          errorMessage={
+            pages.find((page) => !page.id.startsWith("LOCAL-"))?.errorMessage
+          }
+          contentId={
+            pages.find((page) => !page.id.startsWith("LOCAL-"))?.contentId
+          }
           pages={pages}
         />
       </div>
@@ -3978,8 +4474,10 @@ function ComicPageCard({
       }}
       className={cx(
         "group relative overflow-hidden rounded-xl border-2 shadow-sm transition",
-        hasAnyViolations ? "bg-red-500/5 border-red-500" : "bg-creator-sidebar border-transparent hover:border-[#007A8A]",
-        dragging && "scale-95 border-[#B83268] opacity-60"
+        hasAnyViolations
+          ? "bg-red-500/5 border-red-500"
+          : "bg-creator-sidebar border-transparent hover:border-[#007A8A]",
+        dragging && "scale-95 border-[#B83268] opacity-60",
       )}
     >
       <div className="relative aspect-[3/4]">
@@ -4006,15 +4504,24 @@ function ComicPageCard({
         {hasAnyViolations && (
           <div className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity p-4 flex flex-col justify-center items-center text-center overflow-y-auto backdrop-blur-sm z-10 cursor-help">
             <AlertTriangle className="text-red-500 mb-2" size={24} />
-            <span className="text-red-400 font-bold text-sm mb-2">Nội dung không đạt kiểm duyệt</span>
+            <span className="text-red-400 font-bold text-sm mb-2">
+              Nội dung không đạt kiểm duyệt
+            </span>
             {hasCopyrightViolations && (
               <p className="text-xs text-gray-300 mb-1">
-                <span className="font-semibold text-white">Bản quyền:</span> {copyrightViolations.length} vi phạm
+                <span className="font-semibold text-white">Bản quyền:</span>{" "}
+                {copyrightViolations.length} vi phạm
               </p>
             )}
             {hasCensorshipViolations && (
               <p className="text-xs text-gray-300">
-                <span className="font-semibold text-white">Nội dung:</span> {censorshipViolations.map((item) => translateViolationLabel(item.primaryViolationLabel)).filter(Boolean).join(", ")}
+                <span className="font-semibold text-white">Nội dung:</span>{" "}
+                {censorshipViolations
+                  .map((item) =>
+                    translateViolationLabel(item.primaryViolationLabel),
+                  )
+                  .filter(Boolean)
+                  .join(", ")}
               </p>
             )}
           </div>
@@ -4022,7 +4529,9 @@ function ComicPageCard({
       </div>
 
       <div className="space-y-2 p-3 relative z-20">
-        <p className={`truncate text-sm font-black ${hasAnyViolations ? 'text-red-400' : 'text-white'}`}>
+        <p
+          className={`truncate text-sm font-black ${hasAnyViolations ? "text-red-400" : "text-white"}`}
+        >
           {page.title}
         </p>
         <div className="grid grid-cols-3 gap-2">
@@ -4058,7 +4567,6 @@ function ComicPageCard({
     </div>
   );
 }
-
 
 // ============================================================================
 // VIDEO UPLOAD VIEW
@@ -4118,8 +4626,12 @@ function VideoUploadView({
   const isCreator = user?.roleName === "CREATOR";
 
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
-  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(selectedEpisode.thumbnail || null);
-  const [thumbnailFile, setThumbnailFile] = useState<File | undefined>(undefined);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(
+    selectedEpisode.thumbnail || null,
+  );
+  const [thumbnailFile, setThumbnailFile] = useState<File | undefined>(
+    undefined,
+  );
 
   const handleThumbnailUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -4131,16 +4643,26 @@ function VideoUploadView({
   };
 
   const [violationMediaId, setViolationMediaId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState({ episodeNumber: selectedEpisode.episodeNumber, title: selectedEpisode.title, description: selectedEpisode.description || "", unlockType: selectedEpisode.unlockType || "FREE", priceVnd: selectedEpisode.priceVnd || 0 });
+  const [editForm, setEditForm] = useState({
+    episodeNumber: selectedEpisode.episodeNumber,
+    title: selectedEpisode.title,
+    description: selectedEpisode.description || "",
+    unlockType: selectedEpisode.unlockType || "FREE",
+    priceVnd: selectedEpisode.priceVnd || 0,
+  });
   const canSchedule = videos.length > 0 && videos.every(isMediaReadyForPublish);
   return (
     <div className="w-full py-6 text-creator-text space-y-8">
       {/* Header matching mockup */}
       <div>
         <CreatorBackButton onClick={onBack} className="mb-6" />
-        <h2 className="text-4xl font-bold text-white mb-3">Đang kiểm duyệt nội dung cuối cùng</h2>
+        <h2 className="text-4xl font-bold text-white mb-3">
+          Đang kiểm duyệt nội dung cuối cùng
+        </h2>
         <p className="text-creator-muted max-w-2xl text-sm leading-relaxed">
-          Tải lên các tài nguyên điện ảnh chất lượng cao của bạn và để TaleX AI đảm bảo việc tuân thủ chính sách cũng như xác thực tính nguyên bản của nội dung.
+          Tải lên các tài nguyên điện ảnh chất lượng cao của bạn và để TaleX AI
+          đảm bảo việc tuân thủ chính sách cũng như xác thực tính nguyên bản của
+          nội dung.
         </p>
       </div>
 
@@ -4155,33 +4677,48 @@ function VideoUploadView({
               <div className="space-y-5">
                 <div className="grid gap-5 md:grid-cols-2">
                   <div>
-                    <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Số thứ tự Tập</label>
+                    <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">
+                      Số thứ tự Tập
+                    </label>
                     <input
                       type="number"
                       min={1}
                       value={editForm.episodeNumber}
-                      onChange={(e) => setEditForm({ ...editForm, episodeNumber: Number(e.target.value) })}
+                      onChange={(e) =>
+                        setEditForm({
+                          ...editForm,
+                          episodeNumber: Number(e.target.value),
+                        })
+                      }
                       className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Tiêu đề Tập *</label>
+                    <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">
+                      Tiêu đề Tập *
+                    </label>
                     <input
                       type="text"
                       required
                       value={editForm.title}
-                      onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, title: e.target.value })
+                      }
                       className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Mô tả</label>
+                  <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">
+                    Mô tả
+                  </label>
                   <textarea
                     rows={3}
                     value={editForm.description}
-                    onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, description: e.target.value })
+                    }
                     className="w-full resize-none rounded-md border border-creator-border bg-creator-bg p-3 text-sm text-white outline-none focus:border-creator-gold"
                   />
                 </div>
@@ -4189,10 +4726,17 @@ function VideoUploadView({
                 {isCreator && (
                   <div className="grid gap-5 md:grid-cols-2 mt-4 pt-4 border-t border-creator-border">
                     <div>
-                      <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Kiểu mở khóa</label>
+                      <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">
+                        Kiểu mở khóa
+                      </label>
                       <select
                         value={editForm.unlockType}
-                        onChange={(e) => setEditForm({ ...editForm, unlockType: e.target.value as EpisodeUnlockType })}
+                        onChange={(e) =>
+                          setEditForm({
+                            ...editForm,
+                            unlockType: e.target.value as EpisodeUnlockType,
+                          })
+                        }
                         disabled={!canManageUnlockSettings}
                         className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
                       >
@@ -4203,13 +4747,20 @@ function VideoUploadView({
 
                     {editForm.unlockType === "PAID" && (
                       <div>
-                        <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Giá (VNĐ) *</label>
+                        <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">
+                          Giá (VNĐ) *
+                        </label>
                         <input
                           type="number"
                           min={1}
                           max={99999}
                           value={editForm.priceVnd}
-                          onChange={(e) => setEditForm({ ...editForm, priceVnd: Number(e.target.value) })}
+                          onChange={(e) =>
+                            setEditForm({
+                              ...editForm,
+                              priceVnd: Number(e.target.value),
+                            })
+                          }
                           disabled={!canManageUnlockSettings}
                           className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
                         />
@@ -4221,18 +4772,29 @@ function VideoUploadView({
 
               {/* Right: Thumbnail upload */}
               <div className="flex flex-col">
-                <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Ảnh Thumbnail Tập *</label>
+                <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">
+                  Ảnh Thumbnail Tập *
+                </label>
                 <div
                   onClick={() => thumbnailInputRef.current?.click()}
-                  className={`relative w-full aspect-video rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors overflow-hidden group ${thumbnailPreview ? "border-creator-gold" : "border-creator-border hover:border-creator-gold/50"
-                    }`}
+                  className={`relative w-full aspect-video rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors overflow-hidden group ${
+                    thumbnailPreview
+                      ? "border-creator-gold"
+                      : "border-creator-border hover:border-creator-gold/50"
+                  }`}
                 >
                   {thumbnailPreview ? (
                     <>
-                      <img src={thumbnailPreview} alt="Thumbnail Preview" className="w-full h-full object-cover" />
+                      <img
+                        src={thumbnailPreview}
+                        alt="Thumbnail Preview"
+                        className="w-full h-full object-cover"
+                      />
                       <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                         <UploadCloud size={20} className="text-white mb-1" />
-                        <span className="text-xs font-medium text-white">Đổi Thumbnail</span>
+                        <span className="text-xs font-medium text-white">
+                          Đổi Thumbnail
+                        </span>
                       </div>
                     </>
                   ) : (
@@ -4240,7 +4802,9 @@ function VideoUploadView({
                       <div className="w-10 h-10 bg-creator-border rounded-full flex items-center justify-center mb-2">
                         <ImageIcon size={18} className="text-creator-muted" />
                       </div>
-                      <span className="text-xs text-creator-muted px-4 text-center">Tải Thumbnail</span>
+                      <span className="text-xs text-creator-muted px-4 text-center">
+                        Tải Thumbnail
+                      </span>
                     </>
                   )}
                   <input
@@ -4255,7 +4819,9 @@ function VideoUploadView({
             </div>
             <div className="mt-6 flex flex-wrap justify-end gap-3">
               <button
-                onClick={() => onSaveEpisode({ ...selectedEpisode, ...editForm })}
+                onClick={() =>
+                  onSaveEpisode({ ...selectedEpisode, ...editForm })
+                }
                 disabled={isSavingEpisode}
                 className="inline-flex h-10 items-center justify-center rounded bg-creator-bg px-5 text-sm font-bold text-white border border-creator-border hover:bg-white/10 disabled:opacity-50"
               >
@@ -4263,7 +4829,14 @@ function VideoUploadView({
               </button>
               {isCreator && (
                 <button
-                  onClick={() => onSaveUnlockSettings({ ...selectedEpisode, unlockType: editForm.unlockType, priceVnd: editForm.unlockType === "PAID" ? editForm.priceVnd : 0 })}
+                  onClick={() =>
+                    onSaveUnlockSettings({
+                      ...selectedEpisode,
+                      unlockType: editForm.unlockType,
+                      priceVnd:
+                        editForm.unlockType === "PAID" ? editForm.priceVnd : 0,
+                    })
+                  }
                   disabled={!canManageUnlockSettings || isSavingUnlockSettings}
                   className="inline-flex h-10 items-center justify-center rounded bg-creator-gold px-5 text-sm font-bold text-black hover:bg-creator-gold-hover disabled:opacity-50"
                 >
@@ -4299,52 +4872,81 @@ function VideoUploadView({
             {isLoadingMedia ? (
               <div className="p-6 rounded-xl bg-creator-bg border border-creator-border flex flex-col items-center justify-center text-creator-muted">
                 <div className="w-6 h-6 border-2 border-creator-gold border-t-transparent rounded-full animate-spin mb-3"></div>
-                <span className="text-sm font-bold">Đang tải tài nguyên...</span>
+                <span className="text-sm font-bold">
+                  Đang tải tài nguyên...
+                </span>
               </div>
-            ) : videos.length > 0 && (
-              <div className="space-y-4">
-                {videos.map((video) => (
-                  <div key={video.mediaId} className="rounded-xl border border-creator-border bg-creator-bg overflow-hidden group">
-                    <div className="p-4 border-b border-creator-border flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <Clapperboard className="h-5 w-5 text-creator-gold" />
-                        <div>
-                          <p className="text-sm font-bold text-white max-w-[200px] truncate" title={(video as any).fileName || video.fileUrl?.split("/").pop() || video.fileUrl}>
-                            {(video as any).fileName || video.fileUrl?.split("/").pop() || "Tệp video"}
-                          </p>
-                          <p className="text-xs font-medium text-creator-muted uppercase tracking-wider">
-                            {video.mimeType} • {formatBytes(video.fileSize)}
-                          </p>
+            ) : (
+              videos.length > 0 && (
+                <div className="space-y-4">
+                  {videos.map((video) => (
+                    <div
+                      key={video.mediaId}
+                      className="rounded-xl border border-creator-border bg-creator-bg overflow-hidden group"
+                    >
+                      <div className="p-4 border-b border-creator-border flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <Clapperboard className="h-5 w-5 text-creator-gold" />
+                          <div>
+                            <p
+                              className="text-sm font-bold text-white max-w-[200px] truncate"
+                              title={
+                                (video as any).fileName ||
+                                video.fileUrl?.split("/").pop() ||
+                                video.fileUrl
+                              }
+                            >
+                              {(video as any).fileName ||
+                                video.fileUrl?.split("/").pop() ||
+                                "Tệp video"}
+                            </p>
+                            <p className="text-xs font-medium text-creator-muted uppercase tracking-wider">
+                              {video.mimeType} • {formatBytes(video.fileSize)}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={cx(
+                              "px-2.5 py-1 text-[10px] font-bold rounded uppercase tracking-wider border",
+                              getApprovalChipClass(
+                                video.approvalStatus ?? "PENDING_REVIEW",
+                              ),
+                            )}
+                          >
+                            {formatApprovalStatusLabel(
+                              video.approvalStatus ?? "PENDING_REVIEW",
+                            )}
+                          </span>
+                          <button
+                            onClick={() => onDeleteVideo(video)}
+                            className="w-8 h-8 flex items-center justify-center rounded bg-creator-sidebar text-creator-muted hover:text-red-400 hover:bg-red-400/10 transition-colors border border-creator-border hover:border-red-400/30"
+                            title="Xóa video"
+                          >
+                            <Trash2 size={14} />
+                          </button>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className={cx(
-                          "px-2.5 py-1 text-[10px] font-bold rounded uppercase tracking-wider border",
-                          getApprovalChipClass(video.approvalStatus ?? "PENDING_REVIEW")
-                        )}>
-                          {formatApprovalStatusLabel(video.approvalStatus ?? "PENDING_REVIEW")}
-                        </span>
-                        <button
-                          onClick={() => onDeleteVideo(video)}
-                          className="w-8 h-8 flex items-center justify-center rounded bg-creator-sidebar text-creator-muted hover:text-red-400 hover:bg-red-400/10 transition-colors border border-creator-border hover:border-red-400/30"
-                          title="Xóa video"
-                        >
-                          <Trash2 size={14} />
-                        </button>
+                      <div className="p-4 bg-black/20">
+                        {isPlayableVideoStatus(video.status) ? (
+                          <div className="rounded-lg overflow-hidden border border-creator-border">
+                            <SignedHlsPlayer
+                              episodeId={video.episodeId}
+                              compact
+                              creatorMode
+                            />
+                          </div>
+                        ) : (
+                          <VideoProcessingState
+                            video={video}
+                            onViewViolation={setViolationMediaId}
+                          />
+                        )}
                       </div>
                     </div>
-                    <div className="p-4 bg-black/20">
-                      {isPlayableVideoStatus(video.status) ? (
-                        <div className="rounded-lg overflow-hidden border border-creator-border">
-                          <SignedHlsPlayer episodeId={video.episodeId} compact creatorMode />
-                        </div>
-                      ) : (
-                        <VideoProcessingState video={video} onViewViolation={setViolationMediaId} />
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )
             )}
           </div>
 
@@ -4383,19 +4985,31 @@ function VideoUploadView({
   );
 }
 
-function VideoProcessingState({ video, onViewViolation }: { video: MediaResponse; onViewViolation?: (mediaId: string) => void }) {
+function VideoProcessingState({
+  video,
+  onViewViolation,
+}: {
+  video: MediaResponse;
+  onViewViolation?: (mediaId: string) => void;
+}) {
   const failed = video.status === "FAILED";
   const pending = video.status === "PENDING";
   const inactive = video.status === "INACTIVE";
 
-  const bgClass = failed || inactive
-    ? "border-red-500/50 bg-red-500/10 text-red-400"
-    : pending
-      ? "border-amber-300/30 bg-amber-50 text-amber-800"
-      : "border-[#D9E2F0] bg-creator-sidebar text-creator-muted";
+  const bgClass =
+    failed || inactive
+      ? "border-red-500/50 bg-red-500/10 text-red-400"
+      : pending
+        ? "border-amber-300/30 bg-amber-50 text-amber-800"
+        : "border-[#D9E2F0] bg-creator-sidebar text-creator-muted";
 
   return (
-    <div className={cx("flex aspect-video w-full flex-col items-center justify-center rounded-xl border px-4 text-center", bgClass)}>
+    <div
+      className={cx(
+        "flex aspect-video w-full flex-col items-center justify-center rounded-xl border px-4 text-center",
+        bgClass,
+      )}
+    >
       {failed || inactive ? (
         <CircleAlert className="mb-3 h-8 w-8" />
       ) : pending ? (
@@ -4404,16 +5018,40 @@ function VideoProcessingState({ video, onViewViolation }: { video: MediaResponse
         <Loader2 className="mb-3 h-8 w-8 animate-spin text-creator-gold" />
       )}
       <p className="text-sm font-black text-white">
-        {inactive ? "Nội dung vi phạm chính sách" : pending ? "Đang kiểm duyệt nội dung" : failed ? "Xử lý video thất bại" : "Video đang được xử lý"}
+        {inactive
+          ? "Nội dung vi phạm chính sách"
+          : pending
+            ? "Đang kiểm duyệt nội dung"
+            : failed
+              ? "Xử lý video thất bại"
+              : "Video đang được xử lý"}
       </p>
       <p className="mt-2 max-w-md text-xs font-bold leading-relaxed">
-        {inactive ? "Nội dung đã bị ẩn do vi phạm bản quyền hoặc kiểm duyệt." : pending ? "Đang kiểm tra bản quyền và nội dung..." : failed ? (video.errorMessage || "Không thể xử lý video.") : "Vui lòng chờ trong giây lát."}
+        {inactive
+          ? "Nội dung đã bị ẩn do vi phạm bản quyền hoặc kiểm duyệt."
+          : pending
+            ? "Đang kiểm tra bản quyền và nội dung..."
+            : failed
+              ? video.errorMessage || "Không thể xử lý video."
+              : "Vui lòng chờ trong giây lát."}
       </p>
-      <span className={cx("mt-3 rounded-full px-3 py-1 text-[11px] font-black", inactive ? "bg-red-100 text-red-700" : pending ? "bg-amber-100 text-amber-700" : "bg-[#E8F8FF] text-[#075985]")}>
+      <span
+        className={cx(
+          "mt-3 rounded-full px-3 py-1 text-[11px] font-black",
+          inactive
+            ? "bg-red-100 text-red-700"
+            : pending
+              ? "bg-amber-100 text-amber-700"
+              : "bg-[#E8F8FF] text-[#075985]",
+        )}
+      >
         {formatMediaStatusLabel(video.status)}
       </span>
       {inactive && onViewViolation && (
-        <button onClick={() => onViewViolation(video.mediaId)} className="mt-2 text-xs font-semibold text-red-600 underline hover:text-red-800">
+        <button
+          onClick={() => onViewViolation(video.mediaId)}
+          className="mt-2 text-xs font-semibold text-red-600 underline hover:text-red-800"
+        >
           Xem chi tiết vi phạm
         </button>
       )}
