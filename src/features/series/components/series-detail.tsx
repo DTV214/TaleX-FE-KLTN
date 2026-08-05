@@ -953,11 +953,11 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
                         </span>
                         <span className="flex items-center gap-1">
                           <Eye className="w-3.5 h-3.5 text-gray-600" />{" "}
-                          {episode.views.toLocaleString("vi-VN")} lượt xem
+                          {(episode.views || 0).toLocaleString("vi-VN")} lượt xem
                         </span>
                         {isPaid && episode.priceVnd > 0 && (
                           <span className="text-[#D4AF37] font-bold">
-                            {episode.priceVnd.toLocaleString("vi-VN")} đ
+                            {(episode.priceVnd || 0).toLocaleString("vi-VN")} đ
                           </span>
                         )}
                       </div>
