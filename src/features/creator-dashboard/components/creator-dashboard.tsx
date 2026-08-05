@@ -2307,6 +2307,8 @@ function CreatorDashboardContent() {
                       episodeId: "",
                     })
                   }
+                  maxImageSizeMb={mediaSystemConfigQuery.data?.maxComicImageSizeMb}
+                  maxComicImages={mediaSystemConfigQuery.data?.maxComicImages}
                 />
               ) : (
                 <div className="p-8 text-white flex flex-col items-center justify-center min-h-[50vh]">
@@ -2373,6 +2375,7 @@ function CreatorDashboardContent() {
                       episodeId: "",
                     })
                   }
+                  maxVideoSizeMb={mediaSystemConfigQuery.data?.maxVideoSizeMb}
                 />
               ) : (
                 <div className="p-8 text-white flex flex-col items-center justify-center min-h-[50vh]">
@@ -4340,7 +4343,7 @@ function ComicUploadView({
                 Kéo & thả tài nguyên vào đây
               </p>
               <p className="text-xs font-medium text-creator-muted">
-                Kích thước tối đa: ${maxImageSizeMb ? maxImageSizeMb : 10}MB mỗi trang
+                Kích thước tối đa: <span className="text-creator-gold font-bold">{maxImageSizeMb ?? 10}MB</span> mỗi trang
               </p>
             </label>
 
@@ -4652,6 +4655,7 @@ function VideoUploadView({
   isPublishingNow,
   onGoToPublishing,
   onBack,
+  maxVideoSizeMb,
 }: {
   selectedSeries: SeriesRow | null;
   selectedSeason: SeasonRow | null;
@@ -4677,6 +4681,7 @@ function VideoUploadView({
   isPublishingNow: boolean;
   onGoToPublishing: () => void;
   onBack: () => void;
+  maxVideoSizeMb?: number;
 }) {
   const user = useAuthStore((state) => state.user);
   const isCreator = user?.roleName === "CREATOR";
@@ -4918,6 +4923,7 @@ function VideoUploadView({
                     : undefined
                 }
                 onCompleted={onUploadCompleted}
+                maxVideoSizeMb={maxVideoSizeMb}
               />
             </div>
 

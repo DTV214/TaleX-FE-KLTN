@@ -169,7 +169,7 @@ export function ResumableVideoUploader({
             </div>
             <p className="text-lg font-bold text-white mb-2">Kéo & thả video của bạn vào đây</p>
             <p className="text-sm text-creator-muted max-w-sm mb-2">Hoặc nhấp để tải lên từ máy tính. Khuyên dùng MP4 và MOV.</p>
-            <p className="text-xs font-medium text-creator-muted mb-6">Kích thước tối đa: {maxVideoSizeMb ? maxVideoSizeMb : 30}MB</p>
+            <p className="text-xs font-medium text-creator-muted mb-6">Kích thước tối đa: <span className="text-creator-gold font-bold">{maxVideoSizeMb ?? 30}MB</span></p>
             <div className="px-6 py-2.5 bg-white/5 group-hover:bg-white/10 rounded-md text-sm font-medium transition-colors border border-creator-border text-white">
               Chọn Video
             </div>
