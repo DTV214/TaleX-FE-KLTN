@@ -42,6 +42,7 @@ import {
   getFollowers,
 } from "@/features/series/api/creator-follows-api";
 import { useComicHeartbeat } from "@/features/playback/hooks/useComicHeartbeat";
+import { getEpisodeWatchPosition } from "@/features/playback/api/watch-sessions-api";
 import { AdSlot } from "@/shared/ui/ad-slot";
 
 interface ComicReaderProps {
@@ -83,9 +84,7 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
 
   const sortedChapterEpisodes = useMemo(
     () =>
-      [...chapterEpisodes].sort(
-        (a, b) => a.episodeNumber - b.episodeNumber,
-      ),
+      [...chapterEpisodes].sort((a, b) => a.episodeNumber - b.episodeNumber),
     [chapterEpisodes],
   );
 
@@ -122,7 +121,8 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
 
   const episodeSeriesId = useMemo(() => {
     if (!episodeDetail) return null;
-    return "seriesId" in episodeDetail && typeof episodeDetail.seriesId === "string"
+    return "seriesId" in episodeDetail &&
+      typeof episodeDetail.seriesId === "string"
       ? episodeDetail.seriesId
       : null;
   }, [episodeDetail]);
@@ -164,7 +164,12 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
     return seriesIndexBySeason >= 0
       ? comicSeriesCandidates[seriesIndexBySeason]
       : null;
-  }, [comicSeasonQueries, comicSeriesCandidates, episodeDetail, episodeSeriesId]);
+  }, [
+    comicSeasonQueries,
+    comicSeriesCandidates,
+    episodeDetail,
+    episodeSeriesId,
+  ]);
 
   const creatorAccountId =
     creatorDetail?.accountId ||
@@ -181,8 +186,11 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
   const creatorAvatar =
     creatorDetail?.avatarUrl || matchedSeries?.creatorAvatar;
 
-  const { isFollowing, toggleFollow, isMutating: isFollowMutating } =
-    useCreatorFollow(creatorAccountId);
+  const {
+    isFollowing,
+    toggleFollow,
+    isMutating: isFollowMutating,
+  } = useCreatorFollow(creatorAccountId);
 
   const isOwner = Boolean(
     authUser?.accountId &&
@@ -233,17 +241,41 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
 
   const totalPages = sortedPages.length;
 
-  // Luôn mở ra đúng trang đầu tiên khi vào đọc tập (VD: vừa mua xong bấm "Xem ngay") —
-  // không được giữ nguyên vị trí cuộn cũ từ trang trước đó (checkout/paywall).
+  // Tự động khôi phục trang/vị trí đã đọc gần nhất từ API watch-session
   useEffect(() => {
-    if (totalPages > 0) {
-      const frameId = window.requestAnimationFrame(() => {
-        setCurrentPage(0);
-        window.scrollTo({ top: 0, behavior: "auto" });
-      });
-      return () => window.cancelAnimationFrame(frameId);
-    }
-  }, [episodeId, totalPages]);
+    if (!episodeId || totalPages === 0) return;
+
+    let isMounted = true;
+    console.log("[ComicReader] Fetching watch position for episodeId:", episodeId, "totalPages:", totalPages);
+    void getEpisodeWatchPosition(episodeId).then((position) => {
+      console.log("[ComicReader] API Watch Position result:", position);
+      if (!isMounted || position == null || position <= 0) return;
+
+      const pageIndex = Math.min(totalPages - 1, Math.max(0, Math.round(position) - 1));
+      console.log("[ComicReader] Target pageIndex:", pageIndex);
+
+      setCurrentPage(pageIndex);
+
+      // Đợi DOM render ảnh xong rồi tiến hành cuộn màn hình
+      const timerId = setTimeout(() => {
+        if (!isMounted) return;
+        if (readingMode === "vertical" && pageIndex > 0) {
+          const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+          console.log("[ComicReader] Executing vertical scroll to pageIndex:", pageIndex, "scrollHeight:", scrollHeight);
+          if (scrollHeight > 0) {
+            const targetScrollY = (pageIndex / (totalPages - 1)) * scrollHeight;
+            window.scrollTo({ top: targetScrollY, behavior: "smooth" });
+          }
+        }
+      }, 500);
+
+      return () => clearTimeout(timerId);
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [episodeId, totalPages, readingMode]);
 
   // Track reading views and progress updates for comic chapters
   useComicHeartbeat(
@@ -395,7 +427,9 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
 
       <button
         type="button"
-        onClick={() => previousChapter && router.push(`/read/${previousChapter.episodeId}`)}
+        onClick={() =>
+          previousChapter && router.push(`/read/${previousChapter.episodeId}`)
+        }
         disabled={!previousChapter}
         className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-gray-200 transition hover:border-[#D4AF37]/40 hover:bg-[#D4AF37]/15 disabled:cursor-not-allowed disabled:opacity-35"
         title="Tập trước"
@@ -427,7 +461,9 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
 
       <button
         type="button"
-        onClick={() => nextChapter && router.push(`/read/${nextChapter.episodeId}`)}
+        onClick={() =>
+          nextChapter && router.push(`/read/${nextChapter.episodeId}`)
+        }
         disabled={!nextChapter}
         className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-gray-200 transition hover:border-[#D4AF37]/40 hover:bg-[#D4AF37]/15 disabled:cursor-not-allowed disabled:opacity-35"
         title="Tập tiếp theo"
@@ -442,9 +478,7 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
           disabled={isFollowMutating}
           className="hidden h-9 shrink-0 items-center gap-1.5 rounded-xl bg-[#D35B51] px-3 text-xs font-black text-white shadow-[0_8px_24px_rgba(211,91,81,0.25)] transition hover:bg-[#E4665B] disabled:cursor-not-allowed disabled:opacity-60 sm:inline-flex"
         >
-          <Heart
-            className={cn("h-4 w-4", isFollowing && "fill-current")}
-          />
+          <Heart className={cn("h-4 w-4", isFollowing && "fill-current")} />
           {isFollowing ? "Đang theo dõi" : "Theo dõi"}
         </button>
       )}
@@ -467,7 +501,9 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
 
       <button
         type="button"
-        onClick={() => nextChapter && router.push(`/read/${nextChapter.episodeId}`)}
+        onClick={() =>
+          nextChapter && router.push(`/read/${nextChapter.episodeId}`)
+        }
         disabled={!nextChapter}
         className="inline-flex items-center gap-2 rounded-xl border border-[#D35B51]/50 bg-[#C55349] px-5 py-3 text-sm font-black text-white transition hover:bg-[#D35B51] disabled:cursor-not-allowed disabled:opacity-40 sm:text-base"
       >
@@ -700,7 +736,10 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
                     )}
                     <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/40 px-6">
                       {idx === 5 && (
-                        <ContentPaywallGate episodeId={episodeId} contentKind="COMIC" />
+                        <ContentPaywallGate
+                          episodeId={episodeId}
+                          contentKind="COMIC"
+                        />
                       )}
                     </div>
                   </div>
@@ -754,7 +793,8 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
                 <Link
                   href={
                     authUser?.accountId &&
-                    (creatorAccountId === authUser.accountId || episodeDetail?.creatorId === authUser.accountId)
+                    (creatorAccountId === authUser.accountId ||
+                      episodeDetail?.creatorId === authUser.accountId)
                       ? "/creator-channel"
                       : `/public-channel?creatorId=${creatorAccountId || episodeDetail?.creatorId}`
                   }
@@ -809,8 +849,8 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
                 setShowControls((current) => !current);
               }}
             >
-              {sortedPages[currentPage] && (
-                sortedPages[currentPage].isLocked ? (
+              {sortedPages[currentPage] &&
+                (sortedPages[currentPage].isLocked ? (
                   <>
                     {sortedPages[currentPage].fileUrl && (
                       <img
@@ -821,7 +861,10 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
                       />
                     )}
                     <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/40 px-6">
-                      <ContentPaywallGate episodeId={episodeId} contentKind="COMIC" />
+                      <ContentPaywallGate
+                        episodeId={episodeId}
+                        contentKind="COMIC"
+                      />
                     </div>
                   </>
                 ) : (
@@ -832,8 +875,7 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
                     className="container mx-auto max-h-screen w-full max-w-4xl object-contain"
                     style={{ userSelect: "none" }}
                   />
-                )
-              )}
+                ))}
             </div>
 
             {/* Left/Right Click Areas */}
@@ -880,7 +922,11 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
         {/* Phần Bình luận tập truyện */}
         <div className="px-4 py-6">{bottomChapterNavigation}</div>
 
-        <AdSlot slotId="mock-read-bottom" format="horizontal" className="my-8" />
+        <AdSlot
+          slotId="mock-read-bottom"
+          format="horizontal"
+          className="my-8"
+        />
 
         <EpisodeCommentsSection
           episodeId={episodeId}

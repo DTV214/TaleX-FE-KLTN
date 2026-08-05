@@ -203,7 +203,10 @@ function parseAttributes(value: string) {
   return attributes;
 }
 
-function parseManifestQualityOptions(manifestUrl: string, manifestText: string) {
+function parseManifestQualityOptions(
+  manifestUrl: string,
+  manifestText: string,
+) {
   const lines = manifestText.split(/\r?\n/);
   const options: QualityOption[] = [];
   const baseUrl = new URL(manifestUrl, window.location.href);
@@ -603,26 +606,31 @@ export function HlsVideoPlayer({
     }
 
     const nativeDuration = Number.isFinite(video.duration) ? video.duration : 0;
-    const nextDuration = realDuration && realDuration > 0 ? realDuration : nativeDuration;
+    const nextDuration =
+      realDuration && realDuration > 0 ? realDuration : nativeDuration;
     setDuration(nextDuration);
     syncBufferedState(video);
 
-    if (!storageKey || restoredManifestRef.current === manifestUrl) {
+    if (!storageKey) {
       return;
     }
 
-    restoredManifestRef.current = manifestUrl;
     const storedPosition = Number(localStorage.getItem(storageKey) || 0);
+    console.log("[HlsVideoPlayer] handleLoadedMetadata - storedPosition:", storedPosition, "nextDuration:", nextDuration, "restored:", restoredManifestRef.current === manifestUrl);
 
     if (
       Number.isFinite(storedPosition) &&
       storedPosition > 0 &&
-      (!nextDuration || storedPosition < nextDuration - 5)
+      (!nextDuration || storedPosition < nextDuration - 2)
     ) {
-      video.currentTime = storedPosition;
-      setCurrentTime(storedPosition);
+      if (Math.abs(video.currentTime - storedPosition) > 1) {
+        console.log("[HlsVideoPlayer] Seeking video to position:", storedPosition);
+        video.currentTime = storedPosition;
+        setCurrentTime(storedPosition);
+      }
     }
-  }, [manifestUrl, storageKey, syncBufferedState]);
+    restoredManifestRef.current = manifestUrl;
+  }, [manifestUrl, storageKey, syncBufferedState, realDuration]);
 
   const handleTimeUpdate = useCallback(() => {
     const video = videoRef.current;
@@ -666,19 +674,22 @@ export function HlsVideoPlayer({
     video.pause();
   }, []);
 
-  const handleSeek = useCallback((nextTime: number) => {
-    const video = videoRef.current;
+  const handleSeek = useCallback(
+    (nextTime: number) => {
+      const video = videoRef.current;
 
-    if (!video || !Number.isFinite(nextTime)) {
-      return;
-    }
+      if (!video || !Number.isFinite(nextTime)) {
+        return;
+      }
 
-    video.currentTime = nextTime;
-    setCurrentTime(nextTime);
-    if (onTimeUpdate) {
-      onTimeUpdate(nextTime);
-    }
-  }, [onTimeUpdate]);
+      video.currentTime = nextTime;
+      setCurrentTime(nextTime);
+      if (onTimeUpdate) {
+        onTimeUpdate(nextTime);
+      }
+    },
+    [onTimeUpdate],
+  );
 
   const handleVolumeChange = useCallback((nextVolume: number) => {
     const video = videoRef.current;
@@ -802,7 +813,9 @@ export function HlsVideoPlayer({
       ref={containerRef}
       className={cn(
         "group relative overflow-hidden bg-black text-white",
-        compact ? "rounded-xl" : "rounded-2xl shadow-[0_24px_80px_rgba(0,0,0,0.25)]",
+        compact
+          ? "rounded-xl"
+          : "rounded-2xl shadow-[0_24px_80px_rgba(0,0,0,0.25)]",
         className,
       )}
     >
@@ -828,7 +841,7 @@ export function HlsVideoPlayer({
         }}
         className={cn(
           "aspect-video w-full bg-black object-contain transition-all duration-700",
-          blurVideo ? "blur-xl opacity-40 scale-105" : ""
+          blurVideo ? "blur-xl opacity-40 scale-105" : "",
         )}
       >
         Your browser does not support the video tag.
@@ -954,8 +967,7 @@ export function HlsVideoPlayer({
                     onClick={() => selectQuality(option.levelIndex)}
                     className={cn(
                       "flex w-full items-center justify-between gap-3 px-3 py-2 text-left font-bold transition hover:bg-white/10",
-                      selectedQuality === option.levelIndex &&
-                        "text-[#FF7A96]",
+                      selectedQuality === option.levelIndex && "text-[#FF7A96]",
                     )}
                   >
                     <span>{option.label}</span>

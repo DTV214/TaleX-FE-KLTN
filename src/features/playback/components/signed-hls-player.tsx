@@ -1,13 +1,21 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertCircle, Loader2, Calendar, Eye, Film, PlayCircle } from "lucide-react";
+import {
+  AlertCircle,
+  Loader2,
+  Calendar,
+  Eye,
+  Film,
+  PlayCircle,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   getEpisodePlayback,
   getCreatorEpisodePlayback,
 } from "@/features/playback/api/playback-api";
+import { getEpisodeWatchPosition } from "@/features/playback/api/watch-sessions-api";
 import {
   getPublicEpisodeDetail,
   getPublicEpisodes,
@@ -109,6 +117,24 @@ export function SignedHlsPlayer({
     retry: false,
   });
 
+  // Tải vị trí xem dở gần nhất từ API Watch Session và lưu vào localStorage
+  useEffect(() => {
+    if (!episodeId || !storageKey) return;
+    let isMounted = true;
+    console.log("[SignedHlsPlayer] Fetching watch position for episodeId:", episodeId);
+    void getEpisodeWatchPosition(episodeId).then((position) => {
+      console.log("[SignedHlsPlayer] API Watch Position result:", position);
+      if (isMounted && typeof position === "number" && position > 0) {
+        const currentLocal = Number(localStorage.getItem(storageKey) || 0);
+        console.log("[SignedHlsPlayer] Setting position from API:", position, "(previous local:", currentLocal, ")");
+        localStorage.setItem(storageKey, String(position));
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [episodeId, storageKey]);
+
   // Fetch chi tiết tập phim
   const { data: episodeDetail } = useQuery({
     queryKey: ["publicEpisodeDetail", episodeId],
@@ -124,10 +150,7 @@ export function SignedHlsPlayer({
     });
 
   const sortedSeasonEpisodes = useMemo(
-    () =>
-      [...seasonEpisodes].sort(
-        (a, b) => a.episodeNumber - b.episodeNumber,
-      ),
+    () => [...seasonEpisodes].sort((a, b) => a.episodeNumber - b.episodeNumber),
     [seasonEpisodes],
   );
 
@@ -180,8 +203,11 @@ export function SignedHlsPlayer({
   const creatorAvatar =
     creatorDetail?.avatarUrl || matchedSeries?.creatorAvatar;
 
-  const { isFollowing, toggleFollow, isMutating: isFollowMutating } =
-    useCreatorFollow(creatorAccountId);
+  const {
+    isFollowing,
+    toggleFollow,
+    isMutating: isFollowMutating,
+  } = useCreatorFollow(creatorAccountId);
 
   const isOwner = Boolean(
     authUser?.accountId &&
@@ -293,7 +319,9 @@ export function SignedHlsPlayer({
           ) : manifestUrl ? (
             <div className="relative w-full">
               {!isAdFinished && !creatorMode ? (
-                <VideoPrerollAdWidget onAdFinished={() => setIsAdFinished(true)} />
+                <VideoPrerollAdWidget
+                  onAdFinished={() => setIsAdFinished(true)}
+                />
               ) : (
                 <HlsVideoPlayer
                   episodeId={episodeId}
@@ -368,148 +396,150 @@ export function SignedHlsPlayer({
           {/* Thông tin tập phim dưới player */}
           {!compact && episodeDetail && (
             <div className="mt-6 bg-[#121214]/40 border border-white/5 rounded-3xl p-6 md:p-8 backdrop-blur-md shadow-2xl relative overflow-hidden">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-white/5">
-            {/* Tiêu đề & Thông số */}
-            <div className="space-y-2">
-              <h1 className="text-xl md:text-2xl font-black text-white tracking-wide">
-                Tập {episodeDetail.episodeNumber}: {episodeDetail.title}
-              </h1>
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-white/5">
+                {/* Tiêu đề & Thông số */}
+                <div className="space-y-2">
+                  <h1 className="text-xl md:text-2xl font-black text-white tracking-wide">
+                    Tập {episodeDetail.episodeNumber}: {episodeDetail.title}
+                  </h1>
 
-              <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-gray-500">
-                <span className="flex items-center gap-1.5">
-                  <Eye className="w-4 h-4 text-gray-600" />
-                  {(episodeDetail.views || 0).toLocaleString("vi-VN")} lượt xem
-                </span>
-                <span className="w-1.5 h-1.5 rounded-full bg-white/10" />
-                <span className="flex items-center gap-1.5">
-                  <Calendar className="w-4 h-4 text-gray-600" />
-                  {new Date(episodeDetail.publishedAt).toLocaleDateString(
-                    "vi-VN",
-                  )}
-                </span>
-              </div>
-            </div>
-
-            {/* Cụm Likes & Action */}
-            <div className="flex flex-wrap items-center gap-3 shrink-0">
-              <LikeButton
-                isLiked={isLiked}
-                likeCount={totalLikes}
-                onLikeToggle={toggleLike}
-                isLoading={isMutating}
-              />
-
-              <EpisodeShareButton
-                episodeId={episodeId}
-                contentType="VIDEO"
-                variant="pill"
-              />
-
-              {likedUsers.length > 0 && (
-                <div className="flex items-center gap-2">
-                  {/* Overlapping Avatar Group */}
-                  <div className="flex -space-x-2 overflow-hidden">
-                    {likedUsers.slice(0, 3).map((user) => (
-                      <div
-                        key={user.accountId}
-                        className="inline-block h-6 w-6 rounded-full ring-2 ring-[#0B0B0C] overflow-hidden bg-white/5"
-                      >
-                        <img
-                          src={
-                            user.avatarUrl ||
-                            "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=80&auto=format&fit=crop"
-                          }
-                          alt={user.username}
-                          className="h-full w-full object-cover"
-                        />
-                      </div>
-                    ))}
+                  <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-gray-500">
+                    <span className="flex items-center gap-1.5">
+                      <Eye className="w-4 h-4 text-gray-600" />
+                      {(episodeDetail.views || 0).toLocaleString("vi-VN")} lượt
+                      xem
+                    </span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-white/10" />
+                    <span className="flex items-center gap-1.5">
+                      <Calendar className="w-4 h-4 text-gray-600" />
+                      {new Date(episodeDetail.publishedAt).toLocaleDateString(
+                        "vi-VN",
+                      )}
+                    </span>
                   </div>
-
-                  <LikedUsersModal
-                    episodeId={episodeId}
-                    trigger={
-                      <button className="text-[10px] md:text-xs font-bold text-gray-400 hover:text-white cursor-pointer transition-colors">
-                        {totalLikes > 3
-                          ? `và ${totalLikes - 3} người khác đã thích`
-                          : `đã thích`}
-                      </button>
-                    }
-                  />
                 </div>
-              )}
-            </div>
-          </div>
 
-          {/* Thông tin nhà sáng tạo (Creator Profile & Follow Action) */}
-          <div className="mt-6 pt-5 border-t border-white/5 flex items-center justify-between">
-            <Link
-              href={
-                authUser?.accountId &&
-                (creatorAccountId === authUser.accountId || episodeDetail?.creatorId === authUser.accountId)
-                  ? "/creator-channel"
-                  : `/public-channel?creatorId=${creatorAccountId || episodeDetail?.creatorId}`
-              }
-              className="flex items-center gap-3 min-w-0 group cursor-pointer hover:opacity-90 transition-opacity"
-            >
-              {/* Avatar */}
-              <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 overflow-hidden relative flex-none group-hover:border-yellow-500/50 transition-colors">
-                <img
-                  src={
-                    creatorAvatar ||
-                    "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=80&auto=format&fit=crop"
+                {/* Cụm Likes & Action */}
+                <div className="flex flex-wrap items-center gap-3 shrink-0">
+                  <LikeButton
+                    isLiked={isLiked}
+                    likeCount={totalLikes}
+                    onLikeToggle={toggleLike}
+                    isLoading={isMutating}
+                  />
+
+                  <EpisodeShareButton
+                    episodeId={episodeId}
+                    contentType="VIDEO"
+                    variant="pill"
+                  />
+
+                  {likedUsers.length > 0 && (
+                    <div className="flex items-center gap-2">
+                      {/* Overlapping Avatar Group */}
+                      <div className="flex -space-x-2 overflow-hidden">
+                        {likedUsers.slice(0, 3).map((user) => (
+                          <div
+                            key={user.accountId}
+                            className="inline-block h-6 w-6 rounded-full ring-2 ring-[#0B0B0C] overflow-hidden bg-white/5"
+                          >
+                            <img
+                              src={
+                                user.avatarUrl ||
+                                "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=80&auto=format&fit=crop"
+                              }
+                              alt={user.username}
+                              className="h-full w-full object-cover"
+                            />
+                          </div>
+                        ))}
+                      </div>
+
+                      <LikedUsersModal
+                        episodeId={episodeId}
+                        trigger={
+                          <button className="text-[10px] md:text-xs font-bold text-gray-400 hover:text-white cursor-pointer transition-colors">
+                            {totalLikes > 3
+                              ? `và ${totalLikes - 3} người khác đã thích`
+                              : `đã thích`}
+                          </button>
+                        }
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Thông tin nhà sáng tạo (Creator Profile & Follow Action) */}
+              <div className="mt-6 pt-5 border-t border-white/5 flex items-center justify-between">
+                <Link
+                  href={
+                    authUser?.accountId &&
+                    (creatorAccountId === authUser.accountId ||
+                      episodeDetail?.creatorId === authUser.accountId)
+                      ? "/creator-channel"
+                      : `/public-channel?creatorId=${creatorAccountId || episodeDetail?.creatorId}`
                   }
-                  alt={creatorName}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              {/* Tên & Số người theo dõi */}
-              <div className="min-w-0">
-                <h4 className="text-sm font-bold text-gray-200 group-hover:text-yellow-400 truncate leading-snug transition-colors">
-                  {creatorName}
-                </h4>
-                <p className="text-[10px] text-gray-500 font-semibold mt-0.5">
-                  {displayFollowersCount != null
-                    ? `${displayFollowersCount.toLocaleString("vi-VN")} người theo dõi`
-                    : "Nhà sáng tạo TaleX"}
-                </p>
-              </div>
-            </Link>
+                  className="flex items-center gap-3 min-w-0 group cursor-pointer hover:opacity-90 transition-opacity"
+                >
+                  {/* Avatar */}
+                  <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 overflow-hidden relative flex-none group-hover:border-yellow-500/50 transition-colors">
+                    <img
+                      src={
+                        creatorAvatar ||
+                        "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=80&auto=format&fit=crop"
+                      }
+                      alt={creatorName}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  {/* Tên & Số người theo dõi */}
+                  <div className="min-w-0">
+                    <h4 className="text-sm font-bold text-gray-200 group-hover:text-yellow-400 truncate leading-snug transition-colors">
+                      {creatorName}
+                    </h4>
+                    <p className="text-[10px] text-gray-500 font-semibold mt-0.5">
+                      {displayFollowersCount != null
+                        ? `${displayFollowersCount.toLocaleString("vi-VN")} người theo dõi`
+                        : "Nhà sáng tạo TaleX"}
+                    </p>
+                  </div>
+                </Link>
 
-            {/* Nút Follow (Ẩn nếu người xem là tác giả) */}
-            {!isOwner && (
-              <FollowButton
-                isFollowing={isFollowing}
-                onFollowToggle={toggleFollow}
-                isMutating={isFollowMutating}
+                {/* Nút Follow (Ẩn nếu người xem là tác giả) */}
+                {!isOwner && (
+                  <FollowButton
+                    isFollowing={isFollowing}
+                    onFollowToggle={toggleFollow}
+                    isMutating={isFollowMutating}
+                  />
+                )}
+              </div>
+
+              {/* Mô tả tập phim */}
+              <div className="mt-6">
+                <h3 className="text-xs font-black text-gray-400 uppercase tracking-wider mb-2">
+                  Giới thiệu tập phim
+                </h3>
+                {episodeDetail.description ? (
+                  <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-line">
+                    {episodeDetail.description}
+                  </p>
+                ) : (
+                  <p className="text-gray-500 text-xs italic">
+                    Tập phim này chưa có mô tả chi tiết.
+                  </p>
+                )}
+              </div>
+
+              <AdSlot
+                slotId="mock-watch-bottom"
+                format="horizontal"
+                className="mt-4 mb-8"
               />
-            )}
-          </div>
 
-          {/* Mô tả tập phim */}
-          <div className="mt-6">
-            <h3 className="text-xs font-black text-gray-400 uppercase tracking-wider mb-2">
-              Giới thiệu tập phim
-            </h3>
-            {episodeDetail.description ? (
-              <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-line">
-                {episodeDetail.description}
-              </p>
-            ) : (
-              <p className="text-gray-500 text-xs italic">
-                Tập phim này chưa có mô tả chi tiết.
-              </p>
-            )}
-          </div>
-
-          <AdSlot
-            slotId="mock-watch-bottom"
-            format="horizontal"
-            className="mt-4 mb-8"
-          />
-
-          {/* Phần bình luận tập phim */}
-          <EpisodeCommentsSection episodeId={episodeId} className="mt-8" />
+              {/* Phần bình luận tập phim */}
+              <EpisodeCommentsSection episodeId={episodeId} className="mt-8" />
             </div>
           )}
         </div>
@@ -520,7 +550,9 @@ export function SignedHlsPlayer({
             <Film className="pointer-events-none absolute -right-8 top-8 h-32 w-32 text-white opacity-5" />
 
             <div className="relative z-10 mb-4 flex items-center justify-between gap-3">
-              <h2 className="text-sm font-semibold text-white">Danh sách tập</h2>
+              <h2 className="text-sm font-semibold text-white">
+                Danh sách tập
+              </h2>
               <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] font-bold text-white/50">
                 {sortedSeasonEpisodes.length} tập
               </span>
@@ -573,7 +605,8 @@ export function SignedHlsPlayer({
                           Tập {episode.episodeNumber}: {episode.title}
                         </p>
                         <p className="mt-1 text-xs font-medium text-white/40">
-                          {(episode.views || 0).toLocaleString("vi-VN")} lượt xem
+                          {(episode.views || 0).toLocaleString("vi-VN")} lượt
+                          xem
                         </p>
                       </div>
                     </Link>

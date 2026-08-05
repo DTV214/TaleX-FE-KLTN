@@ -72,8 +72,8 @@ export function useHeartbeat(
 
     const handleEnded = () => {
       isPlaying = false;
-      const accumulated = watchedAccumulator;
-      if (accumulated > 0) {
+      const accumulated = Math.round(watchedAccumulator);
+      if (accumulated >= 1) {
         void sendWatchProgress("last_event", video.currentTime, accumulated);
         watchedAccumulator = 0;
       }
@@ -130,8 +130,8 @@ export function useHeartbeat(
       video.removeEventListener("timeupdate", handleTimeUpdate);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
 
-      const accumulated = watchedAccumulator;
-      if (accumulated > 0) {
+      const accumulated = Math.round(watchedAccumulator);
+      if (accumulated >= 1) {
         void sendWatchProgress("last_event", video.currentTime, accumulated);
       }
     };

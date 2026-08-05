@@ -103,8 +103,8 @@ export function useComicHeartbeat(
     return () => {
       clearInterval(intervalId);
 
-      const accumulated = watchedAccumulator;
-      if (accumulated > 0) {
+      const accumulated = Math.round(watchedAccumulator);
+      if (accumulated >= 1) {
         const estimatedPage = getEstimatedCurrentPage();
         void sendWatchProgress("last_event", estimatedPage, accumulated);
       }

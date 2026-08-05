@@ -18,6 +18,7 @@ const sidebarRoutes = [
   "/",
   "/series",
   "/comics",
+  "/watch",
   "/intro",
   "/missions",
   "/profile",
@@ -31,6 +32,7 @@ const sidebarRoutes = [
   "/subscriptions",
   "/creator-channel",
   "/public-channel",
+  "/history",
   "/recomment-demo",
   "/ads",
 ] as const;
@@ -48,7 +50,11 @@ const hiddenChromeRoutes = [
   "/checkout",
   "/advertiser-dashboard",
 ] as const;
-const hiddenHeaderRoutes = ["/read", "/onboarding", "/advertiser-dashboard"] as const;
+const hiddenHeaderRoutes = [
+  "/read",
+  "/onboarding",
+  "/advertiser-dashboard",
+] as const;
 const hiddenCheckoutHeaderRoutes = ["/checkout"] as const;
 
 function shouldShowPublicSidebar(pathname: string) {
