@@ -716,7 +716,7 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
                             <div className="flex justify-between items-center text-gray-400">
                               <span>Giá gốc:</span>
                               <span className="line-through">
-                                {originalPrice.toLocaleString("vi-VN")} đ
+                                {(originalPrice || 0).toLocaleString("vi-VN")} đ
                               </span>
                             </div>
                           )}
@@ -725,7 +725,7 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
                               Giá combo:
                             </span>
                             <span className="text-base font-black text-[#D4AF37]">
-                              {combo.priceVnd.toLocaleString("vi-VN")} đ
+                              {(combo.priceVnd || 0).toLocaleString("vi-VN")} đ
                             </span>
                           </div>
                         </div>

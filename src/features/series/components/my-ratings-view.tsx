@@ -65,7 +65,7 @@ export function MyRatingsView() {
 
                 {/* Rating Badge */}
                 <div className="absolute top-3 right-3 flex items-center gap-1 rounded-full bg-black/70 px-2.5 py-1 text-xs font-black text-amber-400 border border-amber-500/30 backdrop-blur-md">
-                  <Star size={12} className="fill-amber-400 text-amber-400" /> {item.rate.toFixed(1)}
+                  <Star size={12} className="fill-amber-400 text-amber-400" /> {(item.rate || 0).toFixed(1)}
                 </div>
               </div>
 

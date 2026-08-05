@@ -166,7 +166,7 @@ export function TrendingComics() {
 
                       <div className="absolute right-4 top-4 flex items-center gap-1 rounded-full bg-black/45 px-3 py-1.5 text-xs font-bold text-primary backdrop-blur-md">
                         <Star className="h-3.5 w-3.5 fill-current" />
-                        {comic.rating.toFixed(1)}
+                        {(comic.rating || 0).toFixed(1)}
                       </div>
 
                       <div className="absolute inset-x-0 bottom-0 p-5 md:p-6">

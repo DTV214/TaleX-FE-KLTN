@@ -204,7 +204,7 @@ export function SubscriptionsTable({
                     </div>
                   </td>
                   <td className="px-5 py-4 text-sm font-bold text-gray-900">
-                    {subscription.totalPurchases.toLocaleString("vi-VN")}
+                    {(subscription.totalPurchases || 0).toLocaleString("vi-VN")}
                   </td>
                   <td className="px-5 py-4 text-xs font-semibold text-gray-500">
                     {formatDate(subscription.updatedAt)}

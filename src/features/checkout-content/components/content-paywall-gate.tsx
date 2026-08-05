@@ -114,7 +114,7 @@ export function ContentPaywallGate({
             className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-4 text-xs font-bold text-[#D4AF37] transition hover:bg-[#D4AF37]/15 cursor-pointer"
           >
             <Flame className="h-3.5 w-3.5 text-[#D4AF37]" />
-            Mua trọn bộ Combo ({matchingCombo.priceVnd.toLocaleString("vi-VN")} đ)
+            Mua trọn bộ Combo ({(matchingCombo.priceVnd || 0).toLocaleString("vi-VN")} đ)
           </button>
         )}
       </div>

@@ -391,7 +391,7 @@ export default function AdminAdsPage() {
                         <div className="text-slate-500 text-xs">{slot.displayName}</div>
                       </td>
                       <td className="p-3 font-medium text-indigo-600">
-                        {slot.price.toLocaleString()}đ / {slot.totalViewOfPrice}
+                        {(slot.price || 0).toLocaleString()}đ / {slot.totalViewOfPrice}
                       </td>
                       <td className="p-3 flex gap-2 justify-end">
                         <button onClick={() => setEditingSlot(slot)} className="text-blue-500 hover:bg-blue-50 p-2 rounded transition-colors" title="Sửa">

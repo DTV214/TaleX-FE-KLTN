@@ -461,7 +461,7 @@ function CampaignManagementView({ profile }: { profile: any }) {
                   <td className="px-4 py-3 border-r border-slate-100 text-right">{c.startDate ? new Date(c.startDate).toLocaleDateString() : '-'}</td>
                   <td className="px-4 py-3 border-r border-slate-100 text-right">{c.endDate ? new Date(c.endDate).toLocaleDateString() : '-'}</td>
                   <td className="px-4 py-3 border-r border-slate-100 text-right font-medium">
-                    {c.totalBudget.toLocaleString()} VND
+                    {(c.totalBudget || 0).toLocaleString()} VND
                   </td>
                   <td className="px-4 py-3 border-r border-slate-100 text-right">
                     {(c.totalBudget - (c.campaignBalance || 0)).toLocaleString()} VND
@@ -862,7 +862,7 @@ function CreateCampaignPanel({ onClose }: { onClose: () => void }) {
                     <div className="flex items-center justify-between">
                       <div>
                         <h4 className="font-bold text-[#161823]">{slot.displayName}</h4>
-                        <p className="text-xs text-[#757575] mt-1">{slot.price.toLocaleString()} VND / {slot.totalViewOfPrice} Views</p>
+                        <p className="text-xs text-[#757575] mt-1">{(slot.price || 0).toLocaleString()} VND / {slot.totalViewOfPrice} Views</p>
                       </div>
                       <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${formData.slotId === slot.slotId ? 'border-[#00D6BA]' : 'border-slate-300'}`}>
                         {formData.slotId === slot.slotId && <div className="w-2 h-2 rounded-full bg-[#00D6BA]" />}
@@ -1094,7 +1094,7 @@ function TransactionHistory({ campaignId }: { campaignId: string }) {
             <td className="px-3 py-2">{new Date(tx.createdAt).toLocaleString()}</td>
             <td className="px-3 py-2 text-[10px] uppercase font-bold text-slate-500">{tx.type}</td>
             <td className={`px-3 py-2 text-right font-medium ${tx.type === 'FUND_CAMPAIGN' ? 'text-green-600' : 'text-red-600'}`}>
-              {tx.type === "FUND_CAMPAIGN" ? "+" : "-"}{tx.amount.toLocaleString()} VND
+              {tx.type === "FUND_CAMPAIGN" ? "+" : "-"}{(tx.amount || 0).toLocaleString()} VND
             </td>
             <td className="px-3 py-2">{tx.note}</td>
           </tr>
@@ -1227,7 +1227,7 @@ function WalletView({ profile }: { profile: any }) {
                   <td className="px-4 py-3 border-r border-slate-100">{new Date(tx.createdAt).toLocaleString()}</td>
                   <td className="px-4 py-3 border-r border-slate-100 font-medium text-slate-600">{tx.type}</td>
                   <td className={`px-4 py-3 border-r border-slate-100 text-right font-bold ${tx.type === 'TOPUP' || tx.type === 'REFUND' ? 'text-green-600' : 'text-red-600'}`}>
-                    {tx.type === 'TOPUP' || tx.type === 'REFUND' ? '+' : '-'}{tx.amount.toLocaleString()} VND
+                    {tx.type === 'TOPUP' || tx.type === 'REFUND' ? '+' : '-'}{(tx.amount || 0).toLocaleString()} VND
                   </td>
                   <td className="px-4 py-3 text-slate-600 truncate max-w-xs" title={tx.note}>{tx.note}</td>
                 </tr>

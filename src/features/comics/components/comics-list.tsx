@@ -279,7 +279,7 @@ function FeaturedBanner({
         <div className="mt-5 flex flex-wrap items-center gap-4 text-sm font-bold text-white/70">
           <span className="inline-flex items-center gap-2">
             <Eye className="h-4 w-4 text-[#D4AF37]" />
-            {item.totalViews.toLocaleString("vi-VN")} lượt đọc
+            {(item.totalViews || 0).toLocaleString("vi-VN")} lượt đọc
           </span>
           <span className="inline-flex items-center gap-2">
             <Star className="h-4 w-4 fill-[#D4AF37] text-[#D4AF37]" />
@@ -346,11 +346,11 @@ function CatalogCard({
           <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-[10px] font-bold text-white/80">
             <span className="rounded-lg bg-black/55 px-2 py-1 backdrop-blur">
               <Eye className="mr-1 inline h-3 w-3 text-[#D4AF37]" />
-              {item.totalViews.toLocaleString("vi-VN")}
+              {(item.totalViews || 0).toLocaleString("vi-VN")}
             </span>
             <span className="rounded-lg bg-black/55 px-2 py-1 backdrop-blur">
               <Users className="mr-1 inline h-3 w-3 text-[#D4AF37]" />
-              {item.totalSubscriptions.toLocaleString("vi-VN")}
+              {(item.totalSubscriptions || 0).toLocaleString("vi-VN")}
             </span>
           </div>
         </div>

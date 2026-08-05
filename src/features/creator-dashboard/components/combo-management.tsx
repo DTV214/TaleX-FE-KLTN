@@ -126,11 +126,11 @@ export function ComboManagementView() {
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-creator-muted uppercase tracking-wider text-xs font-bold">Giá gốc</span>
-                    <span className="font-medium line-through text-creator-muted">{combo.originalPriceVnd.toLocaleString()} đ</span>
+                    <span className="font-medium line-through text-creator-muted">{(combo.originalPriceVnd || 0).toLocaleString()} đ</span>
                   </div>
                   <div className="flex justify-between items-center pt-2 border-t border-creator-border mt-2">
                     <span className="text-creator-muted uppercase tracking-wider text-xs font-bold">Giá Combo</span>
-                    <span className="font-black text-creator-gold text-lg">{combo.priceVnd.toLocaleString()} đ</span>
+                    <span className="font-black text-creator-gold text-lg">{(combo.priceVnd || 0).toLocaleString()} đ</span>
                   </div>
                 </div>
 
@@ -391,7 +391,7 @@ function ComboForm({
                     <li key={ep.id} className="flex items-center justify-between rounded-md bg-creator-bg border border-creator-border p-3 text-sm">
                       <span className="font-semibold">{ep.title}</span>
                       <div className="flex items-center gap-4">
-                        <span className="text-creator-muted">{ep.price.toLocaleString()} đ</span>
+                        <span className="text-creator-muted">{(ep.price || 0).toLocaleString()} đ</span>
                         <button
                           type="button"
                           onClick={() => handleRemoveEpisode(ep.id)}

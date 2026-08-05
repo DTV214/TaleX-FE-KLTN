@@ -64,9 +64,10 @@ function formatWatchTime(seconds: number): string {
 }
 
 function formatNumber(num: number = 0): string {
-  if (num >= 1_000_000) return (num / 1_000_000).toFixed(1) + "M";
-  if (num >= 1_000) return (num / 1_000).toFixed(1) + "K";
-  return num.toLocaleString("vi-VN");
+  const safeNum = num || 0;
+  if (safeNum >= 1_000_000) return (safeNum / 1_000_000).toFixed(1) + "M";
+  if (safeNum >= 1_000) return (safeNum / 1_000).toFixed(1) + "K";
+  return safeNum.toLocaleString("vi-VN");
 }
 
 export function CreatorAnalyticsLogsView({
@@ -671,7 +672,7 @@ export function CreatorAnalyticsLogsView({
                       color: "#fff",
                       fontSize: "12px",
                     }}
-                    formatter={(val: any, name: any) => [val.toLocaleString("vi-VN"), name]}
+                    formatter={(val: any, name: any) => [(val || 0).toLocaleString("vi-VN"), name]}
                   />
                   <Bar dataKey="views" fill="#D4AF37" radius={[4, 4, 0, 0]} name="Lượt xem" />
                   <Bar dataKey="engagement" fill="#f43f5e" radius={[4, 4, 0, 0]} name="Tổng tương tác" />
@@ -787,7 +788,7 @@ export function CreatorAnalyticsLogsView({
                       <span className="text-xs font-bold text-zinc-300">{item.name}</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-xs font-black text-white">{item.value.toLocaleString("vi-VN")}</span>
+                      <span className="text-xs font-black text-white">{(item.value || 0).toLocaleString("vi-VN")}</span>
                       <span className="text-[11px] font-semibold text-zinc-500 w-12 text-right">{pct}%</span>
                     </div>
                   </div>

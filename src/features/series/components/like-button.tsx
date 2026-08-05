@@ -71,7 +71,7 @@ export function LikeButton({
             : "bg-white/10 border-white/5 text-gray-300",
         )}
       >
-        {likeCount.toLocaleString("vi-VN")}
+        {(likeCount || 0).toLocaleString("vi-VN")}
       </span>
     </button>
   );

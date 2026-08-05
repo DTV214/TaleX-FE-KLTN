@@ -378,7 +378,7 @@ export function SignedHlsPlayer({
               <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-gray-500">
                 <span className="flex items-center gap-1.5">
                   <Eye className="w-4 h-4 text-gray-600" />
-                  {episodeDetail.views.toLocaleString("vi-VN")} lượt xem
+                  {(episodeDetail.views || 0).toLocaleString("vi-VN")} lượt xem
                 </span>
                 <span className="w-1.5 h-1.5 rounded-full bg-white/10" />
                 <span className="flex items-center gap-1.5">
@@ -573,7 +573,7 @@ export function SignedHlsPlayer({
                           Tập {episode.episodeNumber}: {episode.title}
                         </p>
                         <p className="mt-1 text-xs font-medium text-white/40">
-                          {episode.views.toLocaleString("vi-VN")} lượt xem
+                          {(episode.views || 0).toLocaleString("vi-VN")} lượt xem
                         </p>
                       </div>
                     </Link>

@@ -62,9 +62,10 @@ interface DashboardOverviewViewProps {
 }
 
 function formatNumber(num: number = 0): string {
-  if (num >= 1_000_000) return (num / 1_000_000).toFixed(1) + "M";
-  if (num >= 1_000) return (num / 1_000).toFixed(1) + "K";
-  return num.toLocaleString("vi-VN");
+  const safeNum = num || 0;
+  if (safeNum >= 1_000_000) return (safeNum / 1_000_000).toFixed(1) + "M";
+  if (safeNum >= 1_000) return (safeNum / 1_000).toFixed(1) + "K";
+  return safeNum.toLocaleString("vi-VN");
 }
 
 const statusBadgeMap: Record<string, { label: string; className: string }> = {
