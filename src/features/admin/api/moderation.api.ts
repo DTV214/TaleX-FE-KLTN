@@ -158,11 +158,17 @@ export async function getPendingMedia(page = 0, size = 12) {
   return normalizePage(response.data, page, size);
 }
 
-export async function getApprovedMedia(page = 0, size = 12) {
+export type ApprovedReviewFilter = "all" | "manual" | "clean";
+
+export async function getApprovedMedia(
+  page = 0,
+  size = 12,
+  filter: ApprovedReviewFilter = "all",
+) {
   const response = await httpClient.get<BaseResponse<ModerationPagePayload> | ModerationPagePayload>(
     `${MODERATION_ENDPOINT}/approved`,
     {
-      params: { page, size },
+      params: { page, size, filter: filter === "all" ? undefined : filter },
     },
   );
 
