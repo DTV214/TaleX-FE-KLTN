@@ -4324,7 +4324,11 @@ function ComicUploadView({
             {uploadMessage && (
               <div className="mb-6 p-4 rounded-xl bg-creator-bg border border-creator-border text-sm text-creator-muted flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-4 h-4 border-2 border-creator-gold border-t-transparent rounded-full animate-spin"></div>
+                  {isUploading || isSavingOrder ? (
+                    <div className="w-4 h-4 border-2 border-creator-gold border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    <Info className="w-4 h-4 text-creator-gold" />
+                  )}
                   <span>{uploadMessage}</span>
                 </div>
               </div>
