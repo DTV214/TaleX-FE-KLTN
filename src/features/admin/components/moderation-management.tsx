@@ -215,6 +215,14 @@ function ModerationDetailModal({
                 alt={media.id}
                 className="w-full rounded-xl border border-slate-200 object-contain"
               />
+            ) : media.mediaType === "VIDEO" && media.url ? (
+              <video
+                key={media.url}
+                src={media.url}
+                poster={media.thumbnailUrl}
+                controls
+                className="w-full rounded-xl border border-slate-200 bg-black"
+              />
             ) : (
               <div className="flex aspect-video w-full flex-col items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white text-slate-400">
                 <Video className="h-10 w-10" />
@@ -334,7 +342,10 @@ function ModerationDetailModal({
                             )}
 
                             <p className="mt-1 text-slate-500">
-                              Loại nội dung: {item.violationType === "VIDEO" ? "Video" : "Ảnh"} · Kiểm tra lúc {formatDate(item.checkedAt)}
+                              Loại nội dung: {item.violationType === "VIDEO" ? "Video" : "Ảnh"}
+                            </p>
+                            <p className="text-slate-500">
+                              Kiểm tra lúc {formatDate(item.checkedAt)}
                             </p>
                           </div>
                         );
@@ -408,24 +419,28 @@ function ModerationDetailModal({
           >
             Đóng
           </button>
-          <button
-            type="button"
-            onClick={() => onReject(media)}
-            disabled={isMutating}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-red-600 px-5 text-sm font-bold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <X className="h-4 w-4" />
-            Từ chối
-          </button>
-          <button
-            type="button"
-            onClick={() => onApprove(media)}
-            disabled={isMutating}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-5 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <Check className="h-4 w-4" />
-            Duyệt
-          </button>
+          {media.approvalStatus !== "APPROVED" && (
+            <>
+              <button
+                type="button"
+                onClick={() => onReject(media)}
+                disabled={isMutating}
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-red-600 px-5 text-sm font-bold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <X className="h-4 w-4" />
+                Từ chối
+              </button>
+              <button
+                type="button"
+                onClick={() => onApprove(media)}
+                disabled={isMutating}
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-5 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <Check className="h-4 w-4" />
+                Duyệt
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -758,6 +773,7 @@ function ApprovedMediaCard({
 
 export function ModerationManagement() {
   const [activeTab, setActiveTab] = useState<"pending" | "approved">("pending");
+  const [approvedFilter, setApprovedFilter] = useState<"all" | "manual" | "clean">("all");
   const [page, setPage] = useState(0);
   const [approvedPage, setApprovedPage] = useState(0);
   const [rejectTarget, setRejectTarget] = useState<ModerationMedia | null>(null);
@@ -770,7 +786,15 @@ export function ModerationManagement() {
   const forceUnhideMutation = useForceUnhideEpisode();
   const pendingPage = pendingQuery.data;
   const items = pendingPage?.content ?? [];
-  const approvedItems = approvedQuery.data?.content ?? [];
+  const allApprovedItems = approvedQuery.data?.content ?? [];
+  // approvalReviewedBy chỉ được set khi Staff/Admin bấm "Duyệt" thủ công (xem
+  // MediaServiceImpl.approve()) — media tự động APPROVED bởi pipeline (không vi phạm)
+  // không đi qua approve() nên field này luôn null, dùng để phân biệt 2 loại.
+  const approvedItems = allApprovedItems.filter((media) => {
+    if (approvedFilter === "manual") return Boolean(media.approvalReviewedBy);
+    if (approvedFilter === "clean") return !media.approvalReviewedBy;
+    return true;
+  });
   const isMutating = approveMutation.isPending || rejectMutation.isPending;
   const isApprovedMutating = forceHideMutation.isPending || forceUnhideMutation.isPending;
 
@@ -937,6 +961,31 @@ export function ModerationManagement() {
         </>
       )}
 
+      {activeTab === "approved" && (
+        <div className="flex flex-wrap gap-2">
+          {(
+            [
+              { key: "all", label: "Tất cả" },
+              { key: "manual", label: "Duyệt tay (có vi phạm)" },
+              { key: "clean", label: "Không vi phạm" },
+            ] as const
+          ).map((option) => (
+            <button
+              key={option.key}
+              type="button"
+              onClick={() => setApprovedFilter(option.key)}
+              className={`rounded-full border px-4 py-1.5 text-xs font-bold transition ${
+                approvedFilter === option.key
+                  ? "border-slate-950 bg-slate-950 text-white"
+                  : "border-slate-200 bg-white text-slate-500 hover:border-slate-300"
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       {activeTab === "approved" && approvedQuery.isLoading && (
         <div className="rounded-2xl border border-slate-200 bg-white px-6 py-16 text-center shadow-sm">
           <Loader2 className="mx-auto h-7 w-7 animate-spin text-slate-400" />
@@ -958,10 +1007,14 @@ export function ModerationManagement() {
             <ShieldAlert className="h-7 w-7" />
           </div>
           <h2 className="mt-4 text-lg font-bold text-slate-950">
-            Chưa có nội dung nào được duyệt
+            {approvedFilter === "all"
+              ? "Chưa có nội dung nào được duyệt"
+              : "Không có nội dung nào khớp bộ lọc này"}
           </h2>
           <p className="mt-2 text-sm font-medium text-slate-500">
-            Nội dung sau khi được duyệt sẽ hiển thị tại đây, sắp xếp theo thời điểm duyệt gần nhất.
+            {approvedFilter === "all"
+              ? "Nội dung sau khi được duyệt sẽ hiển thị tại đây, sắp xếp theo thời điểm duyệt gần nhất."
+              : "Thử chọn bộ lọc khác hoặc xem lại ở mục \"Tất cả\"."}
           </p>
         </div>
       )}
