@@ -4713,12 +4713,10 @@ function VideoUploadView({
       <div>
         <CreatorBackButton onClick={onBack} className="mb-6" />
         <h2 className="text-4xl font-bold text-white mb-3">
-          Ã„Âang kiÃ¡Â»Æ’m duyÃ¡Â»â€¡t nÃ¡Â»â„¢i dung cuÃ¡Â»â€˜i cÃƒÂ¹ng
+          Đang kiểm duyệt nội dung cuối cùng
         </h2>
         <p className="text-creator-muted max-w-2xl text-sm leading-relaxed">
-          TÃ¡ÂºÂ£i lÃƒÂªn cÃƒÂ¡c tÃƒÂ i nguyÃƒÂªn Ã„â€˜iÃ¡Â»â€¡n Ã¡ÂºÂ£nh chÃ¡ÂºÂ¥t lÃ†Â°Ã¡Â»Â£ng cao cÃ¡Â»Â§a bÃ¡ÂºÂ¡n vÃƒÂ  Ã„â€˜Ã¡Â»Æ’ TaleX AI
-          Ã„â€˜Ã¡ÂºÂ£m bÃ¡ÂºÂ£o viÃ¡Â»â€¡c tuÃƒÂ¢n thÃ¡Â»Â§ chÃƒÂ­nh sÃƒÂ¡ch cÃ…Â©ng nhÃ†Â° xÃƒÂ¡c thÃ¡Â»Â±c tÃƒÂ­nh nguyÃƒÂªn bÃ¡ÂºÂ£n cÃ¡Â»Â§a
-          nÃ¡Â»â„¢i dung.
+          Tải lên các tài nguyên điện ảnh chất lượng cao của bạn và để TaleX AI đảm bảo việc tuân thủ chính sách cũng như xác thực tính nguyên bản của nội dung.
         </p>
       </div>
 
@@ -4727,14 +4725,14 @@ function VideoUploadView({
         <div className="space-y-6">
           <div className="bg-creator-sidebar border border-creator-border rounded-xl p-8 shadow-xl mb-6">
             <div className="mb-6 flex items-center justify-between">
-              <h3 className="text-lg font-bold text-white">Chi tiÃ¡ÂºÂ¿t TÃ¡ÂºÂ­p</h3>
+              <h3 className="text-lg font-bold text-white">Chi tiết tập</h3>
             </div>
             <div className="grid gap-6 md:grid-cols-[1fr_240px]">
               <div className="space-y-5">
                 <div className="grid gap-5 md:grid-cols-2">
                   <div>
                     <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">
-                      SÃ¡Â»â€˜ thÃ¡Â»Â© tÃ¡Â»Â± TÃ¡ÂºÂ­p
+                      Số thứ tự Tập
                     </label>
                     <input
                       type="number"
@@ -4783,7 +4781,7 @@ function VideoUploadView({
                   <div className="grid gap-5 md:grid-cols-2 mt-4 pt-4 border-t border-creator-border">
                     <div>
                       <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">
-                        KiÃ¡Â»Æ’u mÃ¡Â»Å¸ khÃƒÂ³a
+                        Kiểu mở khóa
                       </label>
                       <select
                         value={editForm.unlockType}
