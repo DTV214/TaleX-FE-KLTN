@@ -3,6 +3,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   approveMedia,
+  forceHideEpisode,
+  forceUnhideEpisode,
+  getApprovedMedia,
+  getMediaById,
   getMediaViolations,
   getPendingMedia,
   rejectMedia,
@@ -12,8 +16,12 @@ export const moderationKeys = {
   all: ["admin", "moderation"] as const,
   pending: (page: number, size: number) =>
     [...moderationKeys.all, "pending", page, size] as const,
+  approved: (page: number, size: number) =>
+    [...moderationKeys.all, "approved", page, size] as const,
   violations: (mediaId: string) =>
     [...moderationKeys.all, "violations", mediaId] as const,
+  mediaDetail: (mediaId: string) =>
+    [...moderationKeys.all, "media-detail", mediaId] as const,
 };
 
 export function useMediaViolations(mediaId: string | null) {
@@ -21,6 +29,17 @@ export function useMediaViolations(mediaId: string | null) {
     queryKey: moderationKeys.violations(mediaId ?? ""),
     queryFn: () => getMediaViolations(mediaId!),
     enabled: Boolean(mediaId),
+  });
+}
+
+// Dùng cho nút "Xem nội dung gốc" — chỉ fetch khi modal thật sự mở (enabled), tránh gọi
+// thừa API khi admin chỉ đang xem danh sách vi phạm mà chưa bấm xem chi tiết nội dung gốc.
+export function useMediaDetail(mediaId: string | null) {
+  return useQuery({
+    queryKey: moderationKeys.mediaDetail(mediaId ?? ""),
+    queryFn: () => getMediaById(mediaId!),
+    enabled: Boolean(mediaId),
+    retry: false,
   });
 }
 
@@ -49,6 +68,36 @@ export function useRejectMedia() {
   return useMutation({
     mutationFn: ({ id, reason }: { id: string; reason: string }) =>
       rejectMedia(id, reason),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: moderationKeys.all });
+    },
+  });
+}
+
+export function useGetApprovedMedia(page = 0, size = 12) {
+  return useQuery({
+    queryKey: moderationKeys.approved(page, size),
+    queryFn: () => getApprovedMedia(page, size),
+    staleTime: 30 * 1000,
+  });
+}
+
+export function useForceHideEpisode() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (episodeId: string) => forceHideEpisode(episodeId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: moderationKeys.all });
+    },
+  });
+}
+
+export function useForceUnhideEpisode() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (episodeId: string) => forceUnhideEpisode(episodeId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: moderationKeys.all });
     },

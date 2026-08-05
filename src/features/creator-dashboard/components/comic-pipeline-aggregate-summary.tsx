@@ -85,7 +85,7 @@ export function ComicPipelineAggregateSummary({ pages }: { pages: ComicPageSumma
           />
           <CountRow
             icon={<ShieldQuestion className="h-4 w-4" />}
-            label="Chờ đội kiểm duyệt"
+            label="Chờ kiểm duyệt thủ công"
             count={pendingReviewCount}
             total={total}
             colorClass="text-amber-400"
@@ -132,7 +132,7 @@ export function ComicPipelineAggregateSummary({ pages }: { pages: ComicPageSumma
 
         {pendingReviewCount > 0 && (
           <p className="mt-2 text-[11px] leading-relaxed text-amber-400/90">
-            {pendingReviewCount} trang có nội dung tương đồng với creator khác hoặc chứa yếu tố nhạy cảm — đang chờ đội kiểm duyệt xác nhận thủ công trước khi xuất bản.
+            {pendingReviewCount} trang có nội dung tương đồng với creator khác hoặc chứa yếu tố nhạy cảm — vui lòng chờ kiểm duyệt thủ công trước khi xuất bản.
           </p>
         )}
       </div>

@@ -7,6 +7,9 @@ export type ModerationMediaType = "VIDEO" | "IMAGE";
 export type ModerationMedia = {
   id: string;
   episodeId: string;
+  // Trạng thái của EPISODE chứa media này (khác `status` — trạng thái riêng của media) —
+  // dùng để biết Admin có đang ép ẩn cả episode hay không (xem tab "Đã duyệt").
+  episodeStatus?: string;
   mediaType: ModerationMediaType;
   url: string;
   thumbnailUrl?: string;
@@ -14,6 +17,8 @@ export type ModerationMedia = {
   status: string;
   approvalStatus: string;
   createdAt?: string;
+  approvalReviewedAt?: string;
+  approvalReviewedBy?: string;
 };
 
 export type ModerationPage = {
@@ -30,6 +35,7 @@ type ModerationMediaApiItem = {
   id?: string;
   mediaId?: string;
   episodeId?: string;
+  episodeStatus?: string;
   mediaType?: string;
   fileUrl?: string | null;
   originalUrl?: string | null;
@@ -40,6 +46,8 @@ type ModerationMediaApiItem = {
   status?: string;
   approvalStatus?: string;
   createdAt?: string;
+  approvalReviewedAt?: string;
+  approvalReviewedBy?: string;
 };
 
 type ModerationPagePayload = {
@@ -65,6 +73,7 @@ function normalizeMedia(item: ModerationMediaApiItem): ModerationMedia {
   return {
     id: item.id ?? item.mediaId ?? "",
     episodeId: item.episodeId ?? "",
+    episodeStatus: item.episodeStatus,
     mediaType: normalizeMediaType(item.mediaType),
     url:
       item.originalUrl ??
@@ -78,6 +87,8 @@ function normalizeMedia(item: ModerationMediaApiItem): ModerationMedia {
     status: item.status ?? "PENDING",
     approvalStatus: item.approvalStatus ?? "PENDING_REVIEW",
     createdAt: item.createdAt,
+    approvalReviewedAt: item.approvalReviewedAt,
+    approvalReviewedBy: item.approvalReviewedBy,
   };
 }
 
@@ -147,12 +158,37 @@ export async function getPendingMedia(page = 0, size = 12) {
   return normalizePage(response.data, page, size);
 }
 
+export async function getApprovedMedia(page = 0, size = 12) {
+  const response = await httpClient.get<BaseResponse<ModerationPagePayload> | ModerationPagePayload>(
+    `${MODERATION_ENDPOINT}/approved`,
+    {
+      params: { page, size },
+    },
+  );
+
+  return normalizePage(response.data, page, size);
+}
+
 export async function approveMedia(id: string) {
   await httpClient.patch(`${MODERATION_ENDPOINT}/${id}/approve`);
 }
 
 export async function rejectMedia(id: string, reason: string) {
   await httpClient.patch(`${MODERATION_ENDPOINT}/${id}/reject`, { reason });
+}
+
+// Ép ẩn CẢ EPISODE chứa nội dung vi phạm (không chỉ riêng 1 trang/media đã duyệt) — theo
+// đúng quyết định nghiệp vụ: nếu 1 trang trong episode có vấn đề nghiêm trọng, cả episode
+// đó cần tạm ngừng công khai chứ không phải chỉ ẩn riêng trang đó. BE tự cắt truy cập công
+// khai tới toàn bộ media trong episode (findPublicEntity chặn theo status episode).
+export async function forceHideEpisode(episodeId: string) {
+  await httpClient.patch(`/api/v1/episodes/${episodeId}/force-hide`);
+}
+
+// Gỡ ép ẩn — khôi phục THẲNG về PUBLISHED (không cần Creator xuất bản lại), khác hẳn
+// hành vi forceUnhide ở Media (chỉ về HIDDEN, chờ Creator tự bấm Bỏ ẩn).
+export async function forceUnhideEpisode(episodeId: string) {
+  await httpClient.patch(`/api/v1/episodes/${episodeId}/force-unhide`);
 }
 
 export type MediaCopyrightViolation = {
@@ -164,6 +200,13 @@ export type MediaCopyrightViolation = {
   isValid?: boolean;
   note?: string;
   checkedAt?: string;
+  // Chỉ có giá trị khi caller là STAFF/ADMIN (BE ẩn với chính creator bị flag) — xem
+  // MediaServiceImpl.mapCopyrightToDto.
+  sourceEpisodeTitle?: string;
+  sourceSeriesTitle?: string;
+  sourceCreatorUsername?: string;
+  sourceThumbnailUrl?: string;
+  sourceMediaDeleted?: boolean;
 };
 
 export type ViolationDetail = {
@@ -197,4 +240,27 @@ export async function getMediaViolations(mediaId: string) {
     `${MODERATION_ENDPOINT}/${mediaId}/violations`,
   );
   return unwrapPayload<MediaViolations>(response.data);
+}
+
+export type MediaDetail = {
+  mediaId: string;
+  episodeId?: string;
+  creatorId?: string;
+  mediaType?: ModerationMediaType;
+  originalUrl?: string;
+  thumbnailUrl?: string;
+  status?: string;
+  approvalStatus?: string;
+  createdAt?: string;
+  isDeleted?: boolean;
+};
+
+// Dùng cho nút "Xem nội dung gốc" ở modal kiểm duyệt — endpoint này đã tự bypass ownership
+// check cho STAFF/ADMIN (ContentOwnershipService.assertCanView), nên admin xem được media
+// của bất kỳ creator nào, không cần endpoint riêng.
+export async function getMediaById(mediaId: string) {
+  const response = await httpClient.get<BaseResponse<MediaDetail>>(
+    `${MODERATION_ENDPOINT}/${mediaId}`,
+  );
+  return unwrapPayload<MediaDetail>(response.data);
 }

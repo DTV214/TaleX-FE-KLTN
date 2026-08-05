@@ -8,7 +8,7 @@ export type ContentType = "VIDEO" | "COMIC";
 export type SeriesStatus = "DRAFT" | "PUBLISHED" | "HIDDEN" | "DELETED" | "SCHEDULED";
 export type Visibility = "PUBLIC" | "PRIVATE";
 export type SeasonStatus = "DRAFT" | "PUBLISHED" | "HIDDEN" | "DELETED" | "SCHEDULED";
-export type EpisodeStatus = "DRAFT" | "PUBLISHED" | "HIDDEN" | "DELETED" | "SCHEDULED";
+export type EpisodeStatus = "DRAFT" | "PUBLISHED" | "HIDDEN" | "FORCE_HIDDEN" | "DELETED" | "SCHEDULED";
 export type ContentApprovalStatus = "PENDING_REVIEW" | "APPROVED" | "REJECTED";
 export type EpisodeUnlockType = "FREE" | "PAID";
 export type MediaType = "VIDEO" | "IMAGE";
@@ -118,6 +118,7 @@ export type SeasonResponse = {
 export type EpisodeResponse = {
   episodeId: string;
   seasonId: string;
+  seriesId?: string;
   creatorId?: string;
   episodeNumber?: number;
   title: string;
@@ -379,6 +380,14 @@ export async function createEpisode(
 ) {
   return unwrapBaseResponse<EpisodeResponse>(
     httpClient.post(`/api/v1/seasons/${seasonId}/episodes`, request),
+  );
+}
+
+// Dùng để dựng URL điều hướng sâu (vd bấm 1 thông báo "episode bị ẩn" -> cần
+// seriesId+seasonId để đi thẳng tới đúng episode trong dashboard).
+export async function getEpisodeById(id: string) {
+  return unwrapBaseResponse<EpisodeResponse>(
+    httpClient.get(`/api/v1/episodes/${id}`),
   );
 }
 

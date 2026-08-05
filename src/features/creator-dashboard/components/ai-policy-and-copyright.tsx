@@ -85,8 +85,9 @@ function buildSteps(params: {
   hasContentId: boolean;
   hasCensorshipResult: boolean;
   isFailed: boolean;
+  isForceHidden: boolean;
 }): Step[] {
-  const { mediaId, mediaType, mediaStatus, approvalStatus, hasContentId, hasCensorshipResult, isFailed } = params;
+  const { mediaId, mediaType, mediaStatus, approvalStatus, hasContentId, hasCensorshipResult, isFailed, isForceHidden } = params;
   const steps: Step[] = [];
 
   if (!mediaId) {
@@ -145,16 +146,21 @@ function buildSteps(params: {
   });
 
   const allPriorDone = steps.every((s) => s.state === "done");
+  // isForceHidden: nội dung ĐÃ qua hết pipeline và từng được duyệt (2 bước trên vẫn đúng
+  // là "done") nhưng sau đó bị quản trị viên tạm ẩn khỏi công khai — khác hẳn "chưa xong"
+  // hay "bị từ chối", nên tách riêng label/state thay vì lẫn vào "Sẵn sàng xuất bản".
   steps.push({
     key: "done",
-    label: "Sẵn sàng xuất bản",
-    state: isFailed || isRejected
-      ? "failed"
-      : isPendingReview
-        ? "review"
-        : allPriorDone
-          ? "done"
-          : "pending",
+    label: isForceHidden ? "Tạm ẩn bởi quản trị viên" : "Sẵn sàng xuất bản",
+    state: isForceHidden
+      ? "review"
+      : isFailed || isRejected
+        ? "failed"
+        : isPendingReview
+          ? "review"
+          : allPriorDone
+            ? "done"
+            : "pending",
   });
 
   return steps;
@@ -185,6 +191,10 @@ function SingleMediaPipelinePanel({
   // INACTIVE mới chắc chắn là BE đã chủ động flag (xem ContentPipelineServiceImpl).
   const isPendingReview = approvalStatus === "PENDING_REVIEW" && mediaStatus === "INACTIVE";
   const isRejected = approvalStatus === "REJECTED";
+  // Nội dung đã được duyệt (approvalStatus vẫn APPROVED) nhưng quản trị viên tạm ẩn khỏi
+  // công khai sau đó (xem MediaServiceImpl.forceHide) — khác isRejected (chưa đạt, cần
+  // sửa) và isPendingReview (đang chờ duyệt lần đầu), nên phải phân biệt riêng.
+  const isForceHidden = mediaStatus === "FORCE_HIDDEN";
   // Loại trừ 3 trạng thái TERMINAL (đã có kết luận cuối, dù là gì) khỏi "đang pending" —
   // nếu không, card "Chi tiết bản quyền" sẽ kẹt mãi ở "Đang đối chiếu bản quyền..." dù
   // copyright/kiểm duyệt đã xong thật, chỉ là kết quả cuối là PENDING_REVIEW/REJECTED.
@@ -245,6 +255,7 @@ function SingleMediaPipelinePanel({
     // khiến panel kẹt ở "active" dù toast đã báo hoàn tất (race giữa 2 nguồn dữ liệu).
     hasCensorshipResult: (violations?.censorshipResults.length ?? 0) > 0 || mediaStatus === "ACTIVE",
     isFailed,
+    isForceHidden,
   });
 
   const doneCount = steps.filter((s) => s.state === "done").length;
@@ -305,17 +316,29 @@ function SingleMediaPipelinePanel({
           </div>
         )}
 
+        {isForceHidden && (
+          <div className="mt-5 flex items-start gap-2 border-t border-creator-border pt-5 text-xs text-amber-400">
+            <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <p className="font-bold">Nội dung tạm ngừng hiển thị công khai</p>
+              <p className="leading-relaxed text-amber-400/90">
+                Nội dung này đã được duyệt trước đó nhưng hiện đang tạm ngừng hiển thị công khai theo quyết định của đội ngũ quản trị. Vui lòng liên hệ bộ phận hỗ trợ để được giải thích chi tiết.
+              </p>
+            </div>
+          </div>
+        )}
+
         {isPendingReview && (
           <div className="mt-5 flex items-start gap-2 border-t border-creator-border pt-5 text-xs text-amber-400">
             <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
             <div className="space-y-1">
-              <p className="font-bold">Đang chờ đội kiểm duyệt xác nhận thủ công</p>
+              <p className="font-bold">Nội dung cần kiểm duyệt thủ công</p>
               <p className="leading-relaxed text-amber-400/90">
                 {hasBlockingCopyright
-                  ? `Phát hiện ${blockingCopyright.length} đoạn nội dung tương đồng ${similarityScore}% với nội dung đã có trên hệ thống của creator khác — cần đội kiểm duyệt xác nhận đây có thật sự vi phạm bản quyền hay không trước khi xuất bản.`
+                  ? `Phát hiện ${blockingCopyright.length} đoạn nội dung tương đồng ${similarityScore}% với nội dung đã có trên hệ thống của creator khác — vui lòng chờ xác nhận đây có thật sự vi phạm bản quyền hay không trước khi xuất bản.`
                   : rejectionLabels
-                    ? `Nội dung có yếu tố nhạy cảm (${rejectionLabels}) — cần đội kiểm duyệt xác nhận thủ công trước khi xuất bản.`
-                    : "Cần đội kiểm duyệt xác nhận thủ công trước khi xuất bản."}
+                    ? `Nội dung có yếu tố nhạy cảm (${rejectionLabels}) — vui lòng chờ xác nhận thủ công trước khi xuất bản.`
+                    : "Vui lòng chờ xác nhận thủ công trước khi xuất bản."}
               </p>
             </div>
           </div>
@@ -370,7 +393,7 @@ function SingleMediaPipelinePanel({
             </CopyrightNotice>
           ) : hasBlockingCopyright ? (
             <CopyrightNotice state="failed" icon={<CircleAlert className="h-5 w-5" />}>
-              Phát hiện {blockingCopyright.length} đoạn trùng, đang chờ đội kiểm duyệt xác nhận
+              Phát hiện {blockingCopyright.length} đoạn trùng, vui lòng chờ kiểm duyệt thủ công
             </CopyrightNotice>
           ) : permittedCopyright.length > 0 ? (
             <CopyrightNotice state="passed" icon={<CheckCircle2 className="h-5 w-5" />}>

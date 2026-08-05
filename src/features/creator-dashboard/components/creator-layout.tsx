@@ -8,7 +8,6 @@ import {
   BadgeDollarSign,
   DollarSign,
   Settings,
-  Bell,
   Search,
   User,
   LogOut,
@@ -22,6 +21,7 @@ import {
 import { DropdownMenu } from "radix-ui";
 import { logoutAction } from "@/features/auth/api/auth.actions";
 import { isFullProfile, useAuthStore } from "@/features/auth/store/auth.store";
+import { NotificationBell } from "@/features/creator-dashboard/components/notification-bell";
 
 interface CreatorLayoutProps {
   children: React.ReactNode;
@@ -143,10 +143,7 @@ export function CreatorLayout({
           </div>
 
           <div className="flex items-center gap-6">
-            <button className="relative rounded-full p-2 text-creator-muted transition-colors hover:bg-white/[0.055] hover:text-white">
-              <Bell size={20} />
-              <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border border-creator-bg"></span>
-            </button>
+            <NotificationBell />
             <DropdownMenu.Root>
               <DropdownMenu.Trigger asChild>
                 <button type="button" className="flex cursor-pointer items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.035] px-3 py-2 text-left outline-none transition-colors hover:border-creator-gold/35 hover:bg-white/[0.06]">

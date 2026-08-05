@@ -12,13 +12,13 @@ interface UsePipelineSSEOptions {
   /** Đổi giá trị này (vd đổi view/tab) sẽ tự đóng các toast pipeline đang mở. */
   dismissOnChangeOf?: unknown;
   /**
-   * Trả về true nếu mediaId thuộc 1 đợt comic nhiều trang (>1 ảnh) — khi đó ẩn toast
-   * "Nội dung đã qua kiểm duyệt" xanh của TỪNG trang, vì thấy toast "đã xong, sẵn sàng
-   * xuất bản" của 1 trang trong khi trang khác cùng đợt còn đang chờ duyệt/bị từ chối
-   * dễ gây hiểu nhầm "cả episode đã ổn". Toast tổng kết cả đợt (batch-summary, bắn từ
-   * component cha) đã đủ để báo kết quả — chỉ show xanh riêng lẻ khi có <=1 ảnh.
+   * Trả về true nếu mediaId thuộc 1 đợt comic nhiều trang (>1 ảnh) — khi đó ẩn TOÀN BỘ
+   * toast kết quả riêng lẻ của TỪNG trang (đạt/chờ duyệt/từ chối), vì push N ảnh vi phạm
+   * cùng lúc trước đây bắn ra N toast chồng nhau (mỗi toast duration:Infinity, Creator phải
+   * bấm X từng cái một). Toast tổng kết cả đợt (batch-summary, bắn từ component cha) + panel
+   * ComicPipelineAggregateSummary đã đủ để báo kết quả — chỉ show toast riêng lẻ khi có <=1 ảnh.
    */
-  shouldSuppressSuccessToast?: (mediaId: string) => boolean;
+  shouldSuppressToast?: (mediaId: string) => boolean;
 }
 
 type PipelineToastKind =
@@ -40,17 +40,17 @@ export const pipelineToastId = (kind: PipelineToastKind, mediaId: string) => `pi
 export function usePipelineSSE({
   enabled = true,
   dismissOnChangeOf,
-  shouldSuppressSuccessToast,
+  shouldSuppressToast,
 }: UsePipelineSSEOptions = {}) {
   const queryClient = useQueryClient();
   const ctrlRef = useRef<AbortController | null>(null);
   const activeToastIdsRef = useRef<Set<string>>(new Set());
   // Ref để onmessage (đóng 1 lần khi effect mount, xem dep [enabled, queryClient] bên
   // dưới) luôn đọc được callback mới nhất mà không phải reconnect SSE mỗi lần đổi trang.
-  const shouldSuppressSuccessToastRef = useRef(shouldSuppressSuccessToast);
+  const shouldSuppressToastRef = useRef(shouldSuppressToast);
   useEffect(() => {
-    shouldSuppressSuccessToastRef.current = shouldSuppressSuccessToast;
-  }, [shouldSuppressSuccessToast]);
+    shouldSuppressToastRef.current = shouldSuppressToast;
+  }, [shouldSuppressToast]);
 
   // Đóng toast pipeline khi user chuyển view/tab khác — không để tồn tại xuyên suốt
   // dashboard vì duration giờ là Infinity (chỉ tự đóng khi bấm X hoặc chuyển view).
@@ -84,13 +84,15 @@ export function usePipelineSSE({
             if (data.isDuplicate && (data.violationsCount ?? 0) > 0) {
               // Không còn tự động chặn cứng — chỉ máy phát hiện "giống nhau", cần Staff
               // xem lại mới kết luận được có thật sự vi phạm hay không (xem BE).
-              const id = pipelineToastId("copyright-review", data.mediaId);
-              registerToast(id);
-              toast.warning("Nội dung đang chờ đội kiểm duyệt xác nhận", {
-                id,
-                description: `Phát hiện ${data.violationsCount} đoạn giống nội dung đã có trên hệ thống của creator khác — cần đội kiểm duyệt xác nhận thủ công trước khi xuất bản.`,
-                duration: Infinity,
-              });
+              if (!shouldSuppressToastRef.current?.(data.mediaId)) {
+                const id = pipelineToastId("copyright-review", data.mediaId);
+                registerToast(id);
+                toast.warning("Nội dung cần kiểm duyệt thủ công", {
+                  id,
+                  description: `Phát hiện ${data.violationsCount} đoạn giống nội dung đã có trên hệ thống của creator khác — vui lòng chờ xác nhận thủ công trước khi xuất bản.`,
+                  duration: Infinity,
+                });
+              }
             } else {
               const id = pipelineToastId("copyright-ok", data.mediaId);
               registerToast(id);
@@ -107,7 +109,7 @@ export function usePipelineSSE({
               // "Đã qua kiểm duyệt" — KHÔNG phải "đã xuất bản". Xuất bản là hành động
               // Creator chủ động bấm ở bước cuối (XUẤT BẢN); pass kiểm duyệt chỉ nghĩa
               // là trang này sẵn sàng, chưa chắc đã hiển thị công khai trên nền tảng.
-              if (!shouldSuppressSuccessToastRef.current?.(data.mediaId)) {
+              if (!shouldSuppressToastRef.current?.(data.mediaId)) {
                 const id = pipelineToastId("moderation-ok", data.mediaId);
                 registerToast(id);
                 toast.success("Nội dung đã qua kiểm duyệt", {
@@ -119,14 +121,16 @@ export function usePipelineSSE({
             } else if (data.approvalStatus === "PENDING_REVIEW") {
               // Nhãn nhạy cảm có thể hợp lệ tùy bối cảnh — không tự động từ chối, đẩy qua
               // đội kiểm duyệt xét duyệt thủ công (khác hẳn bị từ chối vĩnh viễn).
-              const id = pipelineToastId("moderation-review", data.mediaId);
-              registerToast(id);
-              toast.warning("Nội dung đang chờ đội kiểm duyệt xác nhận", {
-                id,
-                description: `Phát hiện ${label} — cần đội kiểm duyệt xác nhận thủ công trước khi xuất bản.`,
-                duration: Infinity,
-              });
-            } else {
+              if (!shouldSuppressToastRef.current?.(data.mediaId)) {
+                const id = pipelineToastId("moderation-review", data.mediaId);
+                registerToast(id);
+                toast.warning("Nội dung cần kiểm duyệt thủ công", {
+                  id,
+                  description: `Phát hiện ${label} — vui lòng chờ xác nhận thủ công trước khi xuất bản.`,
+                  duration: Infinity,
+                });
+              }
+            } else if (!shouldSuppressToastRef.current?.(data.mediaId)) {
               const id = pipelineToastId("moderation-rejected", data.mediaId);
               registerToast(id);
               toast.error("Nội dung chưa đạt yêu cầu kiểm duyệt", {
@@ -136,20 +140,22 @@ export function usePipelineSSE({
               });
             }
           } else if (ev.event === "pipeline:failed") {
-            const errorMap: Record<string, string> = {
-              "COPYRIGHT": "kiểm tra bản quyền",
-              "MODERATION": "kiểm duyệt nội dung",
-            };
-            const step = data.failedStep
-              ? errorMap[data.failedStep] || data.failedStep
-              : "xử lý";
-            const id = pipelineToastId("failed", data.mediaId);
-            registerToast(id);
-            toast.error("Xử lý nội dung thất bại", {
-              id,
-              description: `Đã xảy ra lỗi trong quá trình ${step}. ${data.errorMessage || "Vui lòng thử đăng tải lại hoặc liên hệ hỗ trợ."}`,
-              duration: Infinity,
-            });
+            if (!shouldSuppressToastRef.current?.(data.mediaId)) {
+              const errorMap: Record<string, string> = {
+                "COPYRIGHT": "kiểm tra bản quyền",
+                "MODERATION": "kiểm duyệt nội dung",
+              };
+              const step = data.failedStep
+                ? errorMap[data.failedStep] || data.failedStep
+                : "xử lý";
+              const id = pipelineToastId("failed", data.mediaId);
+              registerToast(id);
+              toast.error("Xử lý nội dung thất bại", {
+                id,
+                description: `Đã xảy ra lỗi trong quá trình ${step}. ${data.errorMessage || "Vui lòng thử đăng tải lại hoặc liên hệ hỗ trợ."}`,
+                duration: Infinity,
+              });
+            }
           }
 
           queryClient.invalidateQueries({ queryKey: ["creator-dashboard", "media"] });

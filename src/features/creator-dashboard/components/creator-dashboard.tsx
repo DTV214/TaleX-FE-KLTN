@@ -518,8 +518,17 @@ function formatStatusLabel(
     return "Đang xem xét";
   }
 
+  // Đã được duyệt/xuất bản trước đó nhưng quản trị viên tạm ẩn khỏi công khai sau đó —
+  // trước đây rơi vào default bên dưới, hiện thẳng chuỗi enum "FORCE_HIDDEN" chưa dịch.
+  if (status === "FORCE_HIDDEN") {
+    return "Tạm ẩn";
+  }
+
   return status;
 }
+
+const FORCE_HIDDEN_REASON_TOOLTIP =
+  "Tập nội dung này đã được duyệt/xuất bản trước đó nhưng hiện đang tạm ngừng hiển thị công khai theo quyết định của đội ngũ quản trị. Vui lòng liên hệ bộ phận hỗ trợ để được giải thích chi tiết.";
 
 function getStatusBadgeStyle(status: string) {
   switch (status) {
@@ -606,6 +615,10 @@ function formatMediaStatusLabel(status: MediaStatus) {
   if (status === "INACTIVE") return "Vi phạm chính sách";
   if (status === "HLS_PROCESSING") return "Processing";
   if (status === "HLS_READY") return "Ready";
+  // Đã được duyệt trước đó nhưng quản trị viên tạm ẩn khỏi công khai sau đó — khác
+  // "Vi phạm chính sách" (chưa từng đạt), tránh rơi vào formatStatusLabel() bên dưới sẽ
+  // hiện thẳng chuỗi enum "FORCE_HIDDEN" chưa dịch.
+  if (status === "FORCE_HIDDEN") return "Tạm ẩn bởi quản trị viên";
   return formatStatusLabel(status as EpisodeStatus);
 }
 
@@ -845,7 +858,7 @@ function CreatorDashboardContent() {
   // Danh sách media mới nhất, cập nhật bởi effect polling-fallback bên dưới (khai báo
   // trước vì usePipelineSSE cần callback này ngay, còn mediaQuery thì khai báo sau).
   const suppressionMediaListRef = useRef<MediaResponse[]>([]);
-  const shouldSuppressSuccessToast = useCallback((mediaId: string) => {
+  const shouldSuppressToast = useCallback((mediaId: string) => {
     const list = suppressionMediaListRef.current;
     const target = list.find((m) => m.mediaId === mediaId);
     if (!target || target.mediaType !== "IMAGE") return false;
@@ -855,11 +868,7 @@ function CreatorDashboardContent() {
   }, []);
   // dismissOnChangeOf: đóng toast pipeline khi Creator chuyển sang view khác (vd rời
   // màn hình MEDIA để qua SEASON/EPISODE khác), không để tồn tại xuyên suốt dashboard.
-  usePipelineSSE({
-    enabled: true,
-    dismissOnChangeOf: activeView,
-    shouldSuppressSuccessToast,
-  });
+  usePipelineSSE({ enabled: true, dismissOnChangeOf: activeView, shouldSuppressToast });
   // Toast tổng kết đợt xử lý (bắn từ effect polling-fallback bên dưới, không đi qua
   // usePipelineSSE) cần tự dọn dẹp riêng theo cùng quy tắc "đổi view thì đóng toast".
   // Dùng ref thay vì đọc selectedEpisode trực tiếp trong cleanup — effect chỉ phụ thuộc
@@ -1009,29 +1018,31 @@ function CreatorDashboardContent() {
             });
           }
         } else if (media.status === "INACTIVE" && wasPending) {
-          if (media.approvalStatus === "PENDING_REVIEW") {
-            toast.warning("Nội dung đang chờ đội kiểm duyệt xác nhận", {
-              id: pipelineToastId("moderation-review", media.mediaId),
-              description:
-                "Cần đội kiểm duyệt xác nhận thủ công trước khi xuất bản.",
-              duration: Infinity,
-            });
-          } else {
-            toast.error("Nội dung chưa đạt yêu cầu kiểm duyệt", {
-              id: pipelineToastId("moderation-rejected", media.mediaId),
-              description:
-                "Nội dung đã bị tạm ẩn — vui lòng xem chi tiết vi phạm và chỉnh sửa hoặc thay thế nội dung trước khi tải lên lại.",
+          // Cùng lý do ẩn toast xanh riêng lẻ ở nhánh ACTIVE bên trên — đợt nhiều trang thì
+          // toast tổng kết cả đợt + panel ComicPipelineAggregateSummary đã đủ thông tin.
+          if (!(media.mediaType === "IMAGE" && isMultiPageImageBatch)) {
+            if (media.approvalStatus === "PENDING_REVIEW") {
+              toast.warning("Nội dung cần kiểm duyệt thủ công", {
+                id: pipelineToastId("moderation-review", media.mediaId),
+                description: "Vui lòng chờ xác nhận thủ công trước khi xuất bản.",
+                duration: Infinity,
+              });
+            } else {
+              toast.error("Nội dung chưa đạt yêu cầu kiểm duyệt", {
+                id: pipelineToastId("moderation-rejected", media.mediaId),
+                description: "Nội dung đã bị tạm ẩn — vui lòng xem chi tiết vi phạm và chỉnh sửa hoặc thay thế nội dung trước khi tải lên lại.",
+                duration: Infinity,
+              });
+            }
+          }
+        } else if (media.status === "FAILED") {
+          if (!(media.mediaType === "IMAGE" && isMultiPageImageBatch)) {
+            toast.error("Xử lý nội dung thất bại", {
+              id: pipelineToastId("failed", media.mediaId),
+              description: media.errorMessage || "Đã xảy ra lỗi trong quá trình xử lý. Vui lòng thử đăng tải lại hoặc liên hệ hỗ trợ.",
               duration: Infinity,
             });
           }
-        } else if (media.status === "FAILED") {
-          toast.error("Xử lý nội dung thất bại", {
-            id: pipelineToastId("failed", media.mediaId),
-            description:
-              media.errorMessage ||
-              "Đã xảy ra lỗi trong quá trình xử lý. Vui lòng thử đăng tải lại hoặc liên hệ hỗ trợ.",
-            duration: Infinity,
-          });
         }
       }
     }
@@ -1067,8 +1078,7 @@ function CreatorDashboardContent() {
       const total = imagePages.length;
       const parts: string[] = [];
       if (readyCount > 0) parts.push(`${readyCount} đạt`);
-      if (pendingReviewCount > 0)
-        parts.push(`${pendingReviewCount} chờ đội kiểm duyệt`);
+      if (pendingReviewCount > 0) parts.push(`${pendingReviewCount} chờ kiểm duyệt thủ công`);
       if (rejectedCount > 0) parts.push(`${rejectedCount} bị từ chối`);
       if (failedCount > 0) parts.push(`${failedCount} lỗi hệ thống`);
       const hasIssue =
@@ -3779,6 +3789,7 @@ function EpisodeManagementView({
                             "px-2 py-0.5 rounded border text-[10px] uppercase font-bold",
                             getStatusBadgeStyle(episode.status),
                           )}
+                          title={episode.status === "FORCE_HIDDEN" ? FORCE_HIDDEN_REASON_TOOLTIP : undefined}
                         >
                           {formatStatusLabel(episode.status)}
                         </span>
@@ -3934,6 +3945,7 @@ function EpisodeTableRow({
             "rounded-full border px-3 py-1.5 text-xs font-black",
             statusStyle,
           )}
+          title={episode.status === "FORCE_HIDDEN" ? FORCE_HIDDEN_REASON_TOOLTIP : undefined}
         >
           {formatStatusLabel(episode.status)}
         </span>

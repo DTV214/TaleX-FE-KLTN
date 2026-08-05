@@ -17,6 +17,10 @@ jobs:
           port: 22
           command_timeout: 30m
           script: |
+            set -e
+            # Thiếu set -e trước đây: nếu git pull/npm ci/build lỗi, script vẫn chạy tiếp
+            # xuống pm2 restart (container/process CŨ đứng dậy lại bình thường), health
+            # check pass nhờ bản CŨ, CI báo "success" giả dù code mới chưa hề lên server.
             cd ~/TaleX-FE-KLTN
             git pull origin main
 
@@ -55,4 +59,7 @@ jobs:
               echo "  attempt $i/12..."
               sleep 5
             done
+            # Lệnh cuối trước đây là echo (luôn exit 0) — CI báo xanh dù health check thật
+            # sự timeout. exit 1 để CI báo đỏ đúng.
             echo "WARNING: Frontend health check failed after 60s"
+            exit 1
