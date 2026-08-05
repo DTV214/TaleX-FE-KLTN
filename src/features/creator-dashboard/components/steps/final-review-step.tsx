@@ -9,6 +9,7 @@ import {
 } from "@/features/creator-dashboard/api/creator-content-api";
 import { AIPolicyAndCopyright } from "@/features/creator-dashboard/components/ai-policy-and-copyright";
 import { CreatorBackButton } from "@/features/creator-dashboard/components/creator-back-button";
+import { SignedHlsPlayer } from "@/features/playback/components/signed-hls-player";
 import {
   getBlockingCopyrightViolations,
   getRejectedCensorshipResults,
@@ -167,7 +168,9 @@ export function FinalReviewStep({
           <h3 className="font-semibold text-white mb-4">Bản xem trước trước khi phát hành</h3>
 
           <div className="w-full aspect-video bg-black rounded-lg overflow-hidden border border-creator-border mb-6 relative">
-            {mediaUrl ? (
+            {selectedEpisode?.id && (mediaStatus === "ACTIVE" || mediaStatus === "HLS_READY") ? (
+              <SignedHlsPlayer episodeId={selectedEpisode.id} compact creatorMode />
+            ) : mediaUrl ? (
               <video src={mediaUrl} controls className="w-full h-full object-contain" poster={mediaUrl}></video>
             ) : (
               <div className="w-full h-full flex items-center justify-center text-creator-muted">
