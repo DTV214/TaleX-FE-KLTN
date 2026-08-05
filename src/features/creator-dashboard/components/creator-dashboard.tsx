@@ -125,6 +125,7 @@ import { CreatorMonetizationView } from "@/features/creator-dashboard/components
 import { CreatorCampaignPurchaseView } from "@/features/creator-dashboard/components/views/creator-campaign-purchase-view";
 import { CreatorCampaignsView } from "@/features/creator-dashboard/components/views/creator-campaigns-view";
 import { AIPolicyAndCopyright } from "@/features/creator-dashboard/components/ai-policy-and-copyright";
+import { mediaSystemConfigApi } from "@/features/admin/api/media-system-config.api";
 import {
   getBlockingCopyrightViolations,
   getRejectedCensorshipResults,
@@ -250,11 +251,11 @@ type EditModalState =
 
 type EditSubmitState =
   | {
-      kind: "series";
-      value: SeriesRow;
-      coverFile?: File;
-      bannerFile?: File;
-    }
+    kind: "series";
+    value: SeriesRow;
+    coverFile?: File;
+    bannerFile?: File;
+  }
   | { kind: "season"; value: SeasonRow }
   | { kind: "episode"; value: EpisodeRow };
 
@@ -464,7 +465,7 @@ function normalizeAssetUrl(value: string | undefined, fallback = "") {
 }
 
 function subscribeToClientMount() {
-  return () => {};
+  return () => { };
 }
 
 function getClientSnapshot() {
@@ -808,11 +809,10 @@ function MultiSelectField({
             key={opt.id}
             type="button"
             onClick={() => toggle(opt.id)}
-            className={`px-3 py-1.5 rounded-md text-sm transition-colors border ${
-              selected.includes(opt.id)
-                ? "bg-creator-gold text-black border-creator-gold font-medium"
-                : "bg-creator-sidebar border-creator-border text-creator-muted hover:border-white/30"
-            }`}
+            className={`px-3 py-1.5 rounded-md text-sm transition-colors border ${selected.includes(opt.id)
+              ? "bg-creator-gold text-black border-creator-gold font-medium"
+              : "bg-creator-sidebar border-creator-border text-creator-muted hover:border-white/30"
+              }`}
           >
             {opt.name}
           </button>
@@ -823,6 +823,12 @@ function MultiSelectField({
 }
 
 function CreatorDashboardContent() {
+  const mediaSystemConfigQuery = useQuery({
+    queryKey: ["media-system-config"],
+    queryFn: () => mediaSystemConfigApi.getConfig(),
+    staleTime: 5 * 60 * 1000,
+  });
+
   const categoriesQuery = useQuery({
     queryKey: ["categories"],
     queryFn: async () => {
@@ -1819,21 +1825,34 @@ function CreatorDashboardContent() {
 
     const batchId = Date.now();
     const basePages = comicPages.length > 0 ? comicPages : existingMediaPages;
+    const config = mediaSystemConfigQuery.data;
+
+    if (config) {
+      if (basePages.length + selectedFiles.length > config.maxComicImages) { setUploadMessage(`Bạn đã tải vượt quá ${config.maxComicImages} ảnh cho mỗi tập. Vui lòng xoá bớt ảnh dư.`); }
+    }
+
     const lastDisplayOrder = basePages.reduce(
       (maxOrder, page) => Math.max(maxOrder, page.displayOrder),
       0,
     );
-    const nextPages = selectedFiles.map((file, index) => ({
-      id: `LOCAL-${batchId}-${file.name}-${file.lastModified}-${index}`,
-      image: URL.createObjectURL(file),
-      title: file.name,
-      mimeType: file.type || "image/jpeg",
-      fileSize: formatBytes(file.size),
-      fileSizeBytes: file.size,
-      checksum: "generated",
-      displayOrder: lastDisplayOrder + index + 1,
-      file,
-    }));
+    const nextPages = selectedFiles.map((file, index) => {
+      const isOversized = config && file.size > config.maxComicImageSizeMb * 1024 * 1024;
+      return {
+        id: `LOCAL-${batchId}-${file.name}-${file.lastModified}-${index}`,
+        image: URL.createObjectURL(file),
+        title: file.name,
+        mimeType: file.type || "image/jpeg",
+        fileSize: formatBytes(file.size),
+        fileSizeBytes: file.size,
+        checksum: "generated",
+        displayOrder: lastDisplayOrder + index + 1,
+        file,
+        ...(isOversized ? {
+          status: "FAILED" as const,
+          errorMessage: `Dung lượng ảnh vượt quá giới hạn ${config.maxComicImageSizeMb}MB`,
+        } : {})
+      };
+    });
 
     setUploadMessage(null);
     setComicPages([...basePages, ...nextPages]);
@@ -2050,10 +2069,10 @@ function CreatorDashboardContent() {
         activeView === "create" || activeView === "series"
           ? "current"
           : ((["seasons", "episodes", "comic", "video", "publish"].includes(
-              activeView,
-            )
-              ? "completed"
-              : "upcoming") as any),
+            activeView,
+          )
+            ? "completed"
+            : "upcoming") as any),
     },
     {
       id: "structure",
@@ -2062,8 +2081,8 @@ function CreatorDashboardContent() {
         activeView === "seasons"
           ? "current"
           : ((["episodes", "comic", "video", "publish"].includes(activeView)
-              ? "completed"
-              : "upcoming") as any),
+            ? "completed"
+            : "upcoming") as any),
     },
     {
       id: "content",
@@ -2072,8 +2091,8 @@ function CreatorDashboardContent() {
         activeView === "episodes"
           ? "current"
           : ((["comic", "video", "publish"].includes(activeView)
-              ? "completed"
-              : "upcoming") as any),
+            ? "completed"
+            : "upcoming") as any),
     },
     {
       id: "moderation",
@@ -2426,6 +2445,7 @@ function CreatorDashboardContent() {
                   approvalStatus={existingVideoMedia[0]?.approvalStatus}
                   errorMessage={existingVideoMedia[0]?.errorMessage}
                   contentId={existingVideoMedia[0]?.contentId}
+                  video={existingVideoMedia[0]}
                   isPublishing={publishEpisodeMutation.isPending}
                   onPublish={() =>
                     publishEpisodeMutation.mutate(selectedEpisodeId)
@@ -3861,30 +3881,30 @@ function EpisodeManagementView({
         episode={
           analyticsEpisode
             ? {
-                episodeId: analyticsEpisode.id,
-                seasonId: analyticsEpisode.seasonId,
-                creatorId: "",
-                episodeNumber: analyticsEpisode.episodeNumber,
-                title: analyticsEpisode.title,
-                description: analyticsEpisode.description,
-                thumbnail: analyticsEpisode.thumbnail,
-                contentType: analyticsEpisode.contentType,
-                status: analyticsEpisode.status,
-                scheduledPublishAt: analyticsEpisode.scheduledPublishAt || null,
-                publishedAt: "",
-                unlockType: analyticsEpisode.unlockType,
-                priceVnd: analyticsEpisode.priceVnd,
-                likes: 0,
-                views: Number(analyticsEpisode.views) || 0,
-                totalPage: analyticsEpisode.totalPage || null,
-                createdAt: "",
-                updatedAt: analyticsEpisode.updatedAt,
-                deletedAt: null,
-                createdBy: "",
-                updatedBy: "",
-                deletedBy: null,
-                isDeleted: false,
-              }
+              episodeId: analyticsEpisode.id,
+              seasonId: analyticsEpisode.seasonId,
+              creatorId: "",
+              episodeNumber: analyticsEpisode.episodeNumber,
+              title: analyticsEpisode.title,
+              description: analyticsEpisode.description,
+              thumbnail: analyticsEpisode.thumbnail,
+              contentType: analyticsEpisode.contentType,
+              status: analyticsEpisode.status,
+              scheduledPublishAt: analyticsEpisode.scheduledPublishAt || null,
+              publishedAt: "",
+              unlockType: analyticsEpisode.unlockType,
+              priceVnd: analyticsEpisode.priceVnd,
+              likes: 0,
+              views: Number(analyticsEpisode.views) || 0,
+              totalPage: analyticsEpisode.totalPage || null,
+              createdAt: "",
+              updatedAt: analyticsEpisode.updatedAt,
+              deletedAt: null,
+              createdBy: "",
+              updatedBy: "",
+              deletedBy: null,
+              isDeleted: false,
+            }
             : null
         }
         seriesTitle={selectedSeries.title}
@@ -4031,6 +4051,8 @@ function ComicUploadView({
   isPublishingNow,
   onGoToPublishing,
   onBack,
+  maxImageSizeMb,
+  maxComicImages,
 }: {
   selectedSeries: SeriesRow | null;
   selectedSeason: SeasonRow | null;
@@ -4064,6 +4086,8 @@ function ComicUploadView({
   isPublishingNow: boolean;
   onGoToPublishing: () => void;
   onBack: () => void;
+  maxImageSizeMb?: number;
+  maxComicImages?: number;
 }) {
   const user = useAuthStore((state) => state.user);
   const isCreator = user?.roleName === "CREATOR";
@@ -4218,11 +4242,10 @@ function ComicUploadView({
                 </label>
                 <div
                   onClick={() => thumbnailInputRef.current?.click()}
-                  className={`relative w-full aspect-video rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors overflow-hidden group ${
-                    thumbnailPreview
-                      ? "border-creator-gold"
-                      : "border-creator-border hover:border-creator-gold/50"
-                  }`}
+                  className={`relative w-full aspect-video rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors overflow-hidden group ${thumbnailPreview
+                    ? "border-creator-gold"
+                    : "border-creator-border hover:border-creator-gold/50"
+                    }`}
                 >
                   {thumbnailPreview ? (
                     <>
@@ -4317,7 +4340,7 @@ function ComicUploadView({
                 Kéo & thả tài nguyên vào đây
               </p>
               <p className="text-xs font-medium text-creator-muted">
-                Kích thước tối đa: 10MB mỗi trang
+                Kích thước tối đa: ${maxImageSizeMb ? maxImageSizeMb : 10}MB mỗi trang
               </p>
             </label>
 
@@ -4338,9 +4361,7 @@ function ComicUploadView({
             {pages.length > 0 && (
               <div className="space-y-4 pt-6 border-t border-creator-border">
                 <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-sm font-bold text-white">
-                    Trang đã tải lên ({pages.length})
-                  </h4>
+                  <h4 className="text-sm font-bold text-white flex items-center gap-2">Trang đã tải lên {maxComicImages ? (<span className={cx("text-xs font-medium px-2 py-0.5 rounded", pages.length > maxComicImages ? "bg-red-500/20 text-red-400" : "bg-white/10 text-gray-300")}>{pages.length} / {maxComicImages} ảnh</span>) : (<span className="text-xs font-medium text-gray-400">({pages.length})</span>)}</h4>
                   <button
                     onClick={onSaveOrder}
                     disabled={isSavingOrder}
@@ -4365,6 +4386,7 @@ function ComicUploadView({
                       onMoveUp={() => onMovePage(page.id, -1)}
                       onMoveDown={() => onMovePage(page.id, 1)}
                       onDelete={() => onDeletePage(page)}
+                      isOverCountLimit={maxComicImages != null && index >= maxComicImages}
                     />
                   ))}
                 </div>
@@ -4445,6 +4467,7 @@ function ComicPageCard({
   onMoveUp,
   onMoveDown,
   onDelete,
+  isOverCountLimit,
 }: {
   page: ComicPage;
   dragging: boolean;
@@ -4454,6 +4477,7 @@ function ComicPageCard({
   onMoveUp: () => void;
   onMoveDown: () => void;
   onDelete: () => void;
+  isOverCountLimit?: boolean;
 }) {
   const isLocal = page.id.startsWith("LOCAL-");
   const violationsQuery = useQuery({
@@ -4473,7 +4497,11 @@ function ComicPageCard({
   const censorshipViolations = getRejectedCensorshipResults(violations);
   const hasCopyrightViolations = copyrightViolations.length > 0;
   const hasCensorshipViolations = censorshipViolations.length > 0;
-  const hasAnyViolations = hasCopyrightViolations || hasCensorshipViolations;
+  const hasSizeViolations = page.status === "FAILED" && !!page.errorMessage;
+  const hasAnyViolations = hasCopyrightViolations || hasCensorshipViolations || hasSizeViolations || isOverCountLimit;
+
+  // Use a yellow border for count limit if it's the only violation, else red
+  const isOnlyCountLimit = isOverCountLimit && !hasCopyrightViolations && !hasCensorshipViolations && !hasSizeViolations;
 
   return (
     <div
@@ -4491,7 +4519,9 @@ function ComicPageCard({
       className={cx(
         "group relative overflow-hidden rounded-xl border-2 shadow-sm transition",
         hasAnyViolations
-          ? "bg-red-500/5 border-red-500"
+          ? isOnlyCountLimit
+            ? "bg-yellow-500/5 border-yellow-500"
+            : "bg-red-500/5 border-red-500"
           : "bg-creator-sidebar border-transparent hover:border-[#007A8A]",
         dragging && "scale-95 border-[#B83268] opacity-60",
       )}
@@ -4512,17 +4542,27 @@ function ComicPageCard({
         </span>
 
         {hasAnyViolations && (
-          <div className="absolute top-2 right-10 bg-red-500 text-white p-1.5 rounded-lg shadow z-20">
+          <div className={cx("absolute top-2 right-10 text-white p-1.5 rounded-lg shadow z-20", isOnlyCountLimit ? "bg-yellow-500" : "bg-red-500")}>
             <ShieldAlert size={16} />
           </div>
         )}
 
         {hasAnyViolations && (
           <div className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity p-4 flex flex-col justify-center items-center text-center overflow-y-auto backdrop-blur-sm z-10 cursor-help">
-            <AlertTriangle className="text-red-500 mb-2" size={24} />
-            <span className="text-red-400 font-bold text-sm mb-2">
-              Nội dung không đạt kiểm duyệt
+            <AlertTriangle className={isOnlyCountLimit ? "text-yellow-500 mb-2" : "text-red-500 mb-2"} size={24} />
+            <span className={cx("font-bold text-sm mb-2", isOnlyCountLimit ? "text-yellow-400" : "text-red-400")}>
+              {isOverCountLimit ? "Vượt quá số lượng ảnh" : hasSizeViolations ? "Lỗi tải ảnh" : "Nội dung không đạt kiểm duyệt"}
             </span>
+            {isOverCountLimit && (
+              <p className="text-xs text-gray-300 mb-1">
+                Số lượng ảnh đã vượt quá mức cho phép. Vui lòng xoá bớt ảnh.
+              </p>
+            )}
+            {hasSizeViolations && (
+              <p className="text-xs text-gray-300 mb-1">
+                {page.errorMessage}
+              </p>
+            )}
             {hasCopyrightViolations && (
               <p className="text-xs text-gray-300 mb-1">
                 <span className="font-semibold text-white">Bản quyền:</span>{" "}
@@ -4533,7 +4573,7 @@ function ComicPageCard({
               <p className="text-xs text-gray-300">
                 <span className="font-semibold text-white">Nội dung:</span>{" "}
                 {censorshipViolations
-                  .map((item) =>
+                  .map((item: any) =>
                     translateViolationLabel(item.primaryViolationLabel),
                   )
                   .filter(Boolean)
@@ -4673,12 +4713,12 @@ function VideoUploadView({
       <div>
         <CreatorBackButton onClick={onBack} className="mb-6" />
         <h2 className="text-4xl font-bold text-white mb-3">
-          Đang kiểm duyệt nội dung cuối cùng
+          Ã„Âang kiÃ¡Â»Æ’m duyÃ¡Â»â€¡t nÃ¡Â»â„¢i dung cuÃ¡Â»â€˜i cÃƒÂ¹ng
         </h2>
         <p className="text-creator-muted max-w-2xl text-sm leading-relaxed">
-          Tải lên các tài nguyên điện ảnh chất lượng cao của bạn và để TaleX AI
-          đảm bảo việc tuân thủ chính sách cũng như xác thực tính nguyên bản của
-          nội dung.
+          TÃ¡ÂºÂ£i lÃƒÂªn cÃƒÂ¡c tÃƒÂ i nguyÃƒÂªn Ã„â€˜iÃ¡Â»â€¡n Ã¡ÂºÂ£nh chÃ¡ÂºÂ¥t lÃ†Â°Ã¡Â»Â£ng cao cÃ¡Â»Â§a bÃ¡ÂºÂ¡n vÃƒÂ  Ã„â€˜Ã¡Â»Æ’ TaleX AI
+          Ã„â€˜Ã¡ÂºÂ£m bÃ¡ÂºÂ£o viÃ¡Â»â€¡c tuÃƒÂ¢n thÃ¡Â»Â§ chÃƒÂ­nh sÃƒÂ¡ch cÃ…Â©ng nhÃ†Â° xÃƒÂ¡c thÃ¡Â»Â±c tÃƒÂ­nh nguyÃƒÂªn bÃ¡ÂºÂ£n cÃ¡Â»Â§a
+          nÃ¡Â»â„¢i dung.
         </p>
       </div>
 
@@ -4687,14 +4727,14 @@ function VideoUploadView({
         <div className="space-y-6">
           <div className="bg-creator-sidebar border border-creator-border rounded-xl p-8 shadow-xl mb-6">
             <div className="mb-6 flex items-center justify-between">
-              <h3 className="text-lg font-bold text-white">Chi tiết Tập</h3>
+              <h3 className="text-lg font-bold text-white">Chi tiÃ¡ÂºÂ¿t TÃ¡ÂºÂ­p</h3>
             </div>
             <div className="grid gap-6 md:grid-cols-[1fr_240px]">
               <div className="space-y-5">
                 <div className="grid gap-5 md:grid-cols-2">
                   <div>
                     <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">
-                      Số thứ tự Tập
+                      SÃ¡Â»â€˜ thÃ¡Â»Â© tÃ¡Â»Â± TÃ¡ÂºÂ­p
                     </label>
                     <input
                       type="number"
@@ -4743,7 +4783,7 @@ function VideoUploadView({
                   <div className="grid gap-5 md:grid-cols-2 mt-4 pt-4 border-t border-creator-border">
                     <div>
                       <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">
-                        Kiểu mở khóa
+                        KiÃ¡Â»Æ’u mÃ¡Â»Å¸ khÃƒÂ³a
                       </label>
                       <select
                         value={editForm.unlockType}
@@ -4793,11 +4833,10 @@ function VideoUploadView({
                 </label>
                 <div
                   onClick={() => thumbnailInputRef.current?.click()}
-                  className={`relative w-full aspect-video rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors overflow-hidden group ${
-                    thumbnailPreview
-                      ? "border-creator-gold"
-                      : "border-creator-border hover:border-creator-gold/50"
-                  }`}
+                  className={`relative w-full aspect-video rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors overflow-hidden group ${thumbnailPreview
+                    ? "border-creator-gold"
+                    : "border-creator-border hover:border-creator-gold/50"
+                    }`}
                 >
                   {thumbnailPreview ? (
                     <>
@@ -5001,7 +5040,7 @@ function VideoUploadView({
   );
 }
 
-function VideoProcessingState({
+export function VideoProcessingState({
   video,
   onViewViolation,
 }: {

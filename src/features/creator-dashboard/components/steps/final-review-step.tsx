@@ -10,6 +10,7 @@ import {
 import { AIPolicyAndCopyright } from "@/features/creator-dashboard/components/ai-policy-and-copyright";
 import { CreatorBackButton } from "@/features/creator-dashboard/components/creator-back-button";
 import { SignedHlsPlayer } from "@/features/playback/components/signed-hls-player";
+import { VideoProcessingState } from "@/features/creator-dashboard/components/creator-dashboard";
 import {
   getBlockingCopyrightViolations,
   getRejectedCensorshipResults,
@@ -43,6 +44,7 @@ interface FinalReviewStepProps {
   approvalStatus?: ContentApprovalStatus;
   errorMessage?: string;
   contentId?: string;
+  video?: any; // the whole MediaResponse for processing state
   isPublishing?: boolean;
   onPublish: () => void;
   onSchedulePublish: () => void;
@@ -69,6 +71,7 @@ export function FinalReviewStep({
   approvalStatus,
   errorMessage,
   contentId,
+  video,
   isPublishing,
   onPublish,
   onSchedulePublish,
@@ -170,6 +173,10 @@ export function FinalReviewStep({
           <div className="w-full aspect-video bg-black rounded-lg overflow-hidden border border-creator-border mb-6 relative">
             {selectedEpisode?.id && (mediaStatus === "ACTIVE" || mediaStatus === "HLS_READY") ? (
               <SignedHlsPlayer episodeId={selectedEpisode.id} compact creatorMode />
+            ) : video ? (
+              <div className="flex h-full w-full items-center justify-center p-4">
+                <VideoProcessingState video={video} />
+              </div>
             ) : mediaUrl ? (
               <video src={mediaUrl} controls className="w-full h-full object-contain" poster={mediaUrl}></video>
             ) : (
