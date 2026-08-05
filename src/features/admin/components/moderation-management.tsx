@@ -779,22 +779,18 @@ export function ModerationManagement() {
   const [rejectTarget, setRejectTarget] = useState<ModerationMedia | null>(null);
   const [detailTarget, setDetailTarget] = useState<ModerationMedia | null>(null);
   const pendingQuery = useGetPendingMedia(page, PAGE_SIZE);
-  const approvedQuery = useGetApprovedMedia(approvedPage, PAGE_SIZE);
+  // Lọc "manual"/"clean" chạy ở BE (MediaServiceImpl.listApproved) — approvalReviewedBy
+  // KHÔNG đủ để tự lọc ở FE: pipeline tự duyệt sạch cũng ghi giá trị actor hệ thống vào
+  // field này (không phải null), lọc sai sẽ lẫn nội dung không vi phạm vào "Duyệt tay".
+  // Lọc ở BE cũng giúp phân trang (totalPages/totalElements) phản ánh đúng số lượng đã lọc.
+  const approvedQuery = useGetApprovedMedia(approvedPage, PAGE_SIZE, approvedFilter);
   const approveMutation = useApproveMedia();
   const rejectMutation = useRejectMedia();
   const forceHideMutation = useForceHideEpisode();
   const forceUnhideMutation = useForceUnhideEpisode();
   const pendingPage = pendingQuery.data;
   const items = pendingPage?.content ?? [];
-  const allApprovedItems = approvedQuery.data?.content ?? [];
-  // approvalReviewedBy chỉ được set khi Staff/Admin bấm "Duyệt" thủ công (xem
-  // MediaServiceImpl.approve()) — media tự động APPROVED bởi pipeline (không vi phạm)
-  // không đi qua approve() nên field này luôn null, dùng để phân biệt 2 loại.
-  const approvedItems = allApprovedItems.filter((media) => {
-    if (approvedFilter === "manual") return Boolean(media.approvalReviewedBy);
-    if (approvedFilter === "clean") return !media.approvalReviewedBy;
-    return true;
-  });
+  const approvedItems = approvedQuery.data?.content ?? [];
   const isMutating = approveMutation.isPending || rejectMutation.isPending;
   const isApprovedMutating = forceHideMutation.isPending || forceUnhideMutation.isPending;
 
@@ -973,7 +969,10 @@ export function ModerationManagement() {
             <button
               key={option.key}
               type="button"
-              onClick={() => setApprovedFilter(option.key)}
+              onClick={() => {
+                setApprovedFilter(option.key);
+                setApprovedPage(0);
+              }}
               className={`rounded-full border px-4 py-1.5 text-xs font-bold transition ${
                 approvedFilter === option.key
                   ? "border-slate-950 bg-slate-950 text-white"

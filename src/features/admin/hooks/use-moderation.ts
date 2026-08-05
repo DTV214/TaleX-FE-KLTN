@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   approveMedia,
+  type ApprovedReviewFilter,
   forceHideEpisode,
   forceUnhideEpisode,
   getApprovedMedia,
@@ -16,8 +17,8 @@ export const moderationKeys = {
   all: ["admin", "moderation"] as const,
   pending: (page: number, size: number) =>
     [...moderationKeys.all, "pending", page, size] as const,
-  approved: (page: number, size: number) =>
-    [...moderationKeys.all, "approved", page, size] as const,
+  approved: (page: number, size: number, filter: ApprovedReviewFilter) =>
+    [...moderationKeys.all, "approved", page, size, filter] as const,
   violations: (mediaId: string) =>
     [...moderationKeys.all, "violations", mediaId] as const,
   mediaDetail: (mediaId: string) =>
@@ -74,10 +75,14 @@ export function useRejectMedia() {
   });
 }
 
-export function useGetApprovedMedia(page = 0, size = 12) {
+export function useGetApprovedMedia(
+  page = 0,
+  size = 12,
+  filter: ApprovedReviewFilter = "all",
+) {
   return useQuery({
-    queryKey: moderationKeys.approved(page, size),
-    queryFn: () => getApprovedMedia(page, size),
+    queryKey: moderationKeys.approved(page, size, filter),
+    queryFn: () => getApprovedMedia(page, size, filter),
     staleTime: 30 * 1000,
   });
 }
