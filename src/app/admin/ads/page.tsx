@@ -16,7 +16,7 @@ export default function AdminAdsPage() {
 
   const { data: slots, isLoading: loadingSlots } = useQuery({
     queryKey: ["admin-ad-slots"],
-    queryFn: adsApi.getAllSlots,
+    queryFn: adminAdsApi.getAllSlots,
   });
 
   const { data: pendingCampaigns, isLoading: loadingPending } = useQuery({
@@ -38,14 +38,7 @@ export default function AdminAdsPage() {
     onError: (err: any) => toast.error(err.response?.data?.message || err.message)
   });
 
-  const deleteSlotMutation = useMutation({
-    mutationFn: adminAdsApi.deleteSlot,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-ad-slots"] });
-      toast.success("Đã xoá Slot!");
-    },
-    onError: (err: any) => toast.error(err.response?.data?.message || err.message)
-  });
+
 
   const updateSlotMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<AdSlot> }) => adminAdsApi.updateSlot(id, data),
@@ -403,9 +396,6 @@ export default function AdminAdsPage() {
                           title={slot.isActive ? "Tắt (Ẩn)" : "Bật (Hiện)"}
                         >
                           {slot.isActive ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
-                        <button onClick={() => deleteSlotMutation.mutate(slot.slotId)} className="text-red-500 hover:bg-red-50 p-2 rounded transition-colors" title="Xóa">
-                          <Trash className="w-4 h-4" />
                         </button>
                       </td>
                     </tr>

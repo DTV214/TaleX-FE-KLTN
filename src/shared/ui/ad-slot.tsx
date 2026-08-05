@@ -15,6 +15,7 @@ type AdSlotProps = {
   adData?: any; // Pre-fetched ad data (AdServeResponse)
   format?: AdFormat;
   className?: string;
+  objectFit?: "cover" | "contain";
 };
 
 const minHeightByFormat: Record<AdFormat, string> = {
@@ -32,7 +33,7 @@ function AdBadge() {
   );
 }
 
-export function AdSlot({ slotId, adData, format = "auto", className }: AdSlotProps) {
+export function AdSlot({ slotId, adData, format = "auto", className, objectFit = "cover" }: AdSlotProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [impressionTracked, setImpressionTracked] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -140,13 +141,13 @@ export function AdSlot({ slotId, adData, format = "auto", className }: AdSlotPro
           muted 
           loop 
           playsInline
-          className="absolute inset-0 h-full w-full object-cover group-hover:scale-105 transition-transform duration-500" 
+          className={cn("absolute inset-0 h-full w-full group-hover:scale-105 transition-transform duration-500", objectFit === "contain" ? "object-contain" : "object-cover")} 
         />
       ) : (
         <img 
           src={ad.mediaUrl} 
           alt="Advertisement" 
-          className="absolute inset-0 h-full w-full object-cover group-hover:scale-105 transition-transform duration-500" 
+          className={cn("absolute inset-0 h-full w-full group-hover:scale-105 transition-transform duration-500", objectFit === "contain" ? "object-contain" : "object-cover")} 
         />
       )}
     </div>

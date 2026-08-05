@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useState, useEffect } from "react";
 import {
   BookOpen,
   ChevronLeft,
@@ -21,7 +21,8 @@ export default function Home() {
       <HomeAtmosphere />
       <main className="relative z-10 h-full min-w-0 flex-1 overflow-y-auto p-4 transition-all duration-300 ease-in-out md:p-6 no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         <div className="mx-auto w-full max-w-[1680px]">
-          <HomeFeed promotedComicAfter={<AdImageCarousel />} />
+          {/* <AdImageCarousel /> */}
+          <HomeFeed />
         </div>
       </main>
     </div>
@@ -51,7 +52,7 @@ function HomeAtmosphere() {
 }
 
 function AdImageCarousel() {
-  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const { data: ads, isLoading } = useQuery({
     queryKey: ["serve-all-ads", "HOME_BANNER"],
     queryFn: () => adsApi.serveAllAds("HOME_BANNER"),
@@ -59,67 +60,61 @@ function AdImageCarousel() {
     refetchOnWindowFocus: false,
   });
 
-  const scrollCarousel = useCallback((direction: -1 | 1) => {
-    const container = scrollRef.current;
-    if (!container) return;
-
-    const scrollDistance = Math.min(container.clientWidth * 0.78, 430);
-    container.scrollBy({
-      left: direction * scrollDistance,
-      behavior: "smooth",
-    });
-  }, []);
+  useEffect(() => {
+    if (!ads || ads.length <= 1) return;
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % ads.length);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [ads]);
 
   if (isLoading || !ads || ads.length === 0) return null;
 
-  const displayAds =
-    ads.length < 4
-      ? Array.from({ length: 4 }, (_, index) => ads[index % ads.length])
-      : ads;
-
   return (
-    <section className="relative overflow-hidden rounded-[1.15rem] border border-white/7 bg-[#111113]/92 p-1.5 shadow-[0_14px_42px_rgba(0,0,0,0.26)]">
-      <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-[#111113] to-transparent" />
-      <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-[#111113] to-transparent" />
-
-      {displayAds.length > 1 ? (
-        <>
-          <button
-            type="button"
-            aria-label="Quảng cáo trước"
-            onClick={() => scrollCarousel(-1)}
-            className="absolute left-2 top-1/2 z-20 flex h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-black/55 text-white/80 shadow-lg backdrop-blur-md transition hover:border-[#D4AF37]/40 hover:bg-[#D4AF37] hover:text-black"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            aria-label="Quảng cáo tiếp theo"
-            onClick={() => scrollCarousel(1)}
-            className="absolute right-2 top-1/2 z-20 flex h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-black/55 text-white/80 shadow-lg backdrop-blur-md transition hover:border-[#D4AF37]/40 hover:bg-[#D4AF37] hover:text-black"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </button>
-        </>
-      ) : null}
-
-      <div
-        ref={scrollRef}
-        className="flex h-[118px] snap-x snap-mandatory gap-2 overflow-x-auto scroll-smooth pr-10 [scrollbar-width:none] md:h-[140px] lg:h-[158px] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-      >
-        {displayAds.map((ad: AdServeResponse, index) => (
-          <div
-            key={`${ad.campaignId}-${index}`}
-            className="group relative ml-1 h-full w-[76vw] shrink-0 snap-start overflow-hidden rounded-[0.95rem] border border-white/5 bg-white/[0.04] md:w-[330px] lg:w-[410px]"
-          >
-            <SunSheen />
-            <AdSlot
-              adData={ad}
-              className="h-full min-h-0 w-full rounded-none border-none bg-transparent"
-            />
+    <section className="relative w-full overflow-hidden rounded-[1.15rem] border border-white/7 bg-[#111113]/92 shadow-[0_14px_42px_rgba(0,0,0,0.26)] h-[180px] md:h-[220px] lg:h-[260px]">
+      {ads.map((ad: AdServeResponse, index: number) => (
+        <div
+          key={`${ad.campaignId}-${index}`}
+          className={`absolute inset-0 transition-opacity duration-1000 ${
+            index === currentIndex ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none"
+          }`}
+        >
+          {/* Blurred Background */}
+          <div 
+            className="absolute inset-0 bg-cover bg-center opacity-40 blur-2xl scale-110"
+            style={{ backgroundImage: `url(${ad.mediaUrl})` }} 
+          />
+          <div className="absolute inset-0 bg-black/20" />
+          
+          {/* Centered Image */}
+          <div className="relative flex h-full w-full justify-center">
+            <div className="relative h-full w-full max-w-[1300px] shadow-2xl">
+               <AdSlot
+                 adData={ad}
+                 className="h-full w-full rounded-none border-none bg-transparent"
+                 objectFit="contain"
+               />
+               {/* Pagination Dots */}
+               {index === currentIndex && ads.length > 1 && (
+                 <div className="absolute bottom-4 left-6 z-20 flex gap-2">
+                   {ads.map((_, dotIndex) => (
+                     <button
+                       key={dotIndex}
+                       onClick={(e) => {
+                         e.stopPropagation();
+                         setCurrentIndex(dotIndex);
+                       }}
+                       className={`h-2 rounded-full transition-all duration-300 shadow-sm ${
+                         dotIndex === currentIndex ? "w-6 bg-white" : "w-2 bg-white/50 hover:bg-white/80"
+                       }`}
+                     />
+                   ))}
+                 </div>
+               )}
+            </div>
           </div>
-        ))}
-      </div>
+        </div>
+      ))}
     </section>
   );
 }

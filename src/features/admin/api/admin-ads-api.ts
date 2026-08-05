@@ -13,6 +13,9 @@ export interface AdCampaignAdmin {
 }
 
 export const adminAdsApi = {
+  getAllSlots: () =>
+    api.get<{ data: AdSlot[] }>("/api/v1/ads/admin/slots").then((res) => res.data.data),
+
   getPendingCampaigns: () =>
     api.get<{ data: AdCampaignAdmin[] }>("/api/v1/ads/admin/campaigns/pending").then((res) => res.data.data),
 
@@ -33,7 +36,4 @@ export const adminAdsApi = {
 
   patchSlotStatus: (slotId: string, isActive: boolean) =>
     api.patch(`/api/v1/ads/admin/slots/${slotId}/status?isActive=${isActive}`).then((res) => res.data.data),
-
-  deleteSlot: (slotId: string) =>
-    api.delete(`/api/v1/ads/admin/slots/${slotId}`).then((res) => res.data),
 };
