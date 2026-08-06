@@ -46,7 +46,7 @@ const primaryMenu: MenuItem[] = [
 ];
 
 const libraryMenu: MenuItem[] = [
-  { title: "Video đã xem", href: "/history", icon: History },
+  { title: "Lịch sử đã xem", href: "/history", icon: History },
   { title: "Đã thích", href: "/liked", icon: Heart },
   { title: "Đã đánh giá", href: "/my-ratings", icon: Star },
   { title: "Đã bookmark", href: "/bookmarks", icon: Bookmark },

@@ -37,6 +37,7 @@ import type {
   HomeFeedRequest,
   HomeFeedSeries,
 } from "../types/home-feed.types";
+import { ContinueWatching } from "@/features/home/components/continue-watching";
 import { AdSlot } from "@/shared/ui/ad-slot";
 
 type FeedKind = "COMIC" | "VIDEO";
@@ -423,11 +424,14 @@ export function HomeFeed({
           <Fragment key={section.id}>
             {index > 0 ? <DecorativeSectionDivider /> : null}
             {isFirstVideoSection ? (
-              <HomeFeedZoneTitle
-                icon={<Film className="h-5 w-5" />}
-                title="Khu vực phim bộ"
-                description="Các nội dung video đang nổi bật, thịnh hành và mới cập nhật trên TaleX."
-              />
+              <>
+                <ContinueWatching />
+                <HomeFeedZoneTitle
+                  icon={<Film className="h-5 w-5" />}
+                  title="Khu vực phim bộ"
+                  description="Các nội dung video đang nổi bật, thịnh hành và mới cập nhật trên TaleX."
+                />
+              </>
             ) : null}
             {isFirstComicSection && promotedComicAfter ? (
               <CompactSponsorFrame>{promotedComicAfter}</CompactSponsorFrame>
