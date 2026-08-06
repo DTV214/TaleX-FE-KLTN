@@ -10,7 +10,7 @@ import {
 import { AIPolicyAndCopyright } from "@/features/creator-dashboard/components/ai-policy-and-copyright";
 import { CreatorBackButton } from "@/features/creator-dashboard/components/creator-back-button";
 import { SignedHlsPlayer } from "@/features/playback/components/signed-hls-player";
-import { VideoProcessingState } from "@/features/creator-dashboard/components/creator-dashboard";
+import { VideoProcessingState } from "@/features/creator-dashboard/components/views/video-upload-view";
 import {
   getBlockingCopyrightViolations,
   getRejectedCensorshipResults,

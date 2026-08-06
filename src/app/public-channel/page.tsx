@@ -277,7 +277,7 @@ function PublicChannelContent() {
   };
 
   const getSortedList = (list: typeof series) => {
-    let result = [...list];
+    const result = [...list];
     result.sort((a, b) => {
       const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
       const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
