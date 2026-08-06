@@ -363,6 +363,9 @@ export function ContentPurchaseHistory() {
                 </p>
               </div>
 
+              {/* TẠM COMMENT: xuất hóa đơn điện tử qua SePay đang lỗi phía nhà cung cấp
+                  (matbao) — tắt tạm nút Hóa đơn ở đây, xem giải thích ở
+                  OrderCompletionServiceImpl.complete() (BE).
               <div className="mt-5 flex flex-col gap-3 sm:flex-row">
                 {selectedItem.invoiceUrl && (
                   <Button
@@ -381,6 +384,7 @@ export function ContentPurchaseHistory() {
                   </Button>
                 )}
               </div>
+              */}
             </div>
           </article>
         ) : (
