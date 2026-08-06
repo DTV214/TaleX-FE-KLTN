@@ -27,6 +27,7 @@ const PUBLIC_ROUTE_PREFIXES = [
   "/complete-profile",
   "/intro",
   "/series",
+  "/search",
   "/comics",
   "/movies",
   "/watch",
