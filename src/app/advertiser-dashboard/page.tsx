@@ -153,9 +153,91 @@ function CampaignManagementView({ profile }: { profile: any }) {
   const [activeReportCampaignId, setActiveReportCampaignId] = useState<string | null>(null);
   const [scheduleCampaign, setScheduleCampaign] = useState<any>(null);
   const [topupCampaign, setTopupCampaign] = useState<any>(null);
+  const [isBulkExportModalOpen, setIsBulkExportModalOpen] = useState(false);
   const { labels } = useLabels();
   const selectedLabel = searchParams.get("labelId");
   const [searchQuery, setSearchQuery] = useState("");
+
+  const handleBulkExport = async (selectedFields: ExportField[], startDate?: string, endDate?: string) => {
+    if (selectedCampaignIds.length === 0) return;
+
+    try {
+      toast.loading("Đang xuất dữ liệu hàng loạt...", { id: "bulk-export-excel" });
+      
+      for (let i = 0; i < selectedCampaignIds.length; i++) {
+        const campaignId = selectedCampaignIds[i];
+        const campaign = campaigns?.find((c: any) => c.campaignId === campaignId);
+        if (!campaign) continue;
+
+        const metrics = await adsApi.getCampaignMetrics(campaignId);
+        let filteredMetrics = metrics || [];
+        
+        if (startDate) {
+          const start = new Date(startDate);
+          start.setHours(0, 0, 0, 0);
+          filteredMetrics = filteredMetrics.filter((m: any) => new Date(m.reportDate) >= start);
+        }
+        if (endDate) {
+          const end = new Date(endDate);
+          end.setHours(23, 59, 59, 999);
+          filteredMetrics = filteredMetrics.filter((m: any) => new Date(m.reportDate) <= end);
+        }
+
+        const totalImpressions = filteredMetrics.reduce((sum: number, m: any) => sum + (m.impressions || 0), 0);
+        const totalClicks = filteredMetrics.reduce((sum: number, m: any) => sum + (m.clicks || 0), 0);
+        const totalSpend = filteredMetrics.reduce((sum: number, m: any) => sum + (m.spend || 0), 0);
+        const totalViews6s = filteredMetrics.reduce((sum: number, m: any) => sum + (m.focusedViews6s || 0), 0);
+        const overallCTR = totalImpressions > 0 ? ((totalClicks / totalImpressions) * 100).toFixed(2) + "%" : "0.00%";
+
+        const overviewData = [{
+          "Tên chiến dịch": campaign.name,
+          "Loại Media": campaign.mediaType,
+          "Mục tiêu Impressions": campaign.targetImpressions,
+          "Ngân sách": campaign.campaignBudget,
+          "Ngày bắt đầu": campaign.startDate ? new Date(campaign.startDate).toLocaleDateString("vi-VN") : "",
+          "Ngày kết thúc": campaign.endDate ? new Date(campaign.endDate).toLocaleDateString("vi-VN") : "",
+          "Trạng thái": campaign.status === "ACTIVE" ? "Đang chạy" : (campaign.status === "PAUSED" ? "Tạm dừng" : "Đã xong"),
+          "Tổng lượt hiển thị (Impressions)": totalImpressions,
+          "Tổng lượt click (Clicks)": totalClicks,
+          "Tỉ lệ click tổng (CTR)": overallCTR,
+          "Tổng chi phí (Spend)": totalSpend,
+          "Tổng lượt xem 6s": totalViews6s,
+        }];
+
+        const detailedData: any[] = [];
+        filteredMetrics.forEach((m: any) => {
+          const row: any = { 
+            "Ngày báo cáo": new Date(m.reportDate).toLocaleDateString("vi-VN") 
+          };
+          if (selectedFields.includes("impressions")) row["Impressions"] = m.impressions;
+          if (selectedFields.includes("clicks")) row["Clicks"] = m.clicks;
+          if (selectedFields.includes("ctr")) row["CTR (%)"] = m.ctr;
+          if (selectedFields.includes("spend")) row["Spend (đ)"] = m.spend;
+          if (selectedFields.includes("views6s")) row["Focused Views (6s)"] = m.focusedViews6s;
+          detailedData.push(row);
+        });
+
+        const wb = XLSX.utils.book_new();
+        const overviewSheet = XLSX.utils.json_to_sheet(overviewData);
+        XLSX.utils.book_append_sheet(wb, overviewSheet, "Tổng quan chiến dịch");
+
+        if (detailedData.length > 0) {
+          const detailSheet = XLSX.utils.json_to_sheet(detailedData);
+          XLSX.utils.book_append_sheet(wb, detailSheet, "Phân tích chi tiết");
+        }
+
+        const safeName = campaign.name.replace(/[^a-zA-Z0-9]/g, '_');
+        XLSX.writeFile(wb, `Report_${safeName}_${new Date().getTime()}.xlsx`);
+        
+        await new Promise(r => setTimeout(r, 500));
+      }
+
+      toast.success(`Xuất thành công ${selectedCampaignIds.length} file`, { id: "bulk-export-excel" });
+    } catch (error) {
+      console.error(error);
+      toast.error("Xuất file thất bại", { id: "bulk-export-excel" });
+    }
+  };
 
   const filteredCampaigns = campaigns?.filter((c: any) => {
     if (selectedLabel && (!c.labels || !c.labels.includes(selectedLabel))) return false;
@@ -239,7 +321,16 @@ function CampaignManagementView({ profile }: { profile: any }) {
                 <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Management</span>
               </div>
               
-              <div className="flex items-center justify-between px-6 py-2.5 text-[#757575] hover:bg-slate-50 cursor-pointer">
+              <div 
+                className={`flex items-center justify-between px-6 py-2.5 cursor-pointer ${selectedCampaignIds.length > 0 ? 'text-[#757575] hover:bg-slate-50' : 'text-slate-400 hover:bg-slate-50'}`}
+                onClick={() => {
+                  if (selectedCampaignIds.length > 0) {
+                    setIsBulkExportModalOpen(true);
+                  } else {
+                    toast.error("Vui lòng tick chọn ít nhất 1 chiến dịch để xuất hàng loạt");
+                  }
+                }}
+              >
                 <span className="text-sm font-medium">Bulk export</span>
                 <span className="text-xs">›</span>
               </div>
@@ -527,6 +618,14 @@ function CampaignManagementView({ profile }: { profile: any }) {
       )}
       {topupCampaign && (
         <CampaignTopupModal campaign={topupCampaign} onClose={() => setTopupCampaign(null)} />
+      )}
+      {isBulkExportModalOpen && (
+        <ExportModal 
+          isOpen={isBulkExportModalOpen}
+          onClose={() => setIsBulkExportModalOpen(false)}
+          onExport={handleBulkExport}
+          campaignName={`Đã chọn ${selectedCampaignIds.length} chiến dịch`}
+        />
       )}
     </div>
   );
