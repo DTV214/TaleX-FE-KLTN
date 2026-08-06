@@ -1884,7 +1884,12 @@ function CreatorDashboardContent() {
 
   function openSeriesManagement() {
     clearUploadDrafts();
-    setDashboardRouteState(defaultDashboardRouteState);
+    setDashboardRouteState({
+      view: "series",
+      seriesId: "",
+      seasonId: "",
+      episodeId: "",
+    });
   }
 
   function openCreateSeries() {

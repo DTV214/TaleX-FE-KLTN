@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import {
-  Bell,
   ChevronDown,
   Clapperboard,
   CircleDollarSign,
@@ -24,6 +23,7 @@ import { logoutAction } from "@/features/auth/api/auth.actions";
 import { isFullProfile, useAuthStore } from "@/features/auth/store/auth.store";
 import { CoinWalletWidget } from "@/features/coin";
 import { useMissionHeartbeat } from "@/features/mission/hooks/useMissionHeartbeat";
+import { NotificationBell } from "@/features/notifications/components/notification-bell";
 import { useActiveSubscription } from "@/features/payment/api/payment.api";
 import { usePublicSidebarStore } from "@/shared/stores/public-sidebar.store";
 
@@ -144,15 +144,6 @@ export function SiteHeader() {
 
           <button
             type="button"
-            aria-label="Thông báo"
-            title="Thông báo"
-            className="hidden h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-foreground/75 transition hover:border-primary/40 hover:bg-white/[0.08] hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 md:flex"
-          >
-            <Bell className="h-4 w-4" />
-          </button>
-
-          <button
-            type="button"
             aria-label="Tìm kiếm"
             title="Tìm kiếm"
             className="flex h-10 w-10 items-center justify-center rounded-full text-foreground/80 transition hover:text-primary lg:hidden"
@@ -162,6 +153,12 @@ export function SiteHeader() {
 
           {isAuthenticated && user ? (
             <>
+              <NotificationBell
+                enabled={isAuthenticated}
+                variant="public"
+                className="hidden h-10 w-10 border border-white/10 bg-white/[0.04] md:flex"
+              />
+
               <CoinWalletWidget />
 
               <DropdownMenu.Root

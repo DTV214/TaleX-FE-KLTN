@@ -21,7 +21,7 @@ import {
 import { DropdownMenu } from "radix-ui";
 import { logoutAction } from "@/features/auth/api/auth.actions";
 import { isFullProfile, useAuthStore } from "@/features/auth/store/auth.store";
-import { NotificationBell } from "@/features/creator-dashboard/components/notification-bell";
+import { NotificationBell } from "@/features/notifications/components/notification-bell";
 
 interface CreatorLayoutProps {
   children: React.ReactNode;
@@ -143,7 +143,10 @@ export function CreatorLayout({
           </div>
 
           <div className="flex items-center gap-6">
-            <NotificationBell />
+            <NotificationBell
+              variant="creator"
+              className="h-10 w-10 rounded-full text-creator-muted hover:text-white"
+            />
             <DropdownMenu.Root>
               <DropdownMenu.Trigger asChild>
                 <button type="button" className="flex cursor-pointer items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.035] px-3 py-2 text-left outline-none transition-colors hover:border-creator-gold/35 hover:bg-white/[0.06]">
