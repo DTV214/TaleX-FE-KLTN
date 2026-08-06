@@ -17,6 +17,7 @@ type PublicLayoutShellProps = {
 const sidebarRoutes = [
   "/",
   "/series",
+  "/search",
   "/comics",
   "/watch",
   "/intro",

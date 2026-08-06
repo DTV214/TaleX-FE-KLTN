@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import {
   ChevronDown,
   Clapperboard,
@@ -46,6 +46,7 @@ export function SiteHeader() {
 
   const [isTransactionHistoryOpen, setIsTransactionHistoryOpen] =
     useState(false);
+  const [headerSearch, setHeaderSearch] = useState("");
   const router = useRouter();
   const toggleSidebar = usePublicSidebarStore((state) => state.toggleSidebar);
   const toggleMobileSidebar = usePublicSidebarStore(
@@ -88,6 +89,12 @@ export function SiteHeader() {
     toggleSidebar();
   };
 
+  const handleHeaderSearch = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const query = headerSearch.trim();
+    router.push(query ? `/search?q=${encodeURIComponent(query)}` : "/search");
+  };
+
   return (
     <header className="fixed left-0 top-0 z-50 h-16 w-full border-b border-white/10 bg-black/95 backdrop-blur">
       <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_20%_0%,rgba(212,175,55,0.10),transparent_36%),radial-gradient(circle_at_70%_0%,rgba(255,255,255,0.06),transparent_30%)]" />
@@ -121,17 +128,29 @@ export function SiteHeader() {
           </Link>
         </div>
 
-        <div className="mx-auto hidden min-w-[260px] max-w-xl flex-1 items-center lg:flex">
+        <form
+          onSubmit={handleHeaderSearch}
+          className="mx-auto hidden min-w-[260px] max-w-3xl flex-1 items-center gap-0 lg:flex"
+        >
           <label className="group relative w-full">
             <span className="sr-only">Tìm kiếm truyện, phim</span>
-            <Search className="absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" />
             <input
               type="search"
+              value={headerSearch}
+              onChange={(event) => setHeaderSearch(event.target.value)}
               placeholder="Tìm kiếm truyện, phim..."
-              className="h-12 w-full rounded-2xl border border-white/10 bg-[#14151b]/85 px-14 text-base text-foreground outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-all placeholder:text-muted-foreground/75 focus:border-primary/50 focus:bg-black/50 focus:shadow-[0_0_28px_rgba(212,175,55,0.12)]"
+              className="h-11 w-full rounded-l-full rounded-r-none border border-r-0 border-white/10 bg-[#14151b]/85 px-5 text-base text-foreground outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-all placeholder:text-muted-foreground/75 focus:border-primary/50 focus:bg-black/50 focus:shadow-[0_0_28px_rgba(212,175,55,0.12)]"
             />
           </label>
-        </div>
+          <button
+            type="submit"
+            aria-label="Tìm kiếm"
+            title="Tìm kiếm"
+            className="flex h-11 w-16 shrink-0 items-center justify-center rounded-r-full border border-white/10 bg-white/[0.075] text-white/80 transition hover:border-[#D4AF37]/45 hover:bg-[#D4AF37]/18 hover:text-[#F3D66B] hover:shadow-[0_0_22px_rgba(212,175,55,0.18)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+          >
+            <Search className="h-5 w-5" />
+          </button>
+        </form>
 
         <div className="flex items-center gap-2 md:gap-3">
           <Link
@@ -146,6 +165,7 @@ export function SiteHeader() {
             type="button"
             aria-label="Tìm kiếm"
             title="Tìm kiếm"
+            onClick={() => router.push("/search")}
             className="flex h-10 w-10 items-center justify-center rounded-full text-foreground/80 transition hover:text-primary lg:hidden"
           >
             <Search className="h-5 w-5" />
