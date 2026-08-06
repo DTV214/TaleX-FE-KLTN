@@ -12,9 +12,11 @@ import { createPortal } from "react-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { adsApi, AdSlot } from "@/features/ads/api/ads-api";
 import { toast } from "sonner";
-import { Loader2, Plus, Search, Calendar, ChevronDown, Columns, RefreshCw, MoreVertical, X, Check, Tag, Megaphone, PlusCircle, Coins, HelpCircle, BarChart2, Trash2 } from "lucide-react";
+import { Loader2, Plus, Search, Calendar, ChevronDown, Columns, RefreshCw, MoreVertical, X, Check, Tag, Megaphone, PlusCircle, Coins, HelpCircle, BarChart2, Trash2, Download } from "lucide-react";
 import { useAuthStore } from "@/features/auth/store/auth.store";
 import { useLabels, AdLabel } from "@/features/ads/hooks/use-labels";
+import * as XLSX from "xlsx";
+import { ExportModal, ExportField } from "@/features/advertiser-dashboard/components/export-modal";
 
 export default function AdvertiserDashboardPage() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -238,7 +240,7 @@ function CampaignManagementView({ profile }: { profile: any }) {
               </div>
               
               <div className="flex items-center justify-between px-6 py-2.5 text-[#757575] hover:bg-slate-50 cursor-pointer">
-                <span className="text-sm font-medium">Bulk export/import</span>
+                <span className="text-sm font-medium">Bulk export</span>
                 <span className="text-xs">›</span>
               </div>
               
@@ -1247,6 +1249,83 @@ function WalletView({ profile }: { profile: any }) {
 function CustomerReportView({ campaignId, onClose }: { campaignId?: string; onClose?: () => void }) {
   const { data: campaigns, isLoading } = useQuery({ queryKey: ["my-campaigns"], queryFn: adsApi.getMyCampaigns });
   const [selectedCampaignId, setSelectedCampaignId] = useState<string>(campaignId || "");
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+
+  const handleExport = async (selectedFields: ExportField[], startDate?: string, endDate?: string) => {
+    if (!selectedCampaignId) return;
+
+    try {
+      toast.loading("Đang xuất dữ liệu...", { id: "export-excel" });
+      
+      const campaign = campaigns?.find((c: any) => c.campaignId === selectedCampaignId);
+      if (!campaign) throw new Error("Không tìm thấy chiến dịch");
+
+      const metrics = await adsApi.getCampaignMetrics(selectedCampaignId);
+
+      let filteredMetrics = metrics || [];
+      
+      if (startDate) {
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        filteredMetrics = filteredMetrics.filter((m: any) => new Date(m.reportDate) >= start);
+      }
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        filteredMetrics = filteredMetrics.filter((m: any) => new Date(m.reportDate) <= end);
+      }
+
+      const totalImpressions = filteredMetrics.reduce((sum: number, m: any) => sum + (m.impressions || 0), 0);
+      const totalClicks = filteredMetrics.reduce((sum: number, m: any) => sum + (m.clicks || 0), 0);
+      const totalSpend = filteredMetrics.reduce((sum: number, m: any) => sum + (m.spend || 0), 0);
+      const totalViews6s = filteredMetrics.reduce((sum: number, m: any) => sum + (m.focusedViews6s || 0), 0);
+      const overallCTR = totalImpressions > 0 ? ((totalClicks / totalImpressions) * 100).toFixed(2) + "%" : "0.00%";
+
+      const overviewData = [
+        {
+          "Tên chiến dịch": campaign.name,
+          "Loại Media": campaign.mediaType,
+          "Mục tiêu Impressions": campaign.targetImpressions,
+          "Ngân sách": campaign.campaignBudget,
+          "Ngày bắt đầu": campaign.startDate ? new Date(campaign.startDate).toLocaleDateString("vi-VN") : "",
+          "Ngày kết thúc": campaign.endDate ? new Date(campaign.endDate).toLocaleDateString("vi-VN") : "",
+          "Trạng thái": campaign.status === "ACTIVE" ? "Đang chạy" : (campaign.status === "PAUSED" ? "Tạm dừng" : "Đã xong"),
+          "Tổng lượt hiển thị (Impressions)": totalImpressions,
+          "Tổng lượt click (Clicks)": totalClicks,
+          "Tỉ lệ click tổng (CTR)": overallCTR,
+          "Tổng chi phí (Spend)": totalSpend,
+          "Tổng lượt xem 6s": totalViews6s,
+        }
+      ];
+
+      const detailedData = filteredMetrics.map((m: any) => {
+        const row: any = { "Ngày báo cáo": new Date(m.reportDate).toLocaleDateString("vi-VN") };
+        if (selectedFields.includes("impressions")) row["Impressions"] = m.impressions;
+        if (selectedFields.includes("clicks")) row["Clicks"] = m.clicks;
+        if (selectedFields.includes("ctr")) row["CTR (%)"] = m.ctr;
+        if (selectedFields.includes("spend")) row["Spend (đ)"] = m.spend;
+        if (selectedFields.includes("views6s")) row["Focused Views (6s)"] = m.focusedViews6s;
+        return row;
+      }) || [];
+
+      const wb = XLSX.utils.book_new();
+      
+      const overviewSheet = XLSX.utils.json_to_sheet(overviewData);
+      XLSX.utils.book_append_sheet(wb, overviewSheet, "Tổng quan chiến dịch");
+
+      if (detailedData.length > 0) {
+        const detailSheet = XLSX.utils.json_to_sheet(detailedData);
+        XLSX.utils.book_append_sheet(wb, detailSheet, "Phân tích chi tiết");
+      }
+
+      XLSX.writeFile(wb, `Report_${campaign.name}_${new Date().getTime()}.xlsx`);
+      
+      toast.success("Xuất file thành công", { id: "export-excel" });
+    } catch (error) {
+      console.error(error);
+      toast.error("Xuất file thất bại", { id: "export-excel" });
+    }
+  };
 
   if (isLoading) return null;
 
@@ -1271,18 +1350,29 @@ function CustomerReportView({ campaignId, onClose }: { campaignId?: string; onCl
         </div>
         
         <div className="p-6 border-b border-slate-100 bg-white">
-          <div className="flex items-center gap-4">
-            <label className="text-sm font-semibold text-slate-700">Chọn chiến dịch:</label>
-            <select 
-              value={selectedCampaignId}
-              onChange={(e) => setSelectedCampaignId(e.target.value)}
-              className="border border-slate-200 rounded-lg px-4 py-2 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 min-w-[300px] text-sm font-medium text-slate-800 bg-slate-50 transition-all cursor-pointer"
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <label className="text-sm font-semibold text-slate-700">Chọn chiến dịch:</label>
+              <select 
+                value={selectedCampaignId}
+                onChange={(e) => setSelectedCampaignId(e.target.value)}
+                className="border border-slate-200 rounded-lg px-4 py-2 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 min-w-[300px] text-sm font-medium text-slate-800 bg-slate-50 transition-all cursor-pointer"
+              >
+                <option value="">-- Chọn một chiến dịch --</option>
+                {campaigns?.map((c: any) => (
+                  <option key={c.campaignId} value={c.campaignId}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+            
+            <button 
+              onClick={(e) => { e.stopPropagation(); setIsExportModalOpen(true); }}
+              disabled={!selectedCampaignId}
+              className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50"
             >
-              <option value="">-- Chọn một chiến dịch --</option>
-              {campaigns?.map((c: any) => (
-                <option key={c.campaignId} value={c.campaignId}>{c.name}</option>
-              ))}
-            </select>
+              <Download className="h-4 w-4" />
+              Export file
+            </button>
           </div>
         </div>
         
@@ -1298,6 +1388,13 @@ function CustomerReportView({ campaignId, onClose }: { campaignId?: string; onCl
           )}
         </div>
       </div>
+      
+      <ExportModal 
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        onExport={handleExport}
+        campaignName={campaigns?.find((c: any) => c.campaignId === selectedCampaignId)?.name || ""}
+      />
     </div>
   );
 }
