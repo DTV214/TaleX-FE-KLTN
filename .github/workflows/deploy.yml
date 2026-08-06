@@ -32,10 +32,14 @@ jobs:
 
             sed -i 's/^[[:space:]]*//' .env.local
 
-            # Only install deps when package.json changed
-            if ! diff -q package.json /tmp/talex-fe-pkg.json 2>/dev/null; then
+            # Install deps when manifests changed or node_modules is missing/incomplete.
+            if [ ! -d node_modules ] || \
+               [ ! -d node_modules/xlsx ] || \
+               ! diff -q package.json /tmp/talex-fe-pkg.json 2>/dev/null || \
+               ! diff -q package-lock.json /tmp/talex-fe-lock.json 2>/dev/null; then
               npm ci --prefer-offline
               cp package.json /tmp/talex-fe-pkg.json
+              cp package-lock.json /tmp/talex-fe-lock.json
             fi
 
             # Clean old build cache to prevent disk bloat
