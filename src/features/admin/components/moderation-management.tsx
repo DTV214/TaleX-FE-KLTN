@@ -301,7 +301,11 @@ function ModerationDetailModal({
                                 Tương đồng {formatPercent(item.similarityScore)}
                               </span>
                               <span className={item.isValid ? "text-emerald-700" : "text-red-700"}>
-                                {item.isValid ? "Nguồn hợp lệ (CC0)" : "Chưa xác định quyền sử dụng"}
+                                {item.isValid
+                                  ? "Nguồn hợp lệ (CC0)"
+                                  : item.sourceCreatorUsername
+                                    ? `Trùng nội dung của ${item.sourceCreatorUsername}`
+                                    : "Chưa xác định quyền sử dụng"}
                               </span>
                             </div>
 
@@ -504,6 +508,14 @@ function SourceMediaPreviewModal({
                   alt="Nội dung gốc"
                   className="w-full rounded-xl border border-slate-200 object-contain"
                 />
+              ) : detailQuery.data.mediaType === "VIDEO" && detailQuery.data.originalUrl ? (
+                <video
+                  key={detailQuery.data.originalUrl}
+                  src={detailQuery.data.originalUrl}
+                  poster={detailQuery.data.thumbnailUrl}
+                  controls
+                  className="w-full rounded-xl border border-slate-200 bg-black"
+                />
               ) : (
                 <div className="flex aspect-video w-full flex-col items-center justify-center gap-3 rounded-xl border border-slate-200 bg-slate-100 text-slate-400">
                   <Video className="h-10 w-10" />
@@ -614,8 +626,20 @@ function ModerationCard({
           <div>
             <p className="text-slate-400">Episode</p>
             <p className="mt-1 truncate text-slate-700">
-              {media.episodeId || "-"}
+              {media.episodeTitle || media.episodeId || "-"}
             </p>
+          </div>
+          <div>
+            <p className="text-slate-400">Series</p>
+            <p className="mt-1 truncate text-slate-700">{media.seriesTitle || "-"}</p>
+          </div>
+          <div>
+            <p className="text-slate-400">Season</p>
+            <p className="mt-1 truncate text-slate-700">{media.seasonTitle || "-"}</p>
+          </div>
+          <div>
+            <p className="text-slate-400">Creator</p>
+            <p className="mt-1 truncate text-slate-700">{media.creatorUsername || "-"}</p>
           </div>
           <div>
             <p className="text-slate-400">Ngày tạo</p>
@@ -741,8 +765,20 @@ function ApprovedMediaCard({
           <div>
             <p className="text-slate-400">Episode</p>
             <p className="mt-1 truncate text-slate-700">
-              {media.episodeId || "-"}
+              {media.episodeTitle || media.episodeId || "-"}
             </p>
+          </div>
+          <div>
+            <p className="text-slate-400">Series</p>
+            <p className="mt-1 truncate text-slate-700">{media.seriesTitle || "-"}</p>
+          </div>
+          <div>
+            <p className="text-slate-400">Season</p>
+            <p className="mt-1 truncate text-slate-700">{media.seasonTitle || "-"}</p>
+          </div>
+          <div>
+            <p className="text-slate-400">Creator</p>
+            <p className="mt-1 truncate text-slate-700">{media.creatorUsername || "-"}</p>
           </div>
           <div>
             <p className="text-slate-400">Thời điểm duyệt</p>
