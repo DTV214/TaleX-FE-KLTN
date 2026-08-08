@@ -957,7 +957,14 @@ function CreateCampaignPanel({ onClose }: { onClose: () => void }) {
                 {slots?.map((slot: AdSlot) => (
                   <div 
                     key={slot.slotId}
-                    onClick={() => setFormData({...formData, slotId: slot.slotId})}
+                    onClick={() => {
+                      const newSlotId = slot.slotId;
+                      let newImpressions = formData.targetImpressions;
+                      if (slot.price > 0) {
+                        newImpressions = Math.round((formData.campaignBudget / slot.price) * slot.totalViewOfPrice);
+                      }
+                      setFormData({...formData, slotId: newSlotId, targetImpressions: newImpressions});
+                    }}
                     className={`cursor-pointer rounded-sm border-2 p-4 transition-all ${formData.slotId === slot.slotId ? 'border-[#00D6BA] bg-teal-50/50' : 'border-slate-200 bg-white hover:border-slate-300'}`}
                   >
                     <div className="flex items-center justify-between">
@@ -993,7 +1000,15 @@ function CreateCampaignPanel({ onClose }: { onClose: () => void }) {
                   <input 
                     type="number" 
                     value={formData.campaignBudget} 
-                    onChange={(e) => setFormData({...formData, campaignBudget: Number(e.target.value)})}
+                    onChange={(e) => {
+                      const budget = Number(e.target.value);
+                      const selectedSlot = slots?.find((s: AdSlot) => s.slotId === formData.slotId);
+                      let newImpressions = formData.targetImpressions;
+                      if (selectedSlot && selectedSlot.price > 0) {
+                        newImpressions = Math.round((budget / selectedSlot.price) * selectedSlot.totalViewOfPrice);
+                      }
+                      setFormData({...formData, campaignBudget: budget, targetImpressions: newImpressions});
+                    }}
                     className="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm outline-none focus:border-teal-500" 
                   />
                 </div>
@@ -1003,7 +1018,15 @@ function CreateCampaignPanel({ onClose }: { onClose: () => void }) {
                   <input 
                     type="number" 
                     value={formData.targetImpressions} 
-                    onChange={(e) => setFormData({...formData, targetImpressions: Number(e.target.value)})}
+                    onChange={(e) => {
+                      const impressions = Number(e.target.value);
+                      const selectedSlot = slots?.find((s: AdSlot) => s.slotId === formData.slotId);
+                      let newBudget = formData.campaignBudget;
+                      if (selectedSlot && selectedSlot.totalViewOfPrice > 0) {
+                        newBudget = Math.round((impressions / selectedSlot.totalViewOfPrice) * selectedSlot.price);
+                      }
+                      setFormData({...formData, targetImpressions: impressions, campaignBudget: newBudget});
+                    }}
                     className="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm outline-none focus:border-teal-500" 
                   />
                 </div>
