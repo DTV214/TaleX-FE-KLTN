@@ -19,6 +19,9 @@ export type ModerationMedia = {
   createdAt?: string;
   approvalReviewedAt?: string;
   approvalReviewedBy?: string;
+  // Chỉ có giá trị ở listPendingReview/listApproved — số Media khác trong CÙNG episode
+  // này khớp cùng bộ filter, BE đã group theo episode nên đây là media đại diện.
+  episodeMediaCount?: number;
 };
 
 export type ModerationPage = {
@@ -48,6 +51,7 @@ type ModerationMediaApiItem = {
   createdAt?: string;
   approvalReviewedAt?: string;
   approvalReviewedBy?: string;
+  episodeMediaCount?: number;
 };
 
 type ModerationPagePayload = {
@@ -89,6 +93,7 @@ function normalizeMedia(item: ModerationMediaApiItem): ModerationMedia {
     createdAt: item.createdAt,
     approvalReviewedAt: item.approvalReviewedAt,
     approvalReviewedBy: item.approvalReviewedBy,
+    episodeMediaCount: item.episodeMediaCount,
   };
 }
 

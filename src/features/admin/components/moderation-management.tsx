@@ -14,7 +14,7 @@ import {
   Video,
   X,
 } from "lucide-react";
-import { type FormEvent, useMemo, useState } from "react";
+import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
 import {
   type ModerationMedia,
@@ -802,24 +802,12 @@ export function ModerationManagement() {
   const forceUnhideMutation = useForceUnhideEpisode();
   const pendingPage = pendingQuery.data;
   const items = pendingPage?.content ?? [];
+  // BE đã group theo episode và trả sẵn episodeMediaCount (xem MediaServiceImpl.listApproved
+  // / groupByEpisode) — không group lại ở FE nữa. Group ở FE trước đây chỉ hoạt động ĐÚNG
+  // trong phạm vi 1 trang đang fetch, còn BE vẫn phân trang theo Media riêng lẻ nên 1 episode
+  // có thể bị cắt rải qua nhiều trang, hiện lại thành nhiều card cho cùng 1 episode (bug thật
+  // đã gặp) — nay BE phân trang trực tiếp theo episode nên vấn đề này không còn nữa.
   const approvedItems = approvedQuery.data?.content ?? [];
-  // 1 episode co the co nhieu Media (VD comic nhieu trang) - thao tac an/go an luon o
-  // cap episode (xem handleForceHide/handleForceUnhide dung media.episodeId, khong dung
-  // media.id), nen chi can hien 1 card dai dien cho moi episode thay vi lap lai nut
-  // "Tam an ca episode" tren tung Media rieng le trong cung 1 episode.
-  const approvedEpisodeGroups = useMemo(() => {
-    const groups = new Map<string, { representative: ModerationMedia; mediaCount: number }>();
-    for (const media of approvedItems) {
-      const key = media.episodeId || media.id;
-      const existing = groups.get(key);
-      if (existing) {
-        existing.mediaCount += 1;
-      } else {
-        groups.set(key, { representative: media, mediaCount: 1 });
-      }
-    }
-    return Array.from(groups.values());
-  }, [approvedItems]);
   const isMutating = approveMutation.isPending || rejectMutation.isPending;
   const isApprovedMutating = forceHideMutation.isPending || forceUnhideMutation.isPending;
 
@@ -1106,12 +1094,12 @@ export function ModerationManagement() {
       {activeTab === "approved" && approvedItems.length > 0 && (
         <>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {approvedEpisodeGroups.map(({ representative, mediaCount }) => (
+            {approvedItems.map((media) => (
               <ApprovedMediaCard
-                key={representative.episodeId || representative.id}
+                key={media.episodeId || media.id}
                 isMutating={isApprovedMutating}
-                media={representative}
-                mediaCount={mediaCount}
+                media={media}
+                mediaCount={media.episodeMediaCount ?? 1}
                 onForceHide={handleForceHide}
                 onForceUnhide={handleForceUnhide}
                 onViewDetail={setDetailTarget}
