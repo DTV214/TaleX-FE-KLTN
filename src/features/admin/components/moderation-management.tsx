@@ -216,14 +216,14 @@ function ModerationDetailModal({
           </button>
         </div>
 
-        <div className="grid flex-1 grid-cols-1 gap-0 overflow-y-auto md:grid-cols-2">
-          <div className="border-b border-slate-200 bg-slate-100 p-4 md:border-b-0 md:border-r">
+        <div className="grid flex-1 grid-cols-1 gap-0 overflow-hidden md:grid-cols-2">
+          <div className="min-h-0 overflow-y-auto border-b border-slate-200 bg-slate-100 p-4 md:border-b-0 md:border-r">
             {media.mediaType === "IMAGE" && media.url ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={media.url}
                 alt={media.id}
-                className="w-full rounded-xl border border-slate-200 object-contain"
+                className="max-h-[45vh] w-full rounded-xl border border-slate-200 object-contain"
               />
             ) : media.mediaType === "VIDEO" && media.url ? (
               <video
@@ -231,7 +231,7 @@ function ModerationDetailModal({
                 src={media.url}
                 poster={media.thumbnailUrl}
                 controls
-                className="w-full rounded-xl border border-slate-200 bg-black"
+                className="max-h-[45vh] w-full rounded-xl border border-slate-200 bg-black"
               />
             ) : (
               <div className="flex aspect-video w-full flex-col items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white text-slate-400">
@@ -286,7 +286,7 @@ function ModerationDetailModal({
             </div>
           </div>
 
-          <div className="space-y-5 p-5">
+          <div className="min-h-0 space-y-5 overflow-y-auto p-5">
             {violationsQuery.isLoading && (
               <div className="flex items-center gap-2 text-sm font-semibold text-slate-500">
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -341,37 +341,42 @@ function ModerationDetailModal({
                             </div>
 
                             {hasSourceIdentity ? (
-                              <div className="mt-2 flex items-start gap-2">
-                                {item.sourceThumbnailUrl && (
-                                  // eslint-disable-next-line @next/next/no-img-element
-                                  <img
-                                    src={item.sourceThumbnailUrl}
-                                    alt="Nội dung gốc"
-                                    className="h-12 w-12 shrink-0 rounded-md border border-slate-200 object-cover"
-                                    onError={(e) => {
-                                      e.currentTarget.style.display = "none";
-                                    }}
-                                  />
-                                )}
-                                <div className="min-w-0 flex-1">
-                                  <p className="truncate font-semibold text-slate-700">
-                                    {item.sourceEpisodeTitle || "Tập không xác định"}
-                                    {item.sourceSeriesTitle ? ` · ${item.sourceSeriesTitle}` : ""}
-                                  </p>
-                                  <p className="text-slate-500">
-                                    Nguồn gốc — Creator: {item.sourceCreatorUsername || "không xác định"}
-                                    {item.sourceMediaDeleted ? " (nội dung đã bị xóa)" : ""}
-                                  </p>
+                              <div className="mt-2 rounded-md border border-red-100 bg-white/60 p-2">
+                                <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                                  Nội dung gốc nghi bị trùng (không phải nội dung đang xét)
+                                </p>
+                                <div className="flex items-start gap-2">
+                                  {item.sourceThumbnailUrl && (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img
+                                      src={item.sourceThumbnailUrl}
+                                      alt="Nội dung gốc"
+                                      className="h-12 w-12 shrink-0 rounded-md border border-slate-200 object-cover"
+                                      onError={(e) => {
+                                        e.currentTarget.style.display = "none";
+                                      }}
+                                    />
+                                  )}
+                                  <div className="min-w-0 flex-1">
+                                    <p className="truncate font-semibold text-slate-700">
+                                      {item.sourceEpisodeTitle || "Tập không xác định"}
+                                      {item.sourceSeriesTitle ? ` · ${item.sourceSeriesTitle}` : ""}
+                                    </p>
+                                    <p className="text-slate-500">
+                                      Creator: {item.sourceCreatorUsername || "không xác định"}
+                                      {item.sourceMediaDeleted ? " (nội dung đã bị xóa)" : ""}
+                                    </p>
+                                  </div>
+                                  {canViewSource && (
+                                    <button
+                                      type="button"
+                                      onClick={() => setPreviewSourceId(item.sourceMediaId!)}
+                                      className="shrink-0 rounded-md border border-slate-300 px-2 py-1 text-[11px] font-bold text-slate-600 transition hover:bg-slate-100"
+                                    >
+                                      Xem nội dung gốc
+                                    </button>
+                                  )}
                                 </div>
-                                {canViewSource && (
-                                  <button
-                                    type="button"
-                                    onClick={() => setPreviewSourceId(item.sourceMediaId!)}
-                                    className="shrink-0 rounded-md border border-slate-300 px-2 py-1 text-[11px] font-bold text-slate-600 transition hover:bg-slate-100"
-                                  >
-                                    Xem nội dung gốc
-                                  </button>
-                                )}
                               </div>
                             ) : (
                               <p className="mt-1 break-all text-slate-500">
