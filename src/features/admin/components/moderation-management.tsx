@@ -14,9 +14,12 @@ import {
   Video,
   X,
 } from "lucide-react";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { type ModerationMedia } from "@/features/admin/api/moderation.api";
+import {
+  type ModerationMedia,
+  type ModerationTypeFilter,
+} from "@/features/admin/api/moderation.api";
 import {
   useApproveMedia,
   useForceHideEpisode,
@@ -648,12 +651,14 @@ function ModerationCard({
 function ApprovedMediaCard({
   isMutating,
   media,
+  mediaCount,
   onForceHide,
   onForceUnhide,
   onViewDetail,
 }: {
   isMutating: boolean;
   media: ModerationMedia;
+  mediaCount: number;
   onForceHide: (media: ModerationMedia) => void;
   onForceUnhide: (media: ModerationMedia) => void;
   onViewDetail: (media: ModerationMedia) => void;
@@ -725,6 +730,11 @@ function ApprovedMediaCard({
           >
             {isEpisodeForceHidden ? "Episode đang bị ẩn" : "Episode đang hiển thị"}
           </span>
+          {mediaCount > 1 && (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-bold text-slate-600">
+              {mediaCount} nội dung trong episode này
+            </span>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-3 rounded-xl bg-slate-50 p-3 text-xs font-semibold text-slate-500">
@@ -774,16 +784,18 @@ function ApprovedMediaCard({
 export function ModerationManagement() {
   const [activeTab, setActiveTab] = useState<"pending" | "approved">("pending");
   const [approvedFilter, setApprovedFilter] = useState<"all" | "manual" | "clean">("all");
+  const [pendingTypeFilter, setPendingTypeFilter] = useState<ModerationTypeFilter>("all");
+  const [approvedTypeFilter, setApprovedTypeFilter] = useState<ModerationTypeFilter>("all");
   const [page, setPage] = useState(0);
   const [approvedPage, setApprovedPage] = useState(0);
   const [rejectTarget, setRejectTarget] = useState<ModerationMedia | null>(null);
   const [detailTarget, setDetailTarget] = useState<ModerationMedia | null>(null);
-  const pendingQuery = useGetPendingMedia(page, PAGE_SIZE);
+  const pendingQuery = useGetPendingMedia(page, PAGE_SIZE, pendingTypeFilter);
   // Lọc "manual"/"clean" chạy ở BE (MediaServiceImpl.listApproved) — approvalReviewedBy
   // KHÔNG đủ để tự lọc ở FE: pipeline tự duyệt sạch cũng ghi giá trị actor hệ thống vào
   // field này (không phải null), lọc sai sẽ lẫn nội dung không vi phạm vào "Duyệt tay".
   // Lọc ở BE cũng giúp phân trang (totalPages/totalElements) phản ánh đúng số lượng đã lọc.
-  const approvedQuery = useGetApprovedMedia(approvedPage, PAGE_SIZE, approvedFilter);
+  const approvedQuery = useGetApprovedMedia(approvedPage, PAGE_SIZE, approvedFilter, approvedTypeFilter);
   const approveMutation = useApproveMedia();
   const rejectMutation = useRejectMedia();
   const forceHideMutation = useForceHideEpisode();
@@ -791,6 +803,23 @@ export function ModerationManagement() {
   const pendingPage = pendingQuery.data;
   const items = pendingPage?.content ?? [];
   const approvedItems = approvedQuery.data?.content ?? [];
+  // 1 episode co the co nhieu Media (VD comic nhieu trang) - thao tac an/go an luon o
+  // cap episode (xem handleForceHide/handleForceUnhide dung media.episodeId, khong dung
+  // media.id), nen chi can hien 1 card dai dien cho moi episode thay vi lap lai nut
+  // "Tam an ca episode" tren tung Media rieng le trong cung 1 episode.
+  const approvedEpisodeGroups = useMemo(() => {
+    const groups = new Map<string, { representative: ModerationMedia; mediaCount: number }>();
+    for (const media of approvedItems) {
+      const key = media.episodeId || media.id;
+      const existing = groups.get(key);
+      if (existing) {
+        existing.mediaCount += 1;
+      } else {
+        groups.set(key, { representative: media, mediaCount: 1 });
+      }
+    }
+    return Array.from(groups.values());
+  }, [approvedItems]);
   const isMutating = approveMutation.isPending || rejectMutation.isPending;
   const isApprovedMutating = forceHideMutation.isPending || forceUnhideMutation.isPending;
 
@@ -880,6 +909,34 @@ export function ModerationManagement() {
           Đã duyệt
         </button>
       </div>
+
+      {activeTab === "pending" && (
+        <div className="flex flex-wrap gap-2">
+          {(
+            [
+              { key: "all", label: "Tất cả" },
+              { key: "IMAGE", label: "Ảnh" },
+              { key: "VIDEO", label: "Video" },
+            ] as const
+          ).map((option) => (
+            <button
+              key={option.key}
+              type="button"
+              onClick={() => {
+                setPendingTypeFilter(option.key);
+                setPage(0);
+              }}
+              className={`rounded-full border px-4 py-1.5 text-xs font-bold transition ${
+                pendingTypeFilter === option.key
+                  ? "border-slate-950 bg-slate-950 text-white"
+                  : "border-slate-200 bg-white text-slate-500 hover:border-slate-300"
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {activeTab === "pending" && pendingQuery.isLoading && (
         <div className="rounded-2xl border border-slate-200 bg-white px-6 py-16 text-center shadow-sm">
@@ -985,6 +1042,34 @@ export function ModerationManagement() {
         </div>
       )}
 
+      {activeTab === "approved" && (
+        <div className="flex flex-wrap gap-2">
+          {(
+            [
+              { key: "all", label: "Tất cả" },
+              { key: "IMAGE", label: "Ảnh" },
+              { key: "VIDEO", label: "Video" },
+            ] as const
+          ).map((option) => (
+            <button
+              key={option.key}
+              type="button"
+              onClick={() => {
+                setApprovedTypeFilter(option.key);
+                setApprovedPage(0);
+              }}
+              className={`rounded-full border px-4 py-1.5 text-xs font-bold transition ${
+                approvedTypeFilter === option.key
+                  ? "border-slate-950 bg-slate-950 text-white"
+                  : "border-slate-200 bg-white text-slate-500 hover:border-slate-300"
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       {activeTab === "approved" && approvedQuery.isLoading && (
         <div className="rounded-2xl border border-slate-200 bg-white px-6 py-16 text-center shadow-sm">
           <Loader2 className="mx-auto h-7 w-7 animate-spin text-slate-400" />
@@ -1021,11 +1106,12 @@ export function ModerationManagement() {
       {activeTab === "approved" && approvedItems.length > 0 && (
         <>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {approvedItems.map((media) => (
+            {approvedEpisodeGroups.map(({ representative, mediaCount }) => (
               <ApprovedMediaCard
-                key={media.id}
+                key={representative.episodeId || representative.id}
                 isMutating={isApprovedMutating}
-                media={media}
+                media={representative}
+                mediaCount={mediaCount}
                 onForceHide={handleForceHide}
                 onForceUnhide={handleForceUnhide}
                 onViewDetail={setDetailTarget}

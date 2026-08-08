@@ -147,11 +147,17 @@ function normalizePage(payload: unknown, page: number, size: number): Moderation
   };
 }
 
-export async function getPendingMedia(page = 0, size = 12) {
+export type ModerationTypeFilter = "all" | ModerationMediaType;
+
+export async function getPendingMedia(
+  page = 0,
+  size = 12,
+  mediaType: ModerationTypeFilter = "all",
+) {
   const response = await httpClient.get<BaseResponse<ModerationPagePayload> | ModerationPagePayload>(
     `${MODERATION_ENDPOINT}/pending-review`,
     {
-      params: { page, size },
+      params: { page, size, mediaType: mediaType === "all" ? undefined : mediaType },
     },
   );
 
@@ -164,11 +170,17 @@ export async function getApprovedMedia(
   page = 0,
   size = 12,
   filter: ApprovedReviewFilter = "all",
+  mediaType: ModerationTypeFilter = "all",
 ) {
   const response = await httpClient.get<BaseResponse<ModerationPagePayload> | ModerationPagePayload>(
     `${MODERATION_ENDPOINT}/approved`,
     {
-      params: { page, size, filter: filter === "all" ? undefined : filter },
+      params: {
+        page,
+        size,
+        filter: filter === "all" ? undefined : filter,
+        mediaType: mediaType === "all" ? undefined : mediaType,
+      },
     },
   );
 

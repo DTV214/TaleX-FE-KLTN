@@ -10,15 +10,20 @@ import {
   getMediaById,
   getMediaViolations,
   getPendingMedia,
+  type ModerationTypeFilter,
   rejectMedia,
 } from "@/features/admin/api/moderation.api";
 
 export const moderationKeys = {
   all: ["admin", "moderation"] as const,
-  pending: (page: number, size: number) =>
-    [...moderationKeys.all, "pending", page, size] as const,
-  approved: (page: number, size: number, filter: ApprovedReviewFilter) =>
-    [...moderationKeys.all, "approved", page, size, filter] as const,
+  pending: (page: number, size: number, mediaType: ModerationTypeFilter) =>
+    [...moderationKeys.all, "pending", page, size, mediaType] as const,
+  approved: (
+    page: number,
+    size: number,
+    filter: ApprovedReviewFilter,
+    mediaType: ModerationTypeFilter,
+  ) => [...moderationKeys.all, "approved", page, size, filter, mediaType] as const,
   violations: (mediaId: string) =>
     [...moderationKeys.all, "violations", mediaId] as const,
   mediaDetail: (mediaId: string) =>
@@ -44,10 +49,14 @@ export function useMediaDetail(mediaId: string | null) {
   });
 }
 
-export function useGetPendingMedia(page = 0, size = 12) {
+export function useGetPendingMedia(
+  page = 0,
+  size = 12,
+  mediaType: ModerationTypeFilter = "all",
+) {
   return useQuery({
-    queryKey: moderationKeys.pending(page, size),
-    queryFn: () => getPendingMedia(page, size),
+    queryKey: moderationKeys.pending(page, size, mediaType),
+    queryFn: () => getPendingMedia(page, size, mediaType),
     staleTime: 30 * 1000,
   });
 }
@@ -79,10 +88,11 @@ export function useGetApprovedMedia(
   page = 0,
   size = 12,
   filter: ApprovedReviewFilter = "all",
+  mediaType: ModerationTypeFilter = "all",
 ) {
   return useQuery({
-    queryKey: moderationKeys.approved(page, size, filter),
-    queryFn: () => getApprovedMedia(page, size, filter),
+    queryKey: moderationKeys.approved(page, size, filter, mediaType),
+    queryFn: () => getApprovedMedia(page, size, filter, mediaType),
     staleTime: 30 * 1000,
   });
 }
