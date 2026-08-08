@@ -52,6 +52,13 @@ function formatMediaType(mediaType: string) {
   return mediaType === "VIDEO" ? "Video" : "Ảnh";
 }
 
+// Phải khớp PIPELINE_REVIEWER_ACTOR ở MediaServiceImpl (BE) — hiện actorId thô "content-pipeline"
+// cho Staff sẽ khó hiểu, cần đổi thành nhãn dễ đọc.
+function formatReviewer(reviewedBy?: string) {
+  if (!reviewedBy) return "-";
+  return reviewedBy === "content-pipeline" ? "Hệ thống (tự động)" : reviewedBy;
+}
+
 const APPROVAL_STATUS_VI: Record<string, string> = {
   PENDING_REVIEW: "Chờ duyệt",
   APPROVED: "Đã duyệt",
@@ -246,12 +253,36 @@ function ModerationDetailModal({
               </div>
               <div>
                 <p className="text-slate-400">Episode</p>
-                <p className="mt-1 truncate text-slate-700">{media.episodeId || "-"}</p>
+                <p className="mt-1 truncate text-slate-700">
+                  {media.episodeTitle || media.episodeId || "-"}
+                </p>
+              </div>
+              <div>
+                <p className="text-slate-400">Series</p>
+                <p className="mt-1 truncate text-slate-700">{media.seriesTitle || "-"}</p>
+              </div>
+              <div>
+                <p className="text-slate-400">Season</p>
+                <p className="mt-1 truncate text-slate-700">{media.seasonTitle || "-"}</p>
+              </div>
+              <div>
+                <p className="text-slate-400">Creator</p>
+                <p className="mt-1 truncate text-slate-700">{media.creatorUsername || "-"}</p>
               </div>
               <div>
                 <p className="text-slate-400">Ngày tạo</p>
                 <p className="mt-1 text-slate-700">{formatDate(media.createdAt)}</p>
               </div>
+              <div>
+                <p className="text-slate-400">Người duyệt</p>
+                <p className="mt-1 truncate text-slate-700">{formatReviewer(media.approvalReviewedBy)}</p>
+              </div>
+              {media.approvalReviewedAt && (
+                <div>
+                  <p className="text-slate-400">Thời điểm duyệt</p>
+                  <p className="mt-1 text-slate-700">{formatDate(media.approvalReviewedAt)}</p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -304,7 +335,7 @@ function ModerationDetailModal({
                                 {item.isValid
                                   ? "Nguồn hợp lệ (CC0)"
                                   : item.sourceCreatorUsername
-                                    ? `Trùng nội dung của ${item.sourceCreatorUsername}`
+                                    ? `${media.creatorUsername || "Người upload"} trùng với ${item.sourceCreatorUsername}`
                                     : "Chưa xác định quyền sử dụng"}
                               </span>
                             </div>
@@ -328,7 +359,7 @@ function ModerationDetailModal({
                                     {item.sourceSeriesTitle ? ` · ${item.sourceSeriesTitle}` : ""}
                                   </p>
                                   <p className="text-slate-500">
-                                    Creator: {item.sourceCreatorUsername || "không xác định"}
+                                    Nguồn gốc — Creator: {item.sourceCreatorUsername || "không xác định"}
                                     {item.sourceMediaDeleted ? " (nội dung đã bị xóa)" : ""}
                                   </p>
                                 </div>
@@ -531,7 +562,21 @@ function SourceMediaPreviewModal({
                 </div>
                 <div>
                   <p className="text-slate-400">Episode</p>
-                  <p className="mt-1 truncate text-slate-700">{detailQuery.data.episodeId || "-"}</p>
+                  <p className="mt-1 truncate text-slate-700">
+                    {detailQuery.data.episodeTitle || detailQuery.data.episodeId || "-"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-slate-400">Series</p>
+                  <p className="mt-1 truncate text-slate-700">{detailQuery.data.seriesTitle || "-"}</p>
+                </div>
+                <div>
+                  <p className="text-slate-400">Season</p>
+                  <p className="mt-1 truncate text-slate-700">{detailQuery.data.seasonTitle || "-"}</p>
+                </div>
+                <div>
+                  <p className="text-slate-400">Creator</p>
+                  <p className="mt-1 truncate text-slate-700">{detailQuery.data.creatorUsername || "-"}</p>
                 </div>
                 <div>
                   <p className="text-slate-400">Ngày tạo</p>

@@ -290,6 +290,10 @@ export type MediaDetail = {
   approvalStatus?: string;
   createdAt?: string;
   isDeleted?: boolean;
+  episodeTitle?: string;
+  seasonTitle?: string;
+  seriesTitle?: string;
+  creatorUsername?: string;
 };
 
 // Dùng cho nút "Xem nội dung gốc" ở modal kiểm duyệt — endpoint này đã tự bypass ownership
