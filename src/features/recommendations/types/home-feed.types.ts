@@ -1,3 +1,5 @@
+import type { AnalyticData } from "@/features/series/api/series-api";
+
 export type HomeFeedPoolKey =
   | "promoted"
   | "trending"
@@ -34,7 +36,9 @@ export type HomeFeedSeries = {
   ageRating?: string;
   language?: string;
   totalViews?: number;
+  views?: number;
   totalSubscriptions?: number;
+  analyticData?: AnalyticData;
   averageRating?: number;
   createdAt?: string;
   updatedAt?: string;

@@ -503,13 +503,16 @@ function SearchResultCard({ series, index }: { series: HomeFeedSeries; index: nu
           >
             {isComic ? "Truyện" : "Phim"}
           </Badge>
-          <div className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full border border-[#D4AF37]/35 bg-black/60 text-[#D4AF37]">
+          <div className="absolute right-3 top-3 flex h-8 items-center gap-1 rounded-full border border-[#D4AF37]/35 bg-black/60 px-2 text-[#D4AF37]">
             <Star className="h-4 w-4 fill-current" />
+            {series.averageRating != null && series.averageRating > 0 ? (
+              <span className="text-xs font-black text-white">{series.averageRating.toFixed(1)}</span>
+            ) : null}
           </div>
           <div className="absolute bottom-3 left-3 right-3">
             <span className="rounded-lg bg-black/55 px-2 py-1 text-[10px] font-bold text-white/80">
               <Eye className="mr-1 inline h-3 w-3 text-[#D4AF37]" />
-              {(series.totalViews ?? 0).toLocaleString("vi-VN")}
+              {(series.analyticData?.views ?? series.views ?? series.totalViews ?? 0).toLocaleString("vi-VN")}
             </span>
           </div>
         </div>

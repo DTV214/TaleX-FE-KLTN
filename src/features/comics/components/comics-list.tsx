@@ -279,11 +279,11 @@ function FeaturedBanner({
         <div className="mt-5 flex flex-wrap items-center gap-4 text-sm font-bold text-white/70">
           <span className="inline-flex items-center gap-2">
             <Eye className="h-4 w-4 text-[#D4AF37]" />
-            {(item.totalViews || 0).toLocaleString("vi-VN")} lượt đọc
+            {(item.analyticData?.views ?? (item as any).views ?? item.totalViews ?? 0).toLocaleString("vi-VN")} lượt đọc
           </span>
           <span className="inline-flex items-center gap-2">
             <Star className="h-4 w-4 fill-[#D4AF37] text-[#D4AF37]" />
-            4.9
+            {item.averageRating != null && item.averageRating > 0 ? item.averageRating.toFixed(1) : "4.9"}
           </span>
           <span className="rounded-full bg-white/10 px-3 py-1 text-xs uppercase tracking-widest">
             Chapter mới nhất
@@ -319,6 +319,7 @@ function CatalogCard({
   latestEpisodes: PublicEpisodeItem[];
   isLoadingEpisodes: boolean;
 }) {
+  const views = item.analyticData?.views ?? (item as any).views ?? item.totalViews ?? 0;
   return (
     <article className="group block min-w-0">
       <Link href={`/series/${item.seriesId}`} className="block">
@@ -340,17 +341,16 @@ function CatalogCard({
           <div className="absolute left-3 top-3 rounded-md bg-black/70 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-white/80">
             {item.ageRating || "EVERYONE"}
           </div>
-          <div className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full border border-[#D4AF37]/35 bg-black/60 text-[#D4AF37] backdrop-blur-md">
+          <div className="absolute right-3 top-3 flex h-8 items-center gap-1 rounded-full border border-[#D4AF37]/35 bg-black/60 px-2 text-[#D4AF37] backdrop-blur-md">
             <Star className="h-4 w-4 fill-current" />
+            {item.averageRating != null && item.averageRating > 0 ? (
+              <span className="text-xs font-black text-white">{item.averageRating.toFixed(1)}</span>
+            ) : null}
           </div>
-          <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-[10px] font-bold text-white/80">
-            <span className="rounded-lg bg-black/55 px-2 py-1 backdrop-blur">
-              <Eye className="mr-1 inline h-3 w-3 text-[#D4AF37]" />
-              {(item.totalViews || 0).toLocaleString("vi-VN")}
-            </span>
-            <span className="rounded-lg bg-black/55 px-2 py-1 backdrop-blur">
-              <Users className="mr-1 inline h-3 w-3 text-[#D4AF37]" />
-              {(item.totalSubscriptions || 0).toLocaleString("vi-VN")}
+          <div className="absolute bottom-3 right-3 flex items-center text-xs font-bold text-white/90">
+            <span className="rounded-lg bg-black/65 px-2.5 py-1 text-xs font-black backdrop-blur-md shadow-md">
+              <Eye className="mr-1.5 inline h-3.5 w-3.5 text-[#D4AF37]" />
+              {views.toLocaleString("vi-VN")}
             </span>
           </div>
         </div>
