@@ -59,6 +59,14 @@ function formatReviewer(reviewedBy?: string) {
   return reviewedBy === "content-pipeline" ? "Hệ thống (tự động)" : reviewedBy;
 }
 
+// ContentCensorship.reviewedBy chỉ nhận đúng 2 giá trị cố định ở BE (xem
+// ContentPipelineServiceImpl/rejectWithReason) — khác hẳn formatReviewer() ở trên (actorId).
+function formatCensorshipReviewer(reviewedBy?: string) {
+  if (reviewedBy === "AWS_REKOGNITION") return "Hệ thống tự động (AWS Rekognition)";
+  if (reviewedBy === "HUMAN") return "Nhân viên duyệt thủ công";
+  return reviewedBy || "-";
+}
+
 const APPROVAL_STATUS_VI: Record<string, string> = {
   PENDING_REVIEW: "Chờ duyệt",
   APPROVED: "Đã duyệt",
@@ -318,6 +326,11 @@ function ModerationDetailModal({
                     <Fingerprint className="h-4 w-4" />
                     Bản quyền / Trùng lặp nội dung
                   </h3>
+                  {violations.contentId && (
+                    <p className="mb-2 break-all text-[11px] font-semibold text-slate-400">
+                      Mã fingerprint: {violations.contentId}
+                    </p>
+                  )}
                   {violations.copyrightViolations.length === 0 ? (
                     <p className="rounded-lg bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
                       Không phát hiện trùng lặp nội dung.
@@ -452,12 +465,17 @@ function ModerationDetailModal({
                             <span className={item.status === "APPROVED" ? "text-emerald-700" : "text-red-700"}>
                               {item.primaryViolationLabel
                                 ? translateViolationLabel(item.primaryViolationLabel)
-                                : "Không phát hiện vi phạm"}
+                                : item.status === "REJECTED"
+                                  ? "Bị từ chối thủ công"
+                                  : "Không phát hiện vi phạm"}
                             </span>
                             <span className="text-slate-500">
                               Độ chính xác phát hiện {formatPercent((item.confidenceScore ?? 0) / 100)}
                             </span>
                           </div>
+                          <p className="mt-1 text-slate-400">
+                            Nguồn kiểm duyệt: {formatCensorshipReviewer(item.reviewedBy)}
+                          </p>
                           {item.violationDetails.length > 0 && (
                             <ul className="mt-2 space-y-1">
                               {item.violationDetails.map((detail) => {
@@ -480,6 +498,9 @@ function ModerationDetailModal({
                                           {" "}— vi phạm từ giây{" "}
                                           <span className="font-semibold text-slate-700">{timeRange}</span>
                                         </>
+                                      )}
+                                      {detail.suggestion && (
+                                        <span className="block text-slate-400">{detail.suggestion}</span>
                                       )}
                                     </span>
                                   </li>
