@@ -10,11 +10,15 @@ import {
   Info,
   ToggleLeft,
   Image as ImageIcon,
+  Moon,
+  Sun,
 } from "lucide-react";
 
 import { MediaConfigTab } from "./components/media-config-tab";
+import { useBackofficeTheme } from "@/shared/ui/backoffice-theme-provider";
 
 export default function SettingsPage() {
+  const { isDark, toggleTheme } = useBackofficeTheme();
   // Trạng thái cho các tab và toggles
   const [activeTab, setActiveTab] = useState("General");
   const [toggles, setToggles] = useState({
@@ -119,6 +123,53 @@ export default function SettingsPage() {
                     defaultValue="https://admin.talex-global.com"
                     className="w-full pb-2 text-sm text-gray-900 bg-transparent border-b border-gray-200 focus:border-[#00D1FF] focus:outline-none transition-colors"
                   />
+                </div>
+              </div>
+
+              {/* Divider */}
+              <div className="w-full h-px bg-gray-100 mb-10" />
+
+              {/* Section 2: Backoffice Appearance */}
+              <div className="mb-12">
+                <div className="mb-6 flex items-center gap-2 text-[#007A8A]">
+                  {isDark ? (
+                    <Moon className="h-5 w-5" />
+                  ) : (
+                    <Sun className="h-5 w-5" />
+                  )}
+                  <h3 className="text-lg font-bold">Backoffice Appearance</h3>
+                </div>
+
+                <div className="flex flex-col gap-4 rounded-2xl border border-gray-100 bg-gray-50/80 p-5 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h4 className="text-sm font-bold text-gray-900">
+                      Giao diện Admin/Staff
+                    </h4>
+                    <p className="mt-1 text-xs font-medium leading-5 text-gray-500">
+                      Light giữ tông quản trị hiện tại. Dark dùng tông cinematic
+                      đen/vàng đồng bộ với trải nghiệm người dùng TaleX.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={toggleTheme}
+                    role="switch"
+                    aria-checked={isDark}
+                    aria-label={isDark ? "Đang dùng giao diện tối" : "Đang dùng giao diện sáng"}
+                    className="backoffice-theme-switch relative inline-flex h-8 w-16 shrink-0 items-center rounded-full border transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37]/35"
+                  >
+                    <span
+                      className={`backoffice-theme-switch-knob inline-flex h-6 w-6 items-center justify-center rounded-full transition-transform duration-200 ${
+                        isDark ? "translate-x-8" : "translate-x-1"
+                      }`}
+                    >
+                      {isDark ? (
+                        <Moon className="h-3.5 w-3.5" />
+                      ) : (
+                        <Sun className="h-3.5 w-3.5" />
+                      )}
+                    </span>
+                  </button>
                 </div>
               </div>
 

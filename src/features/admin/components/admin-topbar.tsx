@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { Search, Bell, HelpCircle, Menu } from "lucide-react";
+import { Search, Bell, HelpCircle, Menu, Moon, Sun } from "lucide-react";
+import { useBackofficeTheme } from "@/shared/ui/backoffice-theme-provider";
 import { useAdminSidebarStore } from "./admin-sidebar";
 
 export function AdminTopbar() {
   const toggleSidebar = useAdminSidebarStore((state) => state.toggleSidebar);
+  const { isDark, toggleTheme } = useBackofficeTheme();
 
   return (
     <header className="sticky top-0 z-50 flex h-16 w-full items-center justify-between border-b border-gray-100 bg-white px-4 md:px-8">
@@ -46,6 +48,18 @@ export function AdminTopbar() {
       </div>
 
       <div className="ml-auto flex items-center gap-3 md:gap-4">
+        <button
+          type="button"
+          onClick={toggleTheme}
+          aria-label={isDark ? "Chuyển sang giao diện sáng" : "Chuyển sang giao diện tối"}
+          title={isDark ? "Chuyển sang giao diện sáng" : "Chuyển sang giao diện tối"}
+          className="backoffice-theme-toggle inline-flex h-9 items-center justify-center gap-2 rounded-full border px-3 text-xs font-black transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37]/35"
+        >
+          <span className="backoffice-theme-toggle-icon inline-flex h-5 w-5 items-center justify-center rounded-full">
+            {isDark ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
+          </span>
+          <span className="hidden sm:inline">{isDark ? "Sáng" : "Tối"}</span>
+        </button>
         <button
           type="button"
           aria-label="Notifications"
