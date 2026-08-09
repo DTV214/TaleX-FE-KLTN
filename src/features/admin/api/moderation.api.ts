@@ -232,6 +232,13 @@ export type MediaCopyrightViolation = {
   mediaCopyrightId: string;
   mediaId: string;
   sourceMediaId?: string;
+  // Đơn vị: GIÂY (xem MediaCopyright entity + fingerprint schema BE). target = đoạn
+  // trùng trong video ĐANG XÉT, source = đoạn tương ứng trong video GỐC bị nghi trùng.
+  // Chỉ có ý nghĩa khi violationType === "VIDEO" — ảnh không có khái niệm thời lượng.
+  startTimeTarget?: number;
+  endTimeTarget?: number;
+  startTimeSource?: number;
+  endTimeSource?: number;
   similarityScore?: number;
   violationType?: string;
   isValid?: boolean;
@@ -248,6 +255,10 @@ export type MediaCopyrightViolation = {
 
 export type ViolationDetail = {
   violationDetailId: string;
+  // Đơn vị: MILI-GIÂY (xem ViolationDetail entity BE) — khác đơn vị giây của
+  // MediaCopyrightViolation ở trên, phải chia 1000 khi hiển thị. 0 với vi phạm ở ảnh.
+  violationAt?: number;
+  endViolationAt?: number;
   label: string;
   confidence?: number;
   suggestion?: string;

@@ -173,6 +173,17 @@ function formatPercent(value?: number) {
   return `${(value * 100).toFixed(1)}%`;
 }
 
+// value tính bằng giây — dùng chung cho khoảng thời gian trùng bản quyền (video).
+function formatTimeRange(startSec?: number, endSec?: number) {
+  if (typeof startSec !== "number" || typeof endSec !== "number") return null;
+  const format = (s: number) => {
+    const m = Math.floor(s / 60);
+    const r = Math.floor(s % 60);
+    return `${m}:${r.toString().padStart(2, "0")}`;
+  };
+  return `${format(startSec)} - ${format(endSec)}`;
+}
+
 function ModerationDetailModal({
   isMutating,
   media,
@@ -387,6 +398,26 @@ function ModerationDetailModal({
                             <p className="mt-1 text-slate-500">
                               Loại nội dung: {item.violationType === "VIDEO" ? "Video" : "Ảnh"}
                             </p>
+                            {item.violationType === "VIDEO" && (
+                              <>
+                                {formatTimeRange(item.startTimeTarget, item.endTimeTarget) && (
+                                  <p className="text-slate-500">
+                                    Đoạn trùng trong video này:{" "}
+                                    <span className="font-semibold text-slate-700">
+                                      {formatTimeRange(item.startTimeTarget, item.endTimeTarget)}
+                                    </span>
+                                  </p>
+                                )}
+                                {formatTimeRange(item.startTimeSource, item.endTimeSource) && (
+                                  <p className="text-slate-500">
+                                    Đoạn tương ứng trong video gốc:{" "}
+                                    <span className="font-semibold text-slate-700">
+                                      {formatTimeRange(item.startTimeSource, item.endTimeSource)}
+                                    </span>
+                                  </p>
+                                )}
+                              </>
+                            )}
                             <p className="text-slate-500">
                               Kiểm tra lúc {formatDate(item.checkedAt)}
                             </p>
@@ -429,14 +460,31 @@ function ModerationDetailModal({
                           </div>
                           {item.violationDetails.length > 0 && (
                             <ul className="mt-2 space-y-1">
-                              {item.violationDetails.map((detail) => (
-                                <li key={detail.violationDetailId} className="flex items-start gap-1.5 text-slate-600">
-                                  <CircleAlert className="mt-0.5 h-3 w-3 shrink-0 text-red-500" />
-                                  <span>
-                                    {translateViolationLabel(detail.label)} — độ chính xác phát hiện {formatPercent((detail.confidence ?? 0) / 100)}
-                                  </span>
-                                </li>
-                              ))}
+                              {item.violationDetails.map((detail) => {
+                                // BE lưu violationAt/endViolationAt theo mili-giây, 0 với vi
+                                // phạm ở ảnh (không có khái niệm thời lượng) — chỉ hiện mốc
+                                // thời gian khi media đang xét là VIDEO.
+                                const timeRange =
+                                  isVideo &&
+                                  formatTimeRange(
+                                    typeof detail.violationAt === "number" ? detail.violationAt / 1000 : undefined,
+                                    typeof detail.endViolationAt === "number" ? detail.endViolationAt / 1000 : undefined,
+                                  );
+                                return (
+                                  <li key={detail.violationDetailId} className="flex items-start gap-1.5 text-slate-600">
+                                    <CircleAlert className="mt-0.5 h-3 w-3 shrink-0 text-red-500" />
+                                    <span>
+                                      {translateViolationLabel(detail.label)} — độ chính xác phát hiện {formatPercent((detail.confidence ?? 0) / 100)}
+                                      {timeRange && (
+                                        <>
+                                          {" "}— vi phạm từ giây{" "}
+                                          <span className="font-semibold text-slate-700">{timeRange}</span>
+                                        </>
+                                      )}
+                                    </span>
+                                  </li>
+                                );
+                              })}
                             </ul>
                           )}
                           {item.reviewerNotes && (
