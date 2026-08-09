@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   ReceiptText,
   ScrollText,
+  ShieldCheck,
   Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -27,7 +28,6 @@ import {
   type PaymentProfileRequestDto,
   type TermVersionDto,
 } from "@/features/creator-dashboard/api/creator-monetization-api";
-import { useAuthStore } from "@/features/auth/store/auth.store";
 import { Button } from "@/shared/ui/button";
 import {
   Dialog,
@@ -37,6 +37,7 @@ import {
   DialogTitle,
 } from "@/shared/ui/dialog";
 import { cn } from "@/shared/utils/utils";
+import { renderTermsContent } from "@/shared/utils/terms-content";
 
 type IdentityStatus = "AWAITING_FILL" | "PENDING" | "APPROVED" | "REJECTED";
 type PaymentStatus = "PENDING" | "VERIFIED" | "REJECTED" | "CANCELLED";
@@ -73,6 +74,9 @@ const paymentStatusClassNames: Record<PaymentStatus, string> = {
   REJECTED: "border-red-400/35 bg-red-400/10 text-red-300",
   CANCELLED: "border-white/20 bg-white/10 text-white/62",
 };
+
+const monetizationTermContentClassName =
+  "max-h-72 min-w-0 max-w-full overflow-y-auto overflow-x-hidden rounded-2xl border border-white/10 bg-black/35 px-5 py-5 text-sm font-semibold leading-7 text-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] [overflow-wrap:anywhere] [&_*]:max-w-full [&_blockquote]:my-4 [&_blockquote]:rounded-2xl [&_blockquote]:border-l-4 [&_blockquote]:border-primary [&_blockquote]:bg-primary/10 [&_blockquote]:px-4 [&_blockquote]:py-3 [&_blockquote]:font-bold [&_blockquote]:text-white/85 [&_h1]:mb-3 [&_h1]:font-heading [&_h1]:text-2xl [&_h1]:font-black [&_h1]:text-white [&_h2]:mb-2 [&_h2]:mt-5 [&_h2]:flex [&_h2]:items-center [&_h2]:gap-2 [&_h2]:font-heading [&_h2]:text-lg [&_h2]:font-black [&_h2]:text-white [&_h2]:before:inline-flex [&_h2]:before:h-6 [&_h2]:before:w-6 [&_h2]:before:items-center [&_h2]:before:justify-center [&_h2]:before:rounded-lg [&_h2]:before:border [&_h2]:before:border-primary/25 [&_h2]:before:bg-primary/15 [&_h2]:before:text-primary [&_h2]:before:content-['✦'] [&_h3]:mb-2 [&_h3]:mt-4 [&_h3]:font-heading [&_h3]:text-sm [&_h3]:font-black [&_h3]:uppercase [&_h3]:tracking-[0.14em] [&_h3]:text-primary [&_ol]:my-3 [&_ol]:space-y-2 [&_ol]:pl-6 [&_ol_li::marker]:font-black [&_ol_li::marker]:text-primary [&_p]:my-3 [&_p]:text-white/72 [&_p:first-child]:rounded-2xl [&_p:first-child]:border [&_p:first-child]:border-white/10 [&_p:first-child]:bg-white/[0.045] [&_p:first-child]:p-4 [&_p:first-child]:font-bold [&_p:first-child]:text-white/82 [&_strong]:font-black [&_strong]:text-white [&_ul]:my-4 [&_ul]:space-y-3 [&_ul]:pl-0 [&_ul_li]:relative [&_ul_li]:list-none [&_ul_li]:rounded-xl [&_ul_li]:border [&_ul_li]:border-white/10 [&_ul_li]:bg-white/[0.045] [&_ul_li]:py-3 [&_ul_li]:pl-10 [&_ul_li]:pr-3 [&_ul_li]:before:absolute [&_ul_li]:before:left-4 [&_ul_li]:before:top-4 [&_ul_li]:before:h-2.5 [&_ul_li]:before:w-2.5 [&_ul_li]:before:rounded-full [&_ul_li]:before:bg-primary [&_ul_li]:before:shadow-[0_0_14px_rgba(212,175,55,0.45)]";
 
 const identityStatusByCode: Record<number, IdentityStatus> = {
   0: "AWAITING_FILL",
@@ -145,27 +149,60 @@ function toPaymentProfileRequest(
 }
 
 const ERROR_MESSAGE = "Đã có lỗi xảy ra. Vui lòng thử lại sau.";
+const TAX_ID_PATTERN = /^\d{10}(\d{3})?$/;
+const BANK_CODE_PATTERN = /^[A-Z0-9]{2,20}$/;
+const ACCOUNT_NUMBER_PATTERN = /^\d{6,20}$/;
+const ACCOUNT_NAME_PATTERN = /^[A-ZÀ-Ỹ\s'.-]{3,80}$/i;
+
+function validateTaxId(taxId: string) {
+  const value = taxId.trim();
+
+  if (!value) {
+    return "Vui lòng nhập mã số thuế.";
+  }
+
+  if (!TAX_ID_PATTERN.test(value)) {
+    return "Mã số thuế cần gồm 10 hoặc 13 chữ số.";
+  }
+
+  return "";
+}
+
+function validatePaymentProfile(formData: PaymentFormData) {
+  const payload = toPaymentProfileRequest(formData);
+
+  if (!BANK_CODE_PATTERN.test(payload.bankCode.toUpperCase())) {
+    return "Mã ngân hàng cần gồm 2-20 ký tự chữ hoặc số. Ví dụ: VCB, TCB, MB.";
+  }
+
+  if (!ACCOUNT_NUMBER_PATTERN.test(payload.accountNumber)) {
+    return "Số tài khoản cần gồm 6-20 chữ số.";
+  }
+
+  if (!ACCOUNT_NAME_PATTERN.test(payload.accountName)) {
+    return "Tên tài khoản cần từ 3-80 ký tự và chỉ gồm chữ, khoảng trắng hoặc dấu . '-";
+  }
+
+  return "";
+}
 
 export function CreatorMonetizationView({ onBack }: CreatorMonetizationViewProps) {
   const queryClient = useQueryClient();
-  const authUser = useAuthStore((state) => state.user);
   const [isAgreed, setIsAgreed] = useState(false);
   const [isStep1ModalOpen, setIsStep1ModalOpen] = useState(false);
   const [isStep1Agreed, setIsStep1Agreed] = useState(false);
   const [isStep2ModalOpen, setIsStep2ModalOpen] = useState(false);
   const [step2InputTaxId, setStep2InputTaxId] = useState("");
+  const [step2Error, setStep2Error] = useState("");
   const [isStep3ModalOpen, setIsStep3ModalOpen] = useState(false);
   const [step3FormData, setStep3FormData] = useState<PaymentFormData>(
     emptyPaymentFormData,
   );
+  const [step3Error, setStep3Error] = useState("");
 
   const verificationStatusQuery = useQuery({
     queryKey: creatorMonetizationKeys.verificationStatus(),
-    queryFn: async () => {
-      const data = await getCreatorVerificationStatus();
-      console.log("[CreatorMonetization] GET verification-status response", data);
-      return data;
-    },
+    queryFn: getCreatorVerificationStatus,
     retry: false,
   });
 
@@ -186,11 +223,9 @@ export function CreatorMonetizationView({ onBack }: CreatorMonetizationViewProps
   const gatewayTermQuery = useQuery({
     queryKey: creatorMonetizationKeys.activeTerm("CREATOR_VERIFYING_PROCESS"),
     queryFn: async () => {
-      const data = await getActiveCreatorMonetizationTerm(
+      return getActiveCreatorMonetizationTerm(
         "CREATOR_VERIFYING_PROCESS",
       );
-      console.log("[CreatorMonetization] GET gateway term response", data);
-      return data;
     },
     enabled: Boolean(verificationStatus && !isCreatorVerified),
   });
@@ -200,11 +235,9 @@ export function CreatorMonetizationView({ onBack }: CreatorMonetizationViewProps
       "CREATOR_ENABLE_MONETIZATION",
     ),
     queryFn: async () => {
-      const data = await getActiveCreatorMonetizationTerm(
+      return getActiveCreatorMonetizationTerm(
         "CREATOR_ENABLE_MONETIZATION",
       );
-      console.log("[CreatorMonetization] GET step1 term response", data);
-      return data;
     },
     enabled: isStep1ModalOpen && isCreatorVerified && !isTermsAccepted,
   });
@@ -217,6 +250,14 @@ export function CreatorMonetizationView({ onBack }: CreatorMonetizationViewProps
 
   const gatewayTermId = getTermVersionId(gatewayTermQuery.data);
   const step1TermId = getTermVersionId(step1TermQuery.data);
+  const renderedGatewayTermContent = useMemo(
+    () => renderTermsContent(gatewayTermQuery.data?.content ?? ""),
+    [gatewayTermQuery.data?.content],
+  );
+  const renderedStep1TermContent = useMemo(
+    () => renderTermsContent(step1TermQuery.data?.content ?? ""),
+    [step1TermQuery.data?.content],
+  );
 
   const submitGatewayMutation = useMutation({
     mutationFn: submitCreatorVerification,
@@ -327,6 +368,7 @@ export function CreatorMonetizationView({ onBack }: CreatorMonetizationViewProps
     }
 
     setStep2InputTaxId(taxId);
+    setStep2Error("");
     setIsStep2ModalOpen(true);
   };
 
@@ -339,13 +381,20 @@ export function CreatorMonetizationView({ onBack }: CreatorMonetizationViewProps
 
     if (!open) {
       setStep2InputTaxId(taxId);
+      setStep2Error("");
     }
   };
 
   const handleSubmitStep2TaxProfile = () => {
     const nextTaxId = step2InputTaxId.trim();
+    const validationMessage = validateTaxId(nextTaxId);
 
-    if (updateTaxMutation.isPending || !nextTaxId) {
+    if (updateTaxMutation.isPending) {
+      return;
+    }
+
+    if (validationMessage) {
+      setStep2Error(validationMessage);
       return;
     }
 
@@ -357,6 +406,7 @@ export function CreatorMonetizationView({ onBack }: CreatorMonetizationViewProps
       return;
     }
 
+    setStep3Error("");
     setIsStep3ModalOpen(true);
   };
 
@@ -366,12 +416,17 @@ export function CreatorMonetizationView({ onBack }: CreatorMonetizationViewProps
     }
 
     setIsStep3ModalOpen(open);
+
+    if (!open) {
+      setStep3Error("");
+    }
   };
 
   const updateStep3FormData = <FieldName extends keyof PaymentFormData>(
     fieldName: FieldName,
     value: PaymentFormData[FieldName],
   ) => {
+    setStep3Error("");
     setStep3FormData((currentFormData) => ({
       ...currentFormData,
       [fieldName]: value,
@@ -380,10 +435,14 @@ export function CreatorMonetizationView({ onBack }: CreatorMonetizationViewProps
 
   const handleSubmitStep3PaymentProfile = () => {
     const payload = toPaymentProfileRequest(step3FormData);
-    const isMissingRequiredField =
-      !payload.bankCode || !payload.accountNumber || !payload.accountName;
+    const validationMessage = validatePaymentProfile(payload);
 
-    if (savePaymentProfileMutation.isPending || isMissingRequiredField) {
+    if (savePaymentProfileMutation.isPending) {
+      return;
+    }
+
+    if (validationMessage) {
+      setStep3Error(validationMessage);
       return;
     }
 
@@ -408,10 +467,10 @@ export function CreatorMonetizationView({ onBack }: CreatorMonetizationViewProps
   const isStep2Enabled = isTermsAccepted;
   const isStep3Enabled =
     identityStatus !== null && identityStatus !== "AWAITING_FILL";
-  const canSubmitStep3 =
-    step3FormData.bankCode.trim() &&
-    step3FormData.accountNumber.trim() &&
-    step3FormData.accountName.trim();
+  const step2ValidationMessage = validateTaxId(step2InputTaxId);
+  const step3ValidationMessage = validatePaymentProfile(step3FormData);
+  const canSubmitStep2 = !step2ValidationMessage;
+  const canSubmitStep3 = !step3ValidationMessage;
   const monetizationProgress = paymentStatus
     ? 100
     : isStep3Enabled
@@ -419,97 +478,6 @@ export function CreatorMonetizationView({ onBack }: CreatorMonetizationViewProps
       : isTermsAccepted
         ? 33
         : 0;
-
-  useEffect(() => {
-    console.log("[CreatorMonetization] view mounted", {
-      accountId: authUser?.accountId,
-      roleName: authUser?.roleName,
-      isAuthenticated: Boolean(authUser),
-      location:
-        typeof window !== "undefined"
-          ? `${window.location.pathname}${window.location.search}`
-          : "",
-      clientCookieNames:
-        typeof document !== "undefined" && document.cookie
-          ? document.cookie
-              .split(";")
-              .map((cookie) => cookie.trim().split("=")[0])
-          : [],
-    });
-  }, [authUser]);
-
-  useEffect(() => {
-    console.log("[CreatorMonetization] render state", {
-      verificationStatus,
-      accountId: authUser?.accountId,
-      roleName: authUser?.roleName,
-      isLoading: verificationStatusQuery.isLoading,
-      isFetching: verificationStatusQuery.isFetching,
-      isError: verificationStatusQuery.isError,
-      isCreatorVerified,
-      isTermsAccepted,
-      hasVerificationStatus,
-      identityStatus,
-      paymentStatus,
-      shouldShowGateway,
-      shouldShowDashboard,
-    });
-  }, [
-    verificationStatus,
-    authUser?.accountId,
-    authUser?.roleName,
-    verificationStatusQuery.isLoading,
-    verificationStatusQuery.isFetching,
-    verificationStatusQuery.isError,
-    isCreatorVerified,
-    isTermsAccepted,
-    hasVerificationStatus,
-    identityStatus,
-    paymentStatus,
-    shouldShowGateway,
-    shouldShowDashboard,
-  ]);
-
-  useEffect(() => {
-    console.log("[CreatorMonetization] gateway term query state", {
-      enabled: Boolean(verificationStatus && !isCreatorVerified),
-      isLoading: gatewayTermQuery.isLoading,
-      isFetching: gatewayTermQuery.isFetching,
-      isError: gatewayTermQuery.isError,
-      data: gatewayTermQuery.data,
-      termId: gatewayTermId,
-      hasContent: Boolean(gatewayTermQuery.data?.content?.trim()),
-    });
-  }, [
-    verificationStatus,
-    isCreatorVerified,
-    gatewayTermQuery.isLoading,
-    gatewayTermQuery.isFetching,
-    gatewayTermQuery.isError,
-    gatewayTermQuery.data,
-    gatewayTermId,
-  ]);
-
-  useEffect(() => {
-    console.log("[CreatorMonetization] step1 term query state", {
-      enabled: isStep1ModalOpen && isCreatorVerified && !isTermsAccepted,
-      isLoading: step1TermQuery.isLoading,
-      isFetching: step1TermQuery.isFetching,
-      isError: step1TermQuery.isError,
-      data: step1TermQuery.data,
-      termId: step1TermId,
-      hasContent: Boolean(step1TermQuery.data?.content?.trim()),
-    });
-  }, [
-    isStep1ModalOpen,
-    isCreatorVerified,
-    isTermsAccepted,
-    step1TermQuery.isLoading,
-    step1TermQuery.isFetching,
-    step1TermQuery.isError,
-    step1TermQuery.data,
-    step1TermId,
-  ]);
 
   return (
     <div className="min-h-full bg-transparent text-creator-text">
@@ -884,8 +852,10 @@ export function CreatorMonetizationView({ onBack }: CreatorMonetizationViewProps
           showCloseButton={false}
           onEscapeKeyDown={(event) => event.preventDefault()}
           onInteractOutside={(event) => event.preventDefault()}
-          className="max-h-[calc(100vh-2rem)] gap-5 rounded-lg border border-white/10 bg-card p-5 text-card-foreground shadow-2xl sm:max-w-xl"
+          className="max-h-[calc(100vh-2rem)] gap-5 overflow-hidden rounded-2xl border border-primary/20 bg-[#101012]/95 p-5 text-card-foreground shadow-[0_28px_90px_rgba(0,0,0,0.72),0_0_36px_rgba(212,175,55,0.08)] sm:max-w-2xl"
         >
+          <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-primary/70 to-transparent" />
+          <div className="pointer-events-none absolute -right-20 -top-24 h-56 w-56 rounded-full bg-primary/10 blur-3xl" />
           {onBack ? (
             <div className="flex justify-start">
               <Button
@@ -901,7 +871,10 @@ export function CreatorMonetizationView({ onBack }: CreatorMonetizationViewProps
           ) : null}
 
           <DialogHeader>
-            <DialogTitle className="font-heading text-2xl font-bold tracking-tight text-white">
+            <div className="mb-1 inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-primary/30 bg-primary/12 text-primary shadow-[0_0_24px_rgba(212,175,55,0.12)]">
+              <ShieldCheck className="h-6 w-6" />
+            </div>
+            <DialogTitle className="font-heading text-2xl font-black tracking-tight text-white">
               Xác thực danh tính Creator
             </DialogTitle>
             <DialogDescription className="text-sm leading-6 text-muted-foreground">
@@ -909,18 +882,20 @@ export function CreatorMonetizationView({ onBack }: CreatorMonetizationViewProps
             </DialogDescription>
           </DialogHeader>
 
-          <div className="max-h-64 min-w-0 max-w-full overflow-y-auto overflow-x-hidden whitespace-pre-wrap break-words rounded-lg border border-white/10 bg-white/[0.04] p-4 pr-3 text-sm leading-7 text-white/78 [overflow-wrap:anywhere]">
+          <div className={monetizationTermContentClassName}>
             {gatewayTermQuery.isLoading ? (
               <span>Đang tải điều khoản...</span>
             ) : gatewayTermQuery.isError ? (
               <span className="text-red-200">
                 Không thể tải điều khoản xác thực.
               </span>
-            ) : gatewayTermQuery.data?.content?.trim() ? (
-              gatewayTermQuery.data.content
+            ) : renderedGatewayTermContent ? (
+              <div
+                dangerouslySetInnerHTML={{ __html: renderedGatewayTermContent }}
+              />
             ) : (
               <span className="text-primary">
-                API tráº£ vá» Ä‘iá»u khoáº£n xÃ¡c thá»±c rá»—ng.
+                API trả về điều khoản xác thực rỗng.
               </span>
             )}
           </div>
@@ -956,9 +931,14 @@ export function CreatorMonetizationView({ onBack }: CreatorMonetizationViewProps
       </Dialog>
 
       <Dialog open={isStep1ModalOpen} onOpenChange={handleStep1OpenChange}>
-        <DialogContent className="max-h-[calc(100vh-2rem)] gap-5 rounded-lg border border-white/10 bg-card p-5 text-card-foreground shadow-2xl sm:max-w-xl">
+        <DialogContent className="max-h-[calc(100vh-2rem)] gap-5 overflow-hidden rounded-2xl border border-primary/20 bg-[#101012]/95 p-5 text-card-foreground shadow-[0_28px_90px_rgba(0,0,0,0.72),0_0_36px_rgba(212,175,55,0.08)] sm:max-w-2xl">
+          <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-primary/70 to-transparent" />
+          <div className="pointer-events-none absolute -right-20 -top-24 h-56 w-56 rounded-full bg-primary/10 blur-3xl" />
           <DialogHeader>
-            <DialogTitle className="font-heading text-2xl font-bold tracking-tight text-white">
+            <div className="mb-1 inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-primary/30 bg-primary/12 text-primary shadow-[0_0_24px_rgba(212,175,55,0.12)]">
+              <ScrollText className="h-6 w-6" />
+            </div>
+            <DialogTitle className="font-heading text-2xl font-black tracking-tight text-white">
               Điều khoản bật kiếm tiền
             </DialogTitle>
             <DialogDescription className="text-sm leading-6 text-muted-foreground">
@@ -966,18 +946,20 @@ export function CreatorMonetizationView({ onBack }: CreatorMonetizationViewProps
             </DialogDescription>
           </DialogHeader>
 
-          <div className="max-h-64 min-w-0 max-w-full overflow-y-auto overflow-x-hidden whitespace-pre-wrap break-words rounded-lg border border-white/10 bg-white/[0.04] p-4 pr-3 text-sm leading-7 text-white/78 [overflow-wrap:anywhere]">
+          <div className={monetizationTermContentClassName}>
             {step1TermQuery.isLoading ? (
               <span>Đang tải điều khoản...</span>
             ) : step1TermQuery.isError ? (
               <span className="text-red-200">
                 Không thể tải điều khoản bật kiếm tiền.
               </span>
-            ) : step1TermQuery.data?.content?.trim() ? (
-              step1TermQuery.data.content
+            ) : renderedStep1TermContent ? (
+              <div
+                dangerouslySetInnerHTML={{ __html: renderedStep1TermContent }}
+              />
             ) : (
               <span className="text-primary">
-                API tráº£ vá» Ä‘iá»u khoáº£n báº­t kiáº¿m tiá»n rá»—ng.
+                API trả về điều khoản bật kiếm tiền rỗng.
               </span>
             )}
           </div>
@@ -1011,9 +993,14 @@ export function CreatorMonetizationView({ onBack }: CreatorMonetizationViewProps
       </Dialog>
 
       <Dialog open={isStep2ModalOpen} onOpenChange={handleStep2OpenChange}>
-        <DialogContent className="max-h-[calc(100vh-2rem)] gap-5 rounded-lg border border-white/10 bg-card p-5 text-card-foreground shadow-2xl sm:max-w-xl">
+        <DialogContent className="max-h-[calc(100vh-2rem)] gap-5 overflow-hidden rounded-2xl border border-primary/20 bg-[#101012]/95 p-5 text-card-foreground shadow-[0_28px_90px_rgba(0,0,0,0.72),0_0_36px_rgba(212,175,55,0.08)] sm:max-w-xl">
+          <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-primary/70 to-transparent" />
+          <div className="pointer-events-none absolute -right-20 -top-24 h-56 w-56 rounded-full bg-primary/10 blur-3xl" />
           <DialogHeader>
-            <DialogTitle className="font-heading text-2xl font-bold tracking-tight text-white">
+            <div className="mb-1 inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-primary/30 bg-primary/12 text-primary shadow-[0_0_24px_rgba(212,175,55,0.12)]">
+              <ReceiptText className="h-6 w-6" />
+            </div>
+            <DialogTitle className="font-heading text-2xl font-black tracking-tight text-white">
               Hồ sơ thuế
             </DialogTitle>
             <DialogDescription className="text-sm leading-6 text-muted-foreground">
@@ -1021,23 +1008,42 @@ export function CreatorMonetizationView({ onBack }: CreatorMonetizationViewProps
             </DialogDescription>
           </DialogHeader>
 
-          <label className="grid gap-2 text-sm font-medium text-white/82">
-            <span>Mã số thuế</span>
+          <label className="grid gap-2 rounded-2xl border border-white/10 bg-black/30 p-4 text-sm font-medium text-white/82 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+            <div className="flex items-center justify-between gap-3">
+              <span className="font-bold text-white">Mã số thuế</span>
+              <span className="text-xs font-bold text-white/40">
+                {step2InputTaxId.trim().length}/13
+              </span>
+            </div>
             <input
               type="text"
+              inputMode="numeric"
+              maxLength={13}
               value={step2InputTaxId}
-              onChange={(event) => setStep2InputTaxId(event.target.value)}
-              placeholder="Nhập mã số thuế của bạn"
-              className="h-11 rounded-lg border border-white/12 bg-black/25 px-3 text-sm text-white outline-none transition placeholder:text-white/32 focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+              onChange={(event) => {
+                setStep2Error("");
+                setStep2InputTaxId(event.target.value.replace(/\D/g, ""));
+              }}
+              placeholder="Ví dụ: 0312345678"
+              className="h-12 rounded-xl border border-white/12 bg-black/35 px-4 text-sm font-bold text-white outline-none transition placeholder:text-white/32 focus:border-primary/70 focus:ring-2 focus:ring-primary/20"
             />
+            <div className="rounded-xl border border-primary/15 bg-primary/8 px-3 py-2 text-xs leading-5 text-white/62">
+              Mã số thuế cá nhân/doanh nghiệp thường gồm 10 số. Chi nhánh hoặc
+              đơn vị phụ thuộc có thể gồm 13 số.
+            </div>
+            {(step2Error || (step2InputTaxId && step2ValidationMessage)) && (
+              <p className="text-xs font-bold text-red-300">
+                {step2Error || step2ValidationMessage}
+              </p>
+            )}
           </label>
 
           <div className="flex justify-end">
             <Button
               type="button"
-              disabled={updateTaxMutation.isPending || !step2InputTaxId.trim()}
+              disabled={updateTaxMutation.isPending || !canSubmitStep2}
               onClick={handleSubmitStep2TaxProfile}
-              className="h-10 min-w-32 bg-primary px-5 font-semibold text-black hover:bg-primary/90"
+              className="h-11 min-w-36 rounded-xl bg-primary px-6 font-black text-black shadow-[0_0_24px_rgba(212,175,55,0.18)] transition hover:bg-[#F0D36B] hover:shadow-[0_0_34px_rgba(212,175,55,0.28)] disabled:opacity-45"
             >
               {updateTaxMutation.isPending ? "Đang gửi..." : "Xác nhận"}
             </Button>
@@ -1046,9 +1052,14 @@ export function CreatorMonetizationView({ onBack }: CreatorMonetizationViewProps
       </Dialog>
 
       <Dialog open={isStep3ModalOpen} onOpenChange={handleStep3OpenChange}>
-        <DialogContent className="max-h-[calc(100vh-2rem)] gap-5 overflow-y-auto rounded-lg border border-white/10 bg-card p-5 text-card-foreground shadow-2xl sm:max-w-xl">
+        <DialogContent className="max-h-[calc(100vh-2rem)] gap-5 overflow-y-auto rounded-2xl border border-primary/20 bg-[#101012]/95 p-5 text-card-foreground shadow-[0_28px_90px_rgba(0,0,0,0.72),0_0_36px_rgba(212,175,55,0.08)] sm:max-w-xl">
+          <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-primary/70 to-transparent" />
+          <div className="pointer-events-none absolute -right-20 -top-24 h-56 w-56 rounded-full bg-primary/10 blur-3xl" />
           <DialogHeader>
-            <DialogTitle className="font-heading text-2xl font-bold tracking-tight text-white">
+            <div className="mb-1 inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-primary/30 bg-primary/12 text-primary shadow-[0_0_24px_rgba(212,175,55,0.12)]">
+              <Building2 className="h-6 w-6" />
+            </div>
+            <DialogTitle className="font-heading text-2xl font-black tracking-tight text-white">
               Hồ sơ thanh toán
             </DialogTitle>
             <DialogDescription className="text-sm leading-6 text-muted-foreground">
@@ -1057,46 +1068,85 @@ export function CreatorMonetizationView({ onBack }: CreatorMonetizationViewProps
           </DialogHeader>
 
           <div className="grid gap-4">
-            <label className="grid gap-2 text-sm font-medium text-white/82">
-              <span>Ngân hàng</span>
+            <label className="grid gap-2 rounded-2xl border border-white/10 bg-black/30 p-4 text-sm font-medium text-white/82 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+              <div className="flex items-center justify-between gap-3">
+                <span className="font-bold text-white">Ngân hàng</span>
+                <span className="text-xs font-bold text-white/40">
+                  {step3FormData.bankCode.trim().length}/20
+                </span>
+              </div>
               <input
                 type="text"
+                maxLength={20}
+                autoComplete="organization"
                 value={step3FormData.bankCode}
                 onChange={(event) =>
-                  updateStep3FormData("bankCode", event.target.value)
+                  updateStep3FormData(
+                    "bankCode",
+                    event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""),
+                  )
                 }
-                placeholder="Nhập mã ngân hàng"
-                className="h-11 rounded-lg border border-white/12 bg-black/25 px-3 text-sm text-white outline-none transition placeholder:text-white/32 focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+                placeholder="Ví dụ: VCB, TCB, MB"
+                className="h-12 rounded-xl border border-white/12 bg-black/35 px-4 text-sm font-bold uppercase text-white outline-none transition placeholder:normal-case placeholder:text-white/32 focus:border-primary/70 focus:ring-2 focus:ring-primary/20"
               />
+              <p className="text-xs leading-5 text-white/48">
+                Nhập mã ngân hàng ngắn để hệ thống đối soát nhanh hơn. Ví dụ:
+                VCB, ACB, TCB, MB.
+              </p>
             </label>
 
-            <label className="grid gap-2 text-sm font-medium text-white/82">
-              <span>Số tài khoản</span>
+            <label className="grid gap-2 rounded-2xl border border-white/10 bg-black/30 p-4 text-sm font-medium text-white/82 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+              <div className="flex items-center justify-between gap-3">
+                <span className="font-bold text-white">Số tài khoản</span>
+                <span className="text-xs font-bold text-white/40">
+                  {step3FormData.accountNumber.trim().length}/20
+                </span>
+              </div>
               <input
                 type="text"
+                inputMode="numeric"
+                maxLength={20}
+                autoComplete="off"
                 value={step3FormData.accountNumber}
                 onChange={(event) =>
-                  updateStep3FormData("accountNumber", event.target.value)
+                  updateStep3FormData(
+                    "accountNumber",
+                    event.target.value.replace(/\D/g, ""),
+                  )
                 }
-                placeholder="Nhập số tài khoản"
-                className="h-11 rounded-lg border border-white/12 bg-black/25 px-3 text-sm text-white outline-none transition placeholder:text-white/32 focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+                placeholder="Ví dụ: 1023456789"
+                className="h-12 rounded-xl border border-white/12 bg-black/35 px-4 text-sm font-bold text-white outline-none transition placeholder:text-white/32 focus:border-primary/70 focus:ring-2 focus:ring-primary/20"
               />
+              <p className="text-xs leading-5 text-white/48">
+                Chỉ nhập chữ số, không nhập khoảng trắng hoặc dấu gạch ngang.
+              </p>
             </label>
 
-            <label className="grid gap-2 text-sm font-medium text-white/82">
-              <span>Tên tài khoản</span>
+            <label className="grid gap-2 rounded-2xl border border-white/10 bg-black/30 p-4 text-sm font-medium text-white/82 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+              <div className="flex items-center justify-between gap-3">
+                <span className="font-bold text-white">Tên tài khoản</span>
+                <span className="text-xs font-bold text-white/40">
+                  {step3FormData.accountName.trim().length}/80
+                </span>
+              </div>
               <input
                 type="text"
+                maxLength={80}
+                autoComplete="name"
                 value={step3FormData.accountName}
                 onChange={(event) =>
                   updateStep3FormData("accountName", event.target.value)
                 }
-                placeholder="Nhập tên chủ tài khoản"
-                className="h-11 rounded-lg border border-white/12 bg-black/25 px-3 text-sm text-white outline-none transition placeholder:text-white/32 focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+                placeholder="Ví dụ: NGUYEN VAN A"
+                className="h-12 rounded-xl border border-white/12 bg-black/35 px-4 text-sm font-bold text-white outline-none transition placeholder:text-white/32 focus:border-primary/70 focus:ring-2 focus:ring-primary/20"
               />
+              <p className="text-xs leading-5 text-white/48">
+                Nên nhập đúng tên chủ tài khoản theo ngân hàng để tránh lỗi khi
+                thanh toán doanh thu.
+              </p>
             </label>
 
-            <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-white/10 bg-black/20 p-4 text-sm leading-6 text-white/82">
+            <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-primary/18 bg-primary/8 p-4 text-sm font-semibold leading-6 text-white/82 transition hover:border-primary/35 hover:bg-primary/12">
               <input
                 type="checkbox"
                 checked={step3FormData.isPrimary}
@@ -1107,6 +1157,12 @@ export function CreatorMonetizationView({ onBack }: CreatorMonetizationViewProps
               />
               <span>Đặt làm tài khoản chính</span>
             </label>
+
+            {step3Error && (
+              <div className="rounded-xl border border-red-400/20 bg-red-400/10 px-4 py-3 text-xs font-bold leading-5 text-red-200">
+                {step3Error}
+              </div>
+            )}
           </div>
 
           <div className="flex justify-end">
@@ -1114,7 +1170,7 @@ export function CreatorMonetizationView({ onBack }: CreatorMonetizationViewProps
               type="button"
               disabled={savePaymentProfileMutation.isPending || !canSubmitStep3}
               onClick={handleSubmitStep3PaymentProfile}
-              className="h-10 min-w-32 bg-primary px-5 font-semibold text-black hover:bg-primary/90"
+              className="h-11 min-w-36 rounded-xl bg-primary px-6 font-black text-black shadow-[0_0_24px_rgba(212,175,55,0.18)] transition hover:bg-[#F0D36B] hover:shadow-[0_0_34px_rgba(212,175,55,0.28)] disabled:opacity-45"
             >
               {savePaymentProfileMutation.isPending
                 ? "Đang gửi..."

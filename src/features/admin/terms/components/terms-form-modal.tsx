@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
-import { X, Loader2, Save, AlertCircle, Eye } from "lucide-react";
+import { useMemo, useState, type FormEvent } from "react";
+import { X, Loader2, Save, AlertCircle, Eye, Info, Sparkles } from "lucide-react";
 import {
   useTermsVersion,
   useCreateTermsVersion,
@@ -14,6 +14,7 @@ import {
   ApiResponse,
   TermsVersion,
 } from "../types/terms.types";
+import { renderTermsContent } from "@/shared/utils/terms-content";
 
 interface TermsFormModalProps {
   isOpen: boolean;
@@ -35,6 +36,21 @@ const termsTypeLabels: Record<TermsType, string> = {
   CREATOR_VERIFYING_PROCESS: "Quá trình xác thực (Creator)",
   CREATOR_ENABLE_MONETIZATION: "Bật kiếm tiền (Creator)",
 };
+
+const termsWritingHint = `Chào mừng bạn đến với **TaleX Creator Studio**, không gian dành cho nhà sáng tạo phát triển series và cộng đồng.
+
+## Quyền lợi dành cho Creator
+- Được sử dụng Creator Studio để đăng tải, quản lý và theo dõi hiệu suất series.
+- Có cơ hội tham gia các tính năng tăng trưởng, quảng bá và kiếm tiền khi đủ điều kiện.
+
+## Trách nhiệm nội dung
+- Không đăng tải nội dung vi phạm pháp luật, kích động bạo lực hoặc xâm phạm bản quyền.
+- Không thao túng lượt xem, lượt thích, bình luận hoặc bất kỳ chỉ số tương tác nào.
+
+> TaleX có quyền tạm khóa hoặc hạn chế tính năng nếu phát hiện hành vi gian lận hoặc vi phạm tiêu chuẩn cộng đồng.
+
+1. Tôi đã đọc và hiểu điều khoản dành cho Creator.
+2. Tôi đồng ý tuân thủ quy định nội dung, bản quyền và tiêu chuẩn cộng đồng.`;
 
 function getMutationErrorMessage(error: unknown) {
   const maybeResponseError = error as {
@@ -174,6 +190,10 @@ function TermsForm({
 }: TermsFormProps) {
   const [formData, setFormData] = useState<CreateTermsPayload>(initialData);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const renderedPreview = useMemo(
+    () => renderTermsContent(formData.content),
+    [formData.content],
+  );
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -289,22 +309,79 @@ function TermsForm({
           </label>
         </div>
 
-        <div className="space-y-1.5 flex-1 flex flex-col">
-          <label className="text-sm font-semibold text-gray-700">
-            Nội dung (HTML/Markdown){" "}
-            {!isViewMode && <span className="text-red-500">*</span>}
-          </label>
+        <div className="space-y-3 flex-1 flex flex-col">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <label className="text-sm font-semibold text-gray-700">
+                Nội dung điều khoản{" "}
+                {!isViewMode && <span className="text-red-500">*</span>}
+              </label>
+              <p className="mt-1 text-xs text-gray-500">
+                Admin chỉ cần nhập văn bản. FE sẽ tự căn heading, gạch đầu dòng
+                và điểm nhấn khi hiển thị cho người dùng.
+              </p>
+            </div>
+            {!isViewMode && (
+              <button
+                type="button"
+                onClick={() =>
+                  setFormData({ ...formData, content: termsWritingHint })
+                }
+                className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-[#7B42FF]/20 bg-[#7B42FF]/5 px-3 py-2 text-xs font-bold text-[#6B3DF0] transition hover:border-[#7B42FF]/35 hover:bg-[#7B42FF]/10"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                Dùng mẫu gợi ý
+              </button>
+            )}
+          </div>
+
+          {!isViewMode && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-3 text-xs leading-5 text-amber-900">
+              <div className="mb-1 flex items-center gap-1.5 font-bold">
+                <Info className="h-3.5 w-3.5" />
+                Quy ước nhập nhanh
+              </div>
+              <p>
+                Dùng <span className="font-mono font-bold">## Tiêu đề</span>,{" "}
+                <span className="font-mono font-bold">- Gạch đầu dòng</span>,{" "}
+                <span className="font-mono font-bold">&gt; Ghi chú</span>,{" "}
+                <span className="font-mono font-bold">**chữ nhấn mạnh**</span>.
+                Không cần viết thẻ HTML.
+              </p>
+            </div>
+          )}
+
           <textarea
             required={!isViewMode}
             disabled={isViewMode}
-            rows={10}
-            placeholder="Nhập toàn bộ nội dung điều khoản tại đây..."
+            rows={12}
+            placeholder="Ví dụ:
+Chào mừng bạn đến với **TaleX Creator Studio**.
+
+## Quyền lợi
+- Quản lý series và theo dõi hiệu suất.
+- Tham gia các tính năng tăng trưởng khi đủ điều kiện.
+
+> TaleX có thể cập nhật điều khoản để bảo vệ nền tảng."
             value={formData.content}
             onChange={(e) =>
               setFormData({ ...formData, content: e.target.value })
             }
-            className="w-full flex-1 px-3 py-2 bg-[#F8F9FA] border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#7B42FF]/20 focus:border-[#7B42FF] transition-all resize-none font-mono disabled:opacity-70 disabled:bg-gray-100"
+            className="w-full flex-1 px-3 py-3 bg-[#F8F9FA] border border-gray-200 rounded-lg text-sm leading-6 text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#7B42FF]/20 focus:border-[#7B42FF] transition-all resize-none disabled:opacity-70 disabled:bg-gray-100"
           />
+
+          {renderedPreview && (
+            <div className="rounded-xl border border-gray-200 bg-white p-4">
+              <div className="mb-3 flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-gray-500">
+                <Eye className="h-3.5 w-3.5" />
+                Xem trước cách hiển thị
+              </div>
+              <div
+                className="max-h-64 overflow-y-auto rounded-lg border border-gray-100 bg-[#111113] px-4 py-4 text-sm font-medium leading-7 text-white/75 [&_blockquote]:my-4 [&_blockquote]:rounded-xl [&_blockquote]:border-l-4 [&_blockquote]:border-[#D4AF37] [&_blockquote]:bg-[#D4AF37]/10 [&_blockquote]:px-4 [&_blockquote]:py-3 [&_blockquote]:font-bold [&_blockquote]:text-white/85 [&_h1]:mb-3 [&_h1]:text-xl [&_h1]:font-black [&_h1]:text-white [&_h2]:mb-2 [&_h2]:mt-5 [&_h2]:text-lg [&_h2]:font-black [&_h2]:text-white [&_h3]:mb-2 [&_h3]:mt-4 [&_h3]:text-sm [&_h3]:font-black [&_h3]:uppercase [&_h3]:tracking-[0.12em] [&_h3]:text-[#F2D76B] [&_ol]:my-3 [&_ol]:list-decimal [&_ol]:space-y-1 [&_ol]:pl-5 [&_p]:my-2 [&_strong]:font-black [&_strong]:text-white [&_ul]:my-3 [&_ul]:space-y-2 [&_ul]:pl-0 [&_ul_li]:relative [&_ul_li]:list-none [&_ul_li]:rounded-lg [&_ul_li]:border [&_ul_li]:border-white/10 [&_ul_li]:bg-white/[0.045] [&_ul_li]:py-2 [&_ul_li]:pl-8 [&_ul_li]:pr-3 [&_ul_li]:before:absolute [&_ul_li]:before:left-3 [&_ul_li]:before:top-3.5 [&_ul_li]:before:h-2 [&_ul_li]:before:w-2 [&_ul_li]:before:rounded-full [&_ul_li]:before:bg-[#D4AF37]"
+                dangerouslySetInnerHTML={{ __html: renderedPreview }}
+              />
+            </div>
+          )}
         </div>
       </div>
 
