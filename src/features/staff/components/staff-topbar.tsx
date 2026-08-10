@@ -1,8 +1,11 @@
 "use client";
 
-import { Search, Bell } from "lucide-react";
+import { Search, Bell, Moon, Sun } from "lucide-react";
+import { useBackofficeTheme } from "@/shared/ui/backoffice-theme-provider";
 
 export function StaffTopbar() {
+  const { isDark, toggleTheme } = useBackofficeTheme();
+
   return (
     <header className="sticky top-0 z-40 flex h-20 w-full items-center justify-between bg-white px-8 border-b border-gray-100">
       {/* Global Search cho Task/Ticket */}
@@ -19,6 +22,18 @@ export function StaffTopbar() {
 
       {/* Right Utilities */}
       <div className="flex items-center gap-4 ml-auto">
+        <button
+          type="button"
+          onClick={toggleTheme}
+          aria-label={isDark ? "Chuyển sang giao diện sáng" : "Chuyển sang giao diện tối"}
+          title={isDark ? "Chuyển sang giao diện sáng" : "Chuyển sang giao diện tối"}
+          className="backoffice-theme-toggle inline-flex h-9 items-center justify-center gap-2 rounded-full border px-3 text-xs font-black transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37]/35"
+        >
+          <span className="backoffice-theme-toggle-icon inline-flex h-5 w-5 items-center justify-center rounded-full">
+            {isDark ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
+          </span>
+          <span className="hidden sm:inline">{isDark ? "Sáng" : "Tối"}</span>
+        </button>
         <button className="relative p-2 text-gray-400 hover:text-gray-600 transition-colors rounded-full hover:bg-gray-50">
           <Bell className="w-5 h-5" />
           <span className="absolute top-1.5 right-1.5 flex h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"></span>

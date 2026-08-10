@@ -261,15 +261,16 @@ function buildMixedRecommendations(
   return uniqueSeries([...fresh, ...duplicateFallback]);
 }
 
-function formatViews(value?: number) {
-  if (typeof value !== "number") return "0 lượt xem";
-  if (value >= 1_000_000) {
-    return `${(value / 1_000_000).toFixed(value >= 10_000_000 ? 0 : 1)} Tr lượt xem`;
+function formatViews(value?: number, analyticViews?: number) {
+  const actualViews = analyticViews ?? value;
+  if (typeof actualViews !== "number") return "0 lượt xem";
+  if (actualViews >= 1_000_000) {
+    return `${(actualViews / 1_000_000).toFixed(actualViews >= 10_000_000 ? 0 : 1)} Tr lượt xem`;
   }
-  if (value >= 1_000) {
-    return `${(value / 1_000).toFixed(value >= 10_000 ? 0 : 1)} N lượt xem`;
+  if (actualViews >= 1_000) {
+    return `${(actualViews / 1_000).toFixed(actualViews >= 10_000 ? 0 : 1)} N lượt xem`;
   }
-  return `${value} lượt xem`;
+  return `${actualViews} lượt xem`;
 }
 
 function contentLabel(kind: FeedKind) {
@@ -1659,14 +1660,14 @@ function NetflixRankCard({
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/86 via-black/18 to-black/10" />
         <CardSunSheen />
-        <CardStar />
+        <CardStar rating={series.averageRating} />
         <TypeBadge kind={kind} />
         <div className="absolute bottom-3 left-3 right-3">
           <p className="line-clamp-2 text-sm font-black leading-tight text-white sm:text-base">
             {series.title}
           </p>
           <p className="mt-1 text-xs font-bold text-[#D4AF37]">
-            {formatViews(series.totalViews)}
+            {formatViews(series.totalViews, series.analyticData?.views)}
           </p>
         </div>
       </div>
@@ -1693,7 +1694,7 @@ function LandscapeCard({
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/10" />
         <CardSunSheen />
-        <CardStar />
+        <CardStar rating={series.averageRating} />
         <CardNumber value={index + 1} />
         <TypeBadge kind="VIDEO" />
         {series.ageRating ? <AgeBadge value={series.ageRating} /> : null}
@@ -1724,12 +1725,14 @@ function PortraitCard({
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/86 via-transparent to-black/14" />
         <CardSunSheen />
-        <CardStar />
+        <CardStar rating={series.averageRating} />
         <CardNumber value={rank ?? index + 1} />
-        <TypeBadge kind="COMIC" />
-        <span className="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-full bg-black/70 px-2 py-1 text-xs font-black text-white/88">
+        <span className="absolute bottom-2 left-2 rounded-md bg-black/75 px-2 py-1 text-[11px] font-black text-white shadow-lg backdrop-blur">
+          Truyện
+        </span>
+        <span className="absolute bottom-2 right-2 inline-flex items-center gap-1.5 rounded-full bg-black/75 px-2.5 py-1 text-xs font-black text-white/90 shadow-md backdrop-blur">
           <Eye className="h-3.5 w-3.5 text-[#D4AF37]" />
-          {series.totalViews ?? 0}
+          {series.analyticData?.views ?? series.views ?? series.totalViews ?? 0}
         </span>
       </div>
       <h3 className="mt-3 line-clamp-2 text-base font-black leading-tight text-white">
@@ -1760,7 +1763,7 @@ function MixedRecommendationCard({
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent" />
         <CardSunSheen />
-        <CardStar />
+        <CardStar rating={series.averageRating} />
         <TypeBadge kind={kind} />
       </div>
       <div className="mt-3 flex gap-3">
@@ -1773,7 +1776,7 @@ function MixedRecommendationCard({
             {series.creatorName || "TaleX Creator"}
           </p>
           <p className="mt-0.5 text-xs font-bold text-white/38">
-            {formatViews(series.totalViews)}
+            {formatViews(series.totalViews, series.analyticData?.views)}
           </p>
         </div>
       </div>
@@ -1793,7 +1796,7 @@ function SeriesMeta({ series }: { series: HomeFeedSeries }) {
           {series.creatorName || "TaleX Creator"}
         </p>
         <p className="mt-0.5 text-xs font-bold text-white/38">
-          {formatViews(series.totalViews)}
+          {formatViews(series.totalViews, series.analyticData?.views)}
         </p>
       </div>
     </div>
@@ -1817,10 +1820,13 @@ function CreatorAvatar({ series }: { series: HomeFeedSeries }) {
   );
 }
 
-function CardStar() {
+function CardStar({ rating }: { rating?: number }) {
   return (
-    <span className="absolute right-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-[#D4AF37]/35 bg-black/60 text-[#D4AF37] shadow-lg backdrop-blur-md">
+    <span className="absolute right-2 top-2 z-10 flex h-7 items-center gap-1 rounded-full border border-[#D4AF37]/35 bg-black/60 px-2 text-[#D4AF37] shadow-lg backdrop-blur-md">
       <Star className="h-3.5 w-3.5 fill-[#D4AF37]" />
+      {rating != null && rating > 0 ? (
+        <span className="text-[11px] font-black text-white">{rating.toFixed(1)}</span>
+      ) : null}
     </span>
   );
 }

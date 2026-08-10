@@ -19,6 +19,15 @@ export type ModerationMedia = {
   createdAt?: string;
   approvalReviewedAt?: string;
   approvalReviewedBy?: string;
+  // Chỉ có giá trị ở listPendingReview/listApproved — số Media khác trong CÙNG episode
+  // này khớp cùng bộ filter, BE đã group theo episode nên đây là media đại diện.
+  episodeMediaCount?: number;
+  // Chỉ có giá trị ở listPendingReview/listApproved — cho Staff/Admin biết nội dung thuộc
+  // episode/season/series/creator nào mà không cần tra episodeId thủ công.
+  episodeTitle?: string;
+  seasonTitle?: string;
+  seriesTitle?: string;
+  creatorUsername?: string;
 };
 
 export type ModerationPage = {
@@ -48,6 +57,11 @@ type ModerationMediaApiItem = {
   createdAt?: string;
   approvalReviewedAt?: string;
   approvalReviewedBy?: string;
+  episodeMediaCount?: number;
+  episodeTitle?: string;
+  seasonTitle?: string;
+  seriesTitle?: string;
+  creatorUsername?: string;
 };
 
 type ModerationPagePayload = {
@@ -89,6 +103,11 @@ function normalizeMedia(item: ModerationMediaApiItem): ModerationMedia {
     createdAt: item.createdAt,
     approvalReviewedAt: item.approvalReviewedAt,
     approvalReviewedBy: item.approvalReviewedBy,
+    episodeMediaCount: item.episodeMediaCount,
+    episodeTitle: item.episodeTitle,
+    seasonTitle: item.seasonTitle,
+    seriesTitle: item.seriesTitle,
+    creatorUsername: item.creatorUsername,
   };
 }
 
@@ -147,11 +166,17 @@ function normalizePage(payload: unknown, page: number, size: number): Moderation
   };
 }
 
-export async function getPendingMedia(page = 0, size = 12) {
+export type ModerationTypeFilter = "all" | ModerationMediaType;
+
+export async function getPendingMedia(
+  page = 0,
+  size = 12,
+  mediaType: ModerationTypeFilter = "all",
+) {
   const response = await httpClient.get<BaseResponse<ModerationPagePayload> | ModerationPagePayload>(
     `${MODERATION_ENDPOINT}/pending-review`,
     {
-      params: { page, size },
+      params: { page, size, mediaType: mediaType === "all" ? undefined : mediaType },
     },
   );
 
@@ -164,11 +189,17 @@ export async function getApprovedMedia(
   page = 0,
   size = 12,
   filter: ApprovedReviewFilter = "all",
+  mediaType: ModerationTypeFilter = "all",
 ) {
   const response = await httpClient.get<BaseResponse<ModerationPagePayload> | ModerationPagePayload>(
     `${MODERATION_ENDPOINT}/approved`,
     {
-      params: { page, size, filter: filter === "all" ? undefined : filter },
+      params: {
+        page,
+        size,
+        filter: filter === "all" ? undefined : filter,
+        mediaType: mediaType === "all" ? undefined : mediaType,
+      },
     },
   );
 
@@ -201,6 +232,13 @@ export type MediaCopyrightViolation = {
   mediaCopyrightId: string;
   mediaId: string;
   sourceMediaId?: string;
+  // Đơn vị: GIÂY (xem MediaCopyright entity + fingerprint schema BE). target = đoạn
+  // trùng trong video ĐANG XÉT, source = đoạn tương ứng trong video GỐC bị nghi trùng.
+  // Chỉ có ý nghĩa khi violationType === "VIDEO" — ảnh không có khái niệm thời lượng.
+  startTimeTarget?: number;
+  endTimeTarget?: number;
+  startTimeSource?: number;
+  endTimeSource?: number;
   similarityScore?: number;
   violationType?: string;
   isValid?: boolean;
@@ -217,6 +255,10 @@ export type MediaCopyrightViolation = {
 
 export type ViolationDetail = {
   violationDetailId: string;
+  // Đơn vị: MILI-GIÂY (xem ViolationDetail entity BE) — khác đơn vị giây của
+  // MediaCopyrightViolation ở trên, phải chia 1000 khi hiển thị. 0 với vi phạm ở ảnh.
+  violationAt?: number;
+  endViolationAt?: number;
   label: string;
   confidence?: number;
   suggestion?: string;
@@ -259,6 +301,10 @@ export type MediaDetail = {
   approvalStatus?: string;
   createdAt?: string;
   isDeleted?: boolean;
+  episodeTitle?: string;
+  seasonTitle?: string;
+  seriesTitle?: string;
+  creatorUsername?: string;
 };
 
 // Dùng cho nút "Xem nội dung gốc" ở modal kiểm duyệt — endpoint này đã tự bypass ownership

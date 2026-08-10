@@ -71,7 +71,7 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
   const calculatedAverageRating = useMemo(() => {
     const ratings = seriesRatingsData?.content || [];
     if (ratings.length === 0) {
-      return (series as any)?.averageRating || (series as any)?.rating || 0;
+      return series?.averageRating || (series as any)?.rating || 0;
     }
     const sum = ratings.reduce((acc, r) => acc + (r.rate || 0), 0);
     return sum / ratings.length;
@@ -204,10 +204,10 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
   // Tính tổng lượt xem và lượt thích thật của series từ danh sách tất cả các tập
   const totalSeriesViews = useMemo(() => {
     const epViews = allEpisodesInSeries.reduce(
-      (acc, ep) => acc + (ep.views || 0),
+      (acc, ep) => acc + (ep.analyticData?.views ?? ep.views ?? 0),
       0,
     );
-    return Math.max(series?.totalViews ?? 0, epViews);
+    return Math.max(series?.analyticData?.views ?? series?.totalViews ?? 0, epViews);
   }, [series, allEpisodesInSeries]);
 
   const totalSeriesLikes = useMemo(() => {
@@ -218,16 +218,17 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
         likesQueryData?.content?.length ??
         0;
       const likesForEp = Math.max(
-        ep.likes || 0,
+        ep.analyticData?.likes ?? ep.likes ?? 0,
         listLikesCount,
         myLikedEpisodeIds.has(ep.episodeId) ? 1 : 0,
       );
       return acc + likesForEp;
     }, 0);
     const seriesLikes =
-      series && "likes" in series && typeof series.likes === "number"
-        ? series.likes
-        : 0;
+      series?.analyticData?.likes ??
+      (series && "likes" in series && typeof (series as any).likes === "number"
+        ? (series as any).likes
+        : 0);
     return Math.max(seriesLikes, epLikes);
   }, [series, allEpisodesInSeries, episodeLikesQueries, myLikedEpisodeIds]);
 

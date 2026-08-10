@@ -4,6 +4,15 @@ import {
   type BasePageResponse,
 } from "@/shared/api/http-client";
 
+export type AnalyticData = {
+  likes?: number;
+  views?: number;
+  comments?: number;
+  shares?: number;
+  bookmarks?: number;
+  watchTime?: number;
+};
+
 export type ContentType = "VIDEO" | "COMIC";
 
 export type CategoryResponse = {
@@ -40,6 +49,8 @@ export type PublicSeriesItem = {
   language?: string;
   totalViews: number;
   totalSubscriptions: number;
+  analyticData?: AnalyticData;
+  averageRating?: number;
   categories: CategoryResponse[];
   tags: TagResponse[];
   createdAt: string;
@@ -85,6 +96,8 @@ export type PublicEpisodeItem = {
   likes: number;
   views: number;
   totalPage: number | null;
+  analyticData?: AnalyticData;
+  averageRating?: number;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;

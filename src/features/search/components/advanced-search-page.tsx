@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -20,30 +20,17 @@ import {
   Tag,
   X,
 } from "lucide-react";
-import {
-  DEFAULT_HOME_FEED_LIMITS,
-  getHomeFeed,
-} from "@/features/recommendations/api/home-feed.api";
-import type { HomeFeedPoolKey, HomeFeedSeries } from "@/features/recommendations/types/home-feed.types";
-import { getCategories, getTags } from "@/features/creator-dashboard/api/creator-content-api";
+import { getPublicCategories, getPublicTags, searchSeries } from "@/features/search/api/search-api";
+import type {
+  SearchContentFilter,
+  SearchSeries,
+  SearchSortBy,
+} from "@/features/search/types/search.types";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { cn } from "@/shared/utils/utils";
 
-type ContentFilter = "ALL" | "VIDEO" | "COMIC";
-
-const pools: HomeFeedPoolKey[] = [
-  "promoted",
-  "trending",
-  "newReleases",
-  "recentlyUpdated",
-  "latestCommunityChoice",
-  "communityChoice",
-  "randomCategory",
-  "accountSubscription",
-];
-
-const contentOptions: Array<{ value: ContentFilter; label: string; icon: typeof Sparkles }> = [
+const contentOptions: Array<{ value: SearchContentFilter; label: string; icon: typeof Sparkles }> = [
   { value: "ALL", label: "Tất cả", icon: Sparkles },
   { value: "VIDEO", label: "Phim bộ", icon: Clapperboard },
   { value: "COMIC", label: "Truyện tranh", icon: BookOpen },
@@ -51,11 +38,7 @@ const contentOptions: Array<{ value: ContentFilter; label: string; icon: typeof 
 
 const pageSizeOptions = [8, 12, 16, 20];
 
-function normalizeContentType(series: HomeFeedSeries) {
-  return series.contentType?.toUpperCase() === "COMIC" ? "COMIC" : "VIDEO";
-}
-
-function imageFor(series: HomeFeedSeries, index: number) {
+function imageFor(series: SearchSeries, index: number) {
   return (
     series.coverUrl ||
     series.bannerUrl ||
@@ -67,151 +50,104 @@ function imageFor(series: HomeFeedSeries, index: number) {
   );
 }
 
-function uniqueSeries(items: HomeFeedSeries[]) {
-  const seen = new Set<string>();
-  return items.filter((item) => {
-    if (!item.seriesId || seen.has(item.seriesId)) return false;
-    seen.add(item.seriesId);
-    return true;
-  });
-}
-
-function getYear(series: HomeFeedSeries) {
+function getYear(series: SearchSeries) {
   const rawDate = series.releasedUpdateTime || series.createdAt || series.updatedAt;
   if (!rawDate) return "";
   const date = new Date(rawDate);
   return Number.isNaN(date.getTime()) ? "" : String(date.getFullYear());
 }
 
-function matchesText(series: HomeFeedSeries, keyword: string) {
-  if (!keyword.trim()) return true;
-  const normalized = keyword.trim().toLowerCase();
-  return [series.title, series.description, series.creatorName]
-    .filter(Boolean)
-    .some((value) => String(value).toLowerCase().includes(normalized));
-}
-
 export function AdvancedSearchPage() {
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get("q") ?? "";
   const [keyword, setKeyword] = useState(initialQuery);
-  const [submittedKeyword, setSubmittedKeyword] = useState(initialQuery);
-  const [contentType, setContentType] = useState<ContentFilter>("ALL");
+  const [contentType, setContentType] = useState<SearchContentFilter>("ALL");
   const [categoryId, setCategoryId] = useState("");
   const [tagId, setTagId] = useState("");
   const [yearFrom, setYearFrom] = useState("");
   const [yearTo, setYearTo] = useState("");
   const [minViews, setMinViews] = useState("");
-  const [sortBy, setSortBy] = useState("popular");
+  const [sortBy, setSortBy] = useState<SearchSortBy>("popular");
   const [pageSize, setPageSize] = useState(12);
   const [page, setPage] = useState(1);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
-  const feedQuery = useQuery({
-    queryKey: ["advanced-search", "home-feed-seed"],
+  // Từ khóa/năm/lượt xem chỉ commit khi bấm "Áp dụng bộ lọc" (tránh gọi BE mỗi lần gõ phím,
+  // không cần debounce). contentType/category/tag/sort/page/pageSize áp ngay khi đổi.
+  const [appliedKeyword, setAppliedKeyword] = useState(initialQuery);
+  const [appliedYearFrom, setAppliedYearFrom] = useState("");
+  const [appliedYearTo, setAppliedYearTo] = useState("");
+  const [appliedMinViews, setAppliedMinViews] = useState("");
+
+  const searchQuery = useQuery({
+    queryKey: [
+      "advanced-search",
+      "series",
+      {
+        keyword: appliedKeyword,
+        contentType,
+        categoryId,
+        tagId,
+        yearFrom: appliedYearFrom,
+        yearTo: appliedYearTo,
+        minViews: appliedMinViews,
+        sortBy,
+        page,
+        pageSize,
+      },
+    ],
     queryFn: () =>
-      getHomeFeed({
-        ...DEFAULT_HOME_FEED_LIMITS,
-        promotedLimit: 10,
-        trendingLimit: 10,
-        newReleasesLimit: 10,
-        recentlyUpdatedLimit: 10,
-        latestCommunityChoiceLimit: 10,
-        communityChoiceLimit: 10,
-        randomCategoryLimit: 10,
-        subscriptionLimit: 10,
+      searchSeries({
+        keyword: appliedKeyword,
+        contentType,
+        categoryId,
+        tagId,
+        yearFrom: appliedYearFrom,
+        yearTo: appliedYearTo,
+        minViews: appliedMinViews,
+        sortBy,
+        page,
+        pageSize,
       }),
+    placeholderData: (prev) => prev,
   });
 
   const categoriesQuery = useQuery({
     queryKey: ["advanced-search", "categories"],
-    queryFn: getCategories,
+    queryFn: getPublicCategories,
   });
 
   const tagsQuery = useQuery({
     queryKey: ["advanced-search", "tags"],
-    queryFn: getTags,
+    queryFn: getPublicTags,
   });
 
-  const allSeries = useMemo(() => {
-    const feed = feedQuery.data;
-    if (!feed) return [];
-    return uniqueSeries(pools.flatMap((pool) => feed[pool] ?? []));
-  }, [feedQuery.data]);
-
-  const filteredSeries = useMemo(() => {
-    const from = Number(yearFrom);
-    const to = Number(yearTo);
-    const views = Number(minViews);
-
-    const next = allSeries.filter((series) => {
-      if (contentType !== "ALL" && normalizeContentType(series) !== contentType) {
-        return false;
-      }
-
-      if (!matchesText(series, submittedKeyword)) return false;
-
-      const year = Number(getYear(series));
-      if (yearFrom && (!year || year < from)) return false;
-      if (yearTo && (!year || year > to)) return false;
-      if (minViews && (series.totalViews ?? 0) < views) return false;
-
-      // Category/tag values are rendered now so BE can wire them later.
-      void categoryId;
-      void tagId;
-
-      return true;
-    });
-
-    return next.sort((a, b) => {
-      if (sortBy === "newest") {
-        return (
-          new Date(b.createdAt || b.updatedAt || 0).getTime() -
-          new Date(a.createdAt || a.updatedAt || 0).getTime()
-        );
-      }
-
-      if (sortBy === "name") {
-        return a.title.localeCompare(b.title, "vi");
-      }
-
-      return (b.totalViews ?? 0) - (a.totalViews ?? 0);
-    });
-  }, [
-    allSeries,
-    categoryId,
-    contentType,
-    minViews,
-    sortBy,
-    submittedKeyword,
-    tagId,
-    yearFrom,
-    yearTo,
-  ]);
-
-  const totalPages = Math.max(1, Math.ceil(filteredSeries.length / pageSize));
-  const currentPage = Math.min(page, totalPages);
-  const pagedSeries = filteredSeries.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize,
-  );
+  const series = searchQuery.data?.content ?? [];
+  const totalElements = searchQuery.data?.totalElements ?? 0;
+  const totalPages = Math.max(1, searchQuery.data?.totalPages ?? 1);
   const categories = categoriesQuery.data?.content ?? [];
   const tags = tagsQuery.data?.content ?? [];
 
   function applyFilters() {
-    setSubmittedKeyword(keyword);
+    setAppliedKeyword(keyword);
+    setAppliedYearFrom(yearFrom);
+    setAppliedYearTo(yearTo);
+    setAppliedMinViews(minViews);
     setPage(1);
   }
 
   function resetFilters() {
     setKeyword("");
-    setSubmittedKeyword("");
+    setAppliedKeyword("");
     setContentType("ALL");
     setCategoryId("");
     setTagId("");
     setYearFrom("");
+    setAppliedYearFrom("");
     setYearTo("");
+    setAppliedYearTo("");
     setMinViews("");
+    setAppliedMinViews("");
     setSortBy("popular");
     setPageSize(12);
     setPage(1);
@@ -254,7 +190,7 @@ export function AdvancedSearchPage() {
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                 <div className="rounded-xl border border-white/[0.08] bg-black/30 px-4 py-3 text-xs font-bold text-white/55">
                   <span className="text-[#F6D969]">
-                    {filteredSeries.length.toLocaleString("vi-VN")}
+                    {totalElements.toLocaleString("vi-VN")}
                   </span>{" "}
                   nội dung
                 </div>
@@ -317,7 +253,10 @@ export function AdvancedSearchPage() {
                   <FilterGroup label="Thể loại">
                     <select
                       value={categoryId}
-                      onChange={(event) => setCategoryId(event.target.value)}
+                      onChange={(event) => {
+                        setCategoryId(event.target.value);
+                        setPage(1);
+                      }}
                       className="filter-select"
                     >
                       <option value="">Tất cả thể loại</option>
@@ -332,7 +271,10 @@ export function AdvancedSearchPage() {
                   <FilterGroup label="Tags">
                     <select
                       value={tagId}
-                      onChange={(event) => setTagId(event.target.value)}
+                      onChange={(event) => {
+                        setTagId(event.target.value);
+                        setPage(1);
+                      }}
                       className="filter-select"
                     >
                       <option value="">Tất cả tags</option>
@@ -376,7 +318,10 @@ export function AdvancedSearchPage() {
                   <FilterGroup label="Sắp xếp">
                     <select
                       value={sortBy}
-                      onChange={(event) => setSortBy(event.target.value)}
+                      onChange={(event) => {
+                        setSortBy(event.target.value as SearchSortBy);
+                        setPage(1);
+                      }}
                       className="filter-select"
                     >
                       <option value="popular">Lượt xem cao</option>
@@ -401,24 +346,24 @@ export function AdvancedSearchPage() {
           </div>
 
           <section className="min-w-0 rounded-[1.35rem] border border-white/[0.08] bg-[#0d0d0f]/70 p-4 shadow-[0_16px_42px_rgba(0,0,0,0.24)] sm:p-5">
-            {feedQuery.isLoading && <SearchSkeleton />}
-            {feedQuery.isError && (
+            {searchQuery.isLoading && <SearchSkeleton />}
+            {searchQuery.isError && (
               <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-6 text-red-100">
                 <AlertCircle className="mb-3 h-6 w-6" />
                 Không tải được dữ liệu tìm kiếm tạm thời.
               </div>
             )}
 
-            {!feedQuery.isLoading && !feedQuery.isError && (
+            {!searchQuery.isLoading && !searchQuery.isError && (
               <>
-                {pagedSeries.length === 0 ? (
+                {series.length === 0 ? (
                   <EmptySearchState onReset={resetFilters} />
                 ) : (
                   <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
-                    {pagedSeries.map((series, index) => (
+                    {series.map((item, index) => (
                       <SearchResultCard
-                        key={series.seriesId}
-                        series={series}
+                        key={item.seriesId}
+                        series={item}
                         index={index}
                       />
                     ))}
@@ -426,7 +371,7 @@ export function AdvancedSearchPage() {
                 )}
 
                 <PaginationBar
-                  page={currentPage}
+                  page={page}
                   totalPages={totalPages}
                   onPageChange={setPage}
                 />
@@ -486,8 +431,8 @@ function FilterGroup({ label, children }: { label: string; children: React.React
   );
 }
 
-function SearchResultCard({ series, index }: { series: HomeFeedSeries; index: number }) {
-  const isComic = normalizeContentType(series) === "COMIC";
+function SearchResultCard({ series, index }: { series: SearchSeries; index: number }) {
+  const isComic = series.contentType?.toUpperCase() === "COMIC";
   return (
     <Link href={`/series/${series.seriesId}`} className="group block min-w-0">
       <article className="relative min-w-0">
@@ -503,8 +448,11 @@ function SearchResultCard({ series, index }: { series: HomeFeedSeries; index: nu
           >
             {isComic ? "Truyện" : "Phim"}
           </Badge>
-          <div className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full border border-[#D4AF37]/35 bg-black/60 text-[#D4AF37]">
+          <div className="absolute right-3 top-3 flex h-8 items-center gap-1 rounded-full border border-[#D4AF37]/35 bg-black/60 px-2 text-[#D4AF37]">
             <Star className="h-4 w-4 fill-current" />
+            {series.averageRating != null && series.averageRating > 0 ? (
+              <span className="text-xs font-black text-white">{series.averageRating.toFixed(1)}</span>
+            ) : null}
           </div>
           <div className="absolute bottom-3 left-3 right-3">
             <span className="rounded-lg bg-black/55 px-2 py-1 text-[10px] font-bold text-white/80">

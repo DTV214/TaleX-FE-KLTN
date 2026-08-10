@@ -16,7 +16,10 @@ import {
 } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
-import { type ModerationMedia } from "@/features/admin/api/moderation.api";
+import {
+  type ModerationMedia,
+  type ModerationTypeFilter,
+} from "@/features/admin/api/moderation.api";
 import {
   useApproveMedia,
   useForceHideEpisode,
@@ -47,6 +50,21 @@ function formatDate(value?: string) {
 
 function formatMediaType(mediaType: string) {
   return mediaType === "VIDEO" ? "Video" : "Ảnh";
+}
+
+// Phải khớp PIPELINE_REVIEWER_ACTOR ở MediaServiceImpl (BE) — hiện actorId thô "content-pipeline"
+// cho Staff sẽ khó hiểu, cần đổi thành nhãn dễ đọc.
+function formatReviewer(reviewedBy?: string) {
+  if (!reviewedBy) return "-";
+  return reviewedBy === "content-pipeline" ? "Hệ thống (tự động)" : reviewedBy;
+}
+
+// ContentCensorship.reviewedBy chỉ nhận đúng 2 giá trị cố định ở BE (xem
+// ContentPipelineServiceImpl/rejectWithReason) — khác hẳn formatReviewer() ở trên (actorId).
+function formatCensorshipReviewer(reviewedBy?: string) {
+  if (reviewedBy === "AWS_REKOGNITION") return "Hệ thống tự động (AWS Rekognition)";
+  if (reviewedBy === "HUMAN") return "Nhân viên duyệt thủ công";
+  return reviewedBy || "-";
 }
 
 const APPROVAL_STATUS_VI: Record<string, string> = {
@@ -163,6 +181,17 @@ function formatPercent(value?: number) {
   return `${(value * 100).toFixed(1)}%`;
 }
 
+// value tính bằng giây — dùng chung cho khoảng thời gian trùng bản quyền (video).
+function formatTimeRange(startSec?: number, endSec?: number) {
+  if (typeof startSec !== "number" || typeof endSec !== "number") return null;
+  const format = (s: number) => {
+    const m = Math.floor(s / 60);
+    const r = Math.floor(s % 60);
+    return `${m}:${r.toString().padStart(2, "0")}`;
+  };
+  return `${format(startSec)} - ${format(endSec)}`;
+}
+
 function ModerationDetailModal({
   isMutating,
   media,
@@ -206,14 +235,14 @@ function ModerationDetailModal({
           </button>
         </div>
 
-        <div className="grid flex-1 grid-cols-1 gap-0 overflow-y-auto md:grid-cols-2">
-          <div className="border-b border-slate-200 bg-slate-100 p-4 md:border-b-0 md:border-r">
+        <div className="grid flex-1 grid-cols-1 gap-0 overflow-hidden md:grid-cols-2">
+          <div className="min-h-0 overflow-y-auto border-b border-slate-200 bg-slate-100 p-4 md:border-b-0 md:border-r">
             {media.mediaType === "IMAGE" && media.url ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={media.url}
                 alt={media.id}
-                className="w-full rounded-xl border border-slate-200 object-contain"
+                className="max-h-[45vh] w-full rounded-xl border border-slate-200 object-contain"
               />
             ) : media.mediaType === "VIDEO" && media.url ? (
               <video
@@ -221,7 +250,7 @@ function ModerationDetailModal({
                 src={media.url}
                 poster={media.thumbnailUrl}
                 controls
-                className="w-full rounded-xl border border-slate-200 bg-black"
+                className="max-h-[45vh] w-full rounded-xl border border-slate-200 bg-black"
               />
             ) : (
               <div className="flex aspect-video w-full flex-col items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white text-slate-400">
@@ -243,16 +272,40 @@ function ModerationDetailModal({
               </div>
               <div>
                 <p className="text-slate-400">Episode</p>
-                <p className="mt-1 truncate text-slate-700">{media.episodeId || "-"}</p>
+                <p className="mt-1 truncate text-slate-700">
+                  {media.episodeTitle || media.episodeId || "-"}
+                </p>
+              </div>
+              <div>
+                <p className="text-slate-400">Series</p>
+                <p className="mt-1 truncate text-slate-700">{media.seriesTitle || "-"}</p>
+              </div>
+              <div>
+                <p className="text-slate-400">Season</p>
+                <p className="mt-1 truncate text-slate-700">{media.seasonTitle || "-"}</p>
+              </div>
+              <div>
+                <p className="text-slate-400">Creator</p>
+                <p className="mt-1 truncate text-slate-700">{media.creatorUsername || "-"}</p>
               </div>
               <div>
                 <p className="text-slate-400">Ngày tạo</p>
                 <p className="mt-1 text-slate-700">{formatDate(media.createdAt)}</p>
               </div>
+              <div>
+                <p className="text-slate-400">Người duyệt</p>
+                <p className="mt-1 truncate text-slate-700">{formatReviewer(media.approvalReviewedBy)}</p>
+              </div>
+              {media.approvalReviewedAt && (
+                <div>
+                  <p className="text-slate-400">Thời điểm duyệt</p>
+                  <p className="mt-1 text-slate-700">{formatDate(media.approvalReviewedAt)}</p>
+                </div>
+              )}
             </div>
           </div>
 
-          <div className="space-y-5 p-5">
+          <div className="min-h-0 space-y-5 overflow-y-auto p-5">
             {violationsQuery.isLoading && (
               <div className="flex items-center gap-2 text-sm font-semibold text-slate-500">
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -273,6 +326,11 @@ function ModerationDetailModal({
                     <Fingerprint className="h-4 w-4" />
                     Bản quyền / Trùng lặp nội dung
                   </h3>
+                  {violations.contentId && (
+                    <p className="mb-2 break-all text-[11px] font-semibold text-slate-400">
+                      Mã fingerprint: {violations.contentId}
+                    </p>
+                  )}
                   {violations.copyrightViolations.length === 0 ? (
                     <p className="rounded-lg bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
                       Không phát hiện trùng lặp nội dung.
@@ -298,42 +356,51 @@ function ModerationDetailModal({
                                 Tương đồng {formatPercent(item.similarityScore)}
                               </span>
                               <span className={item.isValid ? "text-emerald-700" : "text-red-700"}>
-                                {item.isValid ? "Nguồn hợp lệ (CC0)" : "Chưa xác định quyền sử dụng"}
+                                {item.isValid
+                                  ? "Nguồn hợp lệ (CC0)"
+                                  : item.sourceCreatorUsername
+                                    ? `${media.creatorUsername || "Người upload"} trùng với ${item.sourceCreatorUsername}`
+                                    : "Chưa xác định quyền sử dụng"}
                               </span>
                             </div>
 
                             {hasSourceIdentity ? (
-                              <div className="mt-2 flex items-start gap-2">
-                                {item.sourceThumbnailUrl && (
-                                  // eslint-disable-next-line @next/next/no-img-element
-                                  <img
-                                    src={item.sourceThumbnailUrl}
-                                    alt="Nội dung gốc"
-                                    className="h-12 w-12 shrink-0 rounded-md border border-slate-200 object-cover"
-                                    onError={(e) => {
-                                      e.currentTarget.style.display = "none";
-                                    }}
-                                  />
-                                )}
-                                <div className="min-w-0 flex-1">
-                                  <p className="truncate font-semibold text-slate-700">
-                                    {item.sourceEpisodeTitle || "Tập không xác định"}
-                                    {item.sourceSeriesTitle ? ` · ${item.sourceSeriesTitle}` : ""}
-                                  </p>
-                                  <p className="text-slate-500">
-                                    Creator: {item.sourceCreatorUsername || "không xác định"}
-                                    {item.sourceMediaDeleted ? " (nội dung đã bị xóa)" : ""}
-                                  </p>
+                              <div className="mt-2 rounded-md border border-red-100 bg-white/60 p-2">
+                                <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                                  Nội dung gốc nghi bị trùng (không phải nội dung đang xét)
+                                </p>
+                                <div className="flex items-start gap-2">
+                                  {item.sourceThumbnailUrl && (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img
+                                      src={item.sourceThumbnailUrl}
+                                      alt="Nội dung gốc"
+                                      className="h-12 w-12 shrink-0 rounded-md border border-slate-200 object-cover"
+                                      onError={(e) => {
+                                        e.currentTarget.style.display = "none";
+                                      }}
+                                    />
+                                  )}
+                                  <div className="min-w-0 flex-1">
+                                    <p className="truncate font-semibold text-slate-700">
+                                      {item.sourceEpisodeTitle || "Tập không xác định"}
+                                      {item.sourceSeriesTitle ? ` · ${item.sourceSeriesTitle}` : ""}
+                                    </p>
+                                    <p className="text-slate-500">
+                                      Creator: {item.sourceCreatorUsername || "không xác định"}
+                                      {item.sourceMediaDeleted ? " (nội dung đã bị xóa)" : ""}
+                                    </p>
+                                  </div>
+                                  {canViewSource && (
+                                    <button
+                                      type="button"
+                                      onClick={() => setPreviewSourceId(item.sourceMediaId!)}
+                                      className="shrink-0 rounded-md border border-slate-300 px-2 py-1 text-[11px] font-bold text-slate-600 transition hover:bg-slate-100"
+                                    >
+                                      Xem nội dung gốc
+                                    </button>
+                                  )}
                                 </div>
-                                {canViewSource && (
-                                  <button
-                                    type="button"
-                                    onClick={() => setPreviewSourceId(item.sourceMediaId!)}
-                                    className="shrink-0 rounded-md border border-slate-300 px-2 py-1 text-[11px] font-bold text-slate-600 transition hover:bg-slate-100"
-                                  >
-                                    Xem nội dung gốc
-                                  </button>
-                                )}
                               </div>
                             ) : (
                               <p className="mt-1 break-all text-slate-500">
@@ -344,6 +411,26 @@ function ModerationDetailModal({
                             <p className="mt-1 text-slate-500">
                               Loại nội dung: {item.violationType === "VIDEO" ? "Video" : "Ảnh"}
                             </p>
+                            {item.violationType === "VIDEO" && (
+                              <>
+                                {formatTimeRange(item.startTimeTarget, item.endTimeTarget) && (
+                                  <p className="text-slate-500">
+                                    Đoạn trùng trong video này:{" "}
+                                    <span className="font-semibold text-slate-700">
+                                      {formatTimeRange(item.startTimeTarget, item.endTimeTarget)}
+                                    </span>
+                                  </p>
+                                )}
+                                {formatTimeRange(item.startTimeSource, item.endTimeSource) && (
+                                  <p className="text-slate-500">
+                                    Đoạn tương ứng trong video gốc:{" "}
+                                    <span className="font-semibold text-slate-700">
+                                      {formatTimeRange(item.startTimeSource, item.endTimeSource)}
+                                    </span>
+                                  </p>
+                                )}
+                              </>
+                            )}
                             <p className="text-slate-500">
                               Kiểm tra lúc {formatDate(item.checkedAt)}
                             </p>
@@ -378,22 +465,47 @@ function ModerationDetailModal({
                             <span className={item.status === "APPROVED" ? "text-emerald-700" : "text-red-700"}>
                               {item.primaryViolationLabel
                                 ? translateViolationLabel(item.primaryViolationLabel)
-                                : "Không phát hiện vi phạm"}
+                                : item.status === "REJECTED"
+                                  ? "Bị từ chối thủ công"
+                                  : "Không phát hiện vi phạm"}
                             </span>
                             <span className="text-slate-500">
                               Độ chính xác phát hiện {formatPercent((item.confidenceScore ?? 0) / 100)}
                             </span>
                           </div>
+                          <p className="mt-1 text-slate-400">
+                            Nguồn kiểm duyệt: {formatCensorshipReviewer(item.reviewedBy)}
+                          </p>
                           {item.violationDetails.length > 0 && (
                             <ul className="mt-2 space-y-1">
-                              {item.violationDetails.map((detail) => (
-                                <li key={detail.violationDetailId} className="flex items-start gap-1.5 text-slate-600">
-                                  <CircleAlert className="mt-0.5 h-3 w-3 shrink-0 text-red-500" />
-                                  <span>
-                                    {translateViolationLabel(detail.label)} — độ chính xác phát hiện {formatPercent((detail.confidence ?? 0) / 100)}
-                                  </span>
-                                </li>
-                              ))}
+                              {item.violationDetails.map((detail) => {
+                                // BE lưu violationAt/endViolationAt theo mili-giây, 0 với vi
+                                // phạm ở ảnh (không có khái niệm thời lượng) — chỉ hiện mốc
+                                // thời gian khi media đang xét là VIDEO.
+                                const timeRange =
+                                  isVideo &&
+                                  formatTimeRange(
+                                    typeof detail.violationAt === "number" ? detail.violationAt / 1000 : undefined,
+                                    typeof detail.endViolationAt === "number" ? detail.endViolationAt / 1000 : undefined,
+                                  );
+                                return (
+                                  <li key={detail.violationDetailId} className="flex items-start gap-1.5 text-slate-600">
+                                    <CircleAlert className="mt-0.5 h-3 w-3 shrink-0 text-red-500" />
+                                    <span>
+                                      {translateViolationLabel(detail.label)} — độ chính xác phát hiện {formatPercent((detail.confidence ?? 0) / 100)}
+                                      {timeRange && (
+                                        <>
+                                          {" "}— vi phạm từ giây{" "}
+                                          <span className="font-semibold text-slate-700">{timeRange}</span>
+                                        </>
+                                      )}
+                                      {detail.suggestion && (
+                                        <span className="block text-slate-400">{detail.suggestion}</span>
+                                      )}
+                                    </span>
+                                  </li>
+                                );
+                              })}
                             </ul>
                           )}
                           {item.reviewerNotes && (
@@ -501,6 +613,14 @@ function SourceMediaPreviewModal({
                   alt="Nội dung gốc"
                   className="w-full rounded-xl border border-slate-200 object-contain"
                 />
+              ) : detailQuery.data.mediaType === "VIDEO" && detailQuery.data.originalUrl ? (
+                <video
+                  key={detailQuery.data.originalUrl}
+                  src={detailQuery.data.originalUrl}
+                  poster={detailQuery.data.thumbnailUrl}
+                  controls
+                  className="w-full rounded-xl border border-slate-200 bg-black"
+                />
               ) : (
                 <div className="flex aspect-video w-full flex-col items-center justify-center gap-3 rounded-xl border border-slate-200 bg-slate-100 text-slate-400">
                   <Video className="h-10 w-10" />
@@ -516,7 +636,21 @@ function SourceMediaPreviewModal({
                 </div>
                 <div>
                   <p className="text-slate-400">Episode</p>
-                  <p className="mt-1 truncate text-slate-700">{detailQuery.data.episodeId || "-"}</p>
+                  <p className="mt-1 truncate text-slate-700">
+                    {detailQuery.data.episodeTitle || detailQuery.data.episodeId || "-"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-slate-400">Series</p>
+                  <p className="mt-1 truncate text-slate-700">{detailQuery.data.seriesTitle || "-"}</p>
+                </div>
+                <div>
+                  <p className="text-slate-400">Season</p>
+                  <p className="mt-1 truncate text-slate-700">{detailQuery.data.seasonTitle || "-"}</p>
+                </div>
+                <div>
+                  <p className="text-slate-400">Creator</p>
+                  <p className="mt-1 truncate text-slate-700">{detailQuery.data.creatorUsername || "-"}</p>
                 </div>
                 <div>
                   <p className="text-slate-400">Ngày tạo</p>
@@ -611,8 +745,20 @@ function ModerationCard({
           <div>
             <p className="text-slate-400">Episode</p>
             <p className="mt-1 truncate text-slate-700">
-              {media.episodeId || "-"}
+              {media.episodeTitle || media.episodeId || "-"}
             </p>
+          </div>
+          <div>
+            <p className="text-slate-400">Series</p>
+            <p className="mt-1 truncate text-slate-700">{media.seriesTitle || "-"}</p>
+          </div>
+          <div>
+            <p className="text-slate-400">Season</p>
+            <p className="mt-1 truncate text-slate-700">{media.seasonTitle || "-"}</p>
+          </div>
+          <div>
+            <p className="text-slate-400">Creator</p>
+            <p className="mt-1 truncate text-slate-700">{media.creatorUsername || "-"}</p>
           </div>
           <div>
             <p className="text-slate-400">Ngày tạo</p>
@@ -648,12 +794,14 @@ function ModerationCard({
 function ApprovedMediaCard({
   isMutating,
   media,
+  mediaCount,
   onForceHide,
   onForceUnhide,
   onViewDetail,
 }: {
   isMutating: boolean;
   media: ModerationMedia;
+  mediaCount: number;
   onForceHide: (media: ModerationMedia) => void;
   onForceUnhide: (media: ModerationMedia) => void;
   onViewDetail: (media: ModerationMedia) => void;
@@ -725,14 +873,31 @@ function ApprovedMediaCard({
           >
             {isEpisodeForceHidden ? "Episode đang bị ẩn" : "Episode đang hiển thị"}
           </span>
+          {mediaCount > 1 && (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-bold text-slate-600">
+              {mediaCount} nội dung trong episode này
+            </span>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-3 rounded-xl bg-slate-50 p-3 text-xs font-semibold text-slate-500">
           <div>
             <p className="text-slate-400">Episode</p>
             <p className="mt-1 truncate text-slate-700">
-              {media.episodeId || "-"}
+              {media.episodeTitle || media.episodeId || "-"}
             </p>
+          </div>
+          <div>
+            <p className="text-slate-400">Series</p>
+            <p className="mt-1 truncate text-slate-700">{media.seriesTitle || "-"}</p>
+          </div>
+          <div>
+            <p className="text-slate-400">Season</p>
+            <p className="mt-1 truncate text-slate-700">{media.seasonTitle || "-"}</p>
+          </div>
+          <div>
+            <p className="text-slate-400">Creator</p>
+            <p className="mt-1 truncate text-slate-700">{media.creatorUsername || "-"}</p>
           </div>
           <div>
             <p className="text-slate-400">Thời điểm duyệt</p>
@@ -774,22 +939,29 @@ function ApprovedMediaCard({
 export function ModerationManagement() {
   const [activeTab, setActiveTab] = useState<"pending" | "approved">("pending");
   const [approvedFilter, setApprovedFilter] = useState<"all" | "manual" | "clean">("all");
+  const [pendingTypeFilter, setPendingTypeFilter] = useState<ModerationTypeFilter>("all");
+  const [approvedTypeFilter, setApprovedTypeFilter] = useState<ModerationTypeFilter>("all");
   const [page, setPage] = useState(0);
   const [approvedPage, setApprovedPage] = useState(0);
   const [rejectTarget, setRejectTarget] = useState<ModerationMedia | null>(null);
   const [detailTarget, setDetailTarget] = useState<ModerationMedia | null>(null);
-  const pendingQuery = useGetPendingMedia(page, PAGE_SIZE);
+  const pendingQuery = useGetPendingMedia(page, PAGE_SIZE, pendingTypeFilter);
   // Lọc "manual"/"clean" chạy ở BE (MediaServiceImpl.listApproved) — approvalReviewedBy
   // KHÔNG đủ để tự lọc ở FE: pipeline tự duyệt sạch cũng ghi giá trị actor hệ thống vào
   // field này (không phải null), lọc sai sẽ lẫn nội dung không vi phạm vào "Duyệt tay".
   // Lọc ở BE cũng giúp phân trang (totalPages/totalElements) phản ánh đúng số lượng đã lọc.
-  const approvedQuery = useGetApprovedMedia(approvedPage, PAGE_SIZE, approvedFilter);
+  const approvedQuery = useGetApprovedMedia(approvedPage, PAGE_SIZE, approvedFilter, approvedTypeFilter);
   const approveMutation = useApproveMedia();
   const rejectMutation = useRejectMedia();
   const forceHideMutation = useForceHideEpisode();
   const forceUnhideMutation = useForceUnhideEpisode();
   const pendingPage = pendingQuery.data;
   const items = pendingPage?.content ?? [];
+  // BE đã group theo episode và trả sẵn episodeMediaCount (xem MediaServiceImpl.listApproved
+  // / groupByEpisode) — không group lại ở FE nữa. Group ở FE trước đây chỉ hoạt động ĐÚNG
+  // trong phạm vi 1 trang đang fetch, còn BE vẫn phân trang theo Media riêng lẻ nên 1 episode
+  // có thể bị cắt rải qua nhiều trang, hiện lại thành nhiều card cho cùng 1 episode (bug thật
+  // đã gặp) — nay BE phân trang trực tiếp theo episode nên vấn đề này không còn nữa.
   const approvedItems = approvedQuery.data?.content ?? [];
   const isMutating = approveMutation.isPending || rejectMutation.isPending;
   const isApprovedMutating = forceHideMutation.isPending || forceUnhideMutation.isPending;
@@ -880,6 +1052,34 @@ export function ModerationManagement() {
           Đã duyệt
         </button>
       </div>
+
+      {activeTab === "pending" && (
+        <div className="flex flex-wrap gap-2">
+          {(
+            [
+              { key: "all", label: "Tất cả" },
+              { key: "IMAGE", label: "Ảnh" },
+              { key: "VIDEO", label: "Video" },
+            ] as const
+          ).map((option) => (
+            <button
+              key={option.key}
+              type="button"
+              onClick={() => {
+                setPendingTypeFilter(option.key);
+                setPage(0);
+              }}
+              className={`rounded-full border px-4 py-1.5 text-xs font-bold transition ${
+                pendingTypeFilter === option.key
+                  ? "border-slate-950 bg-slate-950 text-white"
+                  : "border-slate-200 bg-white text-slate-500 hover:border-slate-300"
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {activeTab === "pending" && pendingQuery.isLoading && (
         <div className="rounded-2xl border border-slate-200 bg-white px-6 py-16 text-center shadow-sm">
@@ -985,6 +1185,34 @@ export function ModerationManagement() {
         </div>
       )}
 
+      {activeTab === "approved" && (
+        <div className="flex flex-wrap gap-2">
+          {(
+            [
+              { key: "all", label: "Tất cả" },
+              { key: "IMAGE", label: "Ảnh" },
+              { key: "VIDEO", label: "Video" },
+            ] as const
+          ).map((option) => (
+            <button
+              key={option.key}
+              type="button"
+              onClick={() => {
+                setApprovedTypeFilter(option.key);
+                setApprovedPage(0);
+              }}
+              className={`rounded-full border px-4 py-1.5 text-xs font-bold transition ${
+                approvedTypeFilter === option.key
+                  ? "border-slate-950 bg-slate-950 text-white"
+                  : "border-slate-200 bg-white text-slate-500 hover:border-slate-300"
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       {activeTab === "approved" && approvedQuery.isLoading && (
         <div className="rounded-2xl border border-slate-200 bg-white px-6 py-16 text-center shadow-sm">
           <Loader2 className="mx-auto h-7 w-7 animate-spin text-slate-400" />
@@ -1023,9 +1251,10 @@ export function ModerationManagement() {
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {approvedItems.map((media) => (
               <ApprovedMediaCard
-                key={media.id}
+                key={media.episodeId || media.id}
                 isMutating={isApprovedMutating}
                 media={media}
+                mediaCount={media.episodeMediaCount ?? 1}
                 onForceHide={handleForceHide}
                 onForceUnhide={handleForceUnhide}
                 onViewDetail={setDetailTarget}
