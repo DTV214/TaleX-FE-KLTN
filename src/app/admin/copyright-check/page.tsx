@@ -32,7 +32,7 @@ export default function CopyrightCheckPage() {
       formData.append("media_type", mediaType);
 
       // Gọi trực tiếp thẳng tới Java BE (cổng 8080) để không bị Next.js Proxy (giới hạn 4MB) cắt đứt mạng
-      const response = await httpClient.post("http://localhost:8080/api/v1/admin/watermark/extract", formData);
+      const response = await httpClient.post("/api/v1/admin/watermark/extract", formData);
 
       if (response.data?.data) {
         setResult(response.data.data);
