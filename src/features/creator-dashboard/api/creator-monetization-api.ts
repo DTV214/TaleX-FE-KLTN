@@ -2,6 +2,8 @@ import axios from "axios";
 import {
   getApiErrorMessage,
   httpClient,
+  unwrapBaseResponse,
+  type BasePageResponse,
   type BaseResponse,
 } from "@/shared/api/http-client";
 
@@ -56,6 +58,7 @@ export type PaymentProfileRequestDto = {
   accountNumber: string;
   accountName: string;
   isPrimary: boolean;
+  status?: CreatorPaymentStatus;
 };
 
 export type PaymentProfileDto = PaymentProfileRequestDto & {
@@ -66,12 +69,31 @@ export type PaymentProfileDto = PaymentProfileRequestDto & {
   verifiedNote?: string | null;
 };
 
+export type CreatorPaymentProfileRecord = {
+  id: string;
+  bankCode: string;
+  accountNumber: string;
+  accountName: string;
+  isPrimary: boolean;
+  status: CreatorPaymentStatus;
+  verifiedAt: string | null;
+  verifiedNote: string | null;
+};
+
+type PaymentProfileListPayload =
+  | PaymentProfileDto[]
+  | BasePageResponse<PaymentProfileDto>
+  | { content?: PaymentProfileDto[]; data?: PaymentProfileDto[] };
+
 export const creatorMonetizationKeys = {
   all: ["creator-monetization"] as const,
   verificationStatus: () =>
     [...creatorMonetizationKeys.all, "verification-status"] as const,
   activeTerm: (type: CreatorMonetizationTermType) =>
     [...creatorMonetizationKeys.all, "active-term", type] as const,
+  paymentProfiles: () =>
+    [...creatorMonetizationKeys.all, "payment-profiles"] as const,
+  bankBins: () => [...creatorMonetizationKeys.all, "bankbins"] as const,
 };
 
 const CREATOR_NOT_VERIFIED_CODE = 4003;
@@ -241,4 +263,57 @@ export function deletePaymentProfile(id: string) {
     `DELETE /api/v1/payment-profiles/${id}`,
     httpClient.delete(`/api/v1/payment-profiles/${id}`),
   );
+}
+
+function extractPaymentProfileItems(
+  payload: PaymentProfileListPayload,
+): PaymentProfileDto[] {
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+
+  if (Array.isArray(payload.content)) {
+    return payload.content;
+  }
+
+  if ("data" in payload && Array.isArray(payload.data)) {
+    return payload.data;
+  }
+
+  return [];
+}
+
+function normalizePaymentProfileRecord(
+  item: PaymentProfileDto,
+): CreatorPaymentProfileRecord {
+  return {
+    id: String(item.paymentProfileId ?? item.id ?? ""),
+    bankCode: String(item.bankCode ?? ""),
+    accountNumber: String(item.accountNumber ?? ""),
+    accountName: String(item.accountName ?? ""),
+    isPrimary: Boolean(item.isPrimary),
+    status: item.status ?? "PENDING",
+    verifiedAt: item.verifiedAt ?? null,
+    verifiedNote: item.verifiedNote ?? null,
+  };
+}
+
+export async function getPaymentBankBins() {
+  const payload = await unwrapBaseResponse<string[]>(
+    httpClient.get("/api/v1/payment-profiles/bankbins"),
+  );
+
+  return payload
+    .map((bankCode) => String(bankCode).trim().toUpperCase())
+    .filter(Boolean);
+}
+
+export async function getOwnPaymentProfiles() {
+  const payload = await unwrapBaseResponse<PaymentProfileListPayload>(
+    httpClient.get("/api/v1/payment-profiles/own"),
+  );
+
+  return extractPaymentProfileItems(payload)
+    .map(normalizePaymentProfileRecord)
+    .filter((item) => item.id);
 }

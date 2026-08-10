@@ -455,8 +455,8 @@ function CampaignSeriesInsights({
     isShowingAllSeries
       ? null
       : rows.find(
-          (row) => row.campaignSeries.campaignSeriesId === selectedCampaignSeriesId,
-        ) ?? rows[0];
+        (row) => row.campaignSeries.campaignSeriesId === selectedCampaignSeriesId,
+      ) ?? rows[0];
   const defaultLogRange = useMemo(() => getCampaignSeriesLogRange(campaign), [campaign]);
   const [logRange, setLogRange] =
     useState<CreatorCampaignSeriesLogParams>(defaultLogRange);
@@ -493,7 +493,7 @@ function CampaignSeriesInsights({
           </div>
           <div className="rounded-2xl border border-[#D4AF37]/20 bg-[#D4AF37]/10 px-4 py-3">
             <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-zinc-500">
-              Impression
+              Hiển thị
             </p>
             <p className="mt-1 text-lg font-black text-[#F5D46E]">
               {formatNumber(
@@ -543,9 +543,6 @@ function CampaignSeriesInsights({
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#D4AF37]">
                   Danh sách series
-                </p>
-                <p className="mt-1 text-sm font-semibold text-zinc-500">
-                  Bấm vào một series để đổi nội dung tổng quan bên dưới.
                 </p>
               </div>
               <Button
@@ -834,9 +831,6 @@ function CampaignSeriesOverviewPanelV2({
           <h4 className="mt-2 text-2xl font-black text-white">
             Hiệu suất series đang chọn
           </h4>
-          <p className="mt-1 text-sm font-semibold text-zinc-500">
-            Snapshot hiện tại từ Campaign Series.
-          </p>
 
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
             <SeriesMiniMetric icon={Megaphone} label="Impression" value={formatNumber(campaignSeries.totalImpression)} tone="gold" />
@@ -851,13 +845,10 @@ function CampaignSeriesOverviewPanelV2({
               <span className="text-sm font-black text-[#F5D46E]">{sharePercent}%</span>
             </div>
             <Progress value={sharePercent} />
-            <p className="mt-3 text-xs font-semibold leading-5 text-zinc-500">
-              So với tổng impression của các series trong chiến dịch này.
-            </p>
           </div>
 
           <div className="mt-5 rounded-2xl border border-white/[0.08] bg-black/20 p-4">
-            <p className="text-sm font-black text-white">Tương tác snapshot</p>
+            <p className="text-sm font-black text-white">Tổng Quan Tương tác</p>
             <div className="mt-3 h-[230px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={snapshotMetrics}>
@@ -891,15 +882,9 @@ function CampaignSeriesOverviewPanelV2({
                 Chi tiết theo thời gian
               </p>
               <h4 className="mt-2 text-2xl font-black text-white">
-                Biểu đồ log phân phối
+                Biểu đồ phân phối
               </h4>
-              <p className="mt-1 text-sm font-semibold text-zinc-500">
-                {range.startTime} - {range.endTime}
-              </p>
             </div>
-            <Badge className="border-white/10 bg-white/[0.06] text-zinc-200" variant="outline">
-              {formatNumber(logs.length)} điểm dữ liệu
-            </Badge>
           </div>
 
           <div className="mt-4 grid gap-3 md:grid-cols-2">
@@ -951,10 +936,10 @@ function CampaignSeriesOverviewPanelV2({
           ) : null}
 
           <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <SeriesMiniMetric icon={Megaphone} label="Log impression" value={formatNumber(logImpression)} tone="gold" />
-            <SeriesMiniMetric icon={Eye} label="Views" value={formatNumber(sumLogMetric(logs, "views"))} tone="blue" />
-            <SeriesMiniMetric icon={ThumbsUp} label="Likes" value={formatNumber(sumLogMetric(logs, "likes"))} tone="green" />
-            <SeriesMiniMetric icon={Clock3} label="Watch time" value={formatNumber(sumLogMetric(logs, "watchTime"))} tone="pink" />
+            <SeriesMiniMetric icon={Megaphone} label="Hiển thị" value={formatNumber(logImpression)} tone="gold" />
+            <SeriesMiniMetric icon={Eye} label="Lượt xem" value={formatNumber(sumLogMetric(logs, "views"))} tone="blue" />
+            <SeriesMiniMetric icon={ThumbsUp} label="Lượt Thích" value={formatNumber(sumLogMetric(logs, "likes"))} tone="green" />
+            <SeriesMiniMetric icon={Clock3} label="Thời gian xem" value={formatNumber(sumLogMetric(logs, "watchTime"))} tone="pink" />
           </div>
 
           {isLogsLoading ? (
@@ -971,7 +956,7 @@ function CampaignSeriesOverviewPanelV2({
             <div className="mt-5 grid gap-5">
               <div className="rounded-2xl border border-white/[0.08] bg-black/20 p-4">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-black text-white">Impression theo giờ</p>
+                  <p className="text-sm font-black text-white">Hiển thị theo giờ</p>
                   <Activity className="h-4 w-4 text-[#D4AF37]" />
                 </div>
                 <div className="mt-4 h-[280px]">
@@ -995,63 +980,62 @@ function CampaignSeriesOverviewPanelV2({
                         }}
                         formatter={(value) => formatNumber(Number(value))}
                       />
-                      <Area type="monotone" dataKey="impression" stroke="#D4AF37" strokeWidth={3} fill="url(#overviewImpressionGradient)" name="Impression" />
+                      <Area type="monotone" dataKey="impression" stroke="#D4AF37" strokeWidth={3} fill="url(#overviewImpressionGradient)" name="Hiển thị" />
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
               </div>
 
-              <div className="grid gap-5 lg:grid-cols-[1fr_0.8fr]">
-                <div className="rounded-2xl border border-white/[0.08] bg-black/20 p-4">
-                  <p className="text-sm font-black text-white">Tương tác theo thời gian</p>
-                  <div className="mt-4 h-[260px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={chartData}>
-                        <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
-                        <XAxis dataKey="hour" tick={{ fill: "#a1a1aa", fontSize: 11 }} tickLine={false} axisLine={false} />
-                        <YAxis tick={{ fill: "#71717a", fontSize: 11 }} tickLine={false} axisLine={false} />
-                        <Tooltip
-                          contentStyle={{
-                            background: "rgba(15, 15, 18, 0.95)",
-                            border: "1px solid rgba(255,255,255,0.12)",
-                            borderRadius: 12,
-                            color: "#fff",
-                          }}
-                          formatter={(value) => formatNumber(Number(value))}
-                        />
-                        <Legend wrapperStyle={{ color: "#d4d4d8", fontSize: 12 }} />
-                        <Line type="monotone" dataKey="views" stroke="#60A5FA" strokeWidth={3} dot={false} name="Views" />
-                        <Line type="monotone" dataKey="likes" stroke="#D4AF37" strokeWidth={3} dot={false} name="Likes" />
-                        <Line type="monotone" dataKey="comments" stroke="#34D399" strokeWidth={3} dot={false} name="Comments" />
-                        <Line type="monotone" dataKey="shares" stroke="#F472B6" strokeWidth={3} dot={false} name="Shares" />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-
-                <div className="rounded-2xl border border-white/[0.08] bg-black/20 p-4">
-                  <p className="text-sm font-black text-white">Tổng log</p>
-                  <div className="mt-4 space-y-3">
-                    {logMetrics.map((metric) => (
-                      <div key={metric.key}>
-                        <div className="mb-1 flex items-center justify-between text-xs font-bold">
-                          <span className="text-zinc-500">{metric.label}</span>
-                          <span className="text-white">{formatNumber(metric.value)}</span>
-                        </div>
-                        <div className="h-2 overflow-hidden rounded-full bg-white/[0.08]">
-                          <div
-                            className="h-full rounded-full"
-                            style={{
-                              width: `${Math.min(100, (metric.value / maxLogMetric) * 100)}%`,
-                              backgroundColor: metric.color,
-                            }}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+              <div className="rounded-2xl border border-white/[0.08] bg-black/20 p-4">
+                <p className="text-sm font-black text-white">Tương tác theo thời gian</p>
+                <div className="mt-4 h-[260px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData}>
+                      <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
+                      <XAxis dataKey="hour" tick={{ fill: "#a1a1aa", fontSize: 11 }} tickLine={false} axisLine={false} />
+                      <YAxis tick={{ fill: "#71717a", fontSize: 11 }} tickLine={false} axisLine={false} />
+                      <Tooltip
+                        contentStyle={{
+                          background: "rgba(15, 15, 18, 0.95)",
+                          border: "1px solid rgba(255,255,255,0.12)",
+                          borderRadius: 12,
+                          color: "#fff",
+                        }}
+                        formatter={(value) => formatNumber(Number(value))}
+                      />
+                      <Legend wrapperStyle={{ color: "#d4d4d8", fontSize: 12 }} />
+                      <Line type="monotone" dataKey="views" stroke="#60A5FA" strokeWidth={3} dot={false} name="Xem" />
+                      <Line type="monotone" dataKey="likes" stroke="#D4AF37" strokeWidth={3} dot={false} name="Thích" />
+                      <Line type="monotone" dataKey="comments" stroke="#34D399" strokeWidth={3} dot={false} name="Bình Luận" />
+                      <Line type="monotone" dataKey="shares" stroke="#F472B6" strokeWidth={3} dot={false} name="Chia Sẻ" />
+                    </LineChart>
+                  </ResponsiveContainer>
                 </div>
               </div>
+
+              <div className="rounded-2xl border border-white/[0.08] bg-black/20 p-4">
+                <p className="text-sm font-black text-white">Tổng log</p>
+                <div className="mt-4 space-y-3">
+                  {logMetrics.map((metric) => (
+                    <div key={metric.key}>
+                      <div className="mb-1 flex items-center justify-between text-xs font-bold">
+                        <span className="text-zinc-500">{metric.label}</span>
+                        <span className="text-white">{formatNumber(metric.value)}</span>
+                      </div>
+                      <div className="h-2 overflow-hidden rounded-full bg-white/[0.08]">
+                        <div
+                          className="h-full rounded-full"
+                          style={{
+                            width: `${Math.min(100, (metric.value / maxLogMetric) * 100)}%`,
+                            backgroundColor: metric.color,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
             </div>
           )}
         </div>
@@ -1203,7 +1187,7 @@ function CampaignSeriesOverviewPanel({
           </div>
 
           <div className="rounded-2xl border border-white/[0.08] bg-black/20 p-4">
-            <p className="text-sm font-black text-white">Tương tác snapshot</p>
+            <p className="text-sm font-black text-white">Tổng Quan Tương tác</p>
             <div className="mt-3 h-[220px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={overviewChartData}>
@@ -1624,11 +1608,11 @@ export function CampaignDetailDashboard({
   const chartMetrics = numericAnalytics.length
     ? numericAnalytics.slice(0, 6)
     : [
-        { key: "likes", label: "Likes", value: getAnalyticNumber(campaign, "likes") },
-        { key: "views", label: "Views", value: getAnalyticNumber(campaign, "views") },
-        { key: "comments", label: "Comments", value: getAnalyticNumber(campaign, "comments") },
-        { key: "shares", label: "Shares", value: getAnalyticNumber(campaign, "shares") },
-      ];
+      { key: "likes", label: "Likes", value: getAnalyticNumber(campaign, "likes") },
+      { key: "views", label: "Views", value: getAnalyticNumber(campaign, "views") },
+      { key: "comments", label: "Comments", value: getAnalyticNumber(campaign, "comments") },
+      { key: "shares", label: "Shares", value: getAnalyticNumber(campaign, "shares") },
+    ];
   const chartPalette = ["#D4AF37", "#60A5FA", "#34D399", "#F472B6", "#A78BFA", "#FB923C"];
   const progressData = [
     { name: "Đã đạt", value: campaign.currentImpression ?? 0 },
@@ -1637,9 +1621,9 @@ export function CampaignDetailDashboard({
   const pieProgressData = progressData.some((item) => item.value > 0)
     ? progressData
     : [
-        { name: "Đã đạt", value: 0 },
-        { name: "Còn lại", value: 1 },
-      ];
+      { name: "Đã đạt", value: 0 },
+      { name: "Còn lại", value: 1 },
+    ];
   const selectorCampaigns = campaigns.length ? campaigns : [campaign];
   const campaignSeriesQuery = useGetCreatorCampaignSeriesByCampaignId(
     campaign.campaignId,
@@ -1683,19 +1667,13 @@ export function CampaignDetailDashboard({
               <ArrowLeft className="h-4 w-4" />
               Danh sách
             </Button>
-            <Badge variant="premium" className="px-4 py-2">
-              Campaign Detail
-            </Badge>
           </div>
 
           <h2 className="text-4xl font-black tracking-tight text-white md:text-6xl">
-            Chi tiết chiến dịch
+            Chi Tiết Chiến Dịch
           </h2>
           <p className="mt-2 break-all text-sm font-semibold text-zinc-500">
-            Campaign ID: {campaign.campaignId}
-          </p>
-          <p className="mt-3 text-sm font-bold text-[#F5D46E]">
-            {getServiceName(campaign.engagementServiceId)}
+            ID: {campaign.campaignId}
           </p>
         </div>
 
@@ -1714,9 +1692,6 @@ export function CampaignDetailDashboard({
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
             <h3 className="text-lg font-black text-white">Chuyển chiến dịch</h3>
-            <p className="text-xs font-semibold text-zinc-500">
-              Chọn nhanh một chiến dịch khác trong danh sách hiện tại.
-            </p>
           </div>
           <Megaphone className="h-5 w-5 text-[#D4AF37]" />
         </div>
@@ -1782,10 +1757,7 @@ export function CampaignDetailDashboard({
         <div className="rounded-[28px] border border-white/10 bg-black/20 p-5 md:p-6">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h3 className="text-xl font-black text-white">Tỷ trọng tiến độ</h3>
-              <p className="text-sm font-semibold text-zinc-500">
-                So sánh lượt đã đạt và phần còn lại.
-              </p>
+              <h3 className="text-xl font-black text-white">Tỷ trọng tiến độ hiển thị</h3>
             </div>
             <BarChart3 className="h-5 w-5 text-[#D4AF37]" />
           </div>
@@ -1836,9 +1808,6 @@ export function CampaignDetailDashboard({
           <div className="flex items-center justify-between gap-3">
             <div>
               <h3 className="text-xl font-black text-white">Chỉ số tương tác</h3>
-              <p className="text-sm font-semibold text-zinc-500">
-                Biểu đồ dựa trên các field số trong `analyticData`.
-              </p>
             </div>
             <TrendingUp className="h-5 w-5 text-[#D4AF37]" />
           </div>
@@ -2194,189 +2163,189 @@ export function CreatorCampaignsView() {
         </div>
 
         {isFiltersOpen ? (
-        <div className="mt-5 grid gap-3 border-t border-white/10 pt-5 md:grid-cols-2 xl:grid-cols-4">
-          <FilterInput
-            label="Mục tiêu từ"
-            type="number"
-            min={0}
-            value={campaignFilters.targetValueFrom ?? ""}
-            onChange={(value) => updateCriteriaFilter("targetValueFrom", value)}
-            placeholder="0"
-          />
+          <div className="mt-5 grid gap-3 border-t border-white/10 pt-5 md:grid-cols-2 xl:grid-cols-4">
+            <FilterInput
+              label="Mục tiêu từ"
+              type="number"
+              min={0}
+              value={campaignFilters.targetValueFrom ?? ""}
+              onChange={(value) => updateCriteriaFilter("targetValueFrom", value)}
+              placeholder="0"
+            />
 
-          <FilterInput
-            label="Mục tiêu đến"
-            type="number"
-            min={0}
-            value={campaignFilters.targetValueTo ?? ""}
-            onChange={(value) => updateCriteriaFilter("targetValueTo", value)}
-            placeholder="1000"
-          />
+            <FilterInput
+              label="Mục tiêu đến"
+              type="number"
+              min={0}
+              value={campaignFilters.targetValueTo ?? ""}
+              onChange={(value) => updateCriteriaFilter("targetValueTo", value)}
+              placeholder="1000"
+            />
 
-          <FilterInput
-            label="Đã đạt từ"
-            type="number"
-            min={0}
-            value={campaignFilters.currentValueFrom ?? ""}
-            onChange={(value) => updateCriteriaFilter("currentValueFrom", value)}
-            placeholder="0"
-          />
+            <FilterInput
+              label="Đã đạt từ"
+              type="number"
+              min={0}
+              value={campaignFilters.currentValueFrom ?? ""}
+              onChange={(value) => updateCriteriaFilter("currentValueFrom", value)}
+              placeholder="0"
+            />
 
-          <FilterInput
-            label="Đã đạt đến"
-            type="number"
-            min={0}
-            value={campaignFilters.currentValueTo ?? ""}
-            onChange={(value) => updateCriteriaFilter("currentValueTo", value)}
-            placeholder="1000"
-          />
+            <FilterInput
+              label="Đã đạt đến"
+              type="number"
+              min={0}
+              value={campaignFilters.currentValueTo ?? ""}
+              onChange={(value) => updateCriteriaFilter("currentValueTo", value)}
+              placeholder="1000"
+            />
 
-          <FilterInput
-            label="Bắt đầu từ"
-            type="datetime-local"
-            value={campaignFilters.startAtFrom ?? ""}
-            onChange={(value) => updateCriteriaFilter("startAtFrom", value)}
-          />
+            <FilterInput
+              label="Bắt đầu từ"
+              type="datetime-local"
+              value={campaignFilters.startAtFrom ?? ""}
+              onChange={(value) => updateCriteriaFilter("startAtFrom", value)}
+            />
 
-          <FilterInput
-            label="Bắt đầu đến"
-            type="datetime-local"
-            value={campaignFilters.startAtTo ?? ""}
-            onChange={(value) => updateCriteriaFilter("startAtTo", value)}
-          />
+            <FilterInput
+              label="Bắt đầu đến"
+              type="datetime-local"
+              value={campaignFilters.startAtTo ?? ""}
+              onChange={(value) => updateCriteriaFilter("startAtTo", value)}
+            />
 
-          <FilterInput
-            label="Kết thúc từ"
-            type="datetime-local"
-            value={campaignFilters.endAtFrom ?? ""}
-            onChange={(value) => updateCriteriaFilter("endAtFrom", value)}
-          />
+            <FilterInput
+              label="Kết thúc từ"
+              type="datetime-local"
+              value={campaignFilters.endAtFrom ?? ""}
+              onChange={(value) => updateCriteriaFilter("endAtFrom", value)}
+            />
 
-          <FilterInput
-            label="Kết thúc đến"
-            type="datetime-local"
-            value={campaignFilters.endAtTo ?? ""}
-            onChange={(value) => updateCriteriaFilter("endAtTo", value)}
-          />
+            <FilterInput
+              label="Kết thúc đến"
+              type="datetime-local"
+              value={campaignFilters.endAtTo ?? ""}
+              onChange={(value) => updateCriteriaFilter("endAtTo", value)}
+            />
 
-          <FilterInput
-            label="Ngày tạo từ"
-            type="datetime-local"
-            value={campaignFilters.createdAtFrom ?? ""}
-            onChange={(value) => updateCriteriaFilter("createdAtFrom", value)}
-          />
+            <FilterInput
+              label="Ngày tạo từ"
+              type="datetime-local"
+              value={campaignFilters.createdAtFrom ?? ""}
+              onChange={(value) => updateCriteriaFilter("createdAtFrom", value)}
+            />
 
-          <FilterInput
-            label="Ngày tạo đến"
-            type="datetime-local"
-            value={campaignFilters.createdAtTo ?? ""}
-            onChange={(value) => updateCriteriaFilter("createdAtTo", value)}
-          />
+            <FilterInput
+              label="Ngày tạo đến"
+              type="datetime-local"
+              value={campaignFilters.createdAtTo ?? ""}
+              onChange={(value) => updateCriteriaFilter("createdAtTo", value)}
+            />
 
-          <FilterInput
-            label="Cập nhật từ"
-            type="datetime-local"
-            value={campaignFilters.updatedAtFrom ?? ""}
-            onChange={(value) => updateCriteriaFilter("updatedAtFrom", value)}
-          />
+            <FilterInput
+              label="Cập nhật từ"
+              type="datetime-local"
+              value={campaignFilters.updatedAtFrom ?? ""}
+              onChange={(value) => updateCriteriaFilter("updatedAtFrom", value)}
+            />
 
-          <FilterInput
-            label="Cập nhật đến"
-            type="datetime-local"
-            value={campaignFilters.updatedAtTo ?? ""}
-            onChange={(value) => updateCriteriaFilter("updatedAtTo", value)}
-          />
+            <FilterInput
+              label="Cập nhật đến"
+              type="datetime-local"
+              value={campaignFilters.updatedAtTo ?? ""}
+              onChange={(value) => updateCriteriaFilter("updatedAtTo", value)}
+            />
 
-          <Button
-            type="button"
-            variant="outline"
-            className="h-12 cursor-pointer self-end rounded-2xl border-white/10 bg-white/[0.05] px-4 text-zinc-200 hover:bg-white/[0.08]"
-            onClick={resetFilters}
-          >
-            <RefreshCw className="h-4 w-4" />
-            Đặt lại
-          </Button>
-        </div>
+            <Button
+              type="button"
+              variant="outline"
+              className="h-12 cursor-pointer self-end rounded-2xl border-white/10 bg-white/[0.05] px-4 text-zinc-200 hover:bg-white/[0.08]"
+              onClick={resetFilters}
+            >
+              <RefreshCw className="h-4 w-4" />
+              Đặt lại
+            </Button>
+          </div>
         ) : null}
       </div>
 
       <section className="rounded-[28px] border border-white/10 bg-white/[0.035] p-5">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 className="text-2xl font-black text-white">Danh sách chiến dịch</h2>
-              <p className="mt-1 text-sm font-semibold text-zinc-500">
-                {formatNumber(totalElements)} chiến dịch
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-2xl font-black text-white">Danh sách chiến dịch</h2>
+            <p className="mt-1 text-sm font-semibold text-zinc-500">
+              {formatNumber(totalElements)} chiến dịch
+            </p>
+          </div>
+          {campaignsQuery.isFetching ? (
+            <div className="flex items-center gap-2 rounded-2xl border border-[#D4AF37]/20 bg-[#D4AF37]/10 px-4 py-2 text-sm font-bold text-[#F5D46E]">
+              <RefreshCw className="h-4 w-4 animate-spin" />
+              Đang cập nhật
+            </div>
+          ) : null}
+        </div>
+
+        <div className="mt-5 space-y-3">
+          {campaignsQuery.isLoading ? (
+            Array.from({ length: 4 }).map((_, index) => (
+              <div
+                key={index}
+                className="h-32 animate-pulse rounded-2xl border border-white/10 bg-white/[0.05]"
+              />
+            ))
+          ) : campaignsQuery.error ? (
+            <div className="rounded-2xl border border-red-300/20 bg-red-300/[0.08] p-5 text-sm font-semibold text-red-100/80">
+              {getApiErrorMessage(campaignsQuery.error)}
+            </div>
+          ) : campaigns.length > 0 ? (
+            campaigns.map((campaign) => (
+              <CampaignCard
+                key={campaign.campaignId}
+                campaign={campaign}
+                serviceName={getServiceName(campaign.engagementServiceId)}
+                onSelect={() => setSelectedCampaignId(campaign.campaignId)}
+              />
+            ))
+          ) : (
+            <div className="flex min-h-[260px] flex-col items-center justify-center rounded-2xl border border-dashed border-white/12 bg-white/[0.025] p-6 text-center">
+              <Sparkles className="h-8 w-8 text-[#D4AF37]" />
+              <p className="mt-4 text-lg font-black text-white">
+                Chưa có chiến dịch
+              </p>
+              <p className="mt-2 text-sm font-semibold leading-6 text-zinc-500">
+                Khi bạn mua gói tăng tương tác, chiến dịch sẽ xuất hiện tại đây để theo dõi.
               </p>
             </div>
-            {campaignsQuery.isFetching ? (
-              <div className="flex items-center gap-2 rounded-2xl border border-[#D4AF37]/20 bg-[#D4AF37]/10 px-4 py-2 text-sm font-bold text-[#F5D46E]">
-                <RefreshCw className="h-4 w-4 animate-spin" />
-                Đang cập nhật
-              </div>
-            ) : null}
-          </div>
+          )}
+        </div>
 
-          <div className="mt-5 space-y-3">
-            {campaignsQuery.isLoading ? (
-              Array.from({ length: 4 }).map((_, index) => (
-                <div
-                  key={index}
-                  className="h-32 animate-pulse rounded-2xl border border-white/10 bg-white/[0.05]"
-                />
-              ))
-            ) : campaignsQuery.error ? (
-              <div className="rounded-2xl border border-red-300/20 bg-red-300/[0.08] p-5 text-sm font-semibold text-red-100/80">
-                {getApiErrorMessage(campaignsQuery.error)}
-              </div>
-            ) : campaigns.length > 0 ? (
-              campaigns.map((campaign) => (
-                <CampaignCard
-                  key={campaign.campaignId}
-                  campaign={campaign}
-                  serviceName={getServiceName(campaign.engagementServiceId)}
-                  onSelect={() => setSelectedCampaignId(campaign.campaignId)}
-                />
-              ))
-            ) : (
-              <div className="flex min-h-[260px] flex-col items-center justify-center rounded-2xl border border-dashed border-white/12 bg-white/[0.025] p-6 text-center">
-                <Sparkles className="h-8 w-8 text-[#D4AF37]" />
-                <p className="mt-4 text-lg font-black text-white">
-                  Chưa có chiến dịch
-                </p>
-                <p className="mt-2 text-sm font-semibold leading-6 text-zinc-500">
-                  Khi bạn mua gói tăng tương tác, chiến dịch sẽ xuất hiện tại đây để theo dõi.
-                </p>
-              </div>
-            )}
+        <div className="mt-5 flex items-center justify-between border-t border-white/10 pt-5">
+          <p className="text-sm font-bold text-zinc-500">
+            Trang {page}/{Math.max(totalPages, 1)}
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="icon-lg"
+              className="cursor-pointer rounded-2xl border-white/10 bg-white/[0.04] text-zinc-300 hover:bg-white/[0.08]"
+              disabled={page <= 1 || campaignsQuery.data?.isFirst}
+              onClick={() => setPage((current) => Math.max(current - 1, 1))}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon-lg"
+              className="cursor-pointer rounded-2xl border-white/10 bg-white/[0.04] text-zinc-300 hover:bg-white/[0.08]"
+              disabled={campaignsQuery.data?.isLast || page >= totalPages}
+              onClick={() => setPage((current) => current + 1)}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
           </div>
-
-          <div className="mt-5 flex items-center justify-between border-t border-white/10 pt-5">
-            <p className="text-sm font-bold text-zinc-500">
-              Trang {page}/{Math.max(totalPages, 1)}
-            </p>
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="icon-lg"
-                className="cursor-pointer rounded-2xl border-white/10 bg-white/[0.04] text-zinc-300 hover:bg-white/[0.08]"
-                disabled={page <= 1 || campaignsQuery.data?.isFirst}
-                onClick={() => setPage((current) => Math.max(current - 1, 1))}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="icon-lg"
-                className="cursor-pointer rounded-2xl border-white/10 bg-white/[0.04] text-zinc-300 hover:bg-white/[0.08]"
-                disabled={campaignsQuery.data?.isLast || page >= totalPages}
-                onClick={() => setPage((current) => current + 1)}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+        </div>
       </section>
     </section>
   );
