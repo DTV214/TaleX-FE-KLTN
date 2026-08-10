@@ -122,6 +122,7 @@ import {
 import { SignedHlsPlayer } from "@/features/playback/components/signed-hls-player";
 import { ComboManagementView } from "@/features/creator-dashboard/components/combo-management";
 import { CreatorMonetizationView } from "@/features/creator-dashboard/components/views/creator-monetization-view";
+import { CreatorPaymentProfilesView } from "@/features/creator-dashboard/components/views/creator-payment-profiles-view";
 import { CreatorCampaignPurchaseView } from "@/features/creator-dashboard/components/views/creator-campaign-purchase-view";
 import { CreatorCampaignsView } from "@/features/creator-dashboard/components/views/creator-campaigns-view";
 import { AIPolicyAndCopyright } from "@/features/creator-dashboard/components/ai-policy-and-copyright";
@@ -154,6 +155,7 @@ const dashboardViews: DashboardView[] = [
   "video",
   "combos",
   "monetization",
+  "payment-profiles",
   "campaign",
   "campaigns",
   "publish",
@@ -259,6 +261,11 @@ const viewMeta: Record<
     title: "Kiếm tiền",
     description:
       "Hoàn thành các bước điều khoản, thuế và thanh toán để bật doanh thu Creator.",
+  },
+  "payment-profiles": {
+    title: "Tài khoản thanh toán",
+    description:
+      "Quản lý tài khoản ngân hàng nhận doanh thu và theo dõi trạng thái duyệt hồ sơ.",
   },
   publish: {
     title: "Xuất bản",
@@ -2132,6 +2139,8 @@ function CreatorDashboardContent() {
                   })
                 }
               />
+            ) : activeView === "payment-profiles" ? (
+              <CreatorPaymentProfilesView />
             ) : activeView === "campaign" ? (
               <CreatorCampaignPurchaseView />
             ) : activeView === "campaigns" ? (

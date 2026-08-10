@@ -12,6 +12,7 @@ export type DashboardView =
   | "video"
   | "combos"
   | "monetization"
+  | "payment-profiles"
   | "campaign"
   | "campaigns"
   | "publish"
