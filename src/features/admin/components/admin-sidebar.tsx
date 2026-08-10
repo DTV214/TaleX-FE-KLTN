@@ -26,6 +26,7 @@ import {
   ShieldCheck,
   Tag,
   Target,
+  TrendingUp,
   UserCheck,
   Users,
   Scan,
@@ -47,6 +48,7 @@ const contentNavItems = [
   { name: "Thể loại", href: "/admin/categories", icon: Grid3X3 },
   { name: "Thẻ", href: "/admin/tags", icon: Tag },
   { name: "Kiểm duyệt", href: "/admin/moderation", icon: ShieldAlert },
+  { name: "Xu hướng", href: "/admin/trending", icon: TrendingUp },
 ];
 
 const creatorVerificationNavItems = [
