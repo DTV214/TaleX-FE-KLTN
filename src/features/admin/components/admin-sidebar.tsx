@@ -28,6 +28,7 @@ import {
   Target,
   UserCheck,
   Users,
+  Scan,
 } from "lucide-react";
 
 type AdminSidebarState = {
@@ -98,6 +99,7 @@ const navItems = [
   },
   { name: "Quảng cáo Direct", href: "/admin/ads", icon: Megaphone },
   { name: "Điều Khoản", href: "/admin/terms", icon: FileText },
+  { name: "Quét Bản Quyền", href: "/admin/copyright-check", icon: Scan },
   { name: "Cài Đặt", href: "/admin/settings", icon: Settings },
 ];
 
