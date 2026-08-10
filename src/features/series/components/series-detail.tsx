@@ -383,12 +383,6 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
 
             {/* Metadata grid */}
             <div className="mb-6 grid max-w-3xl grid-cols-[120px_1fr] gap-y-3 text-sm">
-              <div className="flex items-center gap-2 font-medium text-slate-400">
-                <Users className="h-4 w-4" /> Tác giả
-              </div>
-              <div className="font-semibold text-white">
-                {series.creatorName || "Nhà sáng tạo TaleX"}
-              </div>
 
               {series.categories.length > 0 && (
                 <>
@@ -483,9 +477,6 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
               <div className="flex items-center gap-2 font-medium text-slate-400">
                 <Heart className="h-4 w-4" /> Lượt thích
               </div>
-              <div className="font-bold text-red-400">
-                {totalSeriesLikes.toLocaleString("vi-VN")} lượt thích
-              </div>
             </div>
 
             {/* Thông tin nhà sáng tạo (Creator Profile & Follow Action) */}
@@ -538,6 +529,8 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
                 )}
               </div>
             )}
+
+
 
             {/* Mô tả dài */}
             <div className="max-w-3xl mb-8">
@@ -945,23 +938,36 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
                       </h3>
 
                       {/* Thông tin phụ: ngày phát hành / lượt xem */}
-                      <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500 font-medium mb-3">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-3.5 h-3.5 text-gray-600" />{" "}
-                          {new Date(episode.publishedAt).toLocaleDateString(
-                            "vi-VN",
-                          )}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Eye className="w-3.5 h-3.5 text-gray-600" />{" "}
-                          {(episode.views || 0).toLocaleString("vi-VN")} lượt xem
-                        </span>
-                        {isPaid && episode.priceVnd > 0 && (
-                          <span className="text-[#D4AF37] font-bold">
-                            {(episode.priceVnd || 0).toLocaleString("vi-VN")} đ
-                          </span>
-                        )}
-                      </div>
+                      {(() => {
+                        const epViews =
+                          episode.analyticData?.views ??
+                          episode.views ??
+                          (episode as any).totalViews ??
+                          (episode as any).viewsCount ??
+                          0;
+
+                        return (
+                          <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500 font-medium mb-3">
+                            <span className="flex items-center gap-1">
+                              <Calendar className="w-3.5 h-3.5 text-gray-600" />{" "}
+                              {new Date(episode.publishedAt).toLocaleDateString(
+                                "vi-VN",
+                              )}
+                            </span>
+                            {epViews > 0 && (
+                              <span className="flex items-center gap-1">
+                                <Eye className="w-3.5 h-3.5 text-gray-600" />{" "}
+                                {epViews.toLocaleString("vi-VN")} lượt xem
+                              </span>
+                            )}
+                            {isPaid && episode.priceVnd > 0 && (
+                              <span className="text-[#D4AF37] font-bold">
+                                {(episode.priceVnd || 0).toLocaleString("vi-VN")} đ
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })()}
 
                       {/* Mô tả tập phim */}
                       {episode.description ? (

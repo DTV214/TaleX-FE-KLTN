@@ -10,24 +10,45 @@ import type {
 import type { SearchSeries, SearchSeriesParams } from "../types/search.types";
 
 export async function searchSeries(params: SearchSeriesParams) {
-  // Chỉ gửi field có giá trị thật — query param không gửi thì BE nhận null (@RequestParam
-  // required=false), khớp đúng ngữ nghĩa "không lọc theo field này".
-  const query: Record<string, string | number> = {};
-  if (params.keyword?.trim()) query.keyword = params.keyword.trim();
-  if (params.contentType && params.contentType !== "ALL") {
-    query.contentType = params.contentType;
+  const query = new URLSearchParams();
+
+  if (params.search?.trim()) {
+    query.append("search", params.search.trim());
   }
-  if (params.categoryId) query.categoryId = params.categoryId;
-  if (params.tagId) query.tagId = params.tagId;
-  if (params.yearFrom?.trim()) query.yearFrom = params.yearFrom.trim();
-  if (params.yearTo?.trim()) query.yearTo = params.yearTo.trim();
-  if (params.minViews?.trim()) query.minViews = params.minViews.trim();
-  query.sortBy = params.sortBy ?? "popular";
-  query.page = params.page ?? 1;
-  query.pageSize = params.pageSize ?? 12;
+
+  if (params.contentType && params.contentType !== "ALL") {
+    query.append("contentType", params.contentType);
+  }
+
+  if (params.categoryIds && Array.isArray(params.categoryIds)) {
+    params.categoryIds.forEach((id) => {
+      if (id) query.append("categoryIds", id);
+    });
+  }
+
+  if (params.tagIds && Array.isArray(params.tagIds)) {
+    params.tagIds.forEach((id) => {
+      if (id) query.append("tagIds", id);
+    });
+  }
+
+  if (params.ageRatings && Array.isArray(params.ageRatings)) {
+    params.ageRatings.forEach((rating) => {
+      if (rating) query.append("ageRatings", rating);
+    });
+  }
+
+  query.append("status", params.status ?? "PUBLISHED");
+  query.append("sortBy", params.sortBy ?? "releasedupdatetime");
+  query.append("sortDirection", params.sortDirection ?? "DESC");
+
+  // Backend Spring Boot uses 0-based page index
+  const uiPage = params.page ?? 1;
+  query.append("page", String(Math.max(0, uiPage - 1)));
+  query.append("size", String(params.size ?? 12));
 
   return unwrapBaseResponse<BasePageResponse<SearchSeries>>(
-    httpClient.get("/api/v1/public/series/search", { params: query }),
+    httpClient.get(`/api/v1/public/series/search?${query.toString()}`),
   );
 }
 

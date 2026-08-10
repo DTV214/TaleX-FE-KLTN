@@ -272,17 +272,9 @@ export function CreatorPaymentProfilesView() {
         <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-creator-gold/70 to-transparent" />
         <div className="relative z-10 flex flex-col gap-7 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl">
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-creator-gold/25 bg-creator-gold/10 px-3 py-1 text-xs font-black uppercase tracking-[0.2em] text-creator-gold">
-              <WalletCards className="h-4 w-4" />
-              Creator Payment
-            </div>
             <h1 className="font-heading text-3xl font-black tracking-tight text-white md:text-5xl">
-              Tài khoản thanh toán
+              Tài khoản ngân hàng
             </h1>
-            <p className="mt-4 max-w-2xl text-sm font-semibold leading-6 text-white/62 md:text-base">
-              Quản lý tài khoản ngân hàng dùng để nhận doanh thu Creator. Hồ sơ
-              mới hoặc đã chỉnh sửa sẽ được gửi chờ duyệt trước khi thanh toán.
-            </p>
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row">
@@ -312,144 +304,61 @@ export function CreatorPaymentProfilesView() {
         </div>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-3">
-        <MetricCard
-          icon={CreditCard}
-          label="Tổng hồ sơ"
-          value={profiles.length}
-          caption="Tài khoản đã tạo"
-          tone="gold"
-        />
-        <MetricCard
-          icon={Loader2}
-          label="Chờ duyệt"
-          value={pendingCount}
-          caption="Đang được kiểm tra"
-          tone="blue"
-        />
-        <MetricCard
-          icon={BadgeCheck}
-          label="Đã duyệt"
-          value={verifiedCount}
-          caption={primaryProfile ? `Chính: ${primaryProfile.bankCode}` : "Chưa có tài khoản chính"}
-          tone="green"
-        />
-      </section>
-
-      <section className="grid gap-6 xl:grid-cols-[0.82fr_1.18fr]">
-        <div className="relative overflow-hidden rounded-[1.75rem] border border-white/10 bg-white/[0.045] p-6 backdrop-blur-xl">
-          <div className="pointer-events-none absolute -right-16 -top-20 h-48 w-48 rounded-full bg-creator-gold/12 blur-3xl" />
-          <div className="relative z-10">
-            <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-creator-gold/25 bg-creator-gold/10 text-creator-gold">
-              <ShieldCheck className="h-7 w-7" />
-            </div>
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-creator-gold">
-              Quy trình hồ sơ
-            </p>
-            <h2 className="mt-3 font-heading text-2xl font-black text-white">
-              Thêm tài khoản ngân hàng an toàn
-            </h2>
-            <p className="mt-3 text-sm font-semibold leading-6 text-white/58">
-              Chọn ngân hàng từ danh sách hỗ trợ, nhập đúng số tài khoản và tên
-              chủ tài khoản. TaleX sẽ dùng thông tin này để đối soát doanh thu
-              Creator.
-            </p>
-
-            <div className="mt-6 space-y-3">
-              {[
-                "Bank code lấy từ hệ thống để tránh nhập sai mã ngân hàng.",
-                "Số tài khoản chỉ gồm chữ số, tối đa 20 ký tự.",
-                "Tên tài khoản nên trùng với tên chủ tài khoản tại ngân hàng.",
-              ].map((item) => (
-                <div
-                  key={item}
-                  className="flex gap-3 rounded-2xl border border-white/10 bg-black/25 p-4 text-sm font-bold leading-6 text-white/68"
-                >
-                  <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-creator-gold" />
-                  <span>{item}</span>
-                </div>
-              ))}
-            </div>
+      {paymentProfilesQuery.isLoading ? (
+        <div className="flex min-h-72 items-center justify-center">
+          <div className="flex items-center gap-3 text-sm font-black text-white/65">
+            <Loader2 className="h-5 w-5 animate-spin text-creator-gold" />
+            Đang tải hồ sơ thanh toán...
           </div>
         </div>
-
-        <div className="overflow-hidden rounded-[1.75rem] border border-white/10 bg-black/42 shadow-[0_24px_80px_rgba(0,0,0,0.32)] backdrop-blur-xl">
-          <div className="flex flex-col gap-2 border-b border-white/10 p-5 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.2em] text-creator-gold">
-                Danh sách hồ sơ
-              </p>
-              <h2 className="mt-1 font-heading text-2xl font-black text-white">
-                Hồ sơ thanh toán của tôi
-              </h2>
-            </div>
-            <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-sm font-black text-white/70">
-              {profiles.length} tài khoản
-            </span>
-          </div>
-
-          {paymentProfilesQuery.isLoading ? (
-            <div className="flex min-h-72 items-center justify-center">
-              <div className="flex items-center gap-3 text-sm font-black text-white/65">
-                <Loader2 className="h-5 w-5 animate-spin text-creator-gold" />
-                Đang tải hồ sơ thanh toán...
-              </div>
-            </div>
-          ) : paymentProfilesQuery.isError ? (
-            <div className="m-5 rounded-2xl border border-red-400/20 bg-red-400/10 p-5 text-sm font-bold text-red-100">
-              Không thể tải danh sách hồ sơ thanh toán. Vui lòng thử lại.
-            </div>
-          ) : profiles.length === 0 ? (
-            <div className="m-5 flex min-h-72 flex-col items-center justify-center rounded-3xl border border-dashed border-white/12 bg-white/[0.025] p-8 text-center">
-              <Landmark className="h-12 w-12 text-creator-gold" />
-              <h3 className="mt-4 font-heading text-2xl font-black text-white">
-                Chưa có hồ sơ thanh toán
-              </h3>
-              <p className="mt-2 max-w-md text-sm font-semibold leading-6 text-white/55">
-                Tạo tài khoản ngân hàng đầu tiên để TaleX có thể kiểm duyệt và
-                dùng cho thanh toán doanh thu.
-              </p>
-              <Button
-                type="button"
-                onClick={handleOpenCreate}
-                className="mt-5 h-11 rounded-2xl bg-creator-gold px-5 font-black text-black hover:bg-creator-gold-hover"
-              >
-                <Plus className="h-5 w-5" />
-                Tạo hồ sơ
-              </Button>
-            </div>
-          ) : (
-            <div className="divide-y divide-white/10">
-              {profiles.map((profile) => (
-                <PaymentProfileRow
-                  key={profile.id}
-                  profile={profile}
-                  onEdit={() => handleOpenEdit(profile)}
-                  onDelete={() => setDeleteTarget(profile)}
-                />
-              ))}
-            </div>
-          )}
+      ) : paymentProfilesQuery.isError ? (
+        <div className="m-5 rounded-2xl border border-red-400/20 bg-red-400/10 p-5 text-sm font-bold text-red-100">
+          Không thể tải danh sách hồ sơ thanh toán. Vui lòng thử lại.
         </div>
-      </section>
+      ) : profiles.length === 0 ? (
+        <div className="m-5 flex min-h-72 flex-col items-center justify-center rounded-3xl border border-dashed border-white/12 bg-white/[0.025] p-8 text-center">
+          <Landmark className="h-12 w-12 text-creator-gold" />
+          <h3 className="mt-4 font-heading text-2xl font-black text-white">
+            Chưa có hồ sơ thanh toán
+          </h3>
+          <p className="mt-2 max-w-md text-sm font-semibold leading-6 text-white/55">
+            Tạo tài khoản ngân hàng đầu tiên để TaleX có thể kiểm duyệt và
+            dùng cho thanh toán doanh thu.
+          </p>
+          <Button
+            type="button"
+            onClick={handleOpenCreate}
+            className="mt-5 h-11 rounded-2xl bg-creator-gold px-5 font-black text-black hover:bg-creator-gold-hover"
+          >
+            <Plus className="h-5 w-5" />
+            Tạo hồ sơ
+          </Button>
+        </div>
+      ) : (
+        <div className="grid gap-4 p-5 lg:grid-cols-2 2xl:grid-cols-3">
+          {profiles.map((profile) => (
+            <PaymentProfileRow
+              key={profile.id}
+              profile={profile}
+              onEdit={() => handleOpenEdit(profile)}
+              onDelete={() => setDeleteTarget(profile)}
+            />
+          ))}
+        </div>
+      )}
 
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent className="max-h-[calc(100vh-2rem)] gap-5 overflow-y-auto rounded-3xl border border-creator-gold/25 bg-[#101012]/95 p-5 text-white shadow-[0_28px_90px_rgba(0,0,0,0.72),0_0_36px_rgba(226,177,60,0.1)] sm:max-w-2xl">
           <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-creator-gold/80 to-transparent" />
           <div className="pointer-events-none absolute -right-20 -top-24 h-56 w-56 rounded-full bg-creator-gold/10 blur-3xl" />
           <DialogHeader>
-            <div className="mb-1 inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-creator-gold/30 bg-creator-gold/12 text-creator-gold">
-              <Building2 className="h-6 w-6" />
-            </div>
+
             <DialogTitle className="font-heading text-2xl font-black tracking-tight text-white">
               {modalMode === "edit"
-                ? "Cập nhật tài khoản thanh toán"
+                ? "Cập nhập tài khoản thanh toán"
                 : "Thêm tài khoản thanh toán"}
             </DialogTitle>
-            <DialogDescription className="text-sm font-semibold leading-6 text-white/58">
-              Chọn ngân hàng từ danh sách hỗ trợ và nhập đúng thông tin tài
-              khoản để gửi duyệt.
-            </DialogDescription>
+
           </DialogHeader>
 
           <div className="grid gap-4">
@@ -485,11 +394,7 @@ export function CreatorPaymentProfilesView() {
                 <p className="text-xs font-bold text-red-300">
                   Không thể tải danh sách ngân hàng. Hãy thử làm mới lại trang.
                 </p>
-              ) : (
-                <p className="text-xs leading-5 text-white/48">
-                  Danh sách mã ngân hàng được lấy từ API Bank BIN của TaleX.
-                </p>
-              )}
+              ) : null}
             </label>
 
             <div className="grid gap-4 md:grid-cols-2">
@@ -515,9 +420,6 @@ export function CreatorPaymentProfilesView() {
                   placeholder="Ví dụ: 1023456789"
                   className="h-12 rounded-xl border border-white/12 bg-black/35 px-4 text-sm font-black text-white outline-none transition placeholder:text-white/32 focus:border-creator-gold/70 focus:ring-2 focus:ring-creator-gold/20"
                 />
-                <p className="text-xs leading-5 text-white/48">
-                  Chỉ nhập chữ số, không nhập dấu cách hoặc gạch ngang.
-                </p>
               </label>
 
               <label className="grid gap-2 rounded-2xl border border-white/10 bg-black/30 p-4 text-sm font-medium text-white/82">
@@ -541,9 +443,6 @@ export function CreatorPaymentProfilesView() {
                   placeholder="Ví dụ: NGUYEN VAN A"
                   className="h-12 rounded-xl border border-white/12 bg-black/35 px-4 text-sm font-black text-white outline-none transition placeholder:text-white/32 focus:border-creator-gold/70 focus:ring-2 focus:ring-creator-gold/20"
                 />
-                <p className="text-xs leading-5 text-white/48">
-                  Nên trùng với tên chủ tài khoản tại ngân hàng.
-                </p>
               </label>
             </div>
 
@@ -560,7 +459,7 @@ export function CreatorPaymentProfilesView() {
                 }}
                 className="mt-1 h-4 w-4 shrink-0 rounded border-white/25 bg-background accent-primary"
               />
-              <span>Đặt làm tài khoản chính để nhận doanh thu mặc định</span>
+              <span>Tài khoản chính</span>
             </label>
 
             {(formError || (!canSubmit && formState.accountNumber)) && (
@@ -714,52 +613,57 @@ function PaymentProfileRow({
   const status = formatStatus(profile.status);
 
   return (
-    <article className="group grid gap-4 p-5 transition hover:bg-white/[0.035] xl:grid-cols-[1fr_auto] xl:items-center">
-      <div className="flex min-w-0 gap-4">
-        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-creator-gold/25 bg-creator-gold/10 text-creator-gold">
-          <Landmark className="h-7 w-7" />
-        </div>
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
+    <article className="group flex h-full flex-col justify-between rounded-[1.6rem] border border-white/10 bg-white/[0.04] p-5 shadow-[0_18px_50px_rgba(0,0,0,0.24)] transition hover:border-creator-gold/30 hover:bg-white/[0.055]">
+      <div className="space-y-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+
             <h3 className="font-heading text-xl font-black text-white">
               {profile.bankCode || "Ngân hàng"}
             </h3>
-            {profile.isPrimary ? (
-              <span className="rounded-full border border-creator-gold/25 bg-creator-gold/10 px-2.5 py-1 text-xs font-black text-creator-gold">
-                Chính
-              </span>
-            ) : null}
-            <span
-              className={cn(
-                "rounded-full border px-2.5 py-1 text-xs font-black",
-                status.className,
-              )}
-            >
-              {status.label}
-            </span>
+
+            <div className="flex flex-wrap items-center gap-2">
+              {profile.isPrimary ? (
+                <span className="rounded-full border border-creator-gold/25 bg-creator-gold/10 px-2.5 py-1 text-xs font-black text-creator-gold">
+                  Tài khoản chính
+                </span>
+              ) : null}
+            </div>
           </div>
-          <p className="mt-2 truncate text-sm font-black text-white/80">
+          <span
+            className={cn(
+              "rounded-full border px-2.5 py-1 text-xs font-black",
+              status.className,
+            )}
+          >
+            {status.label}
+          </span>
+        </div>
+
+        <div className="rounded-[1.2rem] border border-white/10 bg-black/25 p-4">
+          <p className="truncate text-sm font-black text-white/80">
             {profile.accountName || "Chưa có tên tài khoản"}
           </p>
-          <p className="mt-1 text-sm font-semibold text-white/48">
+          <p className="mt-2 text-sm font-semibold text-white/48">
             {profile.accountNumber
               ? maskAccountNumber(profile.accountNumber)
               : "Chưa có số tài khoản"}
           </p>
-          {profile.verifiedNote ? (
-            <p className="mt-2 rounded-xl border border-white/10 bg-white/[0.035] px-3 py-2 text-xs font-semibold leading-5 text-white/55">
-              Ghi chú duyệt: {profile.verifiedNote}
-            </p>
-          ) : null}
         </div>
+
+        {profile.verifiedNote ? (
+          <p className="rounded-xl border border-white/10 bg-white/[0.035] px-3 py-2 text-xs font-semibold leading-5 text-white/55">
+            Ghi chú duyệt: {profile.verifiedNote}
+          </p>
+        ) : null}
       </div>
 
-      <div className="flex flex-wrap gap-2 xl:justify-end">
+      <div className="mt-5 flex flex-wrap gap-2">
         <Button
           type="button"
           variant="outline"
           onClick={onEdit}
-          className="h-10 rounded-xl border-white/10 bg-white/[0.035] px-4 font-black text-white hover:border-creator-gold/45 hover:bg-creator-gold/10 hover:text-creator-gold"
+          className="h-10 flex-1 rounded-xl border-white/10 bg-white/[0.035] px-4 font-black text-white hover:border-creator-gold/45 hover:bg-creator-gold/10 hover:text-creator-gold"
         >
           <Edit3 className="h-4 w-4" />
           Sửa
@@ -768,7 +672,7 @@ function PaymentProfileRow({
           type="button"
           variant="outline"
           onClick={onDelete}
-          className="h-10 rounded-xl border-red-300/20 bg-red-400/8 px-4 font-black text-red-200 hover:border-red-300/45 hover:bg-red-400/14 hover:text-red-100"
+          className="h-10 flex-1 rounded-xl border-red-300/20 bg-red-400/8 px-4 font-black text-red-200 hover:border-red-300/45 hover:bg-red-400/14 hover:text-red-100"
         >
           <Trash2 className="h-4 w-4" />
           Xóa

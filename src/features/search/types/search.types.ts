@@ -1,7 +1,17 @@
 import type { ContentType } from "@/features/creator-dashboard/api/creator-content-api";
 
-export type SearchSortBy = "popular" | "newest" | "name";
+export type SearchSortBy =
+  | "releasedupdatetime"
+  | "views"
+  | "averagerating"
+  | "likes"
+  | "watchtime";
+
+export type SearchSortDirection = "ASC" | "DESC";
+
 export type SearchContentFilter = "ALL" | "VIDEO" | "COMIC";
+
+export type SearchAgeRating = "EVERYONE" | "TEEN" | "MATURE";
 
 export type SearchSeries = {
   seriesId: string;
@@ -23,14 +33,14 @@ export type SearchSeries = {
 };
 
 export type SearchSeriesParams = {
-  keyword?: string;
+  search?: string;
   contentType?: SearchContentFilter;
-  categoryId?: string;
-  tagId?: string;
-  yearFrom?: string;
-  yearTo?: string;
-  minViews?: string;
+  categoryIds?: string[];
+  tagIds?: string[];
+  ageRatings?: SearchAgeRating[];
+  status?: string;
   sortBy?: SearchSortBy;
+  sortDirection?: SearchSortDirection;
   page?: number;
-  pageSize?: number;
+  size?: number;
 };
