@@ -2,9 +2,7 @@
 
 import { useState } from "react";
 import { UploadCloud, CheckCircle, AlertTriangle, ScanLine, Info } from "lucide-react";
-import axios from "axios";
-
-import { API_BASE_URL } from "@/core/config/api";
+import { httpClient } from "@/shared/api/http-client";
 
 export default function CopyrightCheckPage() {
   const [file, setFile] = useState<File | null>(null);
@@ -35,14 +33,7 @@ export default function CopyrightCheckPage() {
 
       // Call Backend Admin API (TaleX-Server)
       // The Backend will forward this to TaleX-AI-Python
-      const response = await axios.post(`${API_BASE_URL}/api/v1/admin/watermark/extract`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          // The admin must be logged in, so axios interceptors will attach the Bearer token automatically if setup globally,
-          // Or we use withCredentials if using cookies. Assuming standard Axios setup.
-        },
-        withCredentials: true,
-      });
+      const response = await httpClient.post("/api/v1/admin/watermark/extract", formData);
 
       if (response.data?.data) {
         setResult(response.data.data);
