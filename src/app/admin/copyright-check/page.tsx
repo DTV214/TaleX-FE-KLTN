@@ -31,9 +31,8 @@ export default function CopyrightCheckPage() {
       formData.append("file", file);
       formData.append("media_type", mediaType);
 
-      // Call Backend Admin API (TaleX-Server)
-      // The Backend will forward this to TaleX-AI-Python
-      const response = await httpClient.post("/api/v1/admin/watermark/extract", formData);
+      // Gọi trực tiếp thẳng tới Java BE (cổng 8080) để không bị Next.js Proxy (giới hạn 4MB) cắt đứt mạng
+      const response = await httpClient.post("http://localhost:8080/api/v1/admin/watermark/extract", formData);
 
       if (response.data?.data) {
         setResult(response.data.data);
