@@ -333,6 +333,7 @@ export function SignedHlsPlayer({
                   compact={compact}
                   storageKey={storageKey}
                   enableHeartbeat={Boolean(authUser)}
+                  viewerId={resolvedViewerId}
                   onFatalError={handleFatalPlayerError}
                   onEnded={() => {
                     if (playbackQuery.data?.isLocked) {

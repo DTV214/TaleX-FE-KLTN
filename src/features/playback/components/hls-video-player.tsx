@@ -22,6 +22,7 @@ import {
 } from "react";
 import { cn } from "@/shared/utils/utils";
 import { useHeartbeat } from "../hooks/useHeartbeat";
+import { VideoWatermarkOverlay } from "./video-watermark-overlay";
 
 type QualitySelection = "auto" | number;
 
@@ -51,6 +52,7 @@ type HlsVideoPlayerProps = {
   onFatalError?: (message: string) => void;
   onEnded?: () => void;
   onTimeUpdate?: (time: number) => void;
+  viewerId?: string;
 };
 
 /**
@@ -352,6 +354,7 @@ export function HlsVideoPlayer({
   onFatalError,
   onEnded,
   onTimeUpdate,
+  viewerId,
 }: HlsVideoPlayerProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -846,6 +849,8 @@ export function HlsVideoPlayer({
       >
         Your browser does not support the video tag.
       </video>
+
+      <VideoWatermarkOverlay viewerId={viewerId} />
 
       {(isBuffering || !manifestUrl) && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/45">

@@ -44,6 +44,7 @@ import {
 import { useComicHeartbeat } from "@/features/playback/hooks/useComicHeartbeat";
 import { getEpisodeWatchPosition } from "@/features/playback/api/watch-sessions-api";
 import { AdSlot } from "@/shared/ui/ad-slot";
+import { WatermarkedImage } from "./watermarked-image";
 
 interface ComicReaderProps {
   episodeId: string;
@@ -728,8 +729,9 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
                     }}
                   >
                     {page.fileUrl && (
-                      <img
-                        src={page.fileUrl}
+                      <WatermarkedImage
+                        mediaId={page.mediaId}
+                        fallbackUrl={page.fileUrl}
                         alt="Locked content"
                         className="h-full w-full object-cover select-none"
                       />
@@ -744,8 +746,9 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
                     </div>
                   </div>
                 ) : (
-                  <img
-                    src={page.fileUrl}
+                  <WatermarkedImage
+                    mediaId={page.mediaId}
+                    fallbackUrl={page.fileUrl}
                     alt={`Trang ${idx + 1}`}
                     className="mx-auto block h-auto object-contain transition-[width,max-width] duration-200"
                     style={{
@@ -853,9 +856,10 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
                 (sortedPages[currentPage].isLocked ? (
                   <>
                     {sortedPages[currentPage].fileUrl && (
-                      <img
+                      <WatermarkedImage
                         key={`locked-${sortedPages[currentPage].mediaId}`}
-                        src={sortedPages[currentPage].fileUrl}
+                        mediaId={sortedPages[currentPage].mediaId}
+                        fallbackUrl={sortedPages[currentPage].fileUrl}
                         alt="Locked content"
                         className="container absolute inset-0 mx-auto h-full w-full max-w-4xl object-contain select-none"
                       />
@@ -868,9 +872,10 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
                     </div>
                   </>
                 ) : (
-                  <img
+                  <WatermarkedImage
                     key={sortedPages[currentPage].mediaId}
-                    src={sortedPages[currentPage].fileUrl}
+                    mediaId={sortedPages[currentPage].mediaId}
+                    fallbackUrl={sortedPages[currentPage].fileUrl}
                     alt={`Trang ${currentPage + 1}`}
                     className="container mx-auto max-h-screen w-full max-w-4xl object-contain"
                     style={{ userSelect: "none" }}
