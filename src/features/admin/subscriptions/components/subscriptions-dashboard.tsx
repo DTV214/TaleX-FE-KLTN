@@ -282,17 +282,17 @@ export function SubscriptionsDashboard() {
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-8">
       <header className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
         <div className="flex gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-[#E6F7F9] text-[#007A8A]">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-600 backoffice-dark:bg-[var(--backoffice-primary-soft)] backoffice-dark:text-[var(--backoffice-primary)]">
             <CreditCard className="h-6 w-6" />
           </div>
           <div>
-            <p className="mb-1 text-sm font-medium text-gray-500">
+            <p className="mb-1 text-sm font-medium text-gray-500 backoffice-dark:text-white/55">
               Admin / Gói Premium
             </p>
-            <h1 className="font-heading text-3xl font-bold tracking-tight text-gray-900">
+            <h1 className="text-3xl font-bold tracking-tight text-gray-900 backoffice-dark:text-white">
               Quản lý Gói Premium
             </h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-500">
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-500 backoffice-dark:text-white/55">
               Quản lý giá, thời hạn, lượt mua và quyền lợi của các gói Premium
               trong hệ thống.
             </p>
@@ -306,7 +306,7 @@ export function SubscriptionsDashboard() {
             size="lg"
             onClick={() => subscriptionsQuery.refetch()}
             disabled={subscriptionsQuery.isFetching}
-            className="border-gray-200 bg-white text-gray-700 shadow-sm hover:bg-gray-50"
+            className="border-gray-200 bg-white text-gray-700 shadow-sm hover:bg-gray-50 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/10"
           >
             <RefreshCw
               className={
@@ -321,7 +321,7 @@ export function SubscriptionsDashboard() {
             type="button"
             size="lg"
             onClick={openCreateModal}
-            className="bg-[#007A8A] text-white shadow-sm hover:bg-[#006673]"
+            className="bg-violet-600 text-white shadow-sm hover:bg-violet-700 backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black backoffice-dark:hover:bg-[var(--backoffice-primary-bright)]"
           >
             <Plus className="h-4 w-4" />
             Tạo mới Gói
@@ -329,10 +329,10 @@ export function SubscriptionsDashboard() {
         </div>
       </header>
 
-      <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
         <div className="grid gap-4 lg:grid-cols-[minmax(280px,1fr)_220px_170px_auto] lg:items-end">
           <label className="relative block">
-            <span className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-500">
+            <span className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-500 backoffice-dark:text-white/45">
               Tìm kiếm
             </span>
             <Search className="absolute bottom-3.5 left-3 h-4 w-4 text-gray-400" />
@@ -341,7 +341,7 @@ export function SubscriptionsDashboard() {
               value={searchDraft}
               onChange={(event) => setSearchDraft(event.target.value)}
               placeholder="Tìm theo tên hoặc mô tả gói..."
-              className="h-11 w-full rounded-lg border border-gray-200 bg-white pl-10 pr-3 text-sm font-medium text-gray-900 outline-none transition focus:border-[#007A8A] focus:ring-4 focus:ring-[#007A8A]/10"
+              className="h-11 w-full rounded-lg border border-slate-200 bg-white pl-10 pr-3 text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-violet-500 focus:ring-4 focus:ring-violet-100 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white backoffice-dark:focus:ring-[rgba(212,175,55,0.16)]"
             />
           </label>
 
@@ -368,12 +368,12 @@ export function SubscriptionsDashboard() {
               variant="outline"
               onClick={() => setIsFilterPanelOpen((current) => !current)}
               aria-expanded={isFilterPanelOpen}
-              className="h-11 border-gray-200 bg-white px-4 text-gray-700 shadow-sm hover:bg-gray-50"
+              className="h-11 border-gray-200 bg-white px-4 text-gray-700 shadow-sm hover:bg-gray-50 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/10"
             >
-              <Filter className="h-4 w-4 text-[#007A8A]" />
+              <Filter className="h-4 w-4 text-violet-600 backoffice-dark:text-[var(--backoffice-primary)]" />
               Bộ lọc
               {activeFilterCount > 0 && (
-                <span className="ml-1 rounded-full bg-[#007A8A] px-2 py-0.5 text-xs font-black text-white">
+                <span className="ml-1 rounded-full bg-violet-600 px-2 py-0.5 text-xs font-black text-white backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black">
                   {activeFilterCount}
                 </span>
               )}
@@ -388,7 +388,7 @@ export function SubscriptionsDashboard() {
                 type="button"
                 variant="outline"
                 onClick={resetFilters}
-                className="h-11 border-gray-200 bg-white px-3 text-gray-700 shadow-sm hover:bg-gray-50"
+                className="h-11 border-gray-200 bg-white px-3 text-gray-700 shadow-sm hover:bg-gray-50 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/10"
                 aria-label="Xóa lọc"
               >
                 <RotateCcw className="h-4 w-4" />
@@ -398,9 +398,9 @@ export function SubscriptionsDashboard() {
         </div>
 
         {isFilterPanelOpen && (
-          <div className="mt-5 rounded-xl border border-gray-100 bg-gray-50/60 p-4">
-            <div className="mb-4 flex items-center gap-2 text-sm font-bold text-gray-900">
-              <ArrowUpDown className="h-4 w-4 text-[#007A8A]" />
+          <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50/60 p-4 backoffice-dark:border-white/10 backoffice-dark:bg-black/20">
+            <div className="mb-4 flex items-center gap-2 text-sm font-bold text-gray-900 backoffice-dark:text-white">
+              <ArrowUpDown className="h-4 w-4 text-violet-600 backoffice-dark:text-[var(--backoffice-primary)]" />
               Lọc chi tiết
             </div>
 
@@ -547,7 +547,7 @@ function FilterSelect({
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-700 outline-none transition focus:border-[#007A8A] focus:ring-4 focus:ring-[#007A8A]/10"
+        className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-violet-500 focus:ring-4 focus:ring-violet-100 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white backoffice-dark:focus:ring-[rgba(212,175,55,0.16)]"
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>
@@ -578,7 +578,7 @@ function NumberFilter({
         min="0"
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-700 outline-none transition focus:border-[#007A8A] focus:ring-4 focus:ring-[#007A8A]/10"
+        className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-violet-500 focus:ring-4 focus:ring-violet-100 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white backoffice-dark:focus:ring-[rgba(212,175,55,0.16)]"
       />
     </label>
   );
@@ -602,7 +602,7 @@ function DateTimeFilter({
         type="datetime-local"
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-700 outline-none transition focus:border-[#007A8A] focus:ring-4 focus:ring-[#007A8A]/10"
+        className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-violet-500 focus:ring-4 focus:ring-violet-100 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white backoffice-dark:focus:ring-[rgba(212,175,55,0.16)]"
       />
     </label>
   );

@@ -220,17 +220,17 @@ export default function AdminCreatorVerificationPage() {
   const isPaymentSubmitting = submitPaymentMutation.isPending;
 
   return (
-    <section className="w-full rounded-xl border border-gray-200 bg-white p-6 text-gray-900 shadow-sm">
+    <section className="w-full rounded-2xl border border-slate-200 bg-white p-6 text-gray-900 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white">
       <div className="flex flex-col gap-6">
-        <div className="flex flex-col gap-4 border-b border-gray-200 pb-6 lg:flex-row lg:items-end lg:justify-between">
+        <div className="flex flex-col gap-4 border-b border-gray-200 pb-6 backoffice-dark:border-white/10 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#7B42FF]">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-violet-600 backoffice-dark:text-[var(--backoffice-primary)]">
               Admin Panel
             </p>
-            <h1 className="mt-2 font-heading text-3xl font-black tracking-tight text-gray-900">
+            <h1 className="mt-2 text-3xl font-bold tracking-tight text-gray-900 backoffice-dark:text-white">
               {pageTitle}
             </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-gray-500">
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-gray-500 backoffice-dark:text-white/55">
               Xử lý hồ sơ thuế và tài khoản thanh toán trước khi Creator được
               bật kiếm tiền trên TaleX.
             </p>
@@ -238,9 +238,9 @@ export default function AdminCreatorVerificationPage() {
         </div>
 
         {activeQuery.isLoading ? (
-          <div className="flex min-h-72 items-center justify-center rounded-xl border border-gray-200 bg-white">
+          <div className="flex min-h-72 items-center justify-center rounded-xl border border-gray-200 bg-white backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
             <div className="flex items-center gap-3 text-sm font-medium text-gray-500">
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#7B42FF]/25 border-t-[#7B42FF]" />
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-violet-600/25 border-t-violet-600 backoffice-dark:border-[var(--backoffice-primary)]/25 backoffice-dark:border-t-[var(--backoffice-primary)]" />
               Đang tải dữ liệu kiểm duyệt...
             </div>
           </div>
@@ -255,7 +255,7 @@ export default function AdminCreatorVerificationPage() {
               <Button
                 type="button"
                 onClick={() => void activeQuery.refetch()}
-                className="mt-4 h-9 bg-[#7B42FF] px-4 font-semibold text-white hover:bg-[#6834E0]"
+                className="mt-4 h-9 bg-violet-600 px-4 font-semibold text-white hover:bg-violet-700 backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black backoffice-dark:hover:bg-[var(--backoffice-primary-bright)]"
               >
                 Thử lại
               </Button>
@@ -291,7 +291,7 @@ export default function AdminCreatorVerificationPage() {
           }
         }}
       >
-        <DialogContent className="gap-5 rounded-xl border border-gray-200 bg-white p-5 text-gray-900 shadow-xl sm:max-w-xl">
+        <DialogContent className="gap-5 rounded-xl border border-gray-200 bg-white p-5 text-gray-900 shadow-xl backoffice-dark:border-white/10 backoffice-dark:bg-[#121213] backoffice-dark:text-white sm:max-w-xl">
           <DialogHeader>
             <DialogTitle className="font-heading text-2xl font-bold tracking-tight text-gray-900">
               Xử lý hồ sơ thuế
@@ -305,7 +305,7 @@ export default function AdminCreatorVerificationPage() {
             value={identityVerifiedNote}
             onChange={(event) => setIdentityVerifiedNote(event.target.value)}
             placeholder="Ghi chú kiểm duyệt"
-            className="min-h-32 resize-none rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[#7B42FF] focus:ring-2 focus:ring-[#7B42FF]/20"
+            className="min-h-32 resize-none rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-violet-500 focus:ring-4 focus:ring-violet-100 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white backoffice-dark:focus:ring-[rgba(212,175,55,0.16)]"
           />
 
           <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
@@ -343,7 +343,7 @@ export default function AdminCreatorVerificationPage() {
           }
         }}
       >
-        <DialogContent className="gap-5 rounded-xl border border-gray-200 bg-white p-5 text-gray-900 shadow-xl sm:max-w-xl">
+        <DialogContent className="gap-5 rounded-xl border border-gray-200 bg-white p-5 text-gray-900 shadow-xl backoffice-dark:border-white/10 backoffice-dark:bg-[#121213] backoffice-dark:text-white sm:max-w-xl">
           <DialogHeader>
             <DialogTitle className="font-heading text-2xl font-bold tracking-tight text-gray-900">
               Xử lý hồ sơ thanh toán
@@ -357,17 +357,17 @@ export default function AdminCreatorVerificationPage() {
             value={paymentVerifiedNote}
             onChange={(event) => setPaymentVerifiedNote(event.target.value)}
             placeholder="Ghi chú kiểm duyệt"
-            className="min-h-32 resize-none rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[#7B42FF] focus:ring-2 focus:ring-[#7B42FF]/20"
+            className="min-h-32 resize-none rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-violet-500 focus:ring-4 focus:ring-violet-100 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white backoffice-dark:focus:ring-[rgba(212,175,55,0.16)]"
           />
 
-          <div className="grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-4">
+          <div className="grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-4 backoffice-dark:border-white/10 backoffice-dark:bg-black/25">
             <label className="flex cursor-pointer items-center gap-3 text-sm font-medium text-gray-700">
               <input
                 type="radio"
                 name="payment-result-status"
                 checked={paymentResultStatus === "VERIFIED"}
                 onChange={() => setPaymentResultStatus("VERIFIED")}
-                className="h-4 w-4 accent-[#7B42FF]"
+                className="h-4 w-4 accent-violet-600"
               />
               VERIFIED - Đã duyệt
             </label>
@@ -377,7 +377,7 @@ export default function AdminCreatorVerificationPage() {
                 name="payment-result-status"
                 checked={paymentResultStatus === "REJECTED"}
                 onChange={() => setPaymentResultStatus("REJECTED")}
-                className="h-4 w-4 accent-[#7B42FF]"
+                className="h-4 w-4 accent-violet-600"
               />
               REJECTED - Từ chối
             </label>
@@ -390,7 +390,7 @@ export default function AdminCreatorVerificationPage() {
                 submitPaymentMutation.isPending || !paymentVerifiedNote.trim()
               }
               onClick={handleSubmitPaymentVerification}
-              className="h-10 bg-[#7B42FF] px-5 font-semibold text-white hover:bg-[#6834E0]"
+              className="h-10 bg-violet-600 px-5 font-semibold text-white hover:bg-violet-700 backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black backoffice-dark:hover:bg-[var(--backoffice-primary-bright)]"
             >
               {submitPaymentMutation.isPending
                 ? "Đang cập nhật..."
@@ -413,7 +413,7 @@ function IdentityTable({
   isSubmitting: boolean;
 }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
       <div className="overflow-x-auto">
         <table className="w-full min-w-[760px] border-collapse text-left text-sm">
           <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-500">
@@ -449,7 +449,7 @@ function IdentityTable({
                         type="button"
                         disabled={isSubmitting}
                         onClick={() => onStartVerification(record)}
-                        className="h-9 bg-[#7B42FF] px-4 font-semibold text-white hover:bg-[#6834E0]"
+                        className="h-9 bg-violet-600 px-4 font-semibold text-white hover:bg-violet-700 backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black backoffice-dark:hover:bg-[var(--backoffice-primary-bright)]"
                       >
                         {isSubmitting ? "Đang xử lý..." : "Tiến hành xử lý"}
                       </Button>
@@ -488,7 +488,7 @@ function PaymentProfileTable({
   isSubmitting: boolean;
 }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
       <div className="overflow-x-auto">
         <table className="w-full min-w-[920px] border-collapse text-left text-sm">
           <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-500">
@@ -532,7 +532,7 @@ function PaymentProfileTable({
                         type="button"
                         disabled={isSubmitting}
                         onClick={() => onOpenVerification(record)}
-                        className="h-9 bg-[#7B42FF] px-4 font-semibold text-white hover:bg-[#6834E0]"
+                        className="h-9 bg-violet-600 px-4 font-semibold text-white hover:bg-violet-700 backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black backoffice-dark:hover:bg-[var(--backoffice-primary-bright)]"
                       >
                         {isSubmitting ? "Đang xử lý..." : "Kiểm duyệt"}
                       </Button>

@@ -181,7 +181,7 @@ export function SubscriptionsTable({
                       </p>
                     </div>
                   </td>
-                  <td className="px-5 py-4 font-bold text-[#007A8A]">
+                  <td className="px-5 py-4 font-bold text-violet-600 backoffice-dark:text-[var(--backoffice-primary)]">
                     {formatCurrency(subscription.price)}
                   </td>
                   <td className="px-5 py-4 text-sm font-semibold text-gray-700">
@@ -215,7 +215,7 @@ export function SubscriptionsTable({
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="border-gray-200 bg-white text-gray-700 hover:border-[#007A8A]/40 hover:bg-[#E6F7F9] hover:text-[#007A8A]"
+                        className="border-gray-200 bg-white text-gray-700 hover:border-violet-200 hover:bg-violet-50 hover:text-violet-600 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/10 backoffice-dark:hover:text-white"
                         onClick={() => onEdit(subscription)}
                       >
                         <Edit2 className="h-4 w-4" />

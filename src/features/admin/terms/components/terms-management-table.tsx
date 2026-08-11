@@ -133,17 +133,17 @@ export function TermsManagementTable() {
     <div className="w-full flex flex-col gap-6 font-sans">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">
+          <h2 className="text-3xl font-bold tracking-tight text-gray-900 backoffice-dark:text-white">
             Điều khoản & Điều kiện
           </h2>
-          <p className="text-sm text-gray-500">
+          <p className="mt-2 text-sm font-medium text-gray-500 backoffice-dark:text-white/55">
             Quản lý các điều khoản dịch vụ, điều khoản nhà sáng tạo và quy
             trình bật kiếm tiền.
           </p>
         </div>
         <button
           type="button"
-          className="flex items-center gap-2 bg-[#7B42FF] hover:bg-[#6834E0] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm"
+          className="flex items-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition-colors hover:bg-violet-700 backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black backoffice-dark:hover:bg-[var(--backoffice-primary-bright)]"
           onClick={() => handleOpenModal("create")}
         >
           <Plus className="w-4 h-4" />
@@ -151,7 +151,7 @@ export function TermsManagementTable() {
         </button>
       </div>
 
-      <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col sm:flex-row gap-4 items-center justify-between">
+      <div className="flex flex-col items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] sm:flex-row">
         <div className="relative w-full sm:max-w-md flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
           <input
@@ -159,12 +159,12 @@ export function TermsManagementTable() {
             placeholder="Tìm kiếm theo mã phiên bản (VD: 1.0)..."
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-[#F8F9FA] border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7B42FF]/20 focus:border-[#7B42FF] transition-all text-gray-900"
+            className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-4 text-sm font-medium text-slate-900 transition-all focus:border-violet-500 focus:outline-none focus:ring-4 focus:ring-violet-100 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white backoffice-dark:focus:ring-[rgba(212,175,55,0.16)]"
           />
         </div>
 
         <div className="flex w-full sm:w-auto items-center gap-3">
-          <div className="flex items-center gap-2 text-sm text-gray-600 bg-[#F8F9FA] border border-gray-200 rounded-lg px-3 py-2">
+          <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white/70">
             <Filter className="w-4 h-4 text-gray-400" />
             <select
               onChange={handleTypeChange}
@@ -181,7 +181,7 @@ export function TermsManagementTable() {
               </option>
             </select>
           </div>
-          <div className="flex items-center gap-2 text-sm text-gray-600 bg-[#F8F9FA] border border-gray-200 rounded-lg px-3 py-2">
+          <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white/70">
             <select
               onChange={handleStatusChange}
               className="bg-transparent border-none outline-none cursor-pointer"
@@ -194,17 +194,17 @@ export function TermsManagementTable() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden relative">
+      <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
         {isFetching && (
-          <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-10 flex items-center justify-center">
-            <Loader2 className="w-6 h-6 text-[#7B42FF] animate-spin" />
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/50 backdrop-blur-[1px] backoffice-dark:bg-black/30">
+            <Loader2 className="h-6 w-6 animate-spin text-violet-600 backoffice-dark:text-[var(--backoffice-primary)]" />
           </div>
         )}
 
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-[#F8F9FA] border-b border-gray-100">
+              <tr className="border-b border-slate-200 bg-slate-50 backoffice-dark:border-white/10 backoffice-dark:bg-white/5">
                 <th className="py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Mã Phiên Bản
                 </th>
@@ -222,7 +222,7 @@ export function TermsManagementTable() {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-gray-100 backoffice-dark:divide-white/10">
               {isLoading ? (
                 <tr>
                   <td colSpan={5} className="py-12 text-center text-gray-400">
@@ -248,7 +248,7 @@ export function TermsManagementTable() {
                 termsList.map((term: TermsVersion) => (
                   <tr
                     key={term.id}
-                    className="hover:bg-gray-50/50 transition-colors"
+                    className="transition-colors hover:bg-gray-50/50 backoffice-dark:hover:bg-white/[0.05]"
                   >
                     <td className="py-4 px-6">
                       <span className="font-medium text-gray-900">
@@ -259,7 +259,7 @@ export function TermsManagementTable() {
                       <span
                         className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
                           term.type === "CREATOR"
-                            ? "bg-[#F3F0FF] text-[#7B42FF]"
+                            ? "bg-violet-50 text-violet-600 backoffice-dark:bg-[var(--backoffice-primary-soft)] backoffice-dark:text-[var(--backoffice-primary)]"
                             : "bg-blue-50 text-blue-600"
                         }`}
                       >
@@ -288,7 +288,7 @@ export function TermsManagementTable() {
                       <div className="flex items-center justify-end gap-2">
                         <button
                           type="button"
-                          className="p-1.5 text-gray-400 hover:text-[#00D1FF] hover:bg-cyan-50 rounded-md transition-colors"
+                          className="rounded-md p-1.5 text-gray-400 transition-colors hover:bg-violet-50 hover:text-violet-600 backoffice-dark:hover:bg-white/10 backoffice-dark:hover:text-white"
                           title="View Details"
                           onClick={() => handleOpenModal("view", term.id)}
                         >
@@ -296,7 +296,7 @@ export function TermsManagementTable() {
                         </button>
                         <button
                           type="button"
-                          className="p-1.5 text-gray-400 hover:text-[#7B42FF] hover:bg-[#F3F0FF] rounded-md transition-colors"
+                          className="rounded-md p-1.5 text-gray-400 transition-colors hover:bg-violet-50 hover:text-violet-600 backoffice-dark:hover:bg-white/10 backoffice-dark:hover:text-white"
                           title="Edit"
                           onClick={() => handleOpenModal("edit", term.id)}
                         >
@@ -327,7 +327,7 @@ export function TermsManagementTable() {
         </div>
 
         {!isLoading && !isError && serverTermsList.length > 0 && (
-          <div className="flex items-center justify-between border-t border-gray-100 px-6 py-4 bg-[#F8F9FA]/50">
+          <div className="flex items-center justify-between border-t border-slate-200 bg-slate-50/50 px-6 py-4 backoffice-dark:border-white/10 backoffice-dark:bg-black/20">
             <span className="text-sm text-gray-500">
               Đang hiển thị{" "}
               <span className="font-medium text-gray-900">
@@ -349,7 +349,7 @@ export function TermsManagementTable() {
               >
                 Trước
               </button>
-              <div className="px-3 py-1 text-sm font-medium text-[#7B42FF] bg-[#F3F0FF] rounded-md">
+              <div className="rounded-md bg-violet-50 px-3 py-1 text-sm font-medium text-violet-600 backoffice-dark:bg-[var(--backoffice-primary-soft)] backoffice-dark:text-[var(--backoffice-primary)]">
                 Trang {filters.page} / {totalPages}
               </div>
               <button

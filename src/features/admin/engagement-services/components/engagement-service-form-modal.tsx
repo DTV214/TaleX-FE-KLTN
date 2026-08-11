@@ -41,7 +41,7 @@ const emptyFormValues: EngagementServiceFormValues = {
 };
 
 const fieldClassName =
-  "h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#007A8A] focus:ring-4 focus:ring-[#007A8A]/10 aria-invalid:border-red-500 aria-invalid:ring-red-100";
+  "h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-violet-500 focus:ring-4 focus:ring-violet-100 aria-invalid:border-red-500 aria-invalid:ring-red-100 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white backoffice-dark:focus:ring-[rgba(212,175,55,0.16)]";
 
 function getInitialFormValues(
   initialData?: EngagementService | null,
@@ -250,7 +250,7 @@ export function EngagementServiceFormModal({
                 {...form.register("description")}
                 placeholder="Mô tả cách dịch vụ này tạo tương tác cho nội dung."
                 aria-invalid={Boolean(form.formState.errors.description)}
-                className="w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm font-semibold text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#007A8A] focus:ring-4 focus:ring-[#007A8A]/10 aria-invalid:border-red-500 aria-invalid:ring-red-100"
+                className="w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm font-semibold text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-violet-500 focus:ring-4 focus:ring-violet-100 aria-invalid:border-red-500 aria-invalid:ring-red-100 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white backoffice-dark:focus:ring-[rgba(212,175,55,0.16)]"
               />
             </FormField>
           </div>
@@ -268,7 +268,7 @@ export function EngagementServiceFormModal({
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="h-11 bg-[#007A8A] px-6 font-bold text-white hover:bg-[#006673]"
+              className="h-11 bg-violet-600 px-6 font-bold text-white hover:bg-violet-700 backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black backoffice-dark:hover:bg-[var(--backoffice-primary-bright)]"
             >
               {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
               {mode === "create" ? "Tạo dịch vụ" : "Lưu thay đổi"}

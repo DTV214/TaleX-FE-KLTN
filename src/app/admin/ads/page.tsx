@@ -1,85 +1,290 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { adsApi, AdSlot } from "@/features/ads/api/ads-api";
-import { adminAdsApi, AdCampaignAdmin } from "@/features/admin/api/admin-ads-api";
-import { Trash, Check, X, Eye, EyeOff, Edit, ToggleLeft, ToggleRight, PauseCircle, PlayCircle } from "lucide-react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  Check,
+  Clock,
+  Edit,
+  Eye,
+  EyeOff,
+  Loader2,
+  Megaphone,
+  MonitorPlay,
+  PauseCircle,
+  PlayCircle,
+  Plus,
+  RefreshCw,
+  Route,
+  Settings2,
+  TimerReset,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
+import { adsApi, AdSlot } from "@/features/ads/api/ads-api";
+import {
+  adminAdsApi,
+} from "@/features/admin/api/admin-ads-api";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/shared/ui/dialog";
+
+type AdsTab = "SLOTS" | "PENDING" | "ALL" | "CONFIG";
+
+const QUICK_ROUTES = [
+  "/",
+  "/series",
+  "/comics",
+  "/watch",
+  "/read",
+  "/intro",
+  "/missions",
+  "/profile",
+  "/bookmarks",
+  "/liked",
+  "/coin-history",
+  "/premium",
+  "/premium-history",
+  "/purchase-history",
+  "/subscriptions",
+  "/creator-channel",
+  "/public-channel",
+  "/recomment-demo",
+];
+
+const tabs: Array<{ id: AdsTab; label: string; icon: typeof Megaphone }> = [
+  { id: "SLOTS", label: "Vị trí quảng cáo", icon: MonitorPlay },
+  { id: "PENDING", label: "Chờ duyệt", icon: Check },
+  { id: "ALL", label: "Tất cả chiến dịch", icon: Megaphone },
+  { id: "CONFIG", label: "Cấu hình Popup", icon: Settings2 },
+];
+
+function getErrorMessage(error: unknown) {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "response" in error &&
+    typeof error.response === "object" &&
+    error.response !== null &&
+    "data" in error.response
+  ) {
+    const data = error.response.data as { message?: string };
+    if (data.message) return data.message;
+  }
+
+  return error instanceof Error ? error.message : "Thao tác thất bại.";
+}
+
+function formatCurrency(value?: number | null) {
+  return `${new Intl.NumberFormat("vi-VN").format(value ?? 0)}đ`;
+}
+
+function formatNumber(value?: number | null) {
+  return new Intl.NumberFormat("vi-VN").format(value ?? 0);
+}
+
+function getStatusLabel(status?: string | null) {
+  switch (status) {
+    case "ACTIVE":
+      return "Đang chạy";
+    case "PAUSED":
+      return "Tạm dừng";
+    case "COMPLETED":
+      return "Hoàn tất";
+    case "REJECTED":
+      return "Từ chối";
+    case "PENDING":
+      return "Chờ duyệt";
+    default:
+      return status || "Chưa rõ";
+  }
+}
+
+function getStatusClassName(status?: string | null) {
+  switch (status) {
+    case "ACTIVE":
+      return "border-emerald-200 bg-emerald-50 text-emerald-700 backoffice-dark:border-emerald-400/30 backoffice-dark:bg-emerald-400/10 backoffice-dark:text-emerald-200";
+    case "PAUSED":
+      return "border-amber-200 bg-amber-50 text-amber-700 backoffice-dark:border-amber-400/30 backoffice-dark:bg-amber-400/10 backoffice-dark:text-amber-200";
+    case "COMPLETED":
+      return "border-sky-200 bg-sky-50 text-sky-700 backoffice-dark:border-sky-400/30 backoffice-dark:bg-sky-400/10 backoffice-dark:text-sky-200";
+    case "REJECTED":
+      return "border-red-200 bg-red-50 text-red-700 backoffice-dark:border-red-400/30 backoffice-dark:bg-red-400/10 backoffice-dark:text-red-200";
+    default:
+      return "border-slate-200 bg-slate-100 text-slate-700 backoffice-dark:border-white/10 backoffice-dark:bg-white/8 backoffice-dark:text-white/70";
+  }
+}
+
+function getSlotTypeLabel(type: AdSlot["type"]) {
+  switch (type) {
+    case "BANNER":
+      return "Banner";
+    case "VIDEO":
+      return "Video preroll";
+    case "POPUP":
+      return "Popup";
+    default:
+      return type;
+  }
+}
+
+function TabButton({
+  activeTab,
+  count,
+  icon: Icon,
+  label,
+  onClick,
+  tab,
+}: {
+  activeTab: AdsTab;
+  count?: number;
+  icon: typeof Megaphone;
+  label: string;
+  onClick: () => void;
+  tab: AdsTab;
+}) {
+  const isActive = activeTab === tab;
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-bold transition ${
+        isActive
+          ? "bg-white text-slate-950 shadow-sm backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black"
+          : "text-slate-500 hover:text-slate-900 backoffice-dark:text-white/55 backoffice-dark:hover:text-white"
+      }`}
+    >
+      <Icon className="h-4 w-4" />
+      {label}
+      {count ? (
+        <span className="rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-black text-white">
+          {count}
+        </span>
+      ) : null}
+    </button>
+  );
+}
+
+function ActionButton({
+  children,
+  className = "",
+  disabled,
+  onClick,
+  title,
+}: {
+  children: ReactNode;
+  className?: string;
+  disabled?: boolean;
+  onClick?: () => void;
+  title: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      className={`rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40 backoffice-dark:hover:bg-white/10 backoffice-dark:hover:text-white ${className}`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function EmptyState({ children }: { children: ReactNode }) {
+  return (
+    <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-6 py-12 text-center text-sm font-medium text-slate-500 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.03] backoffice-dark:text-white/55">
+      {children}
+    </div>
+  );
+}
 
 export default function AdminAdsPage() {
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<"SLOTS" | "PENDING" | "ALL" | "CONFIG">("SLOTS");
+  const [activeTab, setActiveTab] = useState<AdsTab>("SLOTS");
   const [editingSlot, setEditingSlot] = useState<AdSlot | null>(null);
-  const [previewMedia, setPreviewMedia] = useState<{ url: string; type: string } | null>(null);
+  const [previewMedia, setPreviewMedia] = useState<{
+    url: string;
+    type: string;
+  } | null>(null);
 
-  const { data: slots, isLoading: loadingSlots } = useQuery({
-    queryKey: ["admin-ad-slots"],
-    queryFn: adminAdsApi.getAllSlots,
-  });
+  const { data: slots, isLoading: loadingSlots, isFetching: fetchingSlots } =
+    useQuery({
+      queryKey: ["admin-ad-slots"],
+      queryFn: adminAdsApi.getAllSlots,
+    });
 
-  const { data: pendingCampaigns, isLoading: loadingPending } = useQuery({
+  const {
+    data: pendingCampaigns,
+    isLoading: loadingPending,
+    isFetching: fetchingPending,
+  } = useQuery({
     queryKey: ["admin-pending-campaigns"],
     queryFn: adminAdsApi.getPendingCampaigns,
   });
 
-  const { data: allCampaigns, isLoading: loadingAll } = useQuery({
+  const {
+    data: allCampaigns,
+    isLoading: loadingAll,
+    isFetching: fetchingAll,
+  } = useQuery({
     queryKey: ["admin-all-campaigns"],
     queryFn: adminAdsApi.getAllCampaigns,
   });
 
-  const createSlotMutation = useMutation({
-    mutationFn: adminAdsApi.createSlot,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-ad-slots"] });
-      toast.success("Tạo Slot thành công!");
-    },
-    onError: (err: any) => toast.error(err.response?.data?.message || err.message)
-  });
-
-
-
   const updateSlotMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<AdSlot> }) => adminAdsApi.updateSlot(id, data),
+    mutationFn: ({ id, data }: { id: string; data: Partial<AdSlot> }) =>
+      adminAdsApi.updateSlot(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-ad-slots"] });
       setEditingSlot(null);
-      toast.success("Cập nhật Slot thành công!");
+      toast.success("Cập nhật Slot thành công.");
     },
-    onError: (err: any) => toast.error(err.response?.data?.message || err.message)
+    onError: (error) => toast.error(getErrorMessage(error)),
   });
-  
+
   const patchSlotStatusMutation = useMutation({
-    mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) => adminAdsApi.patchSlotStatus(id, isActive),
+    mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
+      adminAdsApi.patchSlotStatus(id, isActive),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-ad-slots"] });
-      toast.success("Đã thay đổi trạng thái!");
+      toast.success("Đã thay đổi trạng thái.");
     },
-    onError: (err: any) => toast.error(err.response?.data?.message || err.message)
+    onError: (error) => toast.error(getErrorMessage(error)),
   });
 
   const reviewCampaignMutation = useMutation({
-    mutationFn: ({ id, status, note }: { id: string, status: "ACTIVE" | "REJECTED", note?: string }) => 
-      adminAdsApi.reviewCampaign(id, status, note),
+    mutationFn: ({
+      id,
+      note,
+      status,
+    }: {
+      id: string;
+      status: "ACTIVE" | "REJECTED";
+      note?: string;
+    }) => adminAdsApi.reviewCampaign(id, status, note),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-pending-campaigns"] });
       queryClient.invalidateQueries({ queryKey: ["admin-all-campaigns"] });
-      toast.success("Đã duyệt/Từ chối thành công!");
+      toast.success("Đã xử lý chiến dịch thành công.");
     },
-    onError: (err: any) => toast.error(err.response?.data?.message || err.message)
+    onError: (error) => toast.error(getErrorMessage(error)),
   });
 
   const patchCampaignStatusMutation = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: string }) => adminAdsApi.patchCampaignStatus(id, status),
+    mutationFn: ({ id, status }: { id: string; status: string }) =>
+      adminAdsApi.patchCampaignStatus(id, status),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-all-campaigns"] });
-      toast.success("Đã thay đổi trạng thái chiến dịch!");
+      toast.success("Đã thay đổi trạng thái chiến dịch.");
     },
-    onError: (err: any) => toast.error(err.response?.data?.message || err.message)
+    onError: (error) => toast.error(getErrorMessage(error)),
   });
 
-  // ---- Popup Route Config ----
   const { data: popupConfig, isLoading: loadingRoutes } = useQuery({
     queryKey: ["ad-popup-config"],
     queryFn: adsApi.getPopupConfig,
@@ -89,7 +294,6 @@ export default function AdminAdsPage() {
   const [delayMs, setDelayMs] = useState<number>(3000);
   const [cooldownMinutes, setCooldownMinutes] = useState<number>(15);
 
-  // Sync với data từ server khi load xong lần đầu
   const configSynced = useRef(false);
   useEffect(() => {
     if (popupConfig && !configSynced.current) {
@@ -101,34 +305,44 @@ export default function AdminAdsPage() {
   }, [popupConfig]);
 
   const updateConfigMutation = useMutation({
-    mutationFn: (config: { allowedRoutes: string[], showDelayMs: number, cooldownMinutes: number }) => adsApi.updatePopupConfig(config),
+    mutationFn: (config: {
+      allowedRoutes: string[];
+      showDelayMs: number;
+      cooldownMinutes: number;
+    }) => adsApi.updatePopupConfig(config),
     onSuccess: (data) => {
       setEditedRoutes(data.allowedRoutes);
       setDelayMs(data.showDelayMs);
       setCooldownMinutes(data.cooldownMinutes);
       queryClient.invalidateQueries({ queryKey: ["ad-popup-config"] });
-      toast.success("Đã lưu cấu hình Popup!");
+      toast.success("Đã lưu cấu hình Popup.");
     },
-    onError: (err: any) => toast.error(err.response?.data?.message || err.message)
+    onError: (error) => toast.error(getErrorMessage(error)),
   });
 
   const handleAddRoute = () => {
-    const r = routeInput.trim();
-    if (!r) return;
-    if (!r.startsWith("/")) { toast.error("Route phải bắt đầu bằng /"); return; }
-    if (editedRoutes.includes(r)) { toast.error("Route này đã tồn tại"); return; }
-    setEditedRoutes([...editedRoutes, r]);
+    const route = routeInput.trim();
+    if (!route) return;
+    if (!route.startsWith("/")) {
+      toast.error("Route phải bắt đầu bằng /");
+      return;
+    }
+    if (editedRoutes.includes(route)) {
+      toast.error("Route này đã tồn tại");
+      return;
+    }
+    setEditedRoutes([...editedRoutes, route]);
     setRouteInput("");
   };
 
   const handleRemoveRoute = (route: string) => {
-    setEditedRoutes(editedRoutes.filter(r => r !== route));
+    setEditedRoutes(editedRoutes.filter((item) => item !== route));
   };
 
-  const handleCreateOrUpdateSlot = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!editingSlot) return; // Creation is disabled
-    const formData = new FormData(e.currentTarget);
+  const handleCreateOrUpdateSlot = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!editingSlot) return;
+    const formData = new FormData(event.currentTarget);
     const data = {
       codeName: formData.get("codeName") as string,
       displayName: formData.get("displayName") as string,
@@ -141,413 +355,763 @@ export default function AdminAdsPage() {
     updateSlotMutation.mutate({ id: editingSlot.slotId, data });
   };
 
-  if (loadingSlots || loadingPending || loadingAll) return <div className="p-8">Loading...</div>;
+  const isInitialLoading = loadingSlots || loadingPending || loadingAll;
+  const slotsCount = slots?.length ?? 0;
+  const pendingCount = pendingCampaigns?.length ?? 0;
+  const campaignCount = allCampaigns?.length ?? 0;
+  const isAnyFetching = fetchingSlots || fetchingPending || fetchingAll;
+
+  if (isInitialLoading) {
+    return (
+      <div className="flex min-h-[360px] items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/55">
+        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+        Đang tải hệ thống quảng cáo...
+      </div>
+    );
+  }
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6 text-slate-800">Quản lý Hệ thống Quảng Cáo</h1>
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-8">
+      <header className="flex flex-col gap-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <p className="mb-2 text-sm font-medium text-gray-500 backoffice-dark:text-white/55">
+            Admin / Quảng cáo Direct
+          </p>
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900 backoffice-dark:text-white">
+            Quản lý Hệ thống Quảng Cáo
+          </h1>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-500 backoffice-dark:text-white/55">
+            Quản lý vị trí hiển thị, duyệt chiến dịch và cấu hình popup redirect
+            cho các trang public.
+          </p>
+        </div>
 
-      <div className="flex gap-4 border-b border-slate-200 mb-6">
-        <button 
-          onClick={() => setActiveTab("SLOTS")} 
-          className={`pb-2 px-1 font-semibold ${activeTab === "SLOTS" ? "text-indigo-600 border-b-2 border-indigo-600" : "text-slate-500 hover:text-slate-700"}`}
-        >
-          Vị trí Quảng Cáo (Slots)
-        </button>
-        <button 
-          onClick={() => setActiveTab("PENDING")} 
-          className={`pb-2 px-1 font-semibold flex items-center gap-2 ${activeTab === "PENDING" ? "text-indigo-600 border-b-2 border-indigo-600" : "text-slate-500 hover:text-slate-700"}`}
-        >
-          Chờ Duyệt 
-          {pendingCampaigns && pendingCampaigns.length > 0 && (
-            <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full">{pendingCampaigns.length}</span>
-          )}
-        </button>
-        <button 
-          onClick={() => setActiveTab("ALL")} 
-          className={`pb-2 px-1 font-semibold ${activeTab === "ALL" ? "text-indigo-600 border-b-2 border-indigo-600" : "text-slate-500 hover:text-slate-700"}`}
-        >
-        Tất cả Chiến Dịch
-        </button>
-        <button 
-          onClick={() => setActiveTab("CONFIG")} 
-          className={`pb-2 px-1 font-semibold ${activeTab === "CONFIG" ? "text-indigo-600 border-b-2 border-indigo-600" : "text-slate-500 hover:text-slate-700"}`}
-        >
-          ⚙️ Cấu hình Popup
-        </button>
-      </div>
-
-      <div className="space-y-6">
-        
-        {activeTab === "CONFIG" && (
-          <div className="max-w-2xl bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-            <h2 className="text-lg font-bold mb-1 text-slate-800">Cấu hình Popup Quảng Cáo</h2>
-            <p className="text-sm text-slate-500 mb-6">
-              Quản lý danh sách các trang được phép hiển thị Popup. Dùng <strong>prefix match</strong> — 
-              ví dụ <code className="bg-slate-100 px-1 rounded">/series</code> sẽ khớp cả <code className="bg-slate-100 px-1 rounded">/series/123</code>.
+        <div className="grid grid-cols-3 gap-3 sm:min-w-[420px]">
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 backoffice-dark:border-white/10 backoffice-dark:bg-black/25">
+            <p className="text-xs font-bold uppercase tracking-wider text-slate-500 backoffice-dark:text-white/45">
+              Slots
             </p>
+            <p className="mt-2 text-2xl font-bold text-slate-950 backoffice-dark:text-white">
+              {formatNumber(slotsCount)}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 backoffice-dark:border-white/10 backoffice-dark:bg-black/25">
+            <p className="text-xs font-bold uppercase tracking-wider text-slate-500 backoffice-dark:text-white/45">
+              Chờ duyệt
+            </p>
+            <p className="mt-2 text-2xl font-bold text-slate-950 backoffice-dark:text-white">
+              {formatNumber(pendingCount)}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 backoffice-dark:border-white/10 backoffice-dark:bg-black/25">
+            <p className="text-xs font-bold uppercase tracking-wider text-slate-500 backoffice-dark:text-white/45">
+              Chiến dịch
+            </p>
+            <p className="mt-2 text-2xl font-bold text-slate-950 backoffice-dark:text-white">
+              {formatNumber(campaignCount)}
+            </p>
+          </div>
+        </div>
+      </header>
 
-            {/* Danh sách routes hiện tại */}
-            <div className="mb-4">
-              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Routes đang bật</label>
+      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-slate-100 p-1 backoffice-dark:border-white/10 backoffice-dark:bg-black/25">
+            {tabs.map((tab) => (
+              <TabButton
+                key={tab.id}
+                activeTab={activeTab}
+                count={tab.id === "PENDING" ? pendingCount : undefined}
+                icon={tab.icon}
+                label={tab.label}
+                onClick={() => setActiveTab(tab.id)}
+                tab={tab.id}
+              />
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              queryClient.invalidateQueries({ queryKey: ["admin-ad-slots"] });
+              queryClient.invalidateQueries({
+                queryKey: ["admin-pending-campaigns"],
+              });
+              queryClient.invalidateQueries({
+                queryKey: ["admin-all-campaigns"],
+              });
+              queryClient.invalidateQueries({ queryKey: ["ad-popup-config"] });
+            }}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-50 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/10"
+          >
+            <RefreshCw
+              className={isAnyFetching ? "h-4 w-4 animate-spin" : "h-4 w-4"}
+            />
+            Làm mới
+          </button>
+        </div>
+      </section>
+
+      {activeTab === "CONFIG" && (
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#E6F7F9] text-[#007A8A] backoffice-dark:bg-[var(--backoffice-primary)]/15 backoffice-dark:text-[var(--backoffice-primary)]">
+                <Route className="h-6 w-6" />
+              </div>
+              <h2 className="mt-4 text-xl font-bold text-slate-950 backoffice-dark:text-white">
+                Cấu hình Popup Quảng Cáo
+              </h2>
+              <p className="mt-2 max-w-2xl text-sm font-medium leading-6 text-slate-500 backoffice-dark:text-white/55">
+                Quản lý danh sách route được phép hiển thị popup. Hệ thống dùng
+                prefix match, ví dụ `/series` sẽ khớp cả `/series/123`.
+              </p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 lg:w-[360px]">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 backoffice-dark:border-white/10 backoffice-dark:bg-black/25">
+                <Clock className="mb-3 h-5 w-5 text-[#007A8A] backoffice-dark:text-[var(--backoffice-primary)]" />
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-500 backoffice-dark:text-white/45">
+                  Thời gian chờ
+                </p>
+                <p className="mt-2 text-xl font-bold text-slate-950 backoffice-dark:text-white">
+                  {formatNumber(delayMs)}ms
+                </p>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 backoffice-dark:border-white/10 backoffice-dark:bg-black/25">
+                <TimerReset className="mb-3 h-5 w-5 text-[#007A8A] backoffice-dark:text-[var(--backoffice-primary)]" />
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-500 backoffice-dark:text-white/45">
+                  Cooldown
+                </p>
+                <p className="mt-2 text-xl font-bold text-slate-950 backoffice-dark:text-white">
+                  {formatNumber(cooldownMinutes)} phút
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-7 grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 backoffice-dark:border-white/10 backoffice-dark:bg-black/20">
+              <div className="mb-4 flex items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-950 backoffice-dark:text-white">
+                    Routes đang bật
+                  </h3>
+                  <p className="mt-1 text-xs font-medium text-slate-500 backoffice-dark:text-white/45">
+                    Popup chỉ hiển thị trên các route trong danh sách này.
+                  </p>
+                </div>
+                <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-slate-600 shadow-sm backoffice-dark:bg-white/10 backoffice-dark:text-white/70">
+                  {formatNumber(editedRoutes.length)}
+                </span>
+              </div>
+
               {loadingRoutes ? (
-                <div className="text-slate-400 text-sm">Đang tải...</div>
-              ) : (editedRoutes.length === 0 ? (
-                <div className="text-slate-400 text-sm italic">Chưa có route nào — Popup sẽ không hiển thị ở bất kỳ đâu.</div>
+                <div className="flex min-h-32 items-center justify-center text-sm font-medium text-slate-400">
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Đang tải...
+                </div>
+              ) : editedRoutes.length === 0 ? (
+                <EmptyState>
+                  Chưa có route nào. Popup sẽ không hiển thị ở bất kỳ đâu.
+                </EmptyState>
               ) : (
                 <div className="flex flex-wrap gap-2">
                   {editedRoutes.map((route) => (
-                    <div
+                    <span
                       key={route}
-                      className="flex items-center gap-1.5 bg-indigo-50 border border-indigo-200 text-indigo-700 text-sm px-3 py-1 rounded-full"
+                      className="inline-flex items-center gap-2 rounded-full border border-violet-200 bg-violet-50 px-3 py-1.5 font-mono text-xs font-bold text-violet-700 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.06] backoffice-dark:text-white/80"
                     >
-                      <span className="font-mono">{route}</span>
+                      {route}
                       <button
+                        type="button"
                         onClick={() => handleRemoveRoute(route)}
-                        className="text-indigo-400 hover:text-red-500 transition-colors"
-                        title="Xoá route này"
+                        className="rounded-full p-0.5 text-violet-400 transition hover:bg-red-50 hover:text-red-500 backoffice-dark:hover:bg-red-400/10"
+                        title="Xóa route này"
                       >
-                        <X className="w-3.5 h-3.5" />
+                        <X className="h-3.5 w-3.5" />
                       </button>
-                    </div>
+                    </span>
                   ))}
                 </div>
-              ))}
+              )}
             </div>
 
-            {/* Thêm route mới */}
-            <div className="flex gap-2 mb-6">
-              <input
-                type="text"
-                value={routeInput}
-                onChange={(e) => setRouteInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddRoute())}
-                placeholder="/watch, /series, /comics, ..."
-                className="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-indigo-500 font-mono"
-              />
-              <button
-                onClick={handleAddRoute}
-                className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
-              >
-                <Check className="w-4 h-4" />
-                Thêm
-              </button>
-            </div>
-
-            {/* Các route phổ biến để thêm nhanh */}
-            <div className="mb-6">
-              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Thêm nhanh</label>
-              <div className="flex flex-wrap gap-2">
-                {[
-                  "/", "/series", "/comics", "/watch", "/read", "/intro", "/missions",
-                  "/profile", "/bookmarks", "/liked", "/coin-history", "/premium",
-                  "/premium-history", "/purchase-history", "/subscriptions",
-                  "/creator-channel", "/public-channel", "/recomment-demo"
-                ].map((r) => (
-                  <button
-                    key={r}
-                    onClick={() => {
-                      if (!editedRoutes.includes(r)) setEditedRoutes([...editedRoutes, r]);
-                      else toast.info(`${r} đã có trong danh sách`);
-                    }}
-                    className={`text-xs font-mono px-3 py-1 rounded-full border transition-colors ${
-                      editedRoutes.includes(r)
-                        ? "bg-green-50 border-green-300 text-green-700 cursor-default"
-                        : "bg-slate-50 border-slate-200 text-slate-600 hover:border-indigo-400 hover:text-indigo-600"
-                    }`}
-                  >
-                    {editedRoutes.includes(r) ? "✓ " : "+ "}{r}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Configs (Delay & Cooldown) */}
-            <div className="mb-6 border-t border-slate-100 pt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-semibold text-slate-800 mb-1">Thời gian chờ (ms)</label>
-                <p className="text-[11px] text-slate-500 mb-3 leading-tight">Khi user vào trang, đợi bao lâu thì hiện? (1000ms = 1s)</p>
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
+              <h3 className="text-sm font-bold text-slate-950 backoffice-dark:text-white">
+                Thêm route
+              </h3>
+              <div className="mt-4 flex gap-2">
                 <input
-                  type="number"
-                  value={delayMs}
-                  onChange={(e) => setDelayMs(Number(e.target.value))}
-                  min={0}
-                  step={500}
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-500 font-mono"
+                  type="text"
+                  value={routeInput}
+                  onChange={(event) => setRouteInput(event.target.value)}
+                  onKeyDown={(event) =>
+                    event.key === "Enter" &&
+                    (event.preventDefault(), handleAddRoute())
+                  }
+                  placeholder="/watch, /series, /comics..."
+                  className="h-11 min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 font-mono text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-violet-500 focus:ring-4 focus:ring-violet-100 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white backoffice-dark:focus:ring-[rgba(212,175,55,0.16)]"
                 />
+                <button
+                  type="button"
+                  onClick={handleAddRoute}
+                  className="inline-flex h-11 items-center gap-2 rounded-lg bg-violet-600 px-4 text-sm font-bold text-white transition hover:bg-violet-700 backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black backoffice-dark:hover:bg-[var(--backoffice-primary-bright)]"
+                >
+                  <Plus className="h-4 w-4" />
+                  Thêm
+                </button>
               </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-slate-800 mb-1">Thời gian làm mát (Phút)</label>
-                <p className="text-[11px] text-slate-500 mb-3 leading-tight">Bao lâu sau khi đóng quảng cáo thì mới được hiện lại?</p>
-                <input
-                  type="number"
-                  value={cooldownMinutes}
-                  onChange={(e) => setCooldownMinutes(Number(e.target.value))}
-                  min={0}
-                  step={1}
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-500 font-mono"
-                />
+              <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
+                <label className="block">
+                  <span className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-500 backoffice-dark:text-white/45">
+                    Thời gian chờ (ms)
+                  </span>
+                  <input
+                    type="number"
+                    value={delayMs}
+                    onChange={(event) => setDelayMs(Number(event.target.value))}
+                    min={0}
+                    step={500}
+                    className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 font-mono text-sm font-semibold text-slate-900 outline-none transition focus:border-violet-500 focus:ring-4 focus:ring-violet-100 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white backoffice-dark:focus:ring-[rgba(212,175,55,0.16)]"
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-500 backoffice-dark:text-white/45">
+                    Cooldown sau khi đóng (phút)
+                  </span>
+                  <input
+                    type="number"
+                    value={cooldownMinutes}
+                    onChange={(event) =>
+                      setCooldownMinutes(Number(event.target.value))
+                    }
+                    min={0}
+                    step={1}
+                    className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 font-mono text-sm font-semibold text-slate-900 outline-none transition focus:border-violet-500 focus:ring-4 focus:ring-violet-100 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white backoffice-dark:focus:ring-[rgba(212,175,55,0.16)]"
+                  />
+                </label>
               </div>
-            </div>
-
-            {/* Nút lưu */}
-            <div className="flex items-center justify-between border-t border-slate-100 pt-4">
-              <button
-                onClick={() => setEditedRoutes([])}
-                className="text-sm text-red-500 hover:text-red-700 underline transition-colors"
-              >
-                Xoá tất cả routes
-              </button>
-              <button
-                onClick={() => updateConfigMutation.mutate({ allowedRoutes: editedRoutes, showDelayMs: delayMs, cooldownMinutes })}
-                disabled={updateConfigMutation.isPending}
-                className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white px-6 py-2 rounded-lg text-sm font-semibold transition-colors"
-              >
-                {updateConfigMutation.isPending ? "Đang lưu..." : "💾 Lưu cấu hình"}
-              </button>
             </div>
           </div>
-        )}
 
-        {activeTab === "SLOTS" && (
-          <div className="flex flex-col lg:flex-row gap-8">
-            {editingSlot && (
-              <div className="lg:w-1/3 shrink-0 bg-white p-6 rounded-2xl shadow-sm border border-slate-100 h-fit">
-                <h2 className="text-lg font-bold mb-4">Cập nhật Vị trí</h2>
-              
-              <form onSubmit={handleCreateOrUpdateSlot} className="mb-6 grid grid-cols-2 gap-4 text-slate-900" key={editingSlot ? editingSlot.slotId : "new"}>
-                <div>
-                  <label className="block text-sm font-semibold mb-1 text-slate-700">Mã vị trí (Code Name)</label>
-                  <input name="codeName" defaultValue={editingSlot?.codeName} placeholder="VD: BANNER_HOME" required className="w-full border border-slate-300 bg-white rounded px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-semibold mb-1 text-slate-700">Tên hiển thị</label>
-                  <input name="displayName" defaultValue={editingSlot?.displayName} placeholder="VD: Banner Trang Chủ" required className="w-full border border-slate-300 bg-white rounded px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-semibold mb-1 text-slate-700">Loại hiển thị (Type)</label>
-                  <select name="type" defaultValue={editingSlot?.type} required className="w-full border border-slate-300 bg-white rounded px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                    <option value="BANNER">BANNER (Hình ảnh)</option>
-                    <option value="VIDEO">VIDEO_PREROLL (Đầu video)</option>
-                    <option value="POPUP">POPUP (Cửa sổ bật lên)</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-semibold mb-1 text-slate-700">Giá bán (VND)</label>
-                  <input name="price" defaultValue={editingSlot?.price} type="number" placeholder="VD: 50000" required className="w-full border border-slate-300 bg-white rounded px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-                </div>
+          <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-5 backoffice-dark:border-white/10 backoffice-dark:bg-black/20">
+            <div className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-500 backoffice-dark:text-white/45">
+              Thêm nhanh
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {QUICK_ROUTES.map((route) => {
+                const selected = editedRoutes.includes(route);
 
-                <div>
-                  <label className="block text-sm font-semibold mb-1 text-slate-700">Số Views nhận được</label>
-                  <input name="totalViewOfPrice" defaultValue={editingSlot?.totalViewOfPrice} type="number" placeholder="VD: 1000" required className="w-full border border-slate-300 bg-white rounded px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-semibold mb-1 text-slate-700">Trạng thái (Status)</label>
-                  <select name="isActive" defaultValue={editingSlot ? (editingSlot.isActive ? "true" : "false") : "true"} className="w-full border border-slate-300 bg-white rounded px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                    <option value="true">Đang kích hoạt (Active)</option>
-                    <option value="false">Tạm ẩn (Inactive)</option>
-                  </select>
-                </div>
-
-                <div className="col-span-2 flex gap-3 mt-2">
-                  <button type="submit" disabled={updateSlotMutation.isPending} className="flex-1 bg-indigo-600 text-white rounded px-4 py-2 font-medium hover:bg-indigo-700">
-                    {updateSlotMutation.isPending ? "Đang lưu..." : "Lưu thay đổi"}
+                return (
+                  <button
+                    key={route}
+                    type="button"
+                    onClick={() => {
+                      if (!selected) {
+                        setEditedRoutes([...editedRoutes, route]);
+                      } else {
+                        toast.info(`${route} đã có trong danh sách`);
+                      }
+                    }}
+                    className={`rounded-full border px-3 py-1.5 font-mono text-xs font-bold transition ${
+                      selected
+                        ? "border-emerald-200 bg-emerald-50 text-emerald-700 backoffice-dark:border-emerald-400/30 backoffice-dark:bg-emerald-400/10 backoffice-dark:text-emerald-200"
+                        : "border-slate-200 bg-white text-slate-600 hover:border-violet-300 hover:text-violet-600 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/60 backoffice-dark:hover:text-white"
+                    }`}
+                  >
+                    {selected ? "Đã thêm " : "+ "}
+                    {route}
                   </button>
-                  <button type="button" onClick={() => setEditingSlot(null)} className="flex-1 bg-slate-200 text-slate-700 rounded px-4 py-2 font-medium hover:bg-slate-300">
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="mt-6 flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 backoffice-dark:border-white/10 sm:flex-row sm:items-center sm:justify-between">
+            <button
+              type="button"
+              onClick={() => setEditedRoutes([])}
+              className="inline-flex h-11 items-center justify-center rounded-lg border border-red-200 bg-red-50 px-4 text-sm font-bold text-red-600 transition hover:bg-red-100 backoffice-dark:border-red-400/30 backoffice-dark:bg-red-400/10 backoffice-dark:text-red-200"
+            >
+              Xóa tất cả routes
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                updateConfigMutation.mutate({
+                  allowedRoutes: editedRoutes,
+                  showDelayMs: delayMs,
+                  cooldownMinutes,
+                })
+              }
+              disabled={updateConfigMutation.isPending}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-violet-600 px-6 text-sm font-bold text-white shadow-sm transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60 backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black backoffice-dark:hover:bg-[var(--backoffice-primary-bright)]"
+            >
+              {updateConfigMutation.isPending && (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              )}
+              Lưu cấu hình
+            </button>
+          </div>
+        </section>
+      )}
+
+      {activeTab === "SLOTS" && (
+        <section className="grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
+          {editingSlot && (
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
+              <h2 className="text-lg font-bold text-slate-950 backoffice-dark:text-white">
+                Cập nhật vị trí
+              </h2>
+              <p className="mt-1 text-sm font-medium text-slate-500 backoffice-dark:text-white/55">
+                Điều chỉnh thông tin slot quảng cáo đang được hệ thống phục vụ.
+              </p>
+
+              <form
+                onSubmit={handleCreateOrUpdateSlot}
+                className="mt-5 grid gap-4 text-slate-900"
+                key={editingSlot.slotId}
+              >
+                <SlotField label="Mã vị trí">
+                  <input
+                    name="codeName"
+                    defaultValue={editingSlot.codeName}
+                    placeholder="BANNER_HOME"
+                    required
+                    className={inputClassName}
+                  />
+                </SlotField>
+                <SlotField label="Tên hiển thị">
+                  <input
+                    name="displayName"
+                    defaultValue={editingSlot.displayName}
+                    placeholder="Banner Trang Chủ"
+                    required
+                    className={inputClassName}
+                  />
+                </SlotField>
+                <SlotField label="Loại hiển thị">
+                  <select
+                    name="type"
+                    defaultValue={editingSlot.type}
+                    required
+                    className={inputClassName}
+                  >
+                    <option value="BANNER">Banner hình ảnh</option>
+                    <option value="VIDEO">Video preroll</option>
+                    <option value="POPUP">Popup</option>
+                  </select>
+                </SlotField>
+                <SlotField label="Giá bán (VND)">
+                  <input
+                    name="price"
+                    defaultValue={editingSlot.price}
+                    type="number"
+                    required
+                    className={inputClassName}
+                  />
+                </SlotField>
+                <SlotField label="Số views nhận được">
+                  <input
+                    name="totalViewOfPrice"
+                    defaultValue={editingSlot.totalViewOfPrice}
+                    type="number"
+                    required
+                    className={inputClassName}
+                  />
+                </SlotField>
+                <SlotField label="Trạng thái">
+                  <select
+                    name="isActive"
+                    defaultValue={editingSlot.isActive ? "true" : "false"}
+                    className={inputClassName}
+                  >
+                    <option value="true">Đang kích hoạt</option>
+                    <option value="false">Tạm ẩn</option>
+                  </select>
+                </SlotField>
+
+                <div className="mt-2 flex gap-3">
+                  <button
+                    type="submit"
+                    disabled={updateSlotMutation.isPending}
+                    className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-violet-600 px-4 text-sm font-bold text-white transition hover:bg-violet-700 disabled:opacity-60 backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black"
+                  >
+                    {updateSlotMutation.isPending && (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    )}
+                    Lưu
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditingSlot(null)}
+                    className="h-11 flex-1 rounded-lg border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-50 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/70"
+                  >
                     Hủy
                   </button>
                 </div>
               </form>
             </div>
-            )}
+          )}
 
-            <div className={`bg-white p-6 rounded-2xl shadow-sm border border-slate-100 overflow-x-auto ${editingSlot ? 'lg:w-2/3' : 'w-full'}`}>
-              <h2 className="text-lg font-bold mb-4">Danh sách Vị trí</h2>
-              <table className="w-full text-left text-sm border-collapse text-slate-800 whitespace-nowrap">
-                <thead>
-                  <tr className="border-b bg-slate-50 text-slate-600">
-                    <th className="p-3 font-semibold">Code / Tên</th>
-                    <th className="p-3 font-semibold">Giá / Views</th>
-                    <th className="p-3 font-semibold text-right">Hành động</th>
+          <div
+            className={`overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] ${
+              editingSlot ? "" : "xl:col-span-2"
+            }`}
+          >
+            <div className="border-b border-slate-200 px-6 py-4 backoffice-dark:border-white/10">
+              <h2 className="text-lg font-bold text-slate-950 backoffice-dark:text-white">
+                Danh sách vị trí
+              </h2>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[760px] text-left text-sm">
+                <thead className="border-b border-slate-200 bg-slate-50 text-xs font-bold uppercase tracking-wider text-slate-500 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/45">
+                  <tr>
+                    <th className="px-6 py-4">Code / Tên</th>
+                    <th className="px-6 py-4">Loại</th>
+                    <th className="px-6 py-4">Giá / Views</th>
+                    <th className="px-6 py-4">Trạng thái</th>
+                    <th className="px-6 py-4 text-right">Hành động</th>
                   </tr>
                 </thead>
-                <tbody>
-                  {slots?.map((slot: AdSlot) => (
-                    <tr key={slot.slotId} className={`border-b hover:bg-slate-50 transition-colors ${!slot.isActive ? 'opacity-50' : ''}`}>
-                      <td className="p-3">
-                        <div className="font-bold text-slate-900">{slot.codeName}</div>
-                        <div className="text-slate-500 text-xs">{slot.displayName}</div>
+                <tbody className="divide-y divide-slate-100 backoffice-dark:divide-white/10">
+                  {slots?.map((slot) => (
+                    <tr
+                      key={slot.slotId}
+                      className={`transition hover:bg-slate-50/80 backoffice-dark:hover:bg-white/[0.05] ${
+                        !slot.isActive ? "opacity-60" : ""
+                      }`}
+                    >
+                      <td className="px-6 py-4">
+                        <p className="font-bold text-slate-950 backoffice-dark:text-white">
+                          {slot.codeName}
+                        </p>
+                        <p className="mt-0.5 text-xs font-medium text-slate-400">
+                          {slot.displayName}
+                        </p>
                       </td>
-                      <td className="p-3 font-medium text-indigo-600">
-                        {(slot.price || 0).toLocaleString()}đ / {slot.totalViewOfPrice}
+                      <td className="px-6 py-4 font-semibold text-slate-600 backoffice-dark:text-white/65">
+                        {getSlotTypeLabel(slot.type)}
                       </td>
-                      <td className="p-3 flex gap-2 justify-end">
-                        <button onClick={() => setEditingSlot(slot)} className="text-blue-500 hover:bg-blue-50 p-2 rounded transition-colors" title="Sửa">
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button 
-                          onClick={() => patchSlotStatusMutation.mutate({ id: slot.slotId, isActive: !slot.isActive })} 
-                          className={`${slot.isActive ? 'text-amber-500 hover:bg-amber-50' : 'text-green-500 hover:bg-green-50'} p-2 rounded transition-colors`}
-                          title={slot.isActive ? "Tắt (Ẩn)" : "Bật (Hiện)"}
+                      <td className="px-6 py-4 font-semibold text-violet-600 backoffice-dark:text-[var(--backoffice-primary)]">
+                        {formatCurrency(slot.price)} / {formatNumber(slot.totalViewOfPrice)}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span
+                          className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-bold ${
+                            slot.isActive
+                              ? getStatusClassName("ACTIVE")
+                              : getStatusClassName("PAUSED")
+                          }`}
                         >
-                          {slot.isActive ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
+                          {slot.isActive ? "Đang bật" : "Đang ẩn"}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center justify-end gap-2">
+                          <ActionButton
+                            onClick={() => setEditingSlot(slot)}
+                            title="Sửa"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </ActionButton>
+                          <ActionButton
+                            onClick={() =>
+                              patchSlotStatusMutation.mutate({
+                                id: slot.slotId,
+                                isActive: !slot.isActive,
+                              })
+                            }
+                            title={slot.isActive ? "Tắt" : "Bật"}
+                            className={
+                              slot.isActive
+                                ? "hover:bg-amber-50 hover:text-amber-600"
+                                : "hover:bg-emerald-50 hover:text-emerald-600"
+                            }
+                          >
+                            {slot.isActive ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <Eye className="h-4 w-4" />
+                            )}
+                          </ActionButton>
+                        </div>
                       </td>
                     </tr>
                   ))}
+                  {(!slots || slots.length === 0) && (
+                    <tr>
+                      <td
+                        colSpan={5}
+                        className="px-6 py-14 text-center text-sm font-medium text-slate-500"
+                      >
+                        Không có slot quảng cáo.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
           </div>
-        )}
+        </section>
+      )}
 
-        {activeTab === "PENDING" && (
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 max-w-4xl">
-            <h2 className="text-lg font-bold mb-4">Duyệt Chiến Dịch Chờ</h2>
-            
-            <div className="space-y-4">
-              {pendingCampaigns?.map((campaign: AdCampaignAdmin) => (
-                <div key={campaign.campaignId} className="border border-slate-200 p-4 rounded-lg flex flex-col gap-3">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-bold text-slate-800 text-lg">{campaign.name}</h3>
-                      <p className="text-sm text-slate-500">Mục tiêu: {campaign.targetImpressions} Views</p>
-                      <p className="text-sm text-slate-500">Ngân sách: <span className="font-semibold text-indigo-600">{campaign.totalBudget?.toLocaleString()}đ</span></p>
-                    </div>
-                    <div className="flex gap-2">
-                      <button 
-                        onClick={() => reviewCampaignMutation.mutate({ id: campaign.campaignId, status: "ACTIVE" })}
-                        disabled={reviewCampaignMutation.isPending}
-                        className="bg-green-100 text-green-700 px-4 py-2 rounded font-medium hover:bg-green-200 flex items-center gap-1"
-                      >
-                        <Check className="w-4 h-4" /> Duyệt
-                      </button>
-                      <button 
-                        onClick={() => {
-                          const note = prompt("Lý do từ chối (User sẽ được hoàn tiền):");
-                          if (note) reviewCampaignMutation.mutate({ id: campaign.campaignId, status: "REJECTED", note });
-                        }}
-                        disabled={reviewCampaignMutation.isPending}
-                        className="bg-red-100 text-red-700 px-4 py-2 rounded font-medium hover:bg-red-200 flex items-center gap-1"
-                      >
-                        <X className="w-4 h-4" /> Từ chối
-                      </button>
-                    </div>
+      {activeTab === "PENDING" && (
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
+          <h2 className="text-lg font-bold text-slate-950 backoffice-dark:text-white">
+            Duyệt chiến dịch chờ
+          </h2>
+          <div className="mt-5 grid gap-4">
+            {pendingCampaigns?.map((campaign) => (
+              <div
+                key={campaign.campaignId}
+                className="rounded-2xl border border-slate-200 bg-slate-50 p-5 transition hover:bg-white backoffice-dark:border-white/10 backoffice-dark:bg-black/20 backoffice-dark:hover:bg-white/[0.05]"
+              >
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-950 backoffice-dark:text-white">
+                      {campaign.name}
+                    </h3>
+                    <p className="mt-1 text-sm font-medium text-slate-500 backoffice-dark:text-white/55">
+                      Mục tiêu: {formatNumber(campaign.targetImpressions)} views
+                    </p>
+                    <p className="mt-1 text-sm font-semibold text-violet-600 backoffice-dark:text-[var(--backoffice-primary)]">
+                      Ngân sách: {formatCurrency(campaign.totalBudget)}
+                    </p>
                   </div>
-                  {campaign.creatives && campaign.creatives.length > 0 && (
-                    <div className="mt-2 bg-slate-50 p-3 rounded text-sm">
-                      <p>
-                        <strong>Media đính kèm:</strong>{" "}
-                        <button 
-                          onClick={() => setPreviewMedia({ url: campaign.creatives[0].mediaUrl, type: campaign.creatives[0].mediaType })} 
-                          className="text-blue-600 hover:underline font-medium"
-                        >
-                          Xem thử bản xem trước ({campaign.creatives[0].mediaType})
-                        </button>
-                      </p>
-                      <p><strong>Link đích:</strong> <a href={campaign.creatives[0].targetUrl} target="_blank" className="text-blue-600 hover:underline break-all">{campaign.creatives[0].targetUrl}</a></p>
-                    </div>
-                  )}
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        reviewCampaignMutation.mutate({
+                          id: campaign.campaignId,
+                          status: "ACTIVE",
+                        })
+                      }
+                      disabled={reviewCampaignMutation.isPending}
+                      className="inline-flex h-10 items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 text-sm font-bold text-emerald-700 transition hover:bg-emerald-100 disabled:opacity-60 backoffice-dark:border-emerald-400/30 backoffice-dark:bg-emerald-400/10 backoffice-dark:text-emerald-200"
+                    >
+                      <Check className="h-4 w-4" />
+                      Duyệt
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const note = prompt(
+                          "Lý do từ chối (User sẽ được hoàn tiền):",
+                        );
+                        if (note) {
+                          reviewCampaignMutation.mutate({
+                            id: campaign.campaignId,
+                            status: "REJECTED",
+                            note,
+                          });
+                        }
+                      }}
+                      disabled={reviewCampaignMutation.isPending}
+                      className="inline-flex h-10 items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 text-sm font-bold text-red-700 transition hover:bg-red-100 disabled:opacity-60 backoffice-dark:border-red-400/30 backoffice-dark:bg-red-400/10 backoffice-dark:text-red-200"
+                    >
+                      <X className="h-4 w-4" />
+                      Từ chối
+                    </button>
+                  </div>
                 </div>
-              ))}
 
-              {(!pendingCampaigns || pendingCampaigns.length === 0) && (
-                <div className="text-center py-12 text-slate-400 bg-slate-50 rounded-lg">Không có chiến dịch nào đang chờ duyệt</div>
-              )}
-            </div>
+                {campaign.creatives && campaign.creatives.length > 0 && (
+                  <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4 text-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setPreviewMedia({
+                          url: campaign.creatives[0].mediaUrl,
+                          type: campaign.creatives[0].mediaType,
+                        })
+                      }
+                      className="font-bold text-violet-600 transition hover:text-violet-700 backoffice-dark:text-[var(--backoffice-primary)]"
+                    >
+                      Xem media đính kèm ({campaign.creatives[0].mediaType})
+                    </button>
+                    <p className="mt-2 break-all text-xs font-medium text-slate-500 backoffice-dark:text-white/55">
+                      Link đích:{" "}
+                      <a
+                        href={campaign.creatives[0].targetUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-violet-600 hover:underline backoffice-dark:text-[var(--backoffice-primary)]"
+                      >
+                        {campaign.creatives[0].targetUrl}
+                      </a>
+                    </p>
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {(!pendingCampaigns || pendingCampaigns.length === 0) && (
+              <EmptyState>Không có chiến dịch nào đang chờ duyệt.</EmptyState>
+            )}
           </div>
-        )}
+        </section>
+      )}
 
-        {activeTab === "ALL" && (
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 overflow-x-auto">
-            <h2 className="text-lg font-bold mb-4">Tất cả Chiến Dịch</h2>
-            
-            <table className="w-full text-left text-sm border-collapse text-slate-800 whitespace-nowrap">
-              <thead>
-                <tr className="border-b bg-slate-50 text-slate-600">
-                  <th className="p-3 font-semibold">Tên Chiến dịch</th>
-                  <th className="p-3 font-semibold">Ngân sách</th>
-                  <th className="p-3 font-semibold">Trạng thái</th>
-                  <th className="p-3 font-semibold text-right">Điều khiển</th>
+      {activeTab === "ALL" && (
+        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
+          <div className="border-b border-slate-200 px-6 py-4 backoffice-dark:border-white/10">
+            <h2 className="text-lg font-bold text-slate-950 backoffice-dark:text-white">
+              Tất cả chiến dịch
+            </h2>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[820px] text-left text-sm">
+              <thead className="border-b border-slate-200 bg-slate-50 text-xs font-bold uppercase tracking-wider text-slate-500 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/45">
+                <tr>
+                  <th className="px-6 py-4">Tên chiến dịch</th>
+                  <th className="px-6 py-4">Ngân sách</th>
+                  <th className="px-6 py-4">Trạng thái</th>
+                  <th className="px-6 py-4 text-right">Điều khiển</th>
                 </tr>
               </thead>
-              <tbody>
-                {allCampaigns?.map((campaign: AdCampaignAdmin) => (
-                  <tr key={campaign.campaignId} className="border-b hover:bg-slate-50 transition-colors">
-                    <td className="p-3">
-                      <div className="font-bold text-slate-900">{campaign.name}</div>
-                      <div className="text-slate-500 text-xs">Mục tiêu: {campaign.targetImpressions} views</div>
+              <tbody className="divide-y divide-slate-100 backoffice-dark:divide-white/10">
+                {allCampaigns?.map((campaign) => (
+                  <tr
+                    key={campaign.campaignId}
+                    className="transition hover:bg-slate-50/80 backoffice-dark:hover:bg-white/[0.05]"
+                  >
+                    <td className="px-6 py-4">
+                      <p className="font-bold text-slate-950 backoffice-dark:text-white">
+                        {campaign.name}
+                      </p>
+                      <p className="mt-0.5 text-xs font-medium text-slate-400">
+                        Mục tiêu: {formatNumber(campaign.targetImpressions)} views
+                      </p>
                     </td>
-                    <td className="p-3 font-medium text-indigo-600">
-                      {campaign.totalBudget?.toLocaleString()}đ
+                    <td className="px-6 py-4 font-semibold text-violet-600 backoffice-dark:text-[var(--backoffice-primary)]">
+                      {formatCurrency(campaign.totalBudget)}
                     </td>
-                    <td className="p-3">
-                      <span className={`px-2 py-1 rounded-full text-xs font-bold ${
-                        campaign.status === 'ACTIVE' ? 'bg-green-100 text-green-700' :
-                        campaign.status === 'PAUSED' ? 'bg-amber-100 text-amber-700' :
-                        campaign.status === 'COMPLETED' ? 'bg-blue-100 text-blue-700' :
-                        campaign.status === 'REJECTED' ? 'bg-red-100 text-red-700' :
-                        'bg-slate-100 text-slate-700'
-                      }`}>
-                        {campaign.status}
+                    <td className="px-6 py-4">
+                      <span
+                        className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-bold ${getStatusClassName(
+                          campaign.status,
+                        )}`}
+                      >
+                        {getStatusLabel(campaign.status)}
                       </span>
                     </td>
-                    <td className="p-3 flex justify-end gap-2">
-                      <button 
-                        onClick={() => setPreviewMedia(campaign.creatives && campaign.creatives.length > 0 ? { url: campaign.creatives[0].mediaUrl, type: campaign.creatives[0].mediaType } : null)} 
-                        className="text-slate-500 hover:text-indigo-600 p-2 rounded transition-colors"
-                        title="Xem Media"
-                      >
-                        <Eye className="w-5 h-5" />
-                      </button>
-                      
-                      {(campaign.status === 'ACTIVE' || campaign.status === 'PAUSED') && (
-                        <button
-                          onClick={() => patchCampaignStatusMutation.mutate({ 
-                            id: campaign.campaignId, 
-                            status: campaign.status === 'ACTIVE' ? 'PAUSED' : 'ACTIVE' 
-                          })}
-                          disabled={patchCampaignStatusMutation.isPending}
-                          className={`${campaign.status === 'ACTIVE' ? 'text-amber-500 hover:text-amber-600' : 'text-green-500 hover:text-green-600'} p-2 rounded transition-colors`}
-                          title={campaign.status === 'ACTIVE' ? "Tạm Dừng Quảng Cáo" : "Tiếp Tục Quảng Cáo"}
+                    <td className="px-6 py-4">
+                      <div className="flex justify-end gap-2">
+                        <ActionButton
+                          onClick={() =>
+                            setPreviewMedia(
+                              campaign.creatives && campaign.creatives.length > 0
+                                ? {
+                                    url: campaign.creatives[0].mediaUrl,
+                                    type: campaign.creatives[0].mediaType,
+                                  }
+                                : null,
+                            )
+                          }
+                          title="Xem media"
                         >
-                          {campaign.status === 'ACTIVE' ? <PauseCircle className="w-5 h-5" /> : <PlayCircle className="w-5 h-5" />}
-                        </button>
-                      )}
+                          <Eye className="h-5 w-5" />
+                        </ActionButton>
+                        {(campaign.status === "ACTIVE" ||
+                          campaign.status === "PAUSED") && (
+                          <ActionButton
+                            onClick={() =>
+                              patchCampaignStatusMutation.mutate({
+                                id: campaign.campaignId,
+                                status:
+                                  campaign.status === "ACTIVE"
+                                    ? "PAUSED"
+                                    : "ACTIVE",
+                              })
+                            }
+                            disabled={patchCampaignStatusMutation.isPending}
+                            className={
+                              campaign.status === "ACTIVE"
+                                ? "hover:bg-amber-50 hover:text-amber-600"
+                                : "hover:bg-emerald-50 hover:text-emerald-600"
+                            }
+                            title={
+                              campaign.status === "ACTIVE"
+                                ? "Tạm dừng quảng cáo"
+                                : "Tiếp tục quảng cáo"
+                            }
+                          >
+                            {campaign.status === "ACTIVE" ? (
+                              <PauseCircle className="h-5 w-5" />
+                            ) : (
+                              <PlayCircle className="h-5 w-5" />
+                            )}
+                          </ActionButton>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
                 {(!allCampaigns || allCampaigns.length === 0) && (
                   <tr>
-                    <td colSpan={4} className="p-8 text-center text-slate-400">Không có dữ liệu</td>
+                    <td
+                      colSpan={4}
+                      className="px-6 py-14 text-center text-sm font-medium text-slate-500"
+                    >
+                      Không có dữ liệu.
+                    </td>
                   </tr>
                 )}
               </tbody>
             </table>
           </div>
-        )}
+        </section>
+      )}
 
-      </div>
-
-      <Dialog open={!!previewMedia} onOpenChange={(open) => !open && setPreviewMedia(null)}>
-        <DialogContent className="bg-[#1f1f1f] text-white border-white/10 sm:max-w-3xl">
+      <Dialog
+        open={!!previewMedia}
+        onOpenChange={(open) => !open && setPreviewMedia(null)}
+      >
+        <DialogContent className="border-white/10 bg-[#1f1f1f] text-white sm:max-w-3xl">
           <DialogHeader>
             <DialogTitle>Xem trước Media</DialogTitle>
           </DialogHeader>
-          <div className="flex justify-center items-center mt-4 bg-black rounded-lg overflow-hidden min-h-[300px]">
-            {previewMedia?.type === 'VIDEO' ? (
-              <video src={previewMedia.url} controls className="max-w-full max-h-[70vh] w-auto h-auto" />
+          <div className="mt-4 flex min-h-[300px] items-center justify-center overflow-hidden rounded-lg bg-black">
+            {previewMedia?.type === "VIDEO" ? (
+              <video
+                src={previewMedia.url}
+                controls
+                className="h-auto max-h-[70vh] w-auto max-w-full"
+              />
             ) : previewMedia ? (
-              <img src={previewMedia.url} alt="Ad Preview" className="max-w-full max-h-[70vh] object-contain" />
+              // eslint-disable-next-line @next/next/no-img-element -- Admin preview uses backend-provided ad media URLs.
+              <img
+                src={previewMedia.url}
+                alt="Ad Preview"
+                className="max-h-[70vh] max-w-full object-contain"
+              />
             ) : null}
           </div>
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+const inputClassName =
+  "h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-violet-500 focus:ring-4 focus:ring-violet-100 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white backoffice-dark:focus:ring-[rgba(212,175,55,0.16)]";
+
+function SlotField({
+  children,
+  label,
+}: {
+  children: ReactNode;
+  label: string;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-2 block text-sm font-bold text-slate-700 backoffice-dark:text-white/75">
+        {label}
+      </span>
+      {children}
+    </label>
   );
 }

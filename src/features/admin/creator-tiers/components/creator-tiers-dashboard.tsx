@@ -71,17 +71,17 @@ export function CreatorTiersDashboard() {
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-8">
       <header className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
         <div className="flex gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-[#E6F7F9] text-[#007A8A]">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-600 backoffice-dark:bg-[var(--backoffice-primary-soft)] backoffice-dark:text-[var(--backoffice-primary)]">
             <ShieldCheck className="h-6 w-6" />
           </div>
           <div>
-            <p className="mb-1 text-sm font-medium text-gray-500">
+            <p className="mb-1 text-sm font-medium text-gray-500 backoffice-dark:text-white/55">
               Admin / Cấp Creator
             </p>
-            <h1 className="font-heading text-3xl font-bold tracking-tight text-gray-900">
+            <h1 className="text-3xl font-bold tracking-tight text-gray-900 backoffice-dark:text-white">
               Quản lý cấp Creator
             </h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-500">
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-500 backoffice-dark:text-white/55">
               Cấu hình cấp creator, điều kiện đạt tier và tỷ lệ chia sẻ doanh
               thu theo Premium Fund hoặc giao dịch mua trực tiếp.
             </p>
@@ -95,7 +95,7 @@ export function CreatorTiersDashboard() {
             size="lg"
             onClick={() => tiersQuery.refetch()}
             disabled={tiersQuery.isFetching}
-            className="border-gray-200 bg-white text-gray-700 shadow-sm hover:bg-gray-50"
+            className="border-gray-200 bg-white text-gray-700 shadow-sm hover:bg-gray-50 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/10"
           >
             <RefreshCw
               className={
@@ -108,7 +108,7 @@ export function CreatorTiersDashboard() {
             type="button"
             size="lg"
             onClick={openCreateModal}
-            className="bg-[#007A8A] text-white shadow-sm hover:bg-[#006673]"
+            className="bg-violet-600 text-white shadow-sm hover:bg-violet-700 backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black backoffice-dark:hover:bg-[var(--backoffice-primary-bright)]"
           >
             <Plus className="h-4 w-4" />
             Tạo mới Tier
@@ -116,9 +116,9 @@ export function CreatorTiersDashboard() {
         </div>
       </header>
 
-      <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-        <div className="mb-4 flex items-center gap-2 text-sm font-bold text-gray-900">
-          <Filter className="h-4 w-4 text-[#007A8A]" />
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
+        <div className="mb-4 flex items-center gap-2 text-sm font-bold text-gray-900 backoffice-dark:text-white">
+          <Filter className="h-4 w-4 text-violet-600 backoffice-dark:text-[var(--backoffice-primary)]" />
           Bộ lọc
         </div>
 
@@ -133,18 +133,18 @@ export function CreatorTiersDashboard() {
               value={tierNameDraft}
               onChange={(event) => setTierNameDraft(event.target.value)}
               placeholder="Tìm kiếm theo tên tier..."
-              className="h-11 w-full rounded-lg border border-gray-200 bg-white pl-10 pr-24 text-sm font-medium text-gray-900 outline-none transition focus:border-[#007A8A] focus:ring-4 focus:ring-[#007A8A]/10"
+              className="h-11 w-full rounded-lg border border-slate-200 bg-white pl-10 pr-24 text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-violet-500 focus:ring-4 focus:ring-violet-100 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white backoffice-dark:focus:ring-[rgba(212,175,55,0.16)]"
             />
             <button
               type="submit"
-              className="absolute right-1.5 top-1/2 h-8 -translate-y-1/2 rounded-md bg-[#007A8A] px-3 text-xs font-bold text-white transition hover:bg-[#006673]"
+              className="absolute right-1.5 top-1/2 h-8 -translate-y-1/2 rounded-md bg-violet-600 px-3 text-xs font-bold text-white transition hover:bg-violet-700 backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black backoffice-dark:hover:bg-[var(--backoffice-primary-bright)]"
             >
               Tìm
             </button>
           </form>
 
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-            <label className="text-xs font-bold uppercase tracking-wide text-gray-500">
+            <label className="text-xs font-bold uppercase tracking-wide text-gray-500 backoffice-dark:text-white/45">
               Trạng thái mặc định
             </label>
             <select
@@ -152,7 +152,7 @@ export function CreatorTiersDashboard() {
               onChange={(event) =>
                 handleDefaultFilterChange(event.target.value as DefaultFilter)
               }
-              className="h-11 min-w-48 rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-700 outline-none transition focus:border-[#007A8A] focus:ring-4 focus:ring-[#007A8A]/10"
+              className="h-11 min-w-48 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-violet-500 focus:ring-4 focus:ring-violet-100 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white backoffice-dark:focus:ring-[rgba(212,175,55,0.16)]"
             >
               <option value="ALL">Tất cả</option>
               <option value="DEFAULT">Mặc định</option>
@@ -163,7 +163,7 @@ export function CreatorTiersDashboard() {
       </section>
 
       {tiersQuery.isError && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-bold text-red-700">
+        <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-bold text-red-700 backoffice-dark:border-red-400/30 backoffice-dark:bg-red-400/10 backoffice-dark:text-red-200">
           Không thể tải danh sách cấp Creator. Kiểm tra API
           `/api/v1/creator-tiers`.
         </div>

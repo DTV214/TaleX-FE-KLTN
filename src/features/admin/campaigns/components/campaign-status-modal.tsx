@@ -93,7 +93,7 @@ function CampaignStatusDialog({
       >
         <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-6 py-5">
           <div>
-            <p className="text-xs font-black uppercase tracking-wider text-[#007A8A]">
+            <p className="text-xs font-black uppercase tracking-wider text-violet-600 backoffice-dark:text-[var(--backoffice-primary)]">
               Campaign Update
             </p>
             <h2 className="mt-1 text-2xl font-black text-slate-900">
@@ -153,7 +153,7 @@ function CampaignStatusDialog({
               onChange={(event) =>
                 setStatus(event.target.value as AdminCampaignStatus)
               }
-              className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#007A8A] focus:ring-4 focus:ring-[#007A8A]/10"
+              className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-violet-500 focus:ring-4 focus:ring-violet-100 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white backoffice-dark:focus:ring-[rgba(212,175,55,0.16)]"
             >
               {adminCampaignStatusOptions.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -176,7 +176,7 @@ function CampaignStatusDialog({
             <Button
               type="submit"
               disabled={isSubmitting || status === activeCampaign.status}
-              className="h-11 bg-[#007A8A] px-6 font-bold text-white hover:bg-[#006673]"
+              className="h-11 bg-violet-600 px-6 font-bold text-white hover:bg-violet-700 backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black backoffice-dark:hover:bg-[var(--backoffice-primary-bright)]"
             >
               {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
               Lưu thay đổi

@@ -202,7 +202,7 @@ export function CreatorTierFormModal({
       >
         <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-slate-100 bg-white px-6 py-5">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#007A8A]">
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-violet-600 backoffice-dark:text-[var(--backoffice-primary)]">
               Cấp Creator
             </p>
             <h2 className="mt-1 text-2xl font-black text-slate-950">
@@ -227,7 +227,7 @@ export function CreatorTierFormModal({
             >
               <input
                 {...form.register("tierName")}
-                className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#007A8A] focus:ring-4 focus:ring-[#007A8A]/10 aria-invalid:border-red-500 aria-invalid:ring-red-100"
+                className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-violet-500 focus:ring-4 focus:ring-violet-100 aria-invalid:border-red-500 aria-invalid:ring-red-100 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white backoffice-dark:focus:ring-[rgba(212,175,55,0.16)]"
                 aria-invalid={Boolean(form.formState.errors.tierName)}
                 placeholder="Ví dụ: Rank Đồng"
               />
@@ -242,7 +242,7 @@ export function CreatorTierFormModal({
                 <input
                   type="checkbox"
                   {...form.register("isDefault")}
-                  className="h-5 w-5 rounded border-slate-300 accent-[#007A8A]"
+                  className="h-5 w-5 rounded border-slate-300 accent-violet-600"
                 />
               </label>
             </FormField>
@@ -255,7 +255,7 @@ export function CreatorTierFormModal({
                 type="number"
                 {...form.register("tierLevel")}
                 disabled={isDefault}
-                className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#007A8A] focus:ring-4 focus:ring-[#007A8A]/10 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 aria-invalid:border-red-500 aria-invalid:ring-red-100"
+                className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-violet-500 focus:ring-4 focus:ring-violet-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 aria-invalid:border-red-500 aria-invalid:ring-red-100 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white backoffice-dark:disabled:bg-white/[0.06] backoffice-dark:focus:ring-[rgba(212,175,55,0.16)]"
                 aria-invalid={Boolean(form.formState.errors.tierLevel)}
               />
             </FormField>
@@ -268,7 +268,7 @@ export function CreatorTierFormModal({
                 type="number"
                 {...form.register("minFollowerRequired")}
                 disabled={isDefault}
-                className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#007A8A] focus:ring-4 focus:ring-[#007A8A]/10 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 aria-invalid:border-red-500 aria-invalid:ring-red-100"
+                className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-violet-500 focus:ring-4 focus:ring-violet-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 aria-invalid:border-red-500 aria-invalid:ring-red-100 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white backoffice-dark:disabled:bg-white/[0.06] backoffice-dark:focus:ring-[rgba(212,175,55,0.16)]"
                 aria-invalid={Boolean(
                   form.formState.errors.minFollowerRequired,
                 )}
@@ -283,7 +283,7 @@ export function CreatorTierFormModal({
                 type="number"
                 {...form.register("minViewsRequired")}
                 disabled={isDefault}
-                className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#007A8A] focus:ring-4 focus:ring-[#007A8A]/10 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 aria-invalid:border-red-500 aria-invalid:ring-red-100"
+                className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-violet-500 focus:ring-4 focus:ring-violet-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 aria-invalid:border-red-500 aria-invalid:ring-red-100 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white backoffice-dark:disabled:bg-white/[0.06] backoffice-dark:focus:ring-[rgba(212,175,55,0.16)]"
                 aria-invalid={Boolean(form.formState.errors.minViewsRequired)}
               />
             </FormField>
@@ -297,7 +297,7 @@ export function CreatorTierFormModal({
                 step="0.01"
                 {...form.register("minWatchTimeRequired")}
                 disabled={isDefault}
-                className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#007A8A] focus:ring-4 focus:ring-[#007A8A]/10 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 aria-invalid:border-red-500 aria-invalid:ring-red-100"
+                className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-violet-500 focus:ring-4 focus:ring-violet-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 aria-invalid:border-red-500 aria-invalid:ring-red-100 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white backoffice-dark:disabled:bg-white/[0.06] backoffice-dark:focus:ring-[rgba(212,175,55,0.16)]"
                 aria-invalid={Boolean(
                   form.formState.errors.minWatchTimeRequired,
                 )}
@@ -345,7 +345,7 @@ export function CreatorTierFormModal({
               type="submit"
               size="lg"
               disabled={isSubmitting}
-              className="bg-[#007A8A] text-white hover:bg-[#006673]"
+              className="bg-violet-600 text-white hover:bg-violet-700 backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black backoffice-dark:hover:bg-[var(--backoffice-primary-bright)]"
             >
               {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
               {mode === "create" ? "Tạo cấp" : "Lưu thay đổi"}
@@ -372,7 +372,7 @@ function PercentInput({
         min="0"
         max="100"
         {...registration}
-        className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 pr-10 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#007A8A] focus:ring-4 focus:ring-[#007A8A]/10 aria-invalid:border-red-500 aria-invalid:ring-red-100"
+        className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 pr-10 text-sm font-semibold text-slate-900 outline-none transition focus:border-violet-500 focus:ring-4 focus:ring-violet-100 aria-invalid:border-red-500 aria-invalid:ring-red-100 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white backoffice-dark:focus:ring-[rgba(212,175,55,0.16)]"
         aria-invalid={invalid}
       />
       <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm font-black text-slate-400">

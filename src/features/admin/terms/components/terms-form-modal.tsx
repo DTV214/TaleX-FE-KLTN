@@ -137,7 +137,7 @@ export function TermsFormModal({
 
         {(isEditMode || isViewMode) && isFetchingDetail ? (
           <div className="flex flex-col items-center justify-center p-12 flex-1">
-            <Loader2 className="w-8 h-8 text-[#7B42FF] animate-spin mb-4" />
+            <Loader2 className="mb-4 h-8 w-8 animate-spin text-violet-600 backoffice-dark:text-[var(--backoffice-primary)]" />
             <p className="text-gray-500 text-sm">Đang tải dữ liệu...</p>
           </div>
         ) : (
@@ -254,7 +254,7 @@ function TermsForm({
               onChange={(e) =>
                 setFormData({ ...formData, version: e.target.value })
               }
-              className="w-full px-3 py-2 bg-[#F8F9FA] border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#7B42FF]/20 focus:border-[#7B42FF] transition-all disabled:opacity-70 disabled:bg-gray-100"
+              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 transition-all focus:border-violet-500 focus:outline-none focus:ring-4 focus:ring-violet-100 disabled:bg-gray-100 disabled:opacity-70 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white backoffice-dark:disabled:bg-white/[0.06] backoffice-dark:focus:ring-[rgba(212,175,55,0.16)]"
             />
           </div>
 
@@ -271,7 +271,7 @@ function TermsForm({
                 })
               }
               disabled={isEditMode || isViewMode}
-              className="w-full px-3 py-2 bg-[#F8F9FA] border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#7B42FF]/20 focus:border-[#7B42FF] transition-all disabled:opacity-70 disabled:bg-gray-100 disabled:cursor-not-allowed"
+              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 transition-all focus:border-violet-500 focus:outline-none focus:ring-4 focus:ring-violet-100 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:opacity-70 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white backoffice-dark:disabled:bg-white/[0.06] backoffice-dark:focus:ring-[rgba(212,175,55,0.16)]"
             >
               {Object.entries(termsTypeLabels).map(([value, label]) => (
                 <option key={value} value={value}>
@@ -305,7 +305,7 @@ function TermsForm({
                 setFormData({ ...formData, isActive: e.target.checked })
               }
             />
-            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#7B42FF]/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#00A389]"></div>
+            <div className="peer h-6 w-11 rounded-full bg-gray-200 peer-checked:bg-violet-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-violet-100 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white backoffice-dark:bg-white/15 backoffice-dark:peer-checked:bg-[var(--backoffice-primary)] backoffice-dark:peer-focus:ring-[rgba(212,175,55,0.16)]"></div>
           </label>
         </div>
 
@@ -327,7 +327,7 @@ function TermsForm({
                 onClick={() =>
                   setFormData({ ...formData, content: termsWritingHint })
                 }
-                className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-[#7B42FF]/20 bg-[#7B42FF]/5 px-3 py-2 text-xs font-bold text-[#6B3DF0] transition hover:border-[#7B42FF]/35 hover:bg-[#7B42FF]/10"
+                className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-xs font-bold text-violet-600 transition hover:border-violet-300 hover:bg-violet-100 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-[var(--backoffice-primary)] backoffice-dark:hover:bg-white/10"
               >
                 <Sparkles className="h-3.5 w-3.5" />
                 Dùng mẫu gợi ý
@@ -367,7 +367,7 @@ Chào mừng bạn đến với **TaleX Creator Studio**.
             onChange={(e) =>
               setFormData({ ...formData, content: e.target.value })
             }
-            className="w-full flex-1 px-3 py-3 bg-[#F8F9FA] border border-gray-200 rounded-lg text-sm leading-6 text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#7B42FF]/20 focus:border-[#7B42FF] transition-all resize-none disabled:opacity-70 disabled:bg-gray-100"
+            className="w-full flex-1 resize-none rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm leading-6 text-slate-900 transition-all focus:border-violet-500 focus:outline-none focus:ring-4 focus:ring-violet-100 disabled:bg-gray-100 disabled:opacity-70 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white backoffice-dark:disabled:bg-white/[0.06] backoffice-dark:focus:ring-[rgba(212,175,55,0.16)]"
           />
 
           {renderedPreview && (
@@ -407,7 +407,7 @@ Chào mừng bạn đến với **TaleX Creator Studio**.
             <button
               type="submit"
               disabled={isSaving}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#7B42FF] rounded-lg hover:bg-[#6834E0] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#7B42FF] transition-colors disabled:opacity-70 disabled:cursor-not-allowed shadow-sm"
+              className="flex items-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition-colors hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70 backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black backoffice-dark:hover:bg-[var(--backoffice-primary-bright)]"
             >
               {isSaving ? (
                 <>

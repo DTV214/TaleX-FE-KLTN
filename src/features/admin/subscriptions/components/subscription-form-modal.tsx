@@ -157,7 +157,7 @@ export function SubscriptionFormModal({
       >
         <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-slate-100 bg-white px-6 py-5">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#007A8A]">
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-violet-600 backoffice-dark:text-[var(--backoffice-primary)]">
               Gói Premium
             </p>
             <h2 className="mt-1 text-2xl font-black text-slate-950">
@@ -183,7 +183,7 @@ export function SubscriptionFormModal({
               <input
                 {...form.register("tier")}
                 placeholder="Ví dụ: Premium Tháng"
-                className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#007A8A] focus:ring-4 focus:ring-[#007A8A]/10 aria-invalid:border-red-500 aria-invalid:ring-red-100"
+                className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-violet-500 focus:ring-4 focus:ring-violet-100 aria-invalid:border-red-500 aria-invalid:ring-red-100 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white backoffice-dark:focus:ring-[rgba(212,175,55,0.16)]"
                 aria-invalid={Boolean(form.formState.errors.tier)}
               />
             </FormField>
@@ -198,7 +198,7 @@ export function SubscriptionFormModal({
                   step="1000"
                   min="0"
                   {...form.register("price")}
-                  className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 pr-12 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#007A8A] focus:ring-4 focus:ring-[#007A8A]/10 aria-invalid:border-red-500 aria-invalid:ring-red-100"
+                  className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 pr-12 text-sm font-semibold text-slate-900 outline-none transition focus:border-violet-500 focus:ring-4 focus:ring-violet-100 aria-invalid:border-red-500 aria-invalid:ring-red-100 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white backoffice-dark:focus:ring-[rgba(212,175,55,0.16)]"
                   aria-invalid={Boolean(form.formState.errors.price)}
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-slate-500">
@@ -216,7 +216,7 @@ export function SubscriptionFormModal({
                 step="1"
                 min="0"
                 {...form.register("duration")}
-                className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#007A8A] focus:ring-4 focus:ring-[#007A8A]/10 aria-invalid:border-red-500 aria-invalid:ring-red-100"
+                className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-violet-500 focus:ring-4 focus:ring-violet-100 aria-invalid:border-red-500 aria-invalid:ring-red-100 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white backoffice-dark:focus:ring-[rgba(212,175,55,0.16)]"
                 aria-invalid={Boolean(form.formState.errors.duration)}
               />
             </FormField>
@@ -227,7 +227,7 @@ export function SubscriptionFormModal({
             >
               <select
                 {...form.register("durationUnit")}
-                className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#007A8A] focus:ring-4 focus:ring-[#007A8A]/10 aria-invalid:border-red-500 aria-invalid:ring-red-100"
+                className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-violet-500 focus:ring-4 focus:ring-violet-100 aria-invalid:border-red-500 aria-invalid:ring-red-100 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white backoffice-dark:focus:ring-[rgba(212,175,55,0.16)]"
                 aria-invalid={Boolean(form.formState.errors.durationUnit)}
               >
                 <option value="Days">Ngày</option>
@@ -245,7 +245,7 @@ export function SubscriptionFormModal({
                 rows={4}
                 {...form.register("description")}
                 placeholder="Mô tả ngắn về gói Premium..."
-                className="w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#007A8A] focus:ring-4 focus:ring-[#007A8A]/10 aria-invalid:border-red-500 aria-invalid:ring-red-100"
+                className="w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-violet-500 focus:ring-4 focus:ring-violet-100 aria-invalid:border-red-500 aria-invalid:ring-red-100 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white backoffice-dark:focus:ring-[rgba(212,175,55,0.16)]"
                 aria-invalid={Boolean(form.formState.errors.description)}
               />
             </FormField>
@@ -280,7 +280,7 @@ export function SubscriptionFormModal({
                       role="switch"
                       aria-checked="true"
                       disabled
-                      className="relative h-6 w-11 shrink-0 cursor-not-allowed rounded-full bg-[#007A8A] opacity-70"
+                      className="relative h-6 w-11 shrink-0 cursor-not-allowed rounded-full bg-violet-600 opacity-70 backoffice-dark:bg-[var(--backoffice-primary)]"
                     >
                       <span className="absolute left-6 top-1 h-4 w-4 rounded-full bg-white shadow" />
                     </button>
@@ -304,7 +304,7 @@ export function SubscriptionFormModal({
               type="submit"
               size="lg"
               disabled={isSubmitting}
-              className="bg-[#007A8A] text-white hover:bg-[#006673]"
+              className="bg-violet-600 text-white hover:bg-violet-700 backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black backoffice-dark:hover:bg-[var(--backoffice-primary-bright)]"
             >
               {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
               {mode === "create" ? "Tạo gói" : "Lưu thay đổi"}

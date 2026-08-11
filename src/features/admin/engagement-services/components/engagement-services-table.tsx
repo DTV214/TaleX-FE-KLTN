@@ -26,7 +26,7 @@ function TableSkeleton() {
   return (
     <div className="space-y-3 p-6">
       {[0, 1, 2, 3, 4].map((item) => (
-        <div key={item} className="h-14 animate-pulse rounded-lg bg-slate-100" />
+        <div key={item} className="h-14 animate-pulse rounded-lg bg-slate-100 backoffice-dark:bg-white/10" />
       ))}
     </div>
   );
@@ -58,7 +58,7 @@ export function EngagementServicesTable({
   }
 
   return (
-    <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
       {isLoading && <TableSkeleton />}
 
       {!isLoading && isError && (
@@ -69,10 +69,10 @@ export function EngagementServicesTable({
 
       {!isLoading && !isError && services.length === 0 && (
         <div className="flex min-h-72 flex-col items-center justify-center px-6 text-center">
-          <p className="text-lg font-black text-slate-900">
+          <p className="text-lg font-black text-slate-900 backoffice-dark:text-white">
             Chưa có dịch vụ tương tác
           </p>
-          <p className="mt-2 max-w-md text-sm font-medium leading-6 text-slate-500">
+          <p className="mt-2 max-w-md text-sm font-medium leading-6 text-slate-500 backoffice-dark:text-white/55">
             Tạo dịch vụ đầu tiên để admin có thể cấu hình gói đẩy tương tác cho
             nội dung TaleX.
           </p>
@@ -82,8 +82,8 @@ export function EngagementServicesTable({
       {!isLoading && !isError && services.length > 0 && (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[980px] text-left">
-            <thead className="border-b border-slate-200 bg-slate-50">
-              <tr className="text-xs font-black uppercase tracking-wider text-slate-500">
+            <thead className="border-b border-slate-200 bg-slate-50 backoffice-dark:border-white/10 backoffice-dark:bg-white/5">
+              <tr className="text-xs font-black uppercase tracking-wider text-slate-500 backoffice-dark:text-white/45">
                 <th className="px-6 py-4">Tên gói</th>
                 <th className="px-6 py-4">Giá tiền</th>
                 <th className="px-6 py-4">Target Value</th>
@@ -91,7 +91,7 @@ export function EngagementServicesTable({
                 <th className="w-[240px] px-6 py-4 text-right">Hành động</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 bg-white">
+            <tbody className="divide-y divide-slate-100 bg-white backoffice-dark:divide-white/10 backoffice-dark:bg-transparent">
               {services.map((service) => {
                 const isDeleting =
                   deleteMutation.isPending &&
@@ -100,7 +100,7 @@ export function EngagementServicesTable({
                 return (
                   <tr
                     key={service.engagementServiceId}
-                    className="transition hover:bg-slate-50/80"
+                    className="transition hover:bg-slate-50/80 backoffice-dark:hover:bg-white/[0.05]"
                   >
                     <td className="max-w-sm px-6 py-4">
                       <p className="truncate text-sm font-black text-slate-900">
@@ -137,7 +137,7 @@ export function EngagementServicesTable({
                           type="button"
                           variant="outline"
                           onClick={() => onEdit(service)}
-                          className="h-9 border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
+                          className="h-9 border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 hover:border-violet-200 hover:bg-violet-50 hover:text-violet-600 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/10 backoffice-dark:hover:text-white"
                         >
                           <Edit2 className="h-4 w-4" />
                           Sửa

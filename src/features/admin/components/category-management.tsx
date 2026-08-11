@@ -298,13 +298,13 @@ export function CategoryManagement() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 bg-slate-50">
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-950">
+          <h1 className="text-3xl font-bold tracking-tight text-slate-950 backoffice-dark:text-white">
             Quản lý Thể loại
           </h1>
-          <p className="mt-2 text-sm font-medium text-slate-500">
+          <p className="mt-2 text-sm font-medium text-slate-500 backoffice-dark:text-white/55">
             Theo dõi, tạo mới và điều chỉnh các nhóm thể loại nội dung.
           </p>
         </div>
@@ -320,10 +320,10 @@ export function CategoryManagement() {
         </button>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[780px] text-left text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50 text-xs font-bold uppercase tracking-wider text-slate-500">
+            <thead className="border-b border-slate-200 bg-slate-50 text-xs font-bold uppercase tracking-wider text-slate-500 backoffice-dark:border-white/10 backoffice-dark:bg-white/5 backoffice-dark:text-white/45">
               <tr>
                 <th className="px-6 py-4">Tên thể loại</th>
                 <th className="px-6 py-4">Mô tả</th>
@@ -374,7 +374,7 @@ export function CategoryManagement() {
                 return (
                   <tr
                     key={category.id}
-                    className="transition hover:bg-slate-50/80"
+                    className="transition hover:bg-slate-50/80 backoffice-dark:hover:bg-white/[0.05]"
                   >
                     <td className="px-6 py-4">
                       <div>

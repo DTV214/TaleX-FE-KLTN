@@ -45,7 +45,15 @@ const CONFIG_FIELD_HELP: Record<keyof TrendingConfigRequest, string> = {
   maxImpression:
     "Giới hạn lượt hiển thị tối đa trong một vòng phân phối để tránh lệch mẫu.",
   gravity:
-    "Hệ số trọng lực giúp điều chỉnh điểm xếp hạng, thường dùng để cân bằng độ mới và hiệu suất.",
+    "Hệ số điều chỉnh điểm xếp hạng, thường dùng để cân bằng độ mới và hiệu suất.",
+};
+
+const CONFIG_EXTRA_HELP = {
+  impressionRange:
+    "Khoảng lượt hiển thị tối thiểu và tối đa mà hệ thống dùng cho vòng phân phối.",
+  totalBatch: "Tổng số batch hệ thống đã ghi nhận cho cấu hình hiện tại.",
+  currentBatch: "Batch đang được dùng trong vòng phân phối hiện tại.",
+  threshold: "Ngưỡng điểm hệ thống đang áp dụng sau khi tính toán cấu hình.",
 };
 
 function toNumber(value: unknown, fallback = 0) {
@@ -139,18 +147,23 @@ function Panel({
 function MetricCard({
   helper,
   label,
+  tooltip,
   value,
 }: {
   helper?: ReactNode;
   label: string;
+  tooltip?: ReactNode;
   value: ReactNode;
 }) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 shadow-sm transition hover:border-slate-300 hover:bg-white backoffice-dark:border-white/10 backoffice-dark:bg-black/25 backoffice-dark:hover:border-white/20 backoffice-dark:hover:bg-white/[0.06]">
-      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 backoffice-dark:text-white/45">
-        {label}
-      </p>
-      <p className="mt-2 text-2xl font-semibold tracking-tight text-slate-950 backoffice-dark:text-white">
+      <div className="flex min-h-4 items-center gap-2">
+        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500 backoffice-dark:text-white/45">
+          {label}
+        </p>
+        {tooltip ? <FieldHelp>{tooltip}</FieldHelp> : null}
+      </div>
+      <p className="mt-2 whitespace-nowrap text-2xl font-semibold tracking-tight text-slate-950 backoffice-dark:text-white">
         {value}
       </p>
       {helper && (
@@ -166,15 +179,18 @@ function ConfigSummary({ config }: { config: TrendingConfig | null }) {
   return (
     <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
       <MetricCard
-        label="Min batch"
+        label="Batch tối thiểu"
+        tooltip={CONFIG_FIELD_HELP.minBatch}
         value={config ? formatNumber(config.minBatch) : "-"}
       />
       <MetricCard
-        label="Percentile"
+        label="Ngưỡng percentile"
+        tooltip={CONFIG_FIELD_HELP.percentile}
         value={config ? `${formatScore(config.percentile)}%` : "-"}
       />
       <MetricCard
-        label="Impression"
+        label="Lượt hiển thị"
+        tooltip={CONFIG_EXTRA_HELP.impressionRange}
         value={
           config
             ? `${formatNumber(config.minImpression)} - ${formatNumber(
@@ -182,10 +198,11 @@ function ConfigSummary({ config }: { config: TrendingConfig | null }) {
               )}`
             : "-"
         }
-        helper="Min - max"
+        helper="Tối thiểu - tối đa"
       />
       <MetricCard
-        label="Gravity"
+        label="Hệ số gravity"
+        tooltip={CONFIG_FIELD_HELP.gravity}
         value={config ? formatScore(config.gravity) : "-"}
       />
     </div>
@@ -267,11 +284,11 @@ function ConfigFormModal({
         <div className="grid gap-4 p-6 sm:grid-cols-2">
           {(
             [
-              ["minBatch", "Min batch", "1"],
-              ["percentile", "Percentile", "40"],
-              ["minImpression", "Min impression", "100"],
-              ["maxImpression", "Max impression", "200"],
-              ["gravity", "Gravity", "1.8"],
+              ["minBatch", "Batch tối thiểu", "1"],
+              ["percentile", "Ngưỡng percentile", "40"],
+              ["minImpression", "Hiển thị tối thiểu", "100"],
+              ["maxImpression", "Hiển thị tối đa", "200"],
+              ["gravity", "Hệ số gravity", "1.8"],
             ] as const
           ).map(([field, label, placeholder]) => (
             <label key={field} className="space-y-2">
@@ -662,9 +679,33 @@ export function AdminTrendingDashboard() {
 
         {config && (
           <div className="mt-4 grid gap-3 rounded-3xl border border-slate-200 bg-slate-50 p-4 text-sm font-semibold text-slate-500 backoffice-dark:border-white/10 backoffice-dark:bg-black/20 backoffice-dark:text-white/55 md:grid-cols-3">
-            <div>Total batch: {formatNumber(config.totalBatch)}</div>
-            <div>Current batch: {formatNumber(config.currentBatch)}</div>
-            <div>Threshold: {formatScore(config.threshold)}</div>
+            <div className="flex items-center justify-between gap-3 rounded-2xl bg-white px-4 py-3 backoffice-dark:bg-white/[0.04]">
+              <span className="flex items-center gap-2">
+                Tổng batch
+                <FieldHelp>{CONFIG_EXTRA_HELP.totalBatch}</FieldHelp>
+              </span>
+              <span className="whitespace-nowrap text-slate-950 backoffice-dark:text-white">
+                {formatNumber(config.totalBatch)}
+              </span>
+            </div>
+            <div className="flex items-center justify-between gap-3 rounded-2xl bg-white px-4 py-3 backoffice-dark:bg-white/[0.04]">
+              <span className="flex items-center gap-2">
+                Batch hiện tại
+                <FieldHelp>{CONFIG_EXTRA_HELP.currentBatch}</FieldHelp>
+              </span>
+              <span className="whitespace-nowrap text-slate-950 backoffice-dark:text-white">
+                {formatNumber(config.currentBatch)}
+              </span>
+            </div>
+            <div className="flex items-center justify-between gap-3 rounded-2xl bg-white px-4 py-3 backoffice-dark:bg-white/[0.04]">
+              <span className="flex items-center gap-2">
+                Ngưỡng hiện tại
+                <FieldHelp>{CONFIG_EXTRA_HELP.threshold}</FieldHelp>
+              </span>
+              <span className="whitespace-nowrap text-slate-950 backoffice-dark:text-white">
+                {formatScore(config.threshold)}
+              </span>
+            </div>
           </div>
         )}
       </Panel>

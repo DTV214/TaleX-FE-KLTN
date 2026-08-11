@@ -686,7 +686,7 @@ function ModerationCard({
   const PreviewIcon = isVideo ? Video : FileImage;
 
   return (
-    <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+    <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
       <button
         type="button"
         onClick={() => onViewDetail(media)}
@@ -814,7 +814,7 @@ function ApprovedMediaCard({
   const isEpisodeForceHidden = media.episodeStatus === "FORCE_HIDDEN";
 
   return (
-    <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+    <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
       <button
         type="button"
         onClick={() => onViewDetail(media)}
@@ -1017,12 +1017,12 @@ export function ModerationManagement() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 bg-slate-50">
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-slate-950">
+        <h1 className="text-3xl font-bold tracking-tight text-slate-950 backoffice-dark:text-white">
           Kiểm duyệt Nội dung
         </h1>
-        <p className="mt-2 max-w-3xl text-sm font-medium leading-6 text-slate-500">
+        <p className="mt-2 max-w-3xl text-sm font-medium leading-6 text-slate-500 backoffice-dark:text-white/55">
           Xem trước video và trang truyện đang chờ kiểm duyệt, sau đó duyệt
           hoặc từ chối kèm lý do rõ ràng.
         </p>
@@ -1082,7 +1082,7 @@ export function ModerationManagement() {
       )}
 
       {activeTab === "pending" && pendingQuery.isLoading && (
-        <div className="rounded-2xl border border-slate-200 bg-white px-6 py-16 text-center shadow-sm">
+        <div className="rounded-2xl border border-slate-200 bg-white px-6 py-16 text-center shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
           <Loader2 className="mx-auto h-7 w-7 animate-spin text-slate-400" />
           <p className="mt-3 text-sm font-semibold text-slate-500">
             Đang tải hàng đợi kiểm duyệt...
@@ -1097,7 +1097,7 @@ export function ModerationManagement() {
       )}
 
       {activeTab === "pending" && !pendingQuery.isLoading && !pendingQuery.isError && items.length === 0 && (
-        <div className="rounded-2xl border border-slate-200 bg-white px-6 py-16 text-center shadow-sm">
+        <div className="rounded-2xl border border-slate-200 bg-white px-6 py-16 text-center shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
             <Smile className="h-7 w-7" />
           </div>
@@ -1127,7 +1127,7 @@ export function ModerationManagement() {
           </div>
 
           {pendingPage && pendingPage.totalPages > 1 && (
-            <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-5 py-3 shadow-sm">
+            <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-5 py-3 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
               <p className="text-sm font-semibold text-slate-500">
                 Trang {pendingPage.pageNumber + 1} / {pendingPage.totalPages} -{" "}
                 {pendingPage.totalElements} nội dung
@@ -1214,7 +1214,7 @@ export function ModerationManagement() {
       )}
 
       {activeTab === "approved" && approvedQuery.isLoading && (
-        <div className="rounded-2xl border border-slate-200 bg-white px-6 py-16 text-center shadow-sm">
+        <div className="rounded-2xl border border-slate-200 bg-white px-6 py-16 text-center shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
           <Loader2 className="mx-auto h-7 w-7 animate-spin text-slate-400" />
           <p className="mt-3 text-sm font-semibold text-slate-500">
             Đang tải danh sách nội dung đã duyệt...
@@ -1229,7 +1229,7 @@ export function ModerationManagement() {
       )}
 
       {activeTab === "approved" && !approvedQuery.isLoading && !approvedQuery.isError && approvedItems.length === 0 && (
-        <div className="rounded-2xl border border-slate-200 bg-white px-6 py-16 text-center shadow-sm">
+        <div className="rounded-2xl border border-slate-200 bg-white px-6 py-16 text-center shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
             <ShieldAlert className="h-7 w-7" />
           </div>
@@ -1263,7 +1263,7 @@ export function ModerationManagement() {
           </div>
 
           {approvedQuery.data && approvedQuery.data.totalPages > 1 && (
-            <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-5 py-3 shadow-sm">
+            <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-5 py-3 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
               <p className="text-sm font-semibold text-slate-500">
                 Trang {approvedQuery.data.pageNumber + 1} / {approvedQuery.data.totalPages} -{" "}
                 {approvedQuery.data.totalElements} nội dung

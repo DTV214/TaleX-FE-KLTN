@@ -41,7 +41,7 @@ export function AdminMissionDashboard() {
   }
 
   return (
-    <section className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
+    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
       <div className="flex flex-col gap-4 border-b border-gray-100 p-6 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="font-heading text-xl font-bold text-gray-900">
@@ -55,7 +55,7 @@ export function AdminMissionDashboard() {
         <button
           type="button"
           onClick={() => setEditingMission(null)}
-          className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-lg bg-[#007A8A] px-5 text-sm font-bold text-white shadow-sm transition hover:bg-[#006673]"
+          className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-lg bg-violet-600 px-5 text-sm font-bold text-white shadow-sm transition hover:bg-violet-700 backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black backoffice-dark:hover:bg-[var(--backoffice-primary-bright)]"
         >
           <Plus className="h-4 w-4" />
           Thêm Nhiệm Vụ Mới
@@ -74,7 +74,7 @@ export function AdminMissionDashboard() {
         !missionsQuery.isError &&
         missionsQuery.data?.length === 0 && (
           <div className="flex min-h-72 flex-col items-center justify-center px-6 text-center">
-            <span className="flex h-14 w-14 items-center justify-center rounded-xl bg-[#E6F7F9] text-[#007A8A]">
+            <span className="flex h-14 w-14 items-center justify-center rounded-xl bg-violet-50 text-violet-600 backoffice-dark:bg-[var(--backoffice-primary-soft)] backoffice-dark:text-[var(--backoffice-primary)]">
               <Target className="h-7 w-7" />
             </span>
             <p className="mt-4 font-heading text-lg font-bold text-gray-900">
@@ -125,7 +125,7 @@ export function AdminMissionDashboard() {
                           {mission.description}
                         </p>
                       </td>
-                      <td className="px-6 py-4 text-sm font-bold text-[#007A8A]">
+                      <td className="px-6 py-4 text-sm font-bold text-violet-600 backoffice-dark:text-[var(--backoffice-primary)]">
                         {formatCoin(mission.rewardAmount)} Coin
                       </td>
                       <td className="px-6 py-4 text-sm font-semibold text-gray-700">
@@ -174,7 +174,7 @@ export function AdminMissionDashboard() {
                           <button
                             type="button"
                             onClick={() => setEditingMission(mission)}
-                            className="inline-flex h-9 items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 text-xs font-bold text-gray-600 transition hover:border-[#007A8A]/40 hover:text-[#007A8A]"
+                            className="inline-flex h-9 items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 text-xs font-bold text-gray-600 transition hover:border-violet-200 hover:bg-violet-50 hover:text-violet-600 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/10 backoffice-dark:hover:text-white"
                           >
                             <Edit2 className="h-4 w-4" />
                             Chỉnh sửa

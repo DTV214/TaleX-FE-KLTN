@@ -172,7 +172,7 @@ export function CoinEconomyForm() {
               step="1"
               aria-invalid={Boolean(errors[field.name])}
               {...register(field.name, { valueAsNumber: true })}
-              className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-900 outline-none transition focus:border-[#007A8A] focus:ring-3 focus:ring-[#007A8A]/10 aria-invalid:border-red-400 aria-invalid:ring-red-100"
+              className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-violet-500 focus:ring-4 focus:ring-violet-100 aria-invalid:border-red-400 aria-invalid:ring-red-100 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white backoffice-dark:focus:ring-[rgba(212,175,55,0.16)]"
             />
             <p className="text-xs leading-5 text-gray-500">
               {field.description}
@@ -196,7 +196,7 @@ export function CoinEconomyForm() {
         <button
           type="submit"
           disabled={updateMutation.isPending || !isDirty}
-          className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-[#007A8A] px-5 text-sm font-bold text-white shadow-sm transition hover:bg-[#006673] disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-violet-600 px-5 text-sm font-bold text-white shadow-sm transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50 backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black backoffice-dark:hover:bg-[var(--backoffice-primary-bright)]"
         >
           {updateMutation.isPending ? (
             <Loader2 className="h-4 w-4 animate-spin" />

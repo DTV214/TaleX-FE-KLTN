@@ -168,7 +168,7 @@ export function CampaignManagementTable({
               <tr>
                 <td colSpan={6} className="px-5 py-16 text-center">
                   <div className="mx-auto flex max-w-md flex-col items-center">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#E6F7F9] text-[#007A8A]">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-violet-50 text-violet-600 backoffice-dark:bg-[var(--backoffice-primary-soft)] backoffice-dark:text-[var(--backoffice-primary)]">
                       <Megaphone className="h-6 w-6" />
                     </div>
                     <p className="mt-4 text-lg font-black text-gray-900">
@@ -199,7 +199,7 @@ export function CampaignManagementTable({
                   >
                     <td className="px-5 py-5">
                       <div className="flex items-start gap-3">
-                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[#E6F7F9] text-[#007A8A]">
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-violet-50 text-violet-600 backoffice-dark:bg-[var(--backoffice-primary-soft)] backoffice-dark:text-[var(--backoffice-primary)]">
                           <Megaphone className="h-5 w-5" />
                         </div>
                         <div className="min-w-0">
@@ -227,7 +227,7 @@ export function CampaignManagementTable({
                         </div>
                         <div className="h-2 rounded-full bg-gray-100">
                           <div
-                            className="h-full rounded-full bg-[#007A8A] transition-all"
+                            className="h-full rounded-full bg-violet-600 transition-all backoffice-dark:bg-[var(--backoffice-primary)]"
                             style={{ width: `${progress}%` }}
                           />
                         </div>
@@ -252,14 +252,14 @@ export function CampaignManagementTable({
                     <td className="px-5 py-5">
                       <div className="space-y-2 text-xs font-semibold text-gray-500">
                         <p className="flex items-center gap-2">
-                          <CalendarClock className="h-4 w-4 text-[#007A8A]" />
+                          <CalendarClock className="h-4 w-4 text-violet-600 backoffice-dark:text-[var(--backoffice-primary)]" />
                           Bắt đầu:{" "}
                           <span className="font-bold text-gray-800">
                             {formatDateTime(campaign.startAt)}
                           </span>
                         </p>
                         <p className="flex items-center gap-2">
-                          <BarChart3 className="h-4 w-4 text-[#7B42FF]" />
+                          <BarChart3 className="h-4 w-4 text-violet-600 backoffice-dark:text-[var(--backoffice-primary)]" />
                           Cập nhật:{" "}
                           <span className="font-bold text-gray-800">
                             {formatDateTime(campaign.updatedAt)}
@@ -286,7 +286,7 @@ export function CampaignManagementTable({
                           variant="outline"
                           size="sm"
                           onClick={() => onEdit(campaign)}
-                          className="border-gray-200 bg-white text-gray-700 hover:border-[#007A8A]/40 hover:bg-[#E6F7F9] hover:text-[#007A8A]"
+                          className="border-gray-200 bg-white text-gray-700 hover:border-violet-200 hover:bg-violet-50 hover:text-violet-600 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/10 backoffice-dark:hover:text-white"
                         >
                           <Edit2 className="h-4 w-4" />
                           Sửa
