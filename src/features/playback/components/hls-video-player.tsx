@@ -850,7 +850,7 @@ export function HlsVideoPlayer({
         Your browser does not support the video tag.
       </video>
 
-      <VideoWatermarkOverlay viewerId={viewerId} />
+      <VideoWatermarkOverlay viewerId={viewerId} currentTime={currentTime} />
 
       {(isBuffering || !manifestUrl) && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/45">

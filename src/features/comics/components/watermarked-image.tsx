@@ -56,9 +56,7 @@ export function WatermarkedImage({ mediaId, fallbackUrl, className, ...props }: 
           ctx.globalCompositeOperation = "difference"; // Trộn màu tương phản
           ctx.fillStyle = "rgba(255, 255, 255, 0.02)"; // Chữ mờ 6% (tăng lên 1 chút để có thể nhìn thấy)
           ctx.font = "bold 40px sans-serif";
-
-          const textToDraw = `VID:${accountId}`;
-
+          const textToDraw = `${accountId}`;
           // Chỉ in 2 dòng chữ mờ trên mỗi bức ảnh (để không cản trở việc đọc truyện)
           // Nếu ảnh quá lùn thì chỉ in 1 cái ở giữa
           if (canvas.height > 400) {
@@ -76,13 +74,28 @@ export function WatermarkedImage({ mediaId, fallbackUrl, className, ...props }: 
           }
 
           ctx.globalCompositeOperation = "source-over"; // Trả lại bình thường
-        }
+        } // <-- Dấu ngoặc bị thiếu
+
+        // Vẽ Logo Website mờ ở giữa (luôn hiển thị để đánh dấu bản quyền)
+        ctx.globalCompositeOperation = "difference";
+        ctx.fillStyle = "rgba(255, 255, 255, 0.06)"; // Độ mờ 6%
+        ctx.font = "bold 60px sans-serif";
+        const brandText = "talex.pro.vn";
+        const brandMetrics = ctx.measureText(brandText);
+        
+        // Xoay chéo chữ lên trên bên phải (-30 độ)
+        ctx.save();
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.rotate((-30 * Math.PI) / 180);
+        ctx.fillText(brandText, -brandMetrics.width / 2, 0); // Vẽ ở tọa độ 0,0 vì đã translate
+        ctx.restore();
+        
+        ctx.globalCompositeOperation = "source-over";
 
         // --- Bổ sung: Nhúng LSB (Least Significant Bit) siêu bí mật ---
-        // Đảm bảo trích xuất tự động 100% thành công nếu người dùng "Lưu hình ảnh thành..."
         if (accountId) {
           const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-          const textToHide = `VID:${accountId}`;
+          const textToHide = `${accountId}`;
           const textBytes = new TextEncoder().encode(textToHide);
           const bits = [];
 

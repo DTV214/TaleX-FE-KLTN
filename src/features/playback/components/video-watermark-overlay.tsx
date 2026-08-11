@@ -1,36 +1,85 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 
 type Props = {
   viewerId?: string;
+  currentTime?: number;
 };
 
 /**
- * Hiển thị Pattern mờ mờ toàn màn hình chứa ID người xem.
- * Gần như tàng hình (chỉ 3% opacity), nhưng sẽ hiện rõ khi tăng độ tương phản (Contrast) của ảnh chụp rò rỉ.
+ * Hiển thị Watermark chống quay lén trên Video.
+ * Yêu cầu:
+ * - Nằm ngang (không xoay).
+ * - Tên website (talex.pro.vn) nằm ở vùng trên (Top 5% - 15%).
+ * - UserID (VID:xxx) nằm ở vùng dưới (Top 80% - 90%).
+ * - Tránh hoàn toàn vùng giữa (nơi tập trung tầm nhìn của user).
+ * - Nhỏ gọn, mờ 4%, chớp tắt mỗi 20s.
  */
-export const VideoWatermarkOverlay: React.FC<Props> = ({ viewerId }) => {
-  if (!viewerId) return null;
+export const VideoWatermarkOverlay: React.FC<Props> = ({ viewerId, currentTime = 0 }) => {
+  const [brandPos, setBrandPos] = useState({ top: "10%", left: "10%" });
+  const [userPos, setUserPos] = useState({ top: "85%", left: "80%" });
+  const [isVisible, setIsVisible] = useState(false);
 
-  const encodedId = encodeURIComponent(viewerId);
-  // Dùng inline SVG làm background pattern rất nhẹ và chống phần mềm chặn quảng cáo
-  const svgPattern = `
-    <svg width="250" height="150" xmlns="http://www.w3.org/2000/svg">
-      <text x="20" y="80" font-family="monospace" font-size="16" font-weight="bold" fill="white" opacity="1" transform="rotate(-25 20 80)">
-        ${encodedId}
-      </text>
-    </svg>
-  `;
-  const dataUrl = `data:image/svg+xml;utf8,${svgPattern}`;
+  useEffect(() => {
+    if (!viewerId) return;
+
+    // Bỏ qua 3 giây đầu tiên
+    if (currentTime < 3) {
+      if (isVisible) setIsVisible(false);
+      return;
+    }
+
+    // Tính toán chu kỳ 20 giây (tính từ giây thứ 3)
+    const cycleTime = (currentTime - 3) % 20;
+    
+    // Nếu nằm trong khoảng 3 giây đầu của chu kỳ thì hiện
+    const shouldBeVisible = cycleTime >= 0 && cycleTime <= 3;
+
+    if (shouldBeVisible && !isVisible) {
+      // talex.pro.vn: Vùng trên (5% - 15% chiều cao)
+      setBrandPos({
+        top: `${5 + Math.random() * 10}%`,
+        left: `${10 + Math.random() * 60}%`, // Tránh tràn biên phải
+      });
+      
+      // VID:xxx : Vùng dưới (80% - 90% chiều cao)
+      setUserPos({
+        top: `${80 + Math.random() * 10}%`,
+        left: `${10 + Math.random() * 70}%`, // Tránh tràn biên phải
+      });
+      
+      setIsVisible(true);
+    } else if (!shouldBeVisible && isVisible) {
+      setIsVisible(false);
+    }
+  }, [currentTime, viewerId, isVisible]);
+
+  if (!viewerId || !isVisible) return null;
 
   return (
-    <div
-      className="pointer-events-none absolute inset-0 z-40 mix-blend-overlay"
-      style={{
-        backgroundImage: `url('${dataUrl}')`,
-        backgroundRepeat: "repeat",
-        // Opacity 0.03 là mức cực kỳ khó thấy bằng mắt thường, không gây khó chịu
-        opacity: 0.03, 
-      }}
-    />
+    <>
+      {/* Tên miền website (Vùng trên) */}
+      <div
+        className="pointer-events-none absolute z-40 mix-blend-difference"
+        style={{
+          top: brandPos.top,
+          left: brandPos.left,
+          opacity: 0.04,
+        }}
+      >
+        <div className="text-base font-black text-white drop-shadow-md tracking-wider">talex.pro.vn</div>
+      </div>
+      
+      {/* User ID (Vùng dưới) */}
+      <div
+        className="pointer-events-none absolute z-40 mix-blend-difference"
+        style={{
+          top: userPos.top,
+          left: userPos.left,
+          opacity: 0.04,
+        }}
+      >
+        <div className="text-sm font-bold text-white drop-shadow-md">{viewerId}</div>
+      </div>
+    </>
   );
 };

@@ -92,7 +92,9 @@ export default function CopyrightCheckPage() {
           }
           
           const decodedText = new TextDecoder().decode(bytes);
-          const lsbMatch = decodedText.match(/VID:\s*([a-fA-F0-9\-]{36})/);
+          // Regex để bắt trúng định dạng UUID chuẩn (không cần tiền tố VID:)
+          const uuidRegex = /([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})/;
+          const lsbMatch = decodedText.match(uuidRegex);
           
           if (lsbMatch && lsbMatch[1]) {
             console.log("LSB Extracted Successfully!", lsbMatch[1]);
@@ -121,7 +123,7 @@ export default function CopyrightCheckPage() {
             const { data: { text } } = await worker.recognize(canvas);
             await worker.terminate();
             
-            const ocrMatch = text.match(/VID:\s*([a-fA-F0-9\-]{36})/);
+            const ocrMatch = text.match(uuidRegex);
             if (ocrMatch && ocrMatch[1]) {
               finalViewerId = ocrMatch[1];
             }
