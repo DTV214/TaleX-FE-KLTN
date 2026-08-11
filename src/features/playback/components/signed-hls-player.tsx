@@ -740,7 +740,7 @@ export function SignedHlsPlayer({
                         <CheckCircle2 className="w-3 h-3 text-zinc-400 shrink-0" />
                       </p>
                       <p className="text-[11px] text-zinc-400 font-medium mt-0.5">
-                        {(series.totalViews || series.views || 0).toLocaleString("vi-VN")} lượt xem • Mới
+                        {(series.totalViews || (series as any).views || 0).toLocaleString("vi-VN")} lượt xem • Mới
                       </p>
                     </div>
                   </Link>
