@@ -1100,15 +1100,15 @@ function SeriesGrid({
             {/* Title & Metadata directly below card (YouTube style) */}
             <div className="pt-3 px-1 flex-1 flex flex-col justify-between">
               <div>
-                <h4 className="text-sm font-bold leading-snug text-[#F5F5F5] group-hover:text-[#FACC15] line-clamp-2 transition-colors">
+                <h4 className="text-md font-bold leading-snug text-[#F5F5F5] group-hover:text-[#FACC15] line-clamp-1 transition-colors">
                   {item.title}
                 </h4>
-                <div className="flex items-center gap-1.5 mt-1 text-[10px] font-bold text-[#A1A1AA]">
-                  <span className="flex items-center gap-0.5">
-                    <Eye className="h-3 w-3 text-[#FACC15]" />
-                    {item.totalViews || 0} lượt xem
-                  </span>
-                </div>
+                {item.description && (
+                  <p className="text-[11px] font-medium text-zinc-500 mt-1 line-clamp-2 leading-relaxed">
+                    {item.description}
+                  </p>
+                )}
+
               </div>
             </div>
           </motion.button>

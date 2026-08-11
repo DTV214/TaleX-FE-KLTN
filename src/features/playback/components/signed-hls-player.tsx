@@ -8,6 +8,17 @@ import {
   Eye,
   Film,
   PlayCircle,
+  ArrowUpDown,
+  Menu,
+  Lock,
+  CheckCircle2,
+  Sparkles,
+  Star,
+  BookOpen,
+  Clapperboard,
+  Flame,
+  Zap,
+  Tv,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
@@ -149,9 +160,16 @@ export function SignedHlsPlayer({
       enabled: !compact && !!episodeDetail?.seasonId,
     });
 
+  const [isAscending, setIsAscending] = useState(true);
+
   const sortedSeasonEpisodes = useMemo(
-    () => [...seasonEpisodes].sort((a, b) => a.episodeNumber - b.episodeNumber),
-    [seasonEpisodes],
+    () =>
+      [...seasonEpisodes].sort((a, b) =>
+        isAscending
+          ? a.episodeNumber - b.episodeNumber
+          : b.episodeNumber - a.episodeNumber,
+      ),
+    [seasonEpisodes, isAscending],
   );
 
   // Quản lý trạng thái like của tập phim
@@ -187,6 +205,20 @@ export function SignedHlsPlayer({
       ) || null
     );
   }, [episodeDetail, publicSeriesData]);
+
+  const [selectedFilter, setSelectedFilter] = useState<"all" | "creator" | "newest">("all");
+
+  const filteredSeriesList = useMemo(() => {
+    if (!publicSeriesData?.content) return [];
+    const currentSeriesId = matchedSeries?.seriesId;
+    let list = publicSeriesData.content.filter(
+      (s) => s.contentType === "VIDEO" && s.seriesId !== currentSeriesId,
+    );
+    if (selectedFilter === "creator" && episodeDetail?.creatorId) {
+      list = list.filter((s) => s.creatorId === episodeDetail.creatorId);
+    }
+    return list;
+  }, [publicSeriesData, matchedSeries, selectedFilter, episodeDetail]);
 
   const creatorAccountId =
     creatorDetail?.accountId ||
@@ -295,18 +327,53 @@ export function SignedHlsPlayer({
   }, [processingPlaybackError, processingRetryCount, queryClient, queryKey]);
 
   return (
-    <div
-      className={
-        compact
-          ? "w-full"
-          : "mx-auto w-full max-w-7xl px-4 pt-24 pb-8 sm:px-6 lg:px-8 lg:pt-28"
-      }
-    >
+    <div className="relative min-h-screen w-full overflow-hidden bg-[#12100d] text-white">
+      {/* Background không khí rạp phim sang trọng chuẩn tông đen - vàng kim của TaleX */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        {/* Ảnh nền thiên hà rực rỡ */}
+        <div
+          className="absolute inset-0 bg-cover bg-center opacity-[0.22] mix-blend-screen"
+          style={{
+            backgroundImage:
+              "url(https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=2200&auto=format&fit=crop)",
+          }}
+        />
+
+        {/* Quầng sáng Gold & Đen sâu thẳm (Không có màu xanh) */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(212,175,55,0.28),transparent_42%),radial-gradient(circle_at_80%_25%,rgba(212,175,55,0.18),transparent_40%),linear-gradient(180deg,rgba(18,16,13,0.88)_0%,rgba(10,9,8,0.95)_50%,#080808_100%)]" />
+
+        {/* Ambient Gold Orbs làm sáng nhẹ nhàng tông đen sang trọng */}
+        <div className="absolute -top-24 left-[15%] h-[450px] w-[450px] rounded-full bg-[#D4AF37]/18 blur-[130px]" />
+        <div className="absolute top-[20%] right-[5%] h-[450px] w-[450px] rounded-full bg-amber-500/12 blur-[140px]" />
+
+        {/* Dải vòng vòm ánh sáng Vàng Kim */}
+        <div className="absolute -left-28 top-20 h-80 w-[800px] rotate-[-10deg] rounded-[100%] border-t-2 border-[#D4AF37]/25 shadow-[0_-10px_20px_rgba(212,175,55,0.15)]" />
+        <div className="absolute right-[-180px] top-16 h-[420px] w-[820px] rotate-[16deg] rounded-[100%] border-t-2 border-[#D4AF37]/15" />
+
+        {/* Bộ sưu tập các Icon điện ảnh Tông Vàng / Trắng phát sáng */}
+        <Sparkles className="absolute left-[12%] top-[14%] h-8 w-8 text-[#D4AF37]/45 animate-pulse drop-shadow-[0_0_8px_rgba(212,175,55,0.6)]" />
+        <Star className="absolute right-[14%] top-[16%] h-9 w-9 text-amber-300/40 drop-shadow-[0_0_10px_rgba(251,191,36,0.5)]" />
+        <Flame className="absolute right-[22%] top-[42%] h-8 w-8 text-amber-400/35 rotate-[12deg]" />
+        <BookOpen className="absolute left-[8%] top-[48%] h-8 w-8 text-amber-200/30 rotate-[-8deg]" />
+        <Clapperboard className="absolute left-[42%] top-[8%] h-9 w-9 rotate-[-12deg] text-white/25 drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]" />
+        <Film className="absolute right-[8%] top-[65%] h-10 w-10 text-[#D4AF37]/35 rotate-[15deg]" />
+        <Tv className="absolute left-[16%] top-[72%] h-9 w-9 text-amber-300/30 rotate-[-15deg]" />
+        <Zap className="absolute right-[32%] top-[12%] h-7 w-7 text-yellow-300/40 animate-bounce" />
+        <Sparkles className="absolute left-[48%] top-[78%] h-7 w-7 text-[#D4AF37]/40 animate-pulse" />
+      </div>
+
+      <div
+        className={
+          compact
+            ? "relative z-10 w-full"
+            : "relative z-10 mx-auto w-full max-w-[1600px] px-4 pt-16 pb-8 sm:px-6 lg:px-8 lg:pt-18"
+        }
+      >
       <div
         className={
           compact
             ? "w-full"
-            : "grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_340px]"
+            : "grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_380px] xl:grid-cols-[minmax(0,1fr)_410px]"
         }
       >
         <div className="min-w-0">
@@ -394,40 +461,72 @@ export function SignedHlsPlayer({
             </div>
           )}
 
-          {/* Thông tin tập phim dưới player */}
+          {/* Thông tin tập phim dưới player (Layout 1:1 chuẩn YouTube) */}
           {!compact && episodeDetail && (
-            <div className="mt-6 bg-[#121214]/40 border border-white/5 rounded-3xl p-6 md:p-8 backdrop-blur-md shadow-2xl relative overflow-hidden">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-white/5">
-                {/* Tiêu đề & Thông số */}
-                <div className="space-y-2">
-                  <h1 className="text-xl md:text-2xl font-black text-white tracking-wide">
-                    Tập {episodeDetail.episodeNumber}: {episodeDetail.title}
-                  </h1>
+            <div className="mt-4 space-y-4">
+              {/* Tiêu đề Video chuẩn YouTube */}
+              <h1 className="text-lg md:text-xl font-extrabold text-white leading-snug tracking-tight">
+                Tập {episodeDetail.episodeNumber}: {episodeDetail.title}
+              </h1>
 
-                  <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-gray-500">
-                    <span className="flex items-center gap-1.5">
-                      <Eye className="w-4 h-4 text-gray-600" />
-                      {(episodeDetail.views || 0).toLocaleString("vi-VN")} lượt
-                      xem
-                    </span>
-                    <span className="w-1.5 h-1.5 rounded-full bg-white/10" />
-                    <span className="flex items-center gap-1.5">
-                      <Calendar className="w-4 h-4 text-gray-600" />
-                      {new Date(episodeDetail.publishedAt).toLocaleDateString(
-                        "vi-VN",
-                      )}
-                    </span>
-                  </div>
+              {/* Dòng Kênh Sáng Tạo & Cụm Nút Tương Tác chuẩn YouTube */}
+              <div className="flex flex-wrap items-center justify-between gap-4 pb-2 border-b border-white/10">
+                {/* Góc Trái: Kênh & Nút Đăng Ký */}
+                <div className="flex items-center gap-3">
+                  <Link
+                    href={
+                      authUser?.accountId &&
+                      (creatorAccountId === authUser.accountId ||
+                        episodeDetail?.creatorId === authUser.accountId)
+                        ? "/creator-channel"
+                        : `/public-channel?creatorId=${creatorAccountId || episodeDetail?.creatorId}`
+                    }
+                    className="flex items-center gap-3 group cursor-pointer"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 overflow-hidden shrink-0 group-hover:border-[#D4AF37] transition-colors">
+                      <img
+                        src={
+                          creatorAvatar ||
+                          "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=80&auto=format&fit=crop"
+                        }
+                        alt={creatorName}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="min-w-0 pr-1">
+                      <h4 className="text-sm font-bold text-white group-hover:text-[#D4AF37] truncate leading-snug transition-colors flex items-center gap-1">
+                        {creatorName}
+                        <CheckCircle2 className="w-3.5 h-3.5 text-zinc-400 fill-zinc-800" />
+                      </h4>
+                      <p className="text-[11px] text-zinc-400 font-medium">
+                        {displayFollowersCount != null
+                          ? `${displayFollowersCount.toLocaleString("vi-VN")} người đăng ký`
+                          : "Nhà sáng tạo TaleX"}
+                      </p>
+                    </div>
+                  </Link>
+
+                  {!isOwner && (
+                    <div className="ml-1">
+                      <FollowButton
+                        isFollowing={isFollowing}
+                        onFollowToggle={toggleFollow}
+                        isMutating={isFollowMutating}
+                      />
+                    </div>
+                  )}
                 </div>
 
-                {/* Cụm Likes & Action */}
-                <div className="flex flex-wrap items-center gap-3 shrink-0">
-                  <LikeButton
-                    isLiked={isLiked}
-                    likeCount={totalLikes}
-                    onLikeToggle={toggleLike}
-                    isLoading={isMutating}
-                  />
+                {/* Góc Phải: Cụm Nút Hành Động Kiểu YouTube (Thích, Chia sẻ, Lưu) */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex items-center rounded-full bg-[#27272a] hover:bg-zinc-700 text-white font-semibold text-xs transition-colors">
+                    <LikeButton
+                      isLiked={isLiked}
+                      likeCount={totalLikes}
+                      onLikeToggle={toggleLike}
+                      isLoading={isMutating}
+                    />
+                  </div>
 
                   <EpisodeShareButton
                     episodeId={episodeId}
@@ -436,94 +535,41 @@ export function SignedHlsPlayer({
                   />
 
                   {likedUsers.length > 0 && (
-                    <div className="flex items-center gap-2">
-                      {/* Overlapping Avatar Group */}
-                      <div className="flex -space-x-2 overflow-hidden">
-                        {likedUsers.slice(0, 3).map((user) => (
-                          <div
-                            key={user.accountId}
-                            className="inline-block h-6 w-6 rounded-full ring-2 ring-[#0B0B0C] overflow-hidden bg-white/5"
-                          >
-                            <img
-                              src={
-                                user.avatarUrl ||
-                                "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=80&auto=format&fit=crop"
-                              }
-                              alt={user.username}
-                              className="h-full w-full object-cover"
-                            />
-                          </div>
-                        ))}
-                      </div>
-
-                      <LikedUsersModal
-                        episodeId={episodeId}
-                        trigger={
-                          <button className="text-[10px] md:text-xs font-bold text-gray-400 hover:text-white cursor-pointer transition-colors">
-                            {totalLikes > 3
-                              ? `và ${totalLikes - 3} người khác đã thích`
-                              : `đã thích`}
-                          </button>
-                        }
-                      />
-                    </div>
+                    <LikedUsersModal
+                      episodeId={episodeId}
+                      trigger={
+                        <button className="text-xs font-semibold text-gray-300 hover:text-white bg-[#27272a] hover:bg-zinc-700 px-3.5 py-2 rounded-full cursor-pointer transition-colors">
+                          {totalLikes > 3
+                            ? `+${totalLikes - 3} người thích`
+                            : `Đã thích`}
+                        </button>
+                      }
+                    />
                   )}
                 </div>
               </div>
 
-              {/* Thông tin nhà sáng tạo (Creator Profile & Follow Action) */}
-              <div className="mt-6 pt-5 border-t border-white/5 flex items-center justify-between">
-                <Link
-                  href={
-                    authUser?.accountId &&
-                    (creatorAccountId === authUser.accountId ||
-                      episodeDetail?.creatorId === authUser.accountId)
-                      ? "/creator-channel"
-                      : `/public-channel?creatorId=${creatorAccountId || episodeDetail?.creatorId}`
-                  }
-                  className="flex items-center gap-3 min-w-0 group cursor-pointer hover:opacity-90 transition-opacity"
-                >
-                  {/* Avatar */}
-                  <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 overflow-hidden relative flex-none group-hover:border-yellow-500/50 transition-colors">
-                    <img
-                      src={
-                        creatorAvatar ||
-                        "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=80&auto=format&fit=crop"
-                      }
-                      alt={creatorName}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  {/* Tên & Số người theo dõi */}
-                  <div className="min-w-0">
-                    <h4 className="text-sm font-bold text-gray-200 group-hover:text-yellow-400 truncate leading-snug transition-colors">
-                      {creatorName}
-                    </h4>
-                    <p className="text-[10px] text-gray-500 font-semibold mt-0.5">
-                      {displayFollowersCount != null
-                        ? `${displayFollowersCount.toLocaleString("vi-VN")} người theo dõi`
-                        : "Nhà sáng tạo TaleX"}
-                    </p>
-                  </div>
-                </Link>
+              {/* Hộp Mô Tả Chuẩn YouTube (YouTube Description Box) */}
+              <div className="mt-3 mb-6 rounded-2xl border border-white/5 bg-[#27272a]/60 hover:bg-[#27272a] p-4 text-xs text-zinc-200 transition-colors">
+                <div className="flex flex-wrap items-center gap-2.5 font-bold text-white text-xs mb-2">
+                  <span>
+                    {(
+                      episodeDetail.analyticData?.views ??
+                      episodeDetail.views ??
+                      0
+                    ).toLocaleString("vi-VN")}{" "}
+                    lượt xem
+                  </span>
+                  <span>•</span>
+                  <span>
+                    {new Date(episodeDetail.publishedAt).toLocaleDateString("vi-VN")}
+                  </span>
+                  <span>•</span>
+                  <span className="text-[#D4AF37]">#TaleX #PhimBo #Series</span>
+                </div>
 
-                {/* Nút Follow (Ẩn nếu người xem là tác giả) */}
-                {!isOwner && (
-                  <FollowButton
-                    isFollowing={isFollowing}
-                    onFollowToggle={toggleFollow}
-                    isMutating={isFollowMutating}
-                  />
-                )}
-              </div>
-
-              {/* Mô tả tập phim */}
-              <div className="mt-6">
-                <h3 className="text-xs font-black text-gray-400 uppercase tracking-wider mb-2">
-                  Giới thiệu tập phim
-                </h3>
                 {episodeDetail.description ? (
-                  <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-line">
+                  <p className="text-gray-300 text-xs leading-relaxed whitespace-pre-line">
                     {episodeDetail.description}
                   </p>
                 ) : (
@@ -533,89 +579,176 @@ export function SignedHlsPlayer({
                 )}
               </div>
 
+              {/* Danh sách tập phim (Phần tập nằm ngay dưới Mô tả) */}
+              <div className="mt-6 pt-4 border-t border-white/10">
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <h3 className="text-base md:text-lg font-bold text-white tracking-wide">
+                    Danh sách tập
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => setIsAscending((prev) => !prev)}
+                    className="flex items-center gap-1.5 text-xs font-bold text-gray-300 hover:text-white bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-lg border border-white/10 transition-colors cursor-pointer"
+                  >
+                    <ArrowUpDown className="w-3.5 h-3.5" />
+                    <span>Sắp xếp</span>
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-2 mb-3 text-xs font-bold text-gray-400">
+                  <Menu className="w-4 h-4 text-gray-400" />
+                  <span>Phần 1</span>
+                </div>
+
+                <div className="bg-[#121214]/80 border border-white/10 rounded-2xl p-4 backdrop-blur-sm">
+                  {isSeasonEpisodesLoading ? (
+                    <div className="flex flex-wrap gap-2.5">
+                      {Array.from({ length: 8 }).map((_, idx) => (
+                        <div
+                          key={idx}
+                          className="h-10 w-24 animate-pulse rounded-xl bg-white/5"
+                        />
+                      ))}
+                    </div>
+                  ) : sortedSeasonEpisodes.length > 0 ? (
+                    <div className="flex flex-wrap gap-2.5">
+                      {sortedSeasonEpisodes.map((ep) => {
+                        const isActive = ep.episodeId === episodeId;
+                        return (
+                          <Link
+                            key={ep.episodeId}
+                            href={`/watch/${ep.episodeId}`}
+                            className={`px-4 py-2.5 rounded-xl text-xs md:text-sm font-extrabold transition-all duration-200 flex items-center gap-1.5 ${
+                              isActive
+                                ? "bg-[#FFD700] text-black shadow-lg shadow-[#FFD700]/20 scale-[1.02]"
+                                : "bg-[#242428] text-gray-300 hover:bg-[#323238] hover:text-white border border-white/5"
+                            }`}
+                          >
+                            <span>Tập {ep.episodeNumber}</span>
+                            {ep.unlockType === "PAID" && (
+                              <Lock className="w-3.5 h-3.5 text-amber-500/90" />
+                            )}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 text-xs italic">
+                      Chưa có danh sách tập phim.
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Banner Quảng Cáo */}
               <AdSlot
                 slotId="mock-watch-bottom"
                 format="horizontal"
-                className="mt-4 mb-8"
+                className="mt-6 mb-8"
               />
 
-              {/* Phần bình luận tập phim */}
+              {/* Phần Bình luận Tập Phim */}
               <EpisodeCommentsSection episodeId={episodeId} className="mt-8" />
             </div>
           )}
         </div>
 
+        {/* Thanh Bên Góc Phải (Right Sidebar Chuẩn YouTube) */}
         {!compact && episodeDetail && (
-          <aside className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#121214]/80 p-3 shadow-2xl lg:sticky lg:top-24">
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#1a1a1c] to-transparent" />
-            <Film className="pointer-events-none absolute -right-8 top-8 h-32 w-32 text-white opacity-5" />
+          <aside className="relative space-y-4 lg:sticky lg:top-18">
+            {/* Banner QC Quảng cáo Sidebar */}
+            <AdSlot
+              slotId="mock-watch-sidebar"
+              format="horizontal"
+              className="rounded-2xl overflow-hidden shadow-lg border border-white/10"
+            />
 
-            <div className="relative z-10 mb-4 flex items-center justify-between gap-3">
-              <h2 className="text-sm font-semibold text-white">
-                Danh sách tập
-              </h2>
-              <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] font-bold text-white/50">
-                {sortedSeasonEpisodes.length} tập
-              </span>
+            {/* Thanh Chip Lọc Thể Loại YouTube style */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar text-xs font-bold">
+              <button
+                type="button"
+                onClick={() => setSelectedFilter("all")}
+                className={`px-3.5 py-1.5 rounded-lg whitespace-nowrap transition-colors cursor-pointer ${
+                  selectedFilter === "all"
+                    ? "bg-white text-black font-extrabold"
+                    : "bg-[#27272a] text-white hover:bg-zinc-700"
+                }`}
+              >
+                Tất cả
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedFilter("creator")}
+                className={`px-3.5 py-1.5 rounded-lg whitespace-nowrap transition-colors cursor-pointer ${
+                  selectedFilter === "creator"
+                    ? "bg-white text-black font-extrabold"
+                    : "bg-[#27272a] text-white hover:bg-zinc-700"
+                }`}
+              >
+                Của {creatorName.slice(0, 12)}
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedFilter("newest")}
+                className={`px-3.5 py-1.5 rounded-lg whitespace-nowrap transition-colors cursor-pointer ${
+                  selectedFilter === "newest"
+                    ? "bg-white text-black font-extrabold"
+                    : "bg-[#27272a] text-white hover:bg-zinc-700"
+                }`}
+              >
+                Video liên quan
+              </button>
             </div>
 
-            <div className="relative z-10 max-h-[560px] space-y-2 overflow-y-auto pr-1">
-              {isSeasonEpisodesLoading ? (
-                Array.from({ length: 5 }).map((_, index) => (
-                  <div
-                    key={index}
-                    className="h-[74px] animate-pulse rounded-xl bg-white/[0.04]"
-                  />
-                ))
-              ) : sortedSeasonEpisodes.length > 0 ? (
-                sortedSeasonEpisodes.map((episode) => {
-                  const isActive = episode.episodeId === episodeId;
-                  return (
-                    <Link
-                      key={episode.episodeId}
-                      href={`/watch/${episode.episodeId}`}
-                      className={`group flex gap-2 rounded-xl border p-2 transition-all ${
-                        isActive
-                          ? "border-[#D4AF37]/40 bg-[#D4AF37]/10"
-                          : "border-white/5 bg-white/[0.02] hover:border-white/10 hover:bg-white/[0.05]"
-                      }`}
-                    >
-                      <div className="relative aspect-video w-20 shrink-0 overflow-hidden rounded-lg bg-white/5">
-                        {episode.thumbnail || matchedSeries?.coverUrl ? (
-                          <img
-                            src={episode.thumbnail || matchedSeries?.coverUrl}
-                            alt={episode.title}
-                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                          />
-                        ) : (
-                          <div className="flex h-full w-full items-center justify-center">
-                            <Film className="h-5 w-5 text-white/25" />
-                          </div>
-                        )}
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 transition-opacity group-hover:opacity-100">
-                          <PlayCircle className="h-6 w-6 text-white" />
+            {/* Danh Sách Thẻ Phim Đề Xuất Dọc Kiểu YouTube */}
+            <div className="space-y-3">
+              {filteredSeriesList.length > 0 ? (
+                filteredSeriesList.map((series) => (
+                  <Link
+                    key={series.seriesId}
+                    href={`/series/${series.seriesId}`}
+                    className="group flex gap-3 rounded-xl hover:bg-white/[0.06] p-1.5 transition-all cursor-pointer"
+                  >
+                    {/* 16:9 Thumbnail Youtube style */}
+                    <div className="relative aspect-video w-40 shrink-0 overflow-hidden rounded-xl bg-zinc-900 border border-white/10">
+                      {series.coverUrl || series.bannerUrl ? (
+                        <img
+                          src={series.coverUrl || series.bannerUrl}
+                          alt={series.title}
+                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center">
+                          <Film className="h-6 w-6 text-white/20" />
                         </div>
+                      )}
+                      {/* Thời lượng video badge */}
+                      <div className="absolute bottom-1 right-1 bg-black/80 text-white font-extrabold text-[10px] px-1.5 py-0.5 rounded">
+                        15:00
                       </div>
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+                        <PlayCircle className="h-7 w-7 text-[#D4AF37] shadow-md" />
+                      </div>
+                    </div>
 
-                      <div className="min-w-0 flex-1 py-0.5">
-                        <p
-                          className={`line-clamp-2 text-xs font-bold leading-snug ${
-                            isActive ? "text-[#D4AF37]" : "text-white"
-                          }`}
-                        >
-                          Tập {episode.episodeNumber}: {episode.title}
-                        </p>
-                        <p className="mt-1 text-xs font-medium text-white/40">
-                          {(episode.views || 0).toLocaleString("vi-VN")} lượt
-                          xem
-                        </p>
-                      </div>
-                    </Link>
-                  );
-                })
+                    {/* Chi tiết thông tin phim */}
+                    <div className="min-w-0 flex-1 flex flex-col justify-start py-0.5">
+                      <h4 className="line-clamp-2 text-xs font-bold text-white group-hover:text-[#D4AF37] transition-colors leading-snug">
+                        {series.title}
+                      </h4>
+                      <p className="mt-1 text-[11px] font-medium text-zinc-400 flex items-center gap-1">
+                        <span className="truncate">{series.creatorName || "TaleX Official"}</span>
+                        <CheckCircle2 className="w-3 h-3 text-zinc-400 shrink-0" />
+                      </p>
+                      <p className="text-[11px] text-zinc-400 font-medium mt-0.5">
+                        {(series.totalViews || (series as any).views || 0).toLocaleString("vi-VN")} lượt xem • Mới
+                      </p>
+                    </div>
+                  </Link>
+                ))
               ) : (
-                <div className="rounded-xl border border-white/5 bg-white/[0.02] p-4 text-sm text-white/45">
-                  Chưa có danh sách tập cho phần này.
+                <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-4 text-xs text-zinc-400 text-center">
+                  Chưa có phim đề xuất khác.
                 </div>
               )}
             </div>
@@ -623,5 +756,6 @@ export function SignedHlsPlayer({
         )}
       </div>
     </div>
-  );
+  </div>
+);
 }
