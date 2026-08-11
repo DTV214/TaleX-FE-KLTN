@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { MessageSquare, Send, Loader2, RefreshCw } from "lucide-react";
+import { MessageSquare, Loader2, ArrowUpDown, Smile } from "lucide-react";
 import { useAuthStore, isFullProfile } from "@/features/auth/store/auth.store";
 import { useEpisodeComments, useCommentMutations } from "../hooks/use-comments";
 import { CommentItem } from "./comment-item";
@@ -19,6 +19,7 @@ export function EpisodeCommentsSection({
   const user = isFullProfile(rawUser) ? rawUser : null;
   const isAuthenticated = Boolean(user);
   const [content, setContent] = useState("");
+  const [isFocused, setIsFocused] = useState(false);
 
   const {
     comments,
@@ -42,48 +43,28 @@ export function EpisodeCommentsSection({
         episodeId,
       });
       setContent("");
+      setIsFocused(false);
     } catch {
       // toast handled in hook
     }
   };
 
-  const totalComments = pageData?.numberOfElements
-    ? comments.length
-    : comments.length;
+  const totalCommentsCount = pageData?.numberOfElements ?? comments.length;
 
   return (
-    <section className={`w-full rounded-2xl border border-white/5 bg-[#141416] p-5 md:p-6 shadow-xl ${className || ""}`}>
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-white/5 pb-4 mb-6">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#D4AF37]/10 text-[#D4AF37]">
-            <MessageSquare size={18} />
-          </div>
-          <div>
-            <h3 className="text-base font-black text-white tracking-wide">
-              Bình luận ({totalComments})
-            </h3>
-            <p className="text-[11px] font-semibold text-zinc-450">
-              Chia sẻ cảm nghĩ của bạn về tập phim này
-            </p>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={refresh}
-          disabled={isFetching}
-          className="flex items-center gap-1 text-xs font-bold text-zinc-400 hover:text-white transition-colors"
-          title="Làm mới bình luận"
-        >
-          <RefreshCw size={14} className={isFetching ? "animate-spin text-[#D4AF37]" : ""} />
-        </button>
+    <section className={`w-full text-white ${className || ""}`}>
+      {/* Header chuẩn YouTube: "[Count] bình luận" */}
+      <div className="flex items-center gap-6 mb-6">
+        <h3 className="text-lg md:text-xl font-bold text-white tracking-tight">
+          {totalCommentsCount.toLocaleString("vi-VN")} bình luận
+        </h3>
       </div>
 
-      {/* Input box */}
-      <form onSubmit={handleSubmit} className="mb-8 space-y-3">
-        <div className="flex items-start gap-3">
-          <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full border border-white/10 bg-zinc-800 flex items-center justify-center text-sm font-black text-[#D4AF37]">
+      {/* Form Viết Bình Luận Chuẩn YouTube */}
+      <form onSubmit={handleSubmit} className="mb-8">
+        <div className="flex items-start gap-3 md:gap-4">
+          {/* Avatar Người Dùng */}
+          <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-[#27272a] text-white font-bold flex items-center justify-center text-sm border border-white/10">
             {user?.avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -92,35 +73,49 @@ export function EpisodeCommentsSection({
                 className="h-full w-full object-cover"
               />
             ) : (
-              (user?.fullName || user?.username || "U").charAt(0).toUpperCase()
+              (user?.fullName || user?.username || "T").charAt(0).toUpperCase()
             )}
           </div>
+
           <div className="flex-1 space-y-2">
-            <textarea
+            {/* Input gạch chân chuẩn YouTube */}
+            <input
+              type="text"
               value={content}
+              onFocus={() => setIsFocused(true)}
               onChange={(e) => setContent(e.target.value)}
               placeholder={
                 isAuthenticated
-                  ? "Viết bình luận của bạn..."
+                  ? "Viết bình luận..."
                   : "Vui lòng đăng nhập để tham gia bình luận."
               }
               disabled={!isAuthenticated || isCreating}
-              rows={3}
-              className="w-full rounded-2xl border border-white/10 bg-zinc-900/80 p-3 text-xs text-white placeholder-zinc-500 focus:border-[#D4AF37] focus:outline-none disabled:opacity-50 resize-none transition-colors"
+              className="w-full bg-transparent border-b border-zinc-700 focus:border-white text-sm text-white placeholder-zinc-500 focus:outline-none pb-1.5 transition-colors"
             />
-            {isAuthenticated && (
-              <div className="flex justify-end">
+
+            {/* Thanh Nút Hủy / Bình Luận (Màu Vàng Theme) */}
+            {(isFocused || content.trim().length > 0) && (
+              <div className="flex items-center justify-end gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setContent("");
+                    setIsFocused(false);
+                  }}
+                  className="px-3.5 py-1.5 rounded-full text-xs md:text-sm font-bold text-zinc-300 hover:bg-zinc-800 transition-colors cursor-pointer"
+                >
+                  Hủy
+                </button>
                 <button
                   type="submit"
                   disabled={isCreating || !content.trim()}
-                  className="flex items-center gap-2 rounded-xl bg-[#D4AF37] px-5 py-2 text-xs font-black text-stone-950 transition-all hover:bg-yellow-400 hover:shadow-lg hover:shadow-yellow-500/10 active:scale-[0.98] disabled:opacity-50 cursor-pointer"
+                  className="px-5 py-1.5 rounded-full text-xs md:text-sm font-extrabold transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:bg-[#27272a] disabled:text-zinc-500 bg-[#D4AF37] text-stone-950 hover:bg-yellow-400 shadow-md shadow-[#D4AF37]/10"
                 >
                   {isCreating ? (
-                    <Loader2 size={14} className="animate-spin" />
+                    <Loader2 className="w-4 h-4 animate-spin inline" />
                   ) : (
-                    <Send size={14} />
+                    "Bình luận"
                   )}
-                  Đăng bình luận
                 </button>
               </div>
             )}
@@ -128,7 +123,7 @@ export function EpisodeCommentsSection({
         </div>
       </form>
 
-      {/* Comments List */}
+      {/* Danh Sách Bình Luận */}
       <div className="space-y-6">
         {isLoading && comments.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -136,12 +131,10 @@ export function EpisodeCommentsSection({
             <p className="text-xs text-zinc-400">Đang tải bình luận...</p>
           </div>
         ) : comments.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-center rounded-xl border border-white/5 bg-white/[0.01]">
+          <div className="flex flex-col items-center justify-center py-12 text-center rounded-2xl border border-white/5 bg-white/[0.01]">
             <MessageSquare size={36} className="text-zinc-600 mb-2" />
-            <p className="text-xs font-bold text-zinc-300">
-              Chưa có bình luận nào
-            </p>
-            <p className="text-[10px] text-zinc-500 mt-1">
+            <p className="text-sm font-bold text-zinc-300">Chưa có bình luận nào</p>
+            <p className="text-xs text-zinc-500 mt-1">
               Hãy là người đầu tiên để lại bình luận cho tập phim này!
             </p>
           </div>
@@ -155,14 +148,14 @@ export function EpisodeCommentsSection({
           ))
         )}
 
-        {/* Load More Button */}
+        {/* Nút Tải Thêm Bình Luận */}
         {hasMore && (
           <div className="flex justify-center pt-4">
             <button
               type="button"
               onClick={loadMore}
               disabled={isFetching}
-              className="flex items-center gap-2 rounded-xl border border-white/10 bg-zinc-900 px-5 py-2.5 text-xs font-bold text-white transition-all hover:border-white/20 hover:bg-zinc-800 disabled:opacity-50"
+              className="flex items-center gap-2 rounded-full border border-white/10 bg-[#27272a] px-6 py-2.5 text-xs font-bold text-white transition-all hover:bg-zinc-700 disabled:opacity-50 cursor-pointer"
             >
               {isFetching ? (
                 <>
