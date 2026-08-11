@@ -18,7 +18,7 @@ export function WatermarkedImage({ mediaId, fallbackUrl, className, ...props }: 
   useEffect(() => {
     let isMounted = true;
     let url: string | null = null;
-    
+
     const fetchAndWatermark = async () => {
       try {
         setIsLoading(true);
@@ -29,11 +29,11 @@ export function WatermarkedImage({ mediaId, fallbackUrl, className, ...props }: 
         // Tạo Image object để load ảnh
         const img = new Image();
         img.crossOrigin = "anonymous"; // Bắt buộc để tránh lỗi Tainted Canvas
-        
+
         await new Promise((resolve, reject) => {
           img.onload = resolve;
           img.onerror = () => reject(new Error("Failed to load image for canvas"));
-          
+
           // Dùng Next.js API Route proxy để vượt qua lỗi CORS của Cloudfront/S3
           img.src = `/api/image-proxy?url=${encodeURIComponent(fallbackUrl)}`;
         });
@@ -45,31 +45,36 @@ export function WatermarkedImage({ mediaId, fallbackUrl, className, ...props }: 
         canvas.width = img.width;
         canvas.height = img.height;
         const ctx = canvas.getContext("2d");
-        
+
         if (!ctx) throw new Error("Could not get canvas context");
-        
+
         // Vẽ ảnh gốc
         ctx.drawImage(img, 0, 0);
 
-        // Vẽ Viewer ID chồng lên toàn bộ ảnh
+        // Vẽ Viewer ID (Watermark nổi)
         if (accountId) {
           ctx.globalCompositeOperation = "difference"; // Trộn màu tương phản
-          ctx.fillStyle = "rgba(255, 255, 255, 0.03)"; // Chữ màu trắng siêu mờ 3%
+          ctx.fillStyle = "rgba(255, 255, 255, 0.02)"; // Chữ mờ 6% (tăng lên 1 chút để có thể nhìn thấy)
           ctx.font = "bold 40px sans-serif";
-          
+
           const textToDraw = `VID:${accountId}`;
-          
-          // Lặp để in chữ ngang, xếp so le (staggered)
-          const stepX = 500;
-          const stepY = 150;
-          let offset = 0;
-          for (let y = 50; y < canvas.height; y += stepY) {
-            for (let x = -200 + offset; x < canvas.width; x += stepX) {
-              ctx.fillText(textToDraw, x, y);
-            }
-            // Đổi offset cho hàng tiếp theo để chữ không bị thẳng hàng dọc
-            offset = offset === 0 ? 250 : 0;
+
+          // Chỉ in 2 dòng chữ mờ trên mỗi bức ảnh (để không cản trở việc đọc truyện)
+          // Nếu ảnh quá lùn thì chỉ in 1 cái ở giữa
+          if (canvas.height > 400) {
+            // Nửa trên ảnh
+            const y1 = 100 + Math.random() * (canvas.height / 2 - 200);
+            const x1 = 50 + Math.random() * Math.max(0, canvas.width - 600);
+            ctx.fillText(textToDraw, x1, y1);
+
+            // Nửa dưới ảnh
+            const y2 = (canvas.height / 2) + Math.random() * (canvas.height / 2 - 100);
+            const x2 = 50 + Math.random() * Math.max(0, canvas.width - 600);
+            ctx.fillText(textToDraw, x2, y2);
+          } else {
+            ctx.fillText(textToDraw, 10, canvas.height / 2);
           }
+
           ctx.globalCompositeOperation = "source-over"; // Trả lại bình thường
         }
 
@@ -80,18 +85,18 @@ export function WatermarkedImage({ mediaId, fallbackUrl, className, ...props }: 
           const textToHide = `VID:${accountId}`;
           const textBytes = new TextEncoder().encode(textToHide);
           const bits = [];
-          
+
           // Chuyển string thành mảng các bit (0 và 1)
           for (let i = 0; i < textBytes.length; i++) {
             for (let b = 0; b < 8; b++) {
               bits.push((textBytes[i] >> b) & 1);
             }
           }
-          
+
           // Thay thế bit cuối cùng (Least Significant Bit) của kênh màu Đỏ (Red)
           for (let i = 0; i < bits.length; i++) {
             if (i * 4 < imageData.data.length) {
-               imageData.data[i * 4] = (imageData.data[i * 4] & ~1) | bits[i];
+              imageData.data[i * 4] = (imageData.data[i * 4] & ~1) | bits[i];
             }
           }
           ctx.putImageData(imageData, 0, 0);
@@ -114,9 +119,9 @@ export function WatermarkedImage({ mediaId, fallbackUrl, className, ...props }: 
         }
       }
     };
-    
+
     fetchAndWatermark();
-    
+
     return () => {
       isMounted = false;
       if (url) {
