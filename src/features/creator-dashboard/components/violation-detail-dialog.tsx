@@ -143,6 +143,11 @@ export function ViolationDetailDialog({
                         </span>
                       )}
                     </div>
+                    {c.reviewerNotes && (
+                      <p className="text-sm text-amber-300 italic pl-3 border-l border-amber-500/20">
+                        Nhận xét từ kiểm duyệt viên: {c.reviewerNotes}
+                      </p>
+                    )}
                     {c.violationDetails && c.violationDetails.length > 0 && (
                       <div className="space-y-2 pl-3 border-l border-amber-500/20">
                         {c.violationDetails.map((d) => (
