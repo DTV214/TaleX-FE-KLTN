@@ -96,21 +96,19 @@ export function WatermarkedImage({ mediaId, fallbackUrl, className, ...props }: 
         
         ctx.globalCompositeOperation = "source-over";
 
-        // --- Bổ sung: Nhúng LSB (Least Significant Bit) siêu bí mật ---
+        // --- Nhúng LSB (Least Significant Bit) — ẩn User ID vào bit cuối cùng mầu Đỏ ---
         if (accountId) {
           const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
           const textToHide = `${accountId}`;
           const textBytes = new TextEncoder().encode(textToHide);
-          const bits = [];
+          const bits: number[] = [];
 
-          // Chuyển string thành mảng các bit (0 và 1)
           for (let i = 0; i < textBytes.length; i++) {
             for (let b = 0; b < 8; b++) {
               bits.push((textBytes[i] >> b) & 1);
             }
           }
 
-          // Thay thế bit cuối cùng (Least Significant Bit) của kênh màu Đỏ (Red)
           for (let i = 0; i < bits.length; i++) {
             if (i * 4 < imageData.data.length) {
               imageData.data[i * 4] = (imageData.data[i * 4] & ~1) | bits[i];
