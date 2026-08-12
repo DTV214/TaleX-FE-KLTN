@@ -14,6 +14,7 @@ export default function CopyrightCheckPage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [scanningStatus, setScanningStatus] = useState<string>("");
   const [ocrProgress, setOcrProgress] = useState(0);
+  const [ocrDebug, setOcrDebug] = useState<string>("");
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -38,6 +39,7 @@ export default function CopyrightCheckPage() {
     setResult(null);
     setError(null);
     setScanningStatus("Đang phân tích Watermark qua AI...");
+    setOcrDebug("");
     
     let finalCreatorId: string | undefined = undefined;
     let finalViewerId: string | undefined = undefined;
@@ -66,58 +68,56 @@ export default function CopyrightCheckPage() {
       setError(err.response?.data?.message || "Lỗi khi quét Creator ID từ Backend.");
     }
 
-    // 2. Lấy Viewer ID từ Frontend (LSB / OCR) đối với file Ảnh
+    // 2. L\u1ea5y Viewer ID t\u1eeb Frontend (LSB / OCR) \u0111\u1ed1i v\u1edbi file \u1ea2nh
     if (mediaType === "IMAGE" && previewUrl) {
       setScanningStatus("Đang giải mã ma trận điểm ảnh (Viewer ID)...");
       try {
         const img = new Image();
         img.src = previewUrl;
         await new Promise((res) => { img.onload = res; });
-        
+
         const canvas = document.createElement("canvas");
         canvas.width = img.width;
         canvas.height = img.height;
         const ctx = canvas.getContext("2d");
-        
+
         if (ctx) {
           ctx.drawImage(img, 0, 0);
           const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-          
+
           // Thử Giải mã LSB trước
           let isLsbSuccess = false;
           const bits = [];
           for (let i = 0; i < 40 * 8; i++) {
             bits.push(imageData.data[i * 4] & 1);
           }
-          
+
           const bytes = new Uint8Array(40);
           for (let i = 0; i < bytes.length; i++) {
             for (let b = 0; b < 8; b++) {
               bytes[i] |= (bits[i * 8 + b] << b);
             }
           }
-          
+
           const decodedText = new TextDecoder().decode(bytes);
-          // Regex để bắt trúng định dạng UUID chuẩn (không cần tiền tố VID:)
           const uuidRegex = /([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})/;
           const lsbMatch = decodedText.match(uuidRegex);
-          
+
           if (lsbMatch && lsbMatch[1]) {
             console.log("LSB Extracted Successfully!", lsbMatch[1]);
             finalViewerId = lsbMatch[1];
             isLsbSuccess = true;
           }
-          
+
           // Nếu LSB thất bại (ảnh bị resize/compress/screenshot), dùng OCR dự phòng
           if (!isLsbSuccess) {
             console.warn("LSB Decoding failed, falling back to OCR");
             setScanningStatus("Đang dùng Tesseract OCR để đọc chữ mờ...");
             setOcrProgress(0);
-            
-            // Ép tương phản cực đại để tách chữ chìm thành trắng đen (Contrast 2000%, Brightness 40%)
+
             ctx.filter = "contrast(2000%) brightness(40%) grayscale(100%)";
             ctx.drawImage(img, 0, 0);
-            
+
             const worker = await Tesseract.createWorker("eng", 1, {
               logger: (m) => {
                 if (m.status === "recognizing text") {
@@ -125,11 +125,15 @@ export default function CopyrightCheckPage() {
                 }
               }
             });
-            
+
             const { data: { text } } = await worker.recognize(canvas);
             await worker.terminate();
-            
-            const ocrMatch = text.match(uuidRegex);
+
+            const rawText = text.trim();
+            console.log("OCR raw text:", rawText);
+            setOcrDebug(rawText || "(OCR không nhận ra ký tự nào)");
+
+            const ocrMatch = rawText.match(uuidRegex);
             if (ocrMatch && ocrMatch[1]) {
               finalViewerId = ocrMatch[1];
             }
@@ -137,6 +141,7 @@ export default function CopyrightCheckPage() {
         }
       } catch (err) {
         console.error("Lỗi khi quét Viewer ID:", err);
+        setOcrDebug(`Lỗi: ${err}`);
       }
     }
 
@@ -303,6 +308,14 @@ export default function CopyrightCheckPage() {
                 Không tìm thấy bất kỳ ID nào trong file này. File có thể không phải là dữ liệu rò rỉ từ hệ thống.
               </div>
             )}
+
+          {/* Debug OCR output */}
+          {ocrDebug && (
+            <details className="mt-2 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-500">
+              <summary className="cursor-pointer font-semibold text-slate-600">🔍 OCR raw output (debug)</summary>
+              <pre className="mt-2 max-h-32 overflow-auto whitespace-pre-wrap break-all">{ocrDebug}</pre>
+            </details>
+          )}
           </div>
         </div>
       </div>

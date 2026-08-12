@@ -13,9 +13,7 @@ export async function GET(request: NextRequest) {
       return new NextResponse(`Failed to fetch image from origin: ${res.statusText}`, { status: res.status });
     }
     
-    const blob = await res.blob();
     const headers = new Headers();
-    
     const contentType = res.headers.get("content-type");
     if (contentType) {
       headers.set("Content-Type", contentType);
@@ -29,7 +27,8 @@ export async function GET(request: NextRequest) {
     // Cache ảnh trên trình duyệt
     headers.set("Cache-Control", "public, max-age=31536000, immutable");
     
-    return new NextResponse(blob, { headers, status: 200 });
+    // Stream dữ liệu trực tiếp để tránh tràn RAM trên server (đặc biệt khi load nhiều ảnh truyện)
+    return new NextResponse(res.body, { headers, status: 200 });
   } catch (error: any) {
     return new NextResponse(`Internal proxy error: ${error.message}`, { status: 500 });
   }

@@ -15,6 +15,15 @@ export function AntiPiracyWrapper({
   const [isDisabled, setIsDisabled] = useState(false); // Nút tắt khẩn cấp để Demo
 
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedState = sessionStorage.getItem("antiPiracyDisabled");
+      if (savedState === "true") {
+        setIsDisabled(true);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
     if (isDisabled) return; // Nếu đã tắt thì không chạy logic chặn nữa
 
     // 1. Chặn chuột phải (Context Menu)
@@ -107,6 +116,9 @@ export function AntiPiracyWrapper({
           {/* Nút Dev bypass cho giáo viên */}
           <button 
             onClick={() => {
+              if (typeof window !== "undefined") {
+                sessionStorage.setItem("antiPiracyDisabled", "true");
+              }
               setIsDisabled(true);
               setIsBlocked(false);
               window.location.reload(); // Reload để khôi phục lại thẻ video/img đã bị xóa
@@ -124,7 +136,13 @@ export function AntiPiracyWrapper({
     <>
       {/* Nút toggle nhỏ ở góc dưới phải để chủ động tắt trước khi bị chặn */}
       <button 
-        onClick={() => setIsDisabled(!isDisabled)}
+        onClick={() => {
+          const newValue = !isDisabled;
+          setIsDisabled(newValue);
+          if (typeof window !== "undefined") {
+            sessionStorage.setItem("antiPiracyDisabled", newValue.toString());
+          }
+        }}
         className={`fixed bottom-4 right-4 z-[9999] rounded-full px-3 py-1.5 text-xs font-medium shadow-lg transition-all ${
           isDisabled ? "bg-red-500 text-white" : "bg-black/50 text-white/50 hover:bg-black/80"
         }`}

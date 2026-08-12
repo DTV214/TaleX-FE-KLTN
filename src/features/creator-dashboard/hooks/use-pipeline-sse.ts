@@ -27,6 +27,7 @@ type PipelineToastKind =
   | "moderation-ok"
   | "moderation-review"
   | "moderation-rejected"
+  | "staff-rejected"
   | "failed"
   | "batch-summary";
 
@@ -136,6 +137,21 @@ export function usePipelineSSE({
               toast.error("Nội dung chưa đạt yêu cầu kiểm duyệt", {
                 id,
                 description: `Lý do: phát hiện ${label}. Nội dung đã bị tạm ẩn — vui lòng chỉnh sửa hoặc thay thế nội dung trước khi tải lên lại.`,
+                duration: Infinity,
+              });
+            }
+          } else if (ev.event === "pipeline:staff_rejected") {
+            // Staff duyệt tay từ chối kèm lý do (khác nhánh moderation-rejected ở trên —
+            // đó là lúc AI tự flag lúc upload, cái này bắn MUỘN HƠN, lúc Staff thật sự
+            // bấm nút Từ chối trên trang kiểm duyệt, có thể sau upload rất lâu).
+            if (!shouldSuppressToastRef.current?.(data.mediaId)) {
+              const id = pipelineToastId("staff-rejected", data.mediaId);
+              registerToast(id);
+              toast.error("Nội dung bị từ chối", {
+                id,
+                description: data.reviewerNotes
+                  ? `Lý do từ kiểm duyệt viên: ${data.reviewerNotes}`
+                  : "Nội dung đã bị từ chối sau khi Staff xem xét thủ công.",
                 duration: Infinity,
               });
             }
