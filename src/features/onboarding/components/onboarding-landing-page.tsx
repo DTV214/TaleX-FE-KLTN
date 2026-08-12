@@ -30,6 +30,7 @@ import { getApiErrorMessage } from "@/shared/api/http-client";
 import { isFullProfile, useAuthStore } from "@/features/auth/store/auth.store";
 import {
   isMissingUserFeatureError,
+  type OnboardingAgeSegment,
   type OnboardingGender,
   useCreateUserFeatureProfile,
   usePublicOnboardingCategories,
@@ -122,7 +123,7 @@ const genderOptions: Array<{
     icon: Mars,
   },
   {
-    value: "FEMAL",
+    value: "FEMALE",
     label: "Nữ",
     image:
       "https://images.unsplash.com/photo-1518005020951-eccb494ad742?q=80&w=900&auto=format&fit=crop",
@@ -137,11 +138,22 @@ const genderOptions: Array<{
   },
 ];
 
-function normalizeAge(value: string) {
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed)) return 18;
-  return Math.min(80, Math.max(8, Math.round(parsed)));
-}
+const ageOptions: Array<{
+  value: OnboardingAgeSegment;
+  label: string;
+  helper: string;
+}> = [
+  {
+    value: "teen",
+    label: "11-18",
+    helper: "Teen",
+  },
+  {
+    value: "mature",
+    label: "18+",
+    helper: "Mature",
+  },
+];
 
 function sanitizeNextPath(value: string | null) {
   if (!value) return "/";
@@ -375,7 +387,7 @@ export function OnboardingLandingPage() {
   );
   const [step, setStep] = useState(0);
   const [gender, setGender] = useState<OnboardingGender>("UNKNOWN");
-  const [age, setAge] = useState(18);
+  const [age, setAge] = useState<OnboardingAgeSegment>("mature");
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const profileQuery = useUserFeatureProfile(isAuthenticated);
@@ -615,7 +627,7 @@ export function OnboardingLandingPage() {
                   })}
                 </div>
 
-                <label className="mt-5 grid gap-4 rounded-[1.65rem] border border-white/10 bg-black/30 p-5 shadow-[0_18px_60px_rgba(0,0,0,0.22)] sm:grid-cols-[auto_1fr_auto] sm:items-center">
+                <div className="mt-5 grid gap-4 rounded-[1.65rem] border border-white/10 bg-black/30 p-5 shadow-[0_18px_60px_rgba(0,0,0,0.22)] lg:grid-cols-[auto_1fr_minmax(280px,0.9fr)] lg:items-center">
                   <span className="flex h-14 w-14 items-center justify-center rounded-2xl border border-[#D4AF37]/25 bg-[#D4AF37]/10 text-[#D4AF37]">
                     <Cake className="h-6 w-6" />
                   </span>
@@ -627,15 +639,53 @@ export function OnboardingLandingPage() {
                       TaleX chỉ dùng con số này để làm gợi ý dịu và phù hợp hơn.
                     </span>
                   </span>
-                  <span className="relative block">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {ageOptions.map((option) => {
+                      const isSelected = age === option.value;
+
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => setAge(option.value)}
+                          className={`min-h-[72px] rounded-2xl border px-4 py-3 text-left transition duration-200 hover:border-[#D4AF37]/45 ${
+                            isSelected
+                              ? "border-[#D4AF37]/70 bg-[#D4AF37]/10 text-white shadow-[0_0_0_1px_rgba(212,175,55,0.18)]"
+                              : "border-white/10 bg-white/[0.045] text-white/72"
+                          }`}
+                        >
+                          <span className="flex min-w-0 items-center justify-between gap-3">
+                            <span className="min-w-0">
+                              <span className="block whitespace-nowrap text-[1.7rem] font-black leading-none tracking-normal sm:text-3xl">
+                                {option.label}
+                              </span>
+                              <span className="mt-2 block truncate text-[11px] font-bold text-slate-500 sm:text-xs">
+                                {option.helper}
+                              </span>
+                            </span>
+                            <span
+                              className={`flex h-7 w-7 items-center justify-center rounded-full border transition ${
+                                isSelected
+                                  ? "border-[#D4AF37] bg-[#D4AF37] text-black"
+                                  : "border-white/15 bg-black/30 text-white/30"
+                              }`}
+                            >
+                              <Check className="h-3.5 w-3.5" />
+                            </span>
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <span className="hidden">
                     <input
-                      type="number"
+                      type="hidden"
                       inputMode="numeric"
                       min={8}
                       max={80}
                       value={age}
                       onChange={(event) =>
-                        setAge(normalizeAge(event.target.value))
+                        setAge(Number(event.target.value) <= 18 ? "teen" : "mature")
                       }
                       className="h-16 w-full rounded-2xl border border-white/10 bg-white/[0.055] px-5 pr-14 text-center text-3xl font-black text-white outline-none transition placeholder:text-white/25 focus:border-[#D4AF37]/55 focus:bg-white/[0.075] sm:w-40"
                     />
@@ -643,7 +693,7 @@ export function OnboardingLandingPage() {
                       tuổi
                     </span>
                   </span>
-                </label>
+                </div>
 
                 <div className="mt-8 flex justify-between gap-3">
                   <Button

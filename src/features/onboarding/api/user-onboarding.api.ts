@@ -12,13 +12,14 @@ const USER_FEATURE_ENDPOINT = "/api/v1/mongo/features/user";
 const PUBLIC_CATEGORIES_ENDPOINT = "/api/v1/public/categories";
 const PUBLIC_TAGS_ENDPOINT = "/api/v1/public/tags";
 
-export type OnboardingGender = "MALE" | "FEMAL" | "UNKNOWN";
+export type OnboardingGender = "MALE" | "FEMALE" | "UNKNOWN";
+export type OnboardingAgeSegment = "teen" | "mature";
 
 export type UserFeatureProfile = {
   accountId?: string;
   language?: string;
   gender?: OnboardingGender;
-  age?: number;
+  age?: OnboardingAgeSegment;
   onboardingMovieGeneres?: string[];
   onboardingGenres?: string[];
   onboardingTags?: string[];
@@ -35,7 +36,7 @@ export type UserFeatureProfile = {
 
 export type UserFeatureRequest = {
   gender: OnboardingGender;
-  age: number;
+  age: OnboardingAgeSegment;
   onboardingMovieGeneres: string[];
   onboardingGenres: string[];
   onboardingTags: string[];
