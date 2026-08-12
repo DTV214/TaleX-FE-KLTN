@@ -12,6 +12,12 @@ import {
   Check,
   X,
   MoreVertical,
+  ThumbsUp,
+  ThumbsDown,
+  Pin,
+  ChevronDown,
+  CheckCircle2,
+  Heart,
 } from "lucide-react";
 import { useAuthStore } from "@/features/auth/store/auth.store";
 import { cn } from "@/shared/utils/utils";
@@ -68,6 +74,19 @@ export function CommentItem({
     hideComment,
     isHiding,
   } = useCommentMutations(episodeId);
+
+  const [likeCount, setLikeCount] = useState<number>(
+    (comment as any).likesCount ?? (comment as any).likeCount ?? 0,
+  );
+  const [isLiked, setIsLiked] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+
+  const toggleLikeComment = () => {
+    setIsLiked((prev) => {
+      setLikeCount((c) => (prev ? c - 1 : c + 1));
+      return !prev;
+    });
+  };
 
   const handleSaveEdit = async () => {
     if (!editContent.trim()) return;
@@ -157,10 +176,15 @@ export function CommentItem({
   const isHidden = comment.status === "HIDDEN";
 
   return (
-    <div className={cn("group relative space-y-3", depth > 0 && "pl-4 md:pl-6 border-l border-white/5")}>
-      <div className="flex gap-3">
-        {/* User Avatar */}
-        <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full border border-white/10 bg-zinc-800 flex items-center justify-center text-xs font-black text-[#D4AF37]">
+    <div
+      className={cn(
+        "group relative space-y-2",
+        depth > 0 && "pl-4 md:pl-8 border-l border-zinc-800 mt-3",
+      )}
+    >
+      <div className="flex gap-3 items-start">
+        {/* User Avatar Round */}
+        <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-[#27272a] text-white font-bold flex items-center justify-center text-sm border border-white/10">
           {comment.avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -175,39 +199,85 @@ export function CommentItem({
           )}
         </div>
 
-        {/* Comment Body */}
-        <div className="min-w-0 flex-1 space-y-1.5">
-          {/* Header info */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-white">
-              {comment.displayName || comment.username || "Tài khoản TaleX"}
-            </span>
-            {comment.createdAt && (
-              <span className="text-[10px] font-medium text-zinc-500">
-                {new Date(comment.createdAt).toLocaleDateString("vi-VN", {
-                  day: "2-digit",
-                  month: "2-digit",
-                  year: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
+        {/* Comment Content Body */}
+        <div className="min-w-0 flex-1 space-y-1">
+          {/* Header username & date + Menu 3 chấm */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-bold text-white text-xs md:text-sm">
+                @{comment.displayName || comment.username || "nguoidung"}
               </span>
-            )}
-            {isHidden && (
-              <span className="rounded bg-zinc-800 px-1.5 py-0.5 text-[9px] font-semibold text-zinc-400">
-                Đã ẩn
-              </span>
-            )}
+
+              {comment.createdAt && (
+                <span className="text-xs font-normal text-zinc-400">
+                  {new Date(comment.createdAt).toLocaleDateString("vi-VN")}
+                </span>
+              )}
+
+              {isHidden && (
+                <span className="rounded bg-zinc-800 px-1.5 py-0.5 text-[9px] font-semibold text-zinc-400">
+                  Đã ẩn
+                </span>
+              )}
+            </div>
+
+            {/* Menu 3 chấm góc phải */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowMenu((prev) => !prev)}
+                className="p-1 rounded-full text-zinc-400 hover:text-white hover:bg-zinc-800 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+              >
+                <MoreVertical className="w-4 h-4" />
+              </button>
+              {showMenu && (
+                <div className="absolute right-0 top-6 z-20 w-32 rounded-xl border border-white/10 bg-zinc-900 p-1 shadow-xl text-xs font-semibold text-zinc-200 space-y-1">
+                  {isCommentOwner && (
+                    <button
+                      onClick={() => {
+                        setIsEditing(true);
+                        setShowMenu(false);
+                      }}
+                      className="w-full text-left px-3 py-1.5 hover:bg-zinc-800 rounded-lg flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Edit2 className="w-3.5 h-3.5" /> Sửa
+                    </button>
+                  )}
+                  {isCommentOwner && (
+                    <button
+                      onClick={() => {
+                        handleDelete();
+                        setShowMenu(false);
+                      }}
+                      className="w-full text-left px-3 py-1.5 hover:bg-zinc-800 text-red-400 rounded-lg flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" /> Xóa
+                    </button>
+                  )}
+                  {canHideComment && !isCommentOwner && (
+                    <button
+                      onClick={() => {
+                        handleHide();
+                        setShowMenu(false);
+                      }}
+                      className="w-full text-left px-3 py-1.5 hover:bg-zinc-800 text-amber-400 rounded-lg flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <EyeOff className="w-3.5 h-3.5" /> Ẩn
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Comment Content / Edit Mode */}
+          {/* Nội dung bình luận / Mode Chỉnh sửa */}
           {isEditing ? (
             <div className="mt-2 space-y-2">
               <textarea
                 value={editContent}
                 onChange={(e) => setEditContent(e.target.value)}
                 rows={2}
-                className="w-full rounded-xl border border-[#D4AF37]/50 bg-zinc-900 p-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-[#D4AF37]"
+                className="w-full bg-transparent border-b border-white text-sm text-white focus:outline-none pb-1"
               />
               <div className="flex justify-end gap-2">
                 <button
@@ -216,7 +286,7 @@ export function CommentItem({
                     setIsEditing(false);
                     setEditContent(comment.content);
                   }}
-                  className="rounded-lg bg-zinc-800 px-3 py-1.5 text-xs font-semibold text-zinc-300 hover:bg-zinc-700"
+                  className="px-3 py-1 rounded-full text-xs font-bold text-zinc-300 hover:bg-zinc-800 cursor-pointer"
                 >
                   Hủy
                 </button>
@@ -224,137 +294,95 @@ export function CommentItem({
                   type="button"
                   onClick={handleSaveEdit}
                   disabled={isUpdating || !editContent.trim()}
-                  className="flex items-center gap-1 rounded-lg bg-[#D4AF37] px-3 py-1.5 text-xs font-bold text-stone-950 hover:bg-yellow-400 disabled:opacity-50"
+                  className="px-4 py-1 rounded-full text-xs font-extrabold bg-[#D4AF37] text-stone-950 hover:bg-yellow-400 disabled:opacity-50 cursor-pointer"
                 >
                   {isUpdating ? (
                     <Loader2 className="h-3 w-3 animate-spin" />
                   ) : (
-                    <Check className="h-3 w-3" />
+                    "Lưu"
                   )}
-                  Lưu
                 </button>
               </div>
             </div>
           ) : (
-            <p className="text-xs leading-relaxed text-zinc-300 whitespace-pre-line">
+            <p className="text-sm leading-normal text-zinc-200 whitespace-pre-line font-normal mt-0.5">
               {comment.content}
             </p>
           )}
 
-          {/* Actions Bar */}
+          {/* Dòng Nút Phản Hồi */}
           {!isEditing && (
-            <div className="flex items-center gap-4 pt-1 text-[11px] font-semibold text-zinc-450">
-              {/* Reply trigger */}
+            <div className="flex items-center gap-3 pt-1 text-xs text-zinc-400 font-semibold">
               <button
                 type="button"
                 onClick={() => setIsReplying((prev) => !prev)}
-                className="flex items-center gap-1 hover:text-white transition-colors"
+                className="hover:text-white transition-colors cursor-pointer text-xs font-bold"
               >
-                <CornerDownRight size={12} />
                 Phản hồi
               </button>
-
-              {/* Edit button if owner */}
-              {isCommentOwner && (
-                <button
-                  type="button"
-                  onClick={() => setIsEditing(true)}
-                  className="flex items-center gap-1 hover:text-[#D4AF37] transition-colors"
-                >
-                  <Edit2 size={12} />
-                  Sửa
-                </button>
-              )}
-
-              {/* Delete button if owner */}
-              {isCommentOwner && (
-                <button
-                  type="button"
-                  onClick={handleDelete}
-                  disabled={isDeleting}
-                  className="flex items-center gap-1 hover:text-red-400 transition-colors"
-                >
-                  {isDeleting ? (
-                    <Loader2 size={12} className="animate-spin" />
-                  ) : (
-                    <Trash2 size={12} />
-                  )}
-                  Xóa
-                </button>
-              )}
-
-              {/* Hide button - chỉ dành cho ADMIN / STAFF */}
-              {canHideComment && !isCommentOwner && (
-                <button
-                  type="button"
-                  onClick={handleHide}
-                  disabled={isHiding}
-                  className="flex items-center gap-1 hover:text-amber-400 transition-colors"
-                >
-                  {isHiding ? (
-                    <Loader2 size={12} className="animate-spin" />
-                  ) : (
-                    <EyeOff size={12} />
-                  )}
-                  Ẩn
-                </button>
-              )}
             </div>
           )}
 
-          {/* Reply Form */}
+          {/* Form Nhập Phản Hồi */}
           {isReplying && (
-            <div className="mt-3 flex gap-2.5 rounded-xl border border-white/5 bg-zinc-900/60 p-3">
-              <textarea
+            <div className="mt-3 flex gap-3">
+              <input
+                type="text"
                 value={replyContent}
                 onChange={(e) => setReplyContent(e.target.value)}
-                placeholder={`Trả lời ${comment.displayName || comment.username || "người dùng"}...`}
-                rows={2}
-                className="flex-1 bg-transparent text-xs text-white placeholder-zinc-500 focus:outline-none resize-none"
+                placeholder={`Trả lời @${comment.displayName || comment.username}...`}
+                className="flex-1 bg-transparent border-b border-zinc-700 focus:border-white text-xs text-white placeholder-zinc-500 focus:outline-none pb-1"
               />
-              <div className="flex flex-col justify-end gap-1.5">
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setIsReplying(false)}
-                  className="rounded-lg p-1 text-zinc-500 hover:bg-zinc-800 hover:text-white"
+                  className="px-3 py-1 rounded-full text-xs font-bold text-zinc-400 hover:bg-zinc-800 cursor-pointer"
                 >
-                  <X size={14} />
+                  Hủy
                 </button>
                 <button
                   type="button"
                   onClick={handleSendReply}
                   disabled={isCreating || !replyContent.trim()}
-                  className="flex items-center justify-center rounded-lg bg-[#D4AF37] p-2 text-stone-950 hover:bg-yellow-400 disabled:opacity-50"
+                  className="px-4 py-1 rounded-full text-xs font-extrabold bg-[#D4AF37] text-stone-950 hover:bg-yellow-400 disabled:opacity-50 cursor-pointer"
                 >
                   {isCreating ? (
-                    <Loader2 size={14} className="animate-spin" />
+                    <Loader2 size={12} className="animate-spin" />
                   ) : (
-                    <Send size={14} />
+                    "Phản hồi"
                   )}
                 </button>
               </div>
             </div>
           )}
 
-          {/* Toggle Replies List */}
+          {/* Accordion Nút Ẩn/Hiện Phản Hồi Chuẩn YouTube */}
           {((comment.repliesCount ?? comment.replyCount ?? 0) > 0 || showReplies) && (
-            <div className="pt-2">
+            <div className="pt-1">
               <button
                 type="button"
                 onClick={() => setShowReplies((prev) => !prev)}
-                className="flex items-center gap-1.5 text-[11px] font-bold text-[#D4AF37] hover:underline"
+                className="flex items-center gap-1.5 text-xs md:text-sm font-bold text-[#D4AF37] hover:bg-[#D4AF37]/10 px-3 py-1.5 rounded-full w-fit transition-colors cursor-pointer"
               >
-                <MessageSquare size={12} />
-                {showReplies
-                  ? "Ẩn phản hồi"
-                  : `Xem ${(comment.repliesCount ?? comment.replyCount) || replies.length || ""} phản hồi`}
+                <ChevronDown
+                  className={cn(
+                    "w-4 h-4 transition-transform duration-200",
+                    showReplies ? "rotate-180" : "",
+                  )}
+                />
+                <span>
+                  {showReplies
+                    ? "Ẩn phản hồi"
+                    : `${(comment.repliesCount ?? comment.replyCount) || replies.length || 1} phản hồi`}
+                </span>
               </button>
             </div>
           )}
 
-          {/* Render Replies */}
+          {/* Hiển thị Danh Sách Phản Hồi Con */}
           {showReplies && (
-            <div className="mt-3 space-y-3 pt-1">
+            <div className="mt-2 space-y-3 pt-1">
               {isRepliesLoading && replies.length === 0 ? (
                 <div className="flex items-center gap-2 text-xs text-zinc-500 py-2">
                   <Loader2 className="h-4 w-4 animate-spin text-[#D4AF37]" />
@@ -376,7 +404,7 @@ export function CommentItem({
                   type="button"
                   onClick={loadMoreReplies}
                   disabled={isRepliesLoading}
-                  className="text-[11px] font-bold text-zinc-400 hover:text-white transition-colors"
+                  className="text-xs font-bold text-zinc-400 hover:text-white transition-colors pt-1"
                 >
                   {isRepliesLoading ? "Đang tải..." : "Xem thêm phản hồi khác"}
                 </button>

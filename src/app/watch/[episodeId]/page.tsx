@@ -1,4 +1,5 @@
 import { SignedHlsPlayer } from "@/features/playback/components/signed-hls-player";
+import { AntiPiracyWrapper } from "@/features/playback/components/anti-piracy-wrapper";
 
 type WatchEpisodePageProps = {
   params: Promise<{
@@ -11,5 +12,9 @@ export default async function WatchEpisodePage({
 }: WatchEpisodePageProps) {
   const { episodeId } = await params;
 
-  return <SignedHlsPlayer episodeId={episodeId} />;
+  return (
+    <AntiPiracyWrapper>
+      <SignedHlsPlayer episodeId={episodeId} />
+    </AntiPiracyWrapper>
+  );
 }

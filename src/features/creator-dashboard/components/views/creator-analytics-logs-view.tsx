@@ -57,7 +57,9 @@ function formatWatchTime(seconds: number): string {
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = seconds % 60;
   if (minutes < 60) {
-    return remainingSeconds > 0 ? `${minutes}m ${remainingSeconds}s` : `${minutes}m`;
+    return remainingSeconds > 0
+      ? `${minutes}m ${remainingSeconds}s`
+      : `${minutes}m`;
   }
   const hours = (seconds / 3600).toFixed(1);
   return `${hours}h`;
@@ -80,7 +82,7 @@ export function CreatorAnalyticsLogsView({
   const [activeTab, setActiveTab] = useState<"views" | "engagement">("views");
   const [showTable, setShowTable] = useState<boolean>(false);
 
-  // Tính toán khoảng thời gian from - to
+  // Tính toán khoảng thời gian from - to chuẩn (tính từ HÔM NAY trở về trước)
   const queryParams = useMemo(() => {
     if (rangePreset === "custom") {
       return {
@@ -89,21 +91,24 @@ export function CreatorAnalyticsLogsView({
       };
     }
     const now = new Date();
-    const fromDate = new Date();
+    const fromDate = new Date(now);
 
     if (rangePreset === "24h") {
-      fromDate.setHours(now.getHours() - 24);
+      fromDate.setHours(now.getHours() - 23, 0, 0, 0);
     } else if (rangePreset === "7d") {
-      fromDate.setDate(now.getDate() - 7);
+      fromDate.setDate(now.getDate() - 6);
       fromDate.setHours(0, 0, 0, 0);
     } else if (rangePreset === "30d") {
-      fromDate.setDate(now.getDate() - 30);
+      fromDate.setDate(now.getDate() - 29);
       fromDate.setHours(0, 0, 0, 0);
     }
 
+    const toDate = new Date(now);
+    toDate.setHours(23, 59, 59, 999);
+
     return {
       from: fromDate.toISOString(),
-      to: now.toISOString(),
+      to: toDate.toISOString(),
     };
   }, [rangePreset, customFrom, customTo]);
 
@@ -118,7 +123,7 @@ export function CreatorAnalyticsLogsView({
 
   // Tính toán tổng các chỉ số KPI
   const totals = useMemo(() => {
-    return logs.reduce(
+    const rawTotals = logs.reduce(
       (acc, item) => {
         const data = item.analyticData || {};
         return {
@@ -131,22 +136,182 @@ export function CreatorAnalyticsLogsView({
           bookmarks: acc.bookmarks + (data.bookmarks || 0),
         };
       },
-      { views: 0, watchTime: 0, follows: 0, likes: 0, comments: 0, shares: 0, bookmarks: 0 }
+      {
+        views: 0,
+        watchTime: 0,
+        follows: 0,
+        likes: 0,
+        comments: 0,
+        shares: 0,
+        bookmarks: 0,
+      },
     );
+
+    return {
+      views: Math.max(0, rawTotals.views),
+      watchTime: Math.max(0, rawTotals.watchTime),
+      follows: Math.max(0, rawTotals.follows),
+      likes: Math.max(0, rawTotals.likes),
+      comments: Math.max(0, rawTotals.comments),
+      shares: Math.max(0, rawTotals.shares),
+      bookmarks: Math.max(0, rawTotals.bookmarks),
+    };
   }, [logs]);
 
-  const totalEngagement = totals.likes + totals.comments + totals.shares + totals.bookmarks;
+  const totalEngagement =
+    totals.likes + totals.comments + totals.shares + totals.bookmarks;
 
-  // Format dữ liệu biểu đồ
+  // Format dữ liệu biểu đồ liên tục từ quá khứ đến HÔM NAY / GIỜ HIỆN TẠI
   const chartData = useMemo(() => {
+    const now = new Date();
+    const pad = (n: number) => n.toString().padStart(2, "0");
+
+    if (rangePreset === "24h") {
+      // 24 giờ liên tục tính từ 23 giờ trước tới giờ hiện tại
+      const logsByHour = new Map<string, any[]>();
+      for (const item of logs) {
+        if (!item.hourBucket) continue;
+        const d = new Date(item.hourBucket);
+        const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}-${d.getHours()}`;
+        const list = logsByHour.get(key) || [];
+        list.push(item);
+        logsByHour.set(key, list);
+      }
+
+      const result = [];
+      for (let i = 23; i >= 0; i--) {
+        const target = new Date(now);
+        target.setHours(now.getHours() - i);
+        const key = `${target.getFullYear()}-${target.getMonth()}-${target.getDate()}-${target.getHours()}`;
+        const timeStr = `${target.getHours().toString().padStart(2, "0")}:00`;
+
+        const items = logsByHour.get(key) || [];
+        let views = 0,
+          watchTime = 0,
+          follows = 0,
+          likes = 0,
+          comments = 0,
+          shares = 0,
+          bookmarks = 0;
+        for (const item of items) {
+          const data = item.analyticData || {};
+          views += data.views || 0;
+          watchTime += data.watchTime || 0;
+          follows += item.follows || 0;
+          likes += data.likes || 0;
+          comments += data.comments || 0;
+          shares += data.shares || 0;
+          bookmarks += data.bookmarks || 0;
+        }
+
+        const safeViews = Math.max(0, views);
+        const safeWatchTime = Math.max(0, watchTime);
+        const safeFollows = Math.max(0, follows);
+        const safeLikes = Math.max(0, likes);
+        const safeComments = Math.max(0, comments);
+        const safeShares = Math.max(0, shares);
+        const safeBookmarks = Math.max(0, bookmarks);
+
+        result.push({
+          timestamp: target.toISOString(),
+          time: timeStr,
+          views: safeViews,
+          watchTime: safeWatchTime,
+          follows: safeFollows,
+          likes: safeLikes,
+          comments: safeComments,
+          shares: safeShares,
+          bookmarks: safeBookmarks,
+          engagement: safeLikes + safeComments + safeShares + safeBookmarks,
+        });
+      }
+      return result;
+    }
+
+    const daysCount = rangePreset === "7d" ? 7 : rangePreset === "30d" ? 30 : 0;
+    if (daysCount > 0) {
+      // N ngày liên tục từ (Hôm nay - N + 1) đến HÔM NAY
+      const logsByDate = new Map<string, any[]>();
+      for (const item of logs) {
+        if (!item.hourBucket) continue;
+        const d = new Date(item.hourBucket);
+        const localKey = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+        const utcKey = `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;
+        const rawKey = item.hourBucket.slice(0, 10);
+
+        const keys = Array.from(new Set([localKey, utcKey, rawKey]));
+        for (const k of keys) {
+          if (!k || k.length < 10) continue;
+          const list = logsByDate.get(k) || [];
+          list.push(item);
+          logsByDate.set(k, list);
+        }
+      }
+
+      const result = [];
+      for (let i = daysCount - 1; i >= 0; i--) {
+        const target = new Date(now);
+        target.setDate(now.getDate() - i);
+        const key = `${target.getFullYear()}-${pad(target.getMonth() + 1)}-${pad(target.getDate())}`;
+        const timeStr = `${pad(target.getDate())}/${pad(target.getMonth() + 1)}`;
+
+        const itemsForDay = logsByDate.get(key) || [];
+        const uniqueItemsMap = new Map<string, any>();
+        for (const it of itemsForDay) {
+          const itemKey = it.creatorLogId || it.hourBucket;
+          uniqueItemsMap.set(itemKey, it);
+        }
+
+        let views = 0,
+          watchTime = 0,
+          follows = 0,
+          likes = 0,
+          comments = 0,
+          shares = 0,
+          bookmarks = 0;
+        for (const item of uniqueItemsMap.values()) {
+          const data = item.analyticData || {};
+          views += data.views || 0;
+          watchTime += data.watchTime || 0;
+          follows += item.follows || 0;
+          likes += data.likes || 0;
+          comments += data.comments || 0;
+          shares += data.shares || 0;
+          bookmarks += data.bookmarks || 0;
+        }
+
+        const safeViews = Math.max(0, views);
+        const safeWatchTime = Math.max(0, watchTime);
+        const safeFollows = Math.max(0, follows);
+        const safeLikes = Math.max(0, likes);
+        const safeComments = Math.max(0, comments);
+        const safeShares = Math.max(0, shares);
+        const safeBookmarks = Math.max(0, bookmarks);
+
+        result.push({
+          timestamp: target.toISOString(),
+          time: timeStr,
+          views: safeViews,
+          watchTime: safeWatchTime,
+          follows: safeFollows,
+          likes: safeLikes,
+          comments: safeComments,
+          shares: safeShares,
+          bookmarks: safeBookmarks,
+          engagement: safeLikes + safeComments + safeShares + safeBookmarks,
+        });
+      }
+      return result;
+    }
+
+    // Trường hợp custom range
     return logs.map((item) => {
       const d = new Date(item.hourBucket);
-      const timeStr =
-        rangePreset === "24h"
-          ? `${d.getHours().toString().padStart(2, "0")}:00`
-          : `${d.getDate().toString().padStart(2, "0")}/${(d.getMonth() + 1)
-              .toString()
-              .padStart(2, "0")} ${d.getHours().toString().padStart(2, "0")}h`;
+      const timeStr = `${d.getDate().toString().padStart(2, "0")}/${(
+        d.getMonth() + 1
+      )
+        .toString()
+        .padStart(2, "0")} ${d.getHours().toString().padStart(2, "0")}h`;
 
       const data = item.analyticData || {};
       return {
@@ -159,7 +324,11 @@ export function CreatorAnalyticsLogsView({
         comments: data.comments || 0,
         shares: data.shares || 0,
         bookmarks: data.bookmarks || 0,
-        engagement: (data.likes || 0) + (data.comments || 0) + (data.shares || 0) + (data.bookmarks || 0),
+        engagement:
+          (data.likes || 0) +
+          (data.comments || 0) +
+          (data.shares || 0) +
+          (data.bookmarks || 0),
       };
     });
   }, [logs, rangePreset]);
@@ -178,7 +347,11 @@ export function CreatorAnalyticsLogsView({
       const h = d.getHours();
       if (h >= 0 && h < 24) {
         const data = item.analyticData || {};
-        const eng = (data.likes || 0) + (data.comments || 0) + (data.bookmarks || 0) + (data.shares || 0);
+        const eng =
+          (data.likes || 0) +
+          (data.comments || 0) +
+          (data.bookmarks || 0) +
+          (data.shares || 0);
         hours[h].views += data.views || 0;
         hours[h].engagement += eng;
         hours[h].follows += item.follows || 0;
@@ -197,7 +370,11 @@ export function CreatorAnalyticsLogsView({
   const analyticsDonutItems = [
     { name: "Lượt thích (Likes)", value: totals.likes, color: "#f43f5e" },
     { name: "Bình luận (Comments)", value: totals.comments, color: "#3b82f6" },
-    { name: "Lưu tác phẩm (Bookmarks)", value: totals.bookmarks, color: "#D4AF37" },
+    {
+      name: "Lưu tác phẩm (Bookmarks)",
+      value: totals.bookmarks,
+      color: "#D4AF37",
+    },
     { name: "Chia sẻ (Shares)", value: totals.shares, color: "#a855f7" },
     { name: "Đăng ký mới (Follows)", value: totals.follows, color: "#10b981" },
   ];
@@ -205,9 +382,16 @@ export function CreatorAnalyticsLogsView({
   const validAnalyticsDonut = analyticsDonutItems.filter((d) => d.value > 0);
 
   // Chỉ số đo lường hiệu suất chất lượng
-  const avgWatchSecondsPerView = totals.views > 0 ? Math.round(totals.watchTime / totals.views) : 0;
-  const engagementRate = totals.views > 0 ? ((totalEngagement / totals.views) * 100).toFixed(1) : "0.0";
-  const followConversionRate = totals.views > 0 ? ((totals.follows / totals.views) * 100).toFixed(2) : "0.00";
+  const avgWatchSecondsPerView =
+    totals.views > 0 ? Math.round(totals.watchTime / totals.views) : 0;
+  const engagementRate =
+    totals.views > 0
+      ? ((totalEngagement / totals.views) * 100).toFixed(1)
+      : "0.0";
+  const followConversionRate =
+    totals.views > 0
+      ? ((totals.follows / totals.views) * 100).toFixed(2)
+      : "0.00";
 
   // Custom Hover Tooltip cho Biểu đồ Log Chi tiết
   const CustomLogTooltip = ({ active, payload, label }: any) => {
@@ -218,7 +402,9 @@ export function CreatorAnalyticsLogsView({
         <div className="rounded-2xl border border-white/15 bg-zinc-950/95 p-3.5 shadow-2xl backdrop-blur-md text-xs font-semibold text-white space-y-2 min-w-[210px] z-50">
           <div className="border-b border-white/10 pb-1.5 font-bold text-[#D4AF37] flex items-center justify-between">
             <span>{label}</span>
-            <span className="text-[10px] text-zinc-400 font-normal">Chi tiết khung giờ</span>
+            <span className="text-[10px] text-zinc-400 font-normal">
+              Chi tiết khung giờ
+            </span>
           </div>
           <div className="space-y-1">
             <div className="flex items-center justify-between text-zinc-300">
@@ -226,21 +412,27 @@ export function CreatorAnalyticsLogsView({
                 <span className="h-2 w-2 rounded-full bg-[#D4AF37]" />
                 Lượt xem:
               </span>
-              <span className="font-bold text-[#D4AF37]">{data.views?.toLocaleString("vi-VN") || 0}</span>
+              <span className="font-bold text-[#D4AF37]">
+                {data.views?.toLocaleString("vi-VN") || 0}
+              </span>
             </div>
             <div className="flex items-center justify-between text-zinc-300">
               <span className="flex items-center gap-1.5">
                 <span className="h-2 w-2 rounded-full bg-indigo-400" />
                 Thời gian xem:
               </span>
-              <span className="font-bold text-indigo-300">{formatWatchTime(data.watchTime || 0)}</span>
+              <span className="font-bold text-indigo-300">
+                {formatWatchTime(data.watchTime || 0)}
+              </span>
             </div>
             <div className="flex items-center justify-between text-zinc-300">
               <span className="flex items-center gap-1.5">
                 <span className="h-2 w-2 rounded-full bg-emerald-400" />
                 Đăng ký mới:
               </span>
-              <span className="font-bold text-emerald-400">+{data.follows || 0}</span>
+              <span className="font-bold text-emerald-400">
+                +{data.follows || 0}
+              </span>
             </div>
             <div className="pt-1.5 border-t border-white/10">
               <span className="text-[11px] font-bold text-rose-400 block mb-1">
@@ -287,7 +479,9 @@ export function CreatorAnalyticsLogsView({
               <TrendingUp size={18} className="text-[#D4AF37]" />
               Thống kê hoạt động gần đây
             </h3>
-            <p className="text-xs text-zinc-400 font-medium mt-0.5">7 ngày qua</p>
+            <p className="text-xs text-zinc-400 font-medium mt-0.5">
+              7 ngày qua
+            </p>
           </div>
           {onNavigateToFullAnalytics && (
             <button
@@ -305,25 +499,33 @@ export function CreatorAnalyticsLogsView({
             <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block mb-1">
               Lượt xem
             </span>
-            <span className="text-lg font-black text-white">{formatNumber(totals.views)}</span>
+            <span className="text-lg font-black text-white">
+              {formatNumber(totals.views)}
+            </span>
           </div>
           <div className="rounded-xl border border-white/5 bg-white/[0.03] p-3">
             <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block mb-1">
               Thời gian xem
             </span>
-            <span className="text-lg font-black text-white">{formatWatchTime(totals.watchTime)}</span>
+            <span className="text-lg font-black text-white">
+              {formatWatchTime(totals.watchTime)}
+            </span>
           </div>
           <div className="rounded-xl border border-white/5 bg-white/[0.03] p-3">
             <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block mb-1">
               Follows mới
             </span>
-            <span className="text-lg font-black text-emerald-400">+{totals.follows}</span>
+            <span className="text-lg font-black text-emerald-400">
+              +{totals.follows}
+            </span>
           </div>
           <div className="rounded-xl border border-white/5 bg-white/[0.03] p-3">
             <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block mb-1">
               Tương tác
             </span>
-            <span className="text-lg font-black text-indigo-400">{formatNumber(totalEngagement)}</span>
+            <span className="text-lg font-black text-indigo-400">
+              {formatNumber(totalEngagement)}
+            </span>
           </div>
         </div>
 
@@ -331,7 +533,8 @@ export function CreatorAnalyticsLogsView({
         <div className="h-44 w-full">
           {logsQuery.isLoading ? (
             <div className="flex h-full items-center justify-center text-zinc-500 gap-2">
-              <Loader2 className="h-4 w-4 animate-spin text-[#D4AF37]" /> Đang tải biểu đồ...
+              <Loader2 className="h-4 w-4 animate-spin text-[#D4AF37]" /> Đang
+              tải biểu đồ...
             </div>
           ) : chartData.length === 0 ? (
             <div className="flex h-full items-center justify-center text-xs text-zinc-500">
@@ -346,9 +549,22 @@ export function CreatorAnalyticsLogsView({
                     <stop offset="95%" stopColor="#D4AF37" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <XAxis dataKey="time" stroke="#71717a" fontSize={10} tickLine={false} />
+                <XAxis
+                  dataKey="time"
+                  stroke="#71717a"
+                  fontSize={10}
+                  tickLine={false}
+                />
                 <Tooltip content={<CustomLogTooltip />} />
-                <Area type="monotone" dataKey="views" stroke="#D4AF37" strokeWidth={2} fillOpacity={1} fill="url(#widgetViews)" name="Lượt xem" />
+                <Area
+                  type="monotone"
+                  dataKey="views"
+                  stroke="#D4AF37"
+                  strokeWidth={2}
+                  fillOpacity={1}
+                  fill="url(#widgetViews)"
+                  name="Lượt xem"
+                />
               </AreaChart>
             </ResponsiveContainer>
           )}
@@ -390,7 +606,7 @@ export function CreatorAnalyticsLogsView({
                   "rounded-lg px-3 py-1.5 text-xs font-bold transition-all",
                   rangePreset === p.id
                     ? "bg-[#D4AF37] text-zinc-950 shadow-sm"
-                    : "text-zinc-400 hover:text-white"
+                    : "text-zinc-400 hover:text-white",
                 )}
               >
                 {p.label}
@@ -404,7 +620,10 @@ export function CreatorAnalyticsLogsView({
             className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-zinc-400 transition hover:border-[#D4AF37]/50 hover:text-[#D4AF37] disabled:opacity-50"
             title="Tải lại dữ liệu"
           >
-            <RefreshCw size={14} className={cn(logsQuery.isFetching && "animate-spin")} />
+            <RefreshCw
+              size={14}
+              className={cn(logsQuery.isFetching && "animate-spin")}
+            />
           </button>
         </div>
       </div>
@@ -449,7 +668,9 @@ export function CreatorAnalyticsLogsView({
             {logsQuery.isLoading ? (
               <Loader2 className="h-5 w-5 animate-spin text-zinc-500" />
             ) : (
-              <span className="text-2xl font-black text-white">{formatNumber(totals.views)}</span>
+              <span className="text-2xl font-black text-white">
+                {formatNumber(totals.views)}
+              </span>
             )}
           </div>
           <span className="mt-1 block text-[11px] text-zinc-400">
@@ -471,7 +692,9 @@ export function CreatorAnalyticsLogsView({
             {logsQuery.isLoading ? (
               <Loader2 className="h-5 w-5 animate-spin text-zinc-500" />
             ) : (
-              <span className="text-2xl font-black text-white">{formatWatchTime(totals.watchTime)}</span>
+              <span className="text-2xl font-black text-white">
+                {formatWatchTime(totals.watchTime)}
+              </span>
             )}
           </div>
           <span className="mt-1 block text-[11px] text-zinc-400">
@@ -493,7 +716,9 @@ export function CreatorAnalyticsLogsView({
             {logsQuery.isLoading ? (
               <Loader2 className="h-5 w-5 animate-spin text-zinc-500" />
             ) : (
-              <span className="text-2xl font-black text-emerald-400">+{totals.follows}</span>
+              <span className="text-2xl font-black text-emerald-400">
+                +{totals.follows}
+              </span>
             )}
           </div>
           <span className="mt-1 block text-[11px] text-zinc-400">
@@ -515,11 +740,14 @@ export function CreatorAnalyticsLogsView({
             {logsQuery.isLoading ? (
               <Loader2 className="h-5 w-5 animate-spin text-zinc-500" />
             ) : (
-              <span className="text-2xl font-black text-indigo-300">{formatNumber(totalEngagement)}</span>
+              <span className="text-2xl font-black text-indigo-300">
+                {formatNumber(totalEngagement)}
+              </span>
             )}
           </div>
           <span className="mt-1 block text-[11px] text-zinc-400">
-            Likes ({totals.likes}) • Comments ({totals.comments}) • Shares ({totals.shares})
+            Likes ({totals.likes}) • Comments ({totals.comments}) • Shares (
+            {totals.shares})
           </span>
         </div>
       </div>
@@ -534,10 +762,10 @@ export function CreatorAnalyticsLogsView({
                 "rounded-xl px-4 py-2 text-xs font-black transition-all",
                 activeTab === "views"
                   ? "bg-[#D4AF37] text-zinc-950 shadow-md"
-                  : "bg-white/[0.04] text-zinc-400 hover:text-white"
+                  : "bg-white/[0.04] text-zinc-400 hover:text-white",
               )}
             >
-              Biến động Lượt xem & Thời gian xem
+              Biến động Lượt xem
             </button>
             <button
               onClick={() => setActiveTab("engagement")}
@@ -545,51 +773,62 @@ export function CreatorAnalyticsLogsView({
                 "rounded-xl px-4 py-2 text-xs font-black transition-all",
                 activeTab === "engagement"
                   ? "bg-indigo-500 text-white shadow-md"
-                  : "bg-white/[0.04] text-zinc-400 hover:text-white"
+                  : "bg-white/[0.04] text-zinc-400 hover:text-white",
               )}
             >
               Chi tiết Tương tác (Thích/Bình luận/Lượt theo dõi)
             </button>
           </div>
-
-          <button
-            onClick={() => setShowTable(!showTable)}
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-zinc-400 hover:text-white transition"
-          >
-            <TableIcon size={14} />
-            {showTable ? "Ẩn bảng chi tiết" : "Hiện bảng chi tiết log"}
-          </button>
         </div>
 
         {logsQuery.isLoading ? (
           <div className="flex h-80 items-center justify-center text-zinc-500 gap-3">
-            <Loader2 className="h-6 w-6 animate-spin text-[#D4AF37]" /> Đang tải biểu đồ Creator Logs...
+            <Loader2 className="h-6 w-6 animate-spin text-[#D4AF37]" /> Đang tải
+            biểu đồ Creator Logs...
           </div>
         ) : chartData.length === 0 ? (
           <div className="flex h-80 flex-col items-center justify-center text-center text-zinc-500 space-y-2">
             <BarChart3 className="h-10 w-10 text-zinc-600 stroke-[1.5]" />
-            <p className="text-sm font-semibold">Chưa có log thống kê trong khoảng thời gian này</p>
-            <p className="text-xs text-zinc-600">Thử mở rộng khoảng thời gian tìm kiếm hoặc tạo thêm hoạt động trên kênh</p>
+            <p className="text-sm font-semibold">
+              Chưa có log thống kê trong khoảng thời gian này
+            </p>
+            <p className="text-xs text-zinc-600">
+              Thử mở rộng khoảng thời gian tìm kiếm hoặc tạo thêm hoạt động trên
+              kênh
+            </p>
           </div>
         ) : activeTab === "views" ? (
           <div className="h-80 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData}>
                 <defs>
-                  <linearGradient id="gradientViews" x1="0" y1="0" x2="0" y2="1">
+                  <linearGradient
+                    id="gradientViews"
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="1"
+                  >
                     <stop offset="5%" stopColor="#D4AF37" stopOpacity={0.4} />
                     <stop offset="95%" stopColor="#D4AF37" stopOpacity={0} />
                   </linearGradient>
-                  <linearGradient id="gradientWatchTime" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#818cf8" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#818cf8" stopOpacity={0} />
-                  </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
-                <XAxis dataKey="time" stroke="#a1a1aa" fontSize={11} tickLine={false} />
-                <YAxis stroke="#a1a1aa" fontSize={11} tickLine={false} />
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="#27272a"
+                  vertical={false}
+                />
+                <XAxis
+                  dataKey="time"
+                  stroke="#a1a1aa"
+                  fontSize={11}
+                  tickLine={false}
+                />
+                <YAxis stroke="#a1a1aa" fontSize={11} tickLine={false} tickCount={3} allowDecimals={false} />
                 <Tooltip content={<CustomLogTooltip />} />
-                <Legend wrapperStyle={{ paddingTop: "10px", fontSize: "12px" }} />
+                <Legend
+                  wrapperStyle={{ paddingTop: "10px", fontSize: "12px" }}
+                />
                 <Area
                   type="monotone"
                   dataKey="views"
@@ -597,16 +836,7 @@ export function CreatorAnalyticsLogsView({
                   strokeWidth={2.5}
                   fillOpacity={1}
                   fill="url(#gradientViews)"
-                  name="Lượt xem (Views)"
-                />
-                <Area
-                  type="monotone"
-                  dataKey="watchTime"
-                  stroke="#818cf8"
-                  strokeWidth={2}
-                  fillOpacity={1}
-                  fill="url(#gradientWatchTime)"
-                  name="Thời gian xem (giây)"
+                  name="Lượt xem"
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -615,16 +845,46 @@ export function CreatorAnalyticsLogsView({
           <div className="h-80 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
-                <XAxis dataKey="time" stroke="#a1a1aa" fontSize={11} tickLine={false} />
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="#27272a"
+                  vertical={false}
+                />
+                <XAxis
+                  dataKey="time"
+                  stroke="#a1a1aa"
+                  fontSize={11}
+                  tickLine={false}
+                />
                 <YAxis stroke="#a1a1aa" fontSize={11} tickLine={false} />
                 <Tooltip content={<CustomLogTooltip />} />
-                <Legend wrapperStyle={{ paddingTop: "10px", fontSize: "12px" }} />
-                <Bar dataKey="likes" fill="#f43f5e" name="Lượt thích" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="comments" fill="#3b82f6" name="Bình luận" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="bookmarks" fill="#eab308" name="Lưu tác phẩm" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="shares" fill="#a855f7" name="Chia sẻ" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="follows" fill="#10b981" name="Đăng ký mới" radius={[4, 4, 0, 0]} />
+                <Legend
+                  wrapperStyle={{ paddingTop: "10px", fontSize: "12px" }}
+                />
+                <Bar
+                  dataKey="likes"
+                  fill="#f43f5e"
+                  name="Lượt thích"
+                  radius={[4, 4, 0, 0]}
+                />
+                <Bar
+                  dataKey="comments"
+                  fill="#3b82f6"
+                  name="Bình luận"
+                  radius={[4, 4, 0, 0]}
+                />
+                <Bar
+                  dataKey="bookmarks"
+                  fill="#eab308"
+                  name="Lưu tác phẩm"
+                  radius={[4, 4, 0, 0]}
+                />
+                <Bar
+                  dataKey="shares"
+                  fill="#a855f7"
+                  name="Chia sẻ"
+                  radius={[4, 4, 0, 0]}
+                />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -642,27 +902,42 @@ export function CreatorAnalyticsLogsView({
                 Phân Tích "Khung Giờ Vàng" (24 Hours Activity Heatmap)
               </h3>
               <p className="text-xs text-zinc-400 font-medium mt-0.5">
-                Phân bổ lượt xem và tương tác theo từng giờ trong ngày để chọn thời điểm xuất bản tối ưu
+                Phân bổ lượt xem và tương tác theo từng giờ trong ngày để chọn
+                thời điểm xuất bản tối ưu
               </p>
             </div>
             {peakHourItem && peakHourItem.views > 0 && (
               <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-bold text-amber-300 flex items-center gap-1.5">
                 <Sparkles size={14} className="text-amber-400" />
-                Giờ sôi nổi nhất: <span className="font-black text-white">{peakHourItem.hour}</span> ({peakHourItem.views.toLocaleString("vi-VN")} views)
+                Giờ sôi nổi nhất:{" "}
+                <span className="font-black text-white">
+                  {peakHourItem.hour}
+                </span>{" "}
+                ({peakHourItem.views.toLocaleString("vi-VN")} views)
               </div>
             )}
           </div>
 
           {logsQuery.isLoading ? (
             <div className="flex h-56 items-center justify-center text-zinc-500 gap-2">
-              <Loader2 className="h-5 w-5 animate-spin text-amber-400" /> Đang tải phân tích khung giờ...
+              <Loader2 className="h-5 w-5 animate-spin text-amber-400" /> Đang
+              tải phân tích khung giờ...
             </div>
           ) : (
             <div className="h-60 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={hourlyPeakData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
-                  <XAxis dataKey="hour" stroke="#71717a" fontSize={10} tickLine={false} />
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="#27272a"
+                    vertical={false}
+                  />
+                  <XAxis
+                    dataKey="hour"
+                    stroke="#71717a"
+                    fontSize={10}
+                    tickLine={false}
+                  />
                   <YAxis stroke="#71717a" fontSize={10} tickLine={false} />
                   <Tooltip
                     contentStyle={{
@@ -672,10 +947,23 @@ export function CreatorAnalyticsLogsView({
                       color: "#fff",
                       fontSize: "12px",
                     }}
-                    formatter={(val: any, name: any) => [(val || 0).toLocaleString("vi-VN"), name]}
+                    formatter={(val: any, name: any) => [
+                      (val || 0).toLocaleString("vi-VN"),
+                      name,
+                    ]}
                   />
-                  <Bar dataKey="views" fill="#D4AF37" radius={[4, 4, 0, 0]} name="Lượt xem" />
-                  <Bar dataKey="engagement" fill="#f43f5e" radius={[4, 4, 0, 0]} name="Tổng tương tác" />
+                  <Bar
+                    dataKey="views"
+                    fill="#D4AF37"
+                    radius={[4, 4, 0, 0]}
+                    name="Lượt xem"
+                  />
+                  <Bar
+                    dataKey="engagement"
+                    fill="#f43f5e"
+                    radius={[4, 4, 0, 0]}
+                    name="Tổng tương tác"
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -686,32 +974,41 @@ export function CreatorAnalyticsLogsView({
         <div className="flex flex-col gap-3.5 justify-between">
           <div className="rounded-[22px] border border-white/10 bg-[#17171a] p-5 shadow-lg space-y-1">
             <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
-              <Clock size={14} className="text-indigo-400" /> Thời gian xem TB / lượt xem
+              <Clock size={14} className="text-indigo-400" /> Thời gian xem TB /
+              lượt xem
             </span>
             <div className="text-2xl font-black text-white pt-1">
               {formatWatchTime(avgWatchSecondsPerView)}
             </div>
-            <p className="text-[11px] text-zinc-500 font-medium">Mỗi lượt xem khán giả dành thời gian đọc/xem</p>
+            <p className="text-[11px] text-zinc-500 font-medium">
+              Mỗi lượt xem khán giả dành thời gian đọc/xem
+            </p>
           </div>
 
           <div className="rounded-[22px] border border-white/10 bg-[#17171a] p-5 shadow-lg space-y-1">
             <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
-              <Heart size={14} className="text-rose-400" /> Tỷ lệ Tương tác / Views
+              <Heart size={14} className="text-rose-400" /> Tỷ lệ Tương tác /
+              Views
             </span>
             <div className="text-2xl font-black text-rose-400 pt-1">
               {engagementRate}%
             </div>
-            <p className="text-[11px] text-zinc-500 font-medium">Tỷ lệ khán giả để lại Thích/Bình luận/Lưu khi xem</p>
+            <p className="text-[11px] text-zinc-500 font-medium">
+              Tỷ lệ khán giả để lại Thích/Bình luận/Lưu khi xem
+            </p>
           </div>
 
           <div className="rounded-[22px] border border-white/10 bg-[#17171a] p-5 shadow-lg space-y-1">
             <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
-              <UserPlus size={14} className="text-emerald-400" /> Tỷ lệ Chuyển đổi Đăng ký
+              <UserPlus size={14} className="text-emerald-400" /> Tỷ lệ Chuyển
+              đổi Đăng ký
             </span>
             <div className="text-2xl font-black text-emerald-400 pt-1">
               {followConversionRate}%
             </div>
-            <p className="text-[11px] text-zinc-500 font-medium">Tỷ lệ người xem nhấn Đăng ký kênh sau khi xem</p>
+            <p className="text-[11px] text-zinc-500 font-medium">
+              Tỷ lệ người xem nhấn Đăng ký kênh sau khi xem
+            </p>
           </div>
         </div>
       </div>
@@ -726,7 +1023,8 @@ export function CreatorAnalyticsLogsView({
                 Tỷ Trọng Tương Tác Khán Giả
               </h3>
               <p className="text-xs text-zinc-400 font-medium mt-0.5">
-                Phân tích tỷ lệ từng hình thức tương tác thu hút được trong khoảng thời gian đã chọn
+                Phân tích tỷ lệ từng hình thức tương tác thu hút được trong
+                khoảng thời gian đã chọn
               </p>
             </div>
           </div>
@@ -753,15 +1051,30 @@ export function CreatorAnalyticsLogsView({
                     content={({ active, payload }) => {
                       if (active && payload && payload.length) {
                         const item = payload[0];
-                        const total = validAnalyticsDonut.reduce((a, b) => a + b.value, 0);
-                        const pct = total > 0 ? Math.round((Number(item.value) / total) * 100) : 0;
+                        const total = validAnalyticsDonut.reduce(
+                          (a, b) => a + b.value,
+                          0,
+                        );
+                        const pct =
+                          total > 0
+                            ? Math.round((Number(item.value) / total) * 100)
+                            : 0;
                         return (
                           <div className="rounded-xl border border-white/15 bg-zinc-900/95 p-2.5 px-3.5 shadow-2xl backdrop-blur-md text-xs font-semibold text-white">
                             <div className="flex items-center gap-2">
-                              <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: item.payload.color }} />
-                              <span className="text-zinc-300">{item.name}:</span>
-                              <span className="font-bold text-[#D4AF37]">{item.value?.toLocaleString("vi-VN")}</span>
-                              <span className="text-zinc-400 text-[11px]">({pct}%)</span>
+                              <span
+                                className="h-2.5 w-2.5 rounded-full shrink-0"
+                                style={{ backgroundColor: item.payload.color }}
+                              />
+                              <span className="text-zinc-300">
+                                {item.name}:
+                              </span>
+                              <span className="font-bold text-[#D4AF37]">
+                                {item.value?.toLocaleString("vi-VN")}
+                              </span>
+                              <span className="text-zinc-400 text-[11px]">
+                                ({pct}%)
+                              </span>
                             </div>
                           </div>
                         );
@@ -772,24 +1085,43 @@ export function CreatorAnalyticsLogsView({
                 </PieChart>
               </ResponsiveContainer>
               <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">Tổng tương tác</span>
-                <span className="text-2xl font-black text-white">{(totalEngagement + totals.follows).toLocaleString("vi-VN")}</span>
+                <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">
+                  Tổng tương tác
+                </span>
+                <span className="text-2xl font-black text-white">
+                  {(totalEngagement + totals.follows).toLocaleString("vi-VN")}
+                </span>
               </div>
             </div>
 
             <div className="space-y-3">
               {analyticsDonutItems.map((item) => {
                 const totalAll = totalEngagement + totals.follows;
-                const pct = totalAll > 0 ? ((item.value / totalAll) * 100).toFixed(1) : "0.0";
+                const pct =
+                  totalAll > 0
+                    ? ((item.value / totalAll) * 100).toFixed(1)
+                    : "0.0";
                 return (
-                  <div key={item.name} className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.02] p-3">
+                  <div
+                    key={item.name}
+                    className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.02] p-3"
+                  >
                     <div className="flex items-center gap-2.5">
-                      <span className="h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
-                      <span className="text-xs font-bold text-zinc-300">{item.name}</span>
+                      <span
+                        className="h-3 w-3 rounded-full shrink-0"
+                        style={{ backgroundColor: item.color }}
+                      />
+                      <span className="text-xs font-bold text-zinc-300">
+                        {item.name}
+                      </span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-xs font-black text-white">{(item.value || 0).toLocaleString("vi-VN")}</span>
-                      <span className="text-[11px] font-semibold text-zinc-500 w-12 text-right">{pct}%</span>
+                      <span className="text-xs font-black text-white">
+                        {(item.value || 0).toLocaleString("vi-VN")}
+                      </span>
+                      <span className="text-[11px] font-semibold text-zinc-500 w-12 text-right">
+                        {pct}%
+                      </span>
                     </div>
                   </div>
                 );
@@ -826,15 +1158,34 @@ export function CreatorAnalyticsLogsView({
                   const formattedStr = `${d.toLocaleDateString("vi-VN")} ${d.getHours().toString().padStart(2, "0")}:00`;
                   const analytic = log.analyticData || {};
                   return (
-                    <tr key={log.creatorLogId} className="hover:bg-white/[0.02]">
-                      <td className="px-4 py-2.5 font-semibold text-white">{formattedStr}</td>
-                      <td className="px-4 py-2.5 font-bold text-[#D4AF37]">{analytic.views || 0}</td>
-                      <td className="px-4 py-2.5 text-zinc-400">{formatWatchTime(analytic.watchTime || 0)}</td>
-                      <td className="px-4 py-2.5 font-bold text-emerald-400">+{log.follows || 0}</td>
-                      <td className="px-4 py-2.5 text-rose-400">{analytic.likes || 0}</td>
-                      <td className="px-4 py-2.5 text-blue-400">{analytic.comments || 0}</td>
-                      <td className="px-4 py-2.5 text-purple-400">{analytic.shares || 0}</td>
-                      <td className="px-4 py-2.5 text-yellow-400">{analytic.bookmarks || 0}</td>
+                    <tr
+                      key={log.creatorLogId}
+                      className="hover:bg-white/[0.02]"
+                    >
+                      <td className="px-4 py-2.5 font-semibold text-white">
+                        {formattedStr}
+                      </td>
+                      <td className="px-4 py-2.5 font-bold text-[#D4AF37]">
+                        {analytic.views || 0}
+                      </td>
+                      <td className="px-4 py-2.5 text-zinc-400">
+                        {formatWatchTime(analytic.watchTime || 0)}
+                      </td>
+                      <td className="px-4 py-2.5 font-bold text-emerald-400">
+                        +{log.follows || 0}
+                      </td>
+                      <td className="px-4 py-2.5 text-rose-400">
+                        {analytic.likes || 0}
+                      </td>
+                      <td className="px-4 py-2.5 text-blue-400">
+                        {analytic.comments || 0}
+                      </td>
+                      <td className="px-4 py-2.5 text-purple-400">
+                        {analytic.shares || 0}
+                      </td>
+                      <td className="px-4 py-2.5 text-yellow-400">
+                        {analytic.bookmarks || 0}
+                      </td>
                     </tr>
                   );
                 })}

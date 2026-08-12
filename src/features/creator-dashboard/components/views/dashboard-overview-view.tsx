@@ -22,6 +22,7 @@ import {
   Globe,
   Monitor,
   MoreHorizontal,
+  Heart,
 } from "lucide-react";
 import Link from "next/link";
 import { useAuthStore, isFullProfile } from "@/features/auth/store/auth.store";
@@ -127,10 +128,15 @@ function OverviewDashboardContent({
 
   const queryParams = useMemo(() => {
     const now = new Date();
-    const fromDate = new Date();
-    fromDate.setDate(now.getDate() - (preset === "7d" ? 7 : 30));
+    const daysOffset = preset === "7d" ? 6 : 29;
+    const fromDate = new Date(now);
+    fromDate.setDate(now.getDate() - daysOffset);
     fromDate.setHours(0, 0, 0, 0);
-    return { from: fromDate.toISOString(), to: now.toISOString() };
+
+    const toDate = new Date(now);
+    toDate.setHours(23, 59, 59, 999);
+
+    return { from: fromDate.toISOString(), to: toDate.toISOString() };
   }, [preset]);
 
   const logsQuery = useQuery({
@@ -143,7 +149,7 @@ function OverviewDashboardContent({
 
   // Tổng hợp chỉ số từ API logs
   const totals = useMemo(() => {
-    return logs.reduce(
+    const rawTotals = logs.reduce(
       (acc, item) => {
         const data = item.analyticData || {};
         return {
@@ -157,6 +163,15 @@ function OverviewDashboardContent({
       },
       { views: 0, likes: 0, comments: 0, bookmarks: 0, shares: 0, follows: 0 },
     );
+
+    return {
+      views: Math.max(0, rawTotals.views),
+      likes: Math.max(0, rawTotals.likes),
+      comments: Math.max(0, rawTotals.comments),
+      bookmarks: Math.max(0, rawTotals.bookmarks),
+      shares: Math.max(0, rawTotals.shares),
+      follows: Math.max(0, rawTotals.follows),
+    };
   }, [logs]);
 
   const totalEngagement =
@@ -166,70 +181,79 @@ function OverviewDashboardContent({
     totals.shares +
     totals.follows;
 
-  // Dữ liệu Area Chart (Views, Engagement, Follows) theo ngày cho Sessions Overview
+  // Dữ liệu Area Chart (Views, Engagement, Follows) theo N ngày liên tục từ quá khứ đến HÔM NAY
   const areaChartData = useMemo(() => {
-    const byDay = new Map<
-      string,
-      {
-        views: number;
-        engagement: number;
-        follows: number;
-        likes: number;
-        comments: number;
-        bookmarks: number;
-        shares: number;
-      }
-    >();
+    const daysCount = preset === "7d" ? 7 : 30;
+    const now = new Date();
+    const pad = (n: number) => n.toString().padStart(2, "0");
+
+    // Index logs by all possible date representations to guarantee today's logs match regardless of UTC/local shift
+    const logsByDate = new Map<string, any[]>();
     for (const item of logs) {
+      if (!item.hourBucket) continue;
       const d = new Date(item.hourBucket);
-      const key = `${d.getDate().toString().padStart(2, "0")}/${(
-        d.getMonth() + 1
-      )
-        .toString()
-        .padStart(2, "0")}`;
-      const existing = byDay.get(key) || {
-        views: 0,
-        engagement: 0,
-        follows: 0,
-        likes: 0,
-        comments: 0,
-        bookmarks: 0,
-        shares: 0,
-      };
-      const data = item.analyticData || {};
-      const eng =
-        (data.likes || 0) +
-        (data.comments || 0) +
-        (data.bookmarks || 0) +
-        (data.shares || 0);
-      byDay.set(key, {
-        views: existing.views + (data.views || 0),
-        engagement: existing.engagement + eng,
-        follows: existing.follows + (item.follows || 0),
-        likes: existing.likes + (data.likes || 0),
-        comments: existing.comments + (data.comments || 0),
-        bookmarks: existing.bookmarks + (data.bookmarks || 0),
-        shares: existing.shares + (data.shares || 0),
+      const localKey = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+      const utcKey = `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;
+      const rawKey = item.hourBucket.slice(0, 10);
+
+      const keys = Array.from(new Set([localKey, utcKey, rawKey]));
+      for (const k of keys) {
+        if (!k || k.length < 10) continue;
+        const list = logsByDate.get(k) || [];
+        list.push(item);
+        logsByDate.set(k, list);
+      }
+    }
+
+    const result = [];
+    for (let i = daysCount - 1; i >= 0; i--) {
+      const targetDate = new Date(now);
+      targetDate.setDate(now.getDate() - i);
+      const key = `${targetDate.getFullYear()}-${pad(targetDate.getMonth() + 1)}-${pad(targetDate.getDate())}`;
+      const dayLabel = `${pad(targetDate.getDate())}/${pad(targetDate.getMonth() + 1)}`;
+
+      const itemsForDay = logsByDate.get(key) || [];
+      // De-duplicate items if matched by multiple keys
+      const uniqueItemsMap = new Map<string, any>();
+      for (const it of itemsForDay) {
+        const itemKey = it.creatorLogId || it.hourBucket;
+        uniqueItemsMap.set(itemKey, it);
+      }
+      const uniqueItems = Array.from(uniqueItemsMap.values());
+
+      let views = 0;
+      let likes = 0;
+      let comments = 0;
+      let bookmarks = 0;
+      let shares = 0;
+      let follows = 0;
+
+      for (const item of uniqueItems) {
+        const data = item.analyticData || {};
+        views += data.views || 0;
+        likes += data.likes || 0;
+        comments += data.comments || 0;
+        bookmarks += data.bookmarks || 0;
+        shares += data.shares || 0;
+        follows += item.follows || 0;
+      }
+
+      const engagement = likes + comments + bookmarks + shares;
+
+      result.push({
+        day: dayLabel,
+        views: Math.max(0, views),
+        engagement: Math.max(0, engagement),
+        follows: Math.max(0, follows),
+        likes: Math.max(0, likes),
+        comments: Math.max(0, comments),
+        bookmarks: Math.max(0, bookmarks),
+        shares: Math.max(0, shares),
       });
     }
-    return Array.from(byDay.entries()).map(([day, val]) => ({
-      day,
-      ...val,
-    }));
-  }, [logs]);
 
-  // Mini Sparkline Data cho 3 Top Cards
-  const viewsSparklineData = useMemo(() => {
-    return areaChartData.slice(-6).map((d) => ({ val: d.views }));
-  }, [areaChartData]);
-
-  const engagementSparklineData = useMemo(() => {
-    return areaChartData.slice(-6).map((d) => ({ val: d.engagement }));
-  }, [areaChartData]);
-
-  const subSparklineData = useMemo(() => {
-    return areaChartData.slice(-6).map((d) => ({ val: d.follows }));
-  }, [areaChartData]);
+    return result;
+  }, [logs, preset]);
 
   // Donut Chart Items (Cơ cấu tương tác)
   const donutItems = [
@@ -246,34 +270,81 @@ function OverviewDashboardContent({
   const topSeriesChartData = useMemo(() => {
     if (!seriesList.length) return [];
     return [...seriesList]
-      .sort((a, b) => (b.totalViews || 0) - (a.totalViews || 0))
-      .slice(0, 5)
-      .map((s) => ({
-        name: s.title.length > 16 ? s.title.slice(0, 16) + "..." : s.title,
-        views: s.totalViews || 0,
-        subscribers: s.totalSubscriptions || 0,
-      }));
+      .map((s: any) => {
+        const views =
+          s.analyticData?.views ??
+          s.totalViews ??
+          s.views ??
+          s.viewsCount ??
+          0;
+        const subscribers =
+          s.totalSubscriptions ??
+          s.totalCreatorFollowers ??
+          s.followersCount ??
+          s.followers ??
+          0;
+        const titleStr = s.title || s.name || "Tác phẩm";
+        return {
+          name: titleStr.length > 16 ? titleStr.slice(0, 16) + "..." : titleStr,
+          views,
+          subscribers,
+        };
+      })
+      .sort((a, b) => b.views - a.views)
+      .slice(0, 5);
   }, [seriesList]);
 
-  // Watch Time Chart Data (Số phút xem theo ngày)
+  // Watch Time Chart Data (Số phút xem theo N ngày liên tục từ quá khứ đến HÔM NAY)
   const watchTimeChartData = useMemo(() => {
-    const byDay = new Map<string, number>();
+    const daysCount = preset === "7d" ? 7 : 30;
+    const now = new Date();
+    const pad = (n: number) => n.toString().padStart(2, "0");
+
+    const logsByDate = new Map<string, any[]>();
     for (const item of logs) {
+      if (!item.hourBucket) continue;
       const d = new Date(item.hourBucket);
-      const key = `${d.getDate().toString().padStart(2, "0")}/${(
-        d.getMonth() + 1
-      )
-        .toString()
-        .padStart(2, "0")}`;
-      const existing = byDay.get(key) || 0;
-      const data = item.analyticData || {};
-      byDay.set(key, existing + (data.watchTime || 0));
+      const localKey = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+      const utcKey = `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;
+      const rawKey = item.hourBucket.slice(0, 10);
+
+      const keys = Array.from(new Set([localKey, utcKey, rawKey]));
+      for (const k of keys) {
+        if (!k || k.length < 10) continue;
+        const list = logsByDate.get(k) || [];
+        list.push(item);
+        logsByDate.set(k, list);
+      }
     }
-    return Array.from(byDay.entries()).map(([day, val]) => ({
-      day,
-      watchMinutes: Math.round(val / 60),
-    }));
-  }, [logs]);
+
+    const result = [];
+    for (let i = daysCount - 1; i >= 0; i--) {
+      const targetDate = new Date(now);
+      targetDate.setDate(now.getDate() - i);
+      const key = `${targetDate.getFullYear()}-${pad(targetDate.getMonth() + 1)}-${pad(targetDate.getDate())}`;
+      const dayLabel = `${pad(targetDate.getDate())}/${pad(targetDate.getMonth() + 1)}`;
+
+      const itemsForDay = logsByDate.get(key) || [];
+      const uniqueItemsMap = new Map<string, any>();
+      for (const it of itemsForDay) {
+        const itemKey = it.creatorLogId || it.hourBucket;
+        uniqueItemsMap.set(itemKey, it);
+      }
+
+      let totalSec = 0;
+      for (const item of uniqueItemsMap.values()) {
+        const data = item.analyticData || {};
+        totalSec += data.watchTime || 0;
+      }
+
+      result.push({
+        day: dayLabel,
+        watchMinutes: Math.round(totalSec / 60),
+      });
+    }
+
+    return result;
+  }, [logs, preset]);
 
   // Recent 4 series
   const recentSeries = useMemo(() => {
@@ -306,31 +377,9 @@ function OverviewDashboardContent({
               Tổng số lượt xem kênh
             </span>
           </div>
-          {/* Mini Sparkline Gold */}
-          <div className="h-12 w-24">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart
-                data={
-                  viewsSparklineData.length
-                    ? viewsSparklineData
-                    : [{ val: 1 }, { val: 3 }, { val: 2 }, { val: 5 }]
-                }
-              >
-                <defs>
-                  <linearGradient id="spkGold" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#D4AF37" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#D4AF37" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <Area
-                  type="monotone"
-                  dataKey="val"
-                  stroke="#D4AF37"
-                  strokeWidth={2}
-                  fill="url(#spkGold)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+          {/* Icon Badge Gold */}
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#D4AF37]/10 border border-[#D4AF37]/20 shadow-inner">
+            <Eye className="h-6 w-6 text-[#D4AF37]" />
           </div>
         </div>
 
@@ -356,31 +405,9 @@ function OverviewDashboardContent({
               Số người theo dõi kênh
             </span>
           </div>
-          {/* Mini Sparkline Emerald */}
-          <div className="h-12 w-24">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart
-                data={
-                  subSparklineData.length
-                    ? subSparklineData
-                    : [{ val: 1 }, { val: 2 }, { val: 4 }, { val: 5 }]
-                }
-              >
-                <defs>
-                  <linearGradient id="spkEmerald" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <Area
-                  type="monotone"
-                  dataKey="val"
-                  stroke="#10b981"
-                  strokeWidth={2}
-                  fill="url(#spkEmerald)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+          {/* Icon Badge Emerald */}
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/10 border border-emerald-500/20 shadow-inner">
+            <Users className="h-6 w-6 text-emerald-400" />
           </div>
         </div>
 
@@ -406,31 +433,9 @@ function OverviewDashboardContent({
               Thích, Bình luận, Lưu, Chia sẻ
             </span>
           </div>
-          {/* Mini Sparkline Rose */}
-          <div className="h-12 w-24">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart
-                data={
-                  engagementSparklineData.length
-                    ? engagementSparklineData
-                    : [{ val: 4 }, { val: 2 }, { val: 3 }, { val: 1 }]
-                }
-              >
-                <defs>
-                  <linearGradient id="spkRose" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#f43f5e" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <Area
-                  type="monotone"
-                  dataKey="val"
-                  stroke="#f43f5e"
-                  strokeWidth={2}
-                  fill="url(#spkRose)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+          {/* Icon Badge Rose */}
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-rose-500/10 border border-rose-500/20 shadow-inner">
+            <Heart className="h-6 w-6 text-rose-400" />
           </div>
         </div>
       </div>
@@ -718,7 +723,11 @@ function OverviewDashboardContent({
           ) : (
             <div className="h-64 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={topSeriesChartData} layout="vertical">
+                <BarChart
+                  data={topSeriesChartData}
+                  layout="vertical"
+                  margin={{ top: 10, right: 30, left: 10, bottom: 5 }}
+                >
                   <CartesianGrid
                     strokeDasharray="3 3"
                     stroke="#27272a"
@@ -729,6 +738,7 @@ function OverviewDashboardContent({
                     stroke="#71717a"
                     fontSize={11}
                     tickLine={false}
+                    allowDecimals={false}
                   />
                   <YAxis
                     dataKey="name"
@@ -736,7 +746,7 @@ function OverviewDashboardContent({
                     stroke="#a1a1aa"
                     fontSize={11}
                     tickLine={false}
-                    width={110}
+                    width={120}
                   />
                   <Tooltip
                     contentStyle={{
@@ -755,12 +765,14 @@ function OverviewDashboardContent({
                     fill="#D4AF37"
                     name="Lượt xem"
                     radius={[0, 6, 6, 0]}
+                    barSize={14}
                   />
                   <Bar
                     dataKey="subscribers"
                     fill="#10b981"
                     name="Người theo dõi"
                     radius={[0, 6, 6, 0]}
+                    barSize={14}
                   />
                 </BarChart>
               </ResponsiveContainer>

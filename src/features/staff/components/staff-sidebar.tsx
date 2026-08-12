@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { create } from "zustand";
 import { logoutAction } from "@/features/auth/api/auth.actions";
 import { useAuthStore } from "@/features/auth/store/auth.store";
 import {
@@ -9,15 +10,28 @@ import {
   FileCheck2, // Cho Creator Applications
   ShieldAlert, // Cho Content Moderation
   Flag, // Cho Report Management
-  Settings,
+  ShieldCheck,
+  Users,
+  Clapperboard,
   LogOut,
-  HelpCircle,
 } from "lucide-react";
+
+type StaffSidebarState = {
+  isSidebarOpen: boolean;
+  toggleSidebar: () => void;
+};
+
+export const useStaffSidebarStore = create<StaffSidebarState>((set) => ({
+  isSidebarOpen: true,
+  toggleSidebar: () =>
+    set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
+}));
 
 export function StaffSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { clearAuth } = useAuthStore();
+  const isSidebarOpen = useStaffSidebarStore((state) => state.isSidebarOpen);
 
   const handleLogout = async () => {
     await logoutAction();
@@ -31,28 +45,36 @@ export function StaffSidebar() {
     { name: "Applications", href: "/staff/applications", icon: FileCheck2 },
     { name: "Moderation", href: "/staff/moderation", icon: ShieldAlert },
     { name: "Reports & Tickets", href: "/staff/reports", icon: Flag },
+    {
+      name: "Kiểm duyệt Hồ sơ",
+      href: "/staff/creator-verification",
+      icon: ShieldCheck,
+    },
+    {
+      name: "Người sáng tạo",
+      href: "/staff/creators",
+      icon: Users,
+    },
+    {
+      name: "Danh sách Series",
+      href: "/staff/series",
+      icon: Clapperboard,
+    },
   ];
 
   return (
-    <aside className="sticky top-0 flex h-screen w-[260px] flex-col border-r border-gray-100 bg-white py-6 shrink-0">
-      {/* Logo Area */}
-      <div className="px-8 mb-8">
-        <Link href="/staff/dashboard" className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded bg-[#10B981] text-white font-bold text-lg shadow-sm">
-            T
-          </div>
-          <span className="font-heading text-xl font-extrabold text-gray-900 tracking-wide">
-            TaleX{" "}
-            <span className="text-gray-400 font-medium text-sm">Staff</span>
-          </span>
-        </Link>
-      </div>
-
+    <aside
+      className={`flex h-[calc(100vh-64px)] shrink-0 flex-col border-r border-gray-100 bg-white py-4 transition-all duration-300 ${
+        isSidebarOpen ? "w-[260px]" : "w-[80px]"
+      }`}
+    >
       {/* Navigation Links */}
-      <nav className="flex-1 px-4 space-y-1">
-        <div className="px-4 mb-2 text-xs font-bold tracking-widest text-gray-400 uppercase">
-          Workspace
-        </div>
+      <nav className="flex-1 overflow-y-auto px-3 space-y-1">
+        {isSidebarOpen && (
+          <div className="px-3 mb-2 text-xs font-bold tracking-widest text-gray-400 uppercase">
+            Workspace
+          </div>
+        )}
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname.startsWith(item.href);
@@ -61,19 +83,30 @@ export function StaffSidebar() {
             <Link
               key={item.name}
               href={item.href}
-              className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-bold transition-all ${
+              title={item.name}
+              className={`relative flex items-center rounded-lg py-3 text-sm font-bold transition-all ${
+                isSidebarOpen
+                  ? "justify-start gap-3 px-4"
+                  : "justify-center px-0"
+              } ${
                 isActive
                   ? "bg-[#ECFDF5] text-[#10B981]" // Nền xanh ngọc nhạt, chữ đậm
                   : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
               }`}
             >
               <Icon
-                className={`w-5 h-5 ${isActive ? "text-[#10B981]" : "text-gray-400"}`}
+                className={`w-5 h-5 shrink-0 ${isActive ? "text-[#10B981]" : "text-gray-400"}`}
               />
-              {item.name}
-              {/* Badge thông báo số lượng công việc chờ (Mock) */}
+              {isSidebarOpen && <span className="truncate">{item.name}</span>}
+              {/* Badge thông báo số lượng công việc chờ */}
               {item.name === "Moderation" && (
-                <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-red-100 text-[10px] text-red-600">
+                <span
+                  className={`flex items-center justify-center rounded-full bg-red-100 text-[10px] text-red-600 ${
+                    isSidebarOpen
+                      ? "ml-auto h-5 w-5"
+                      : "absolute top-1 right-2 h-4 w-4 text-[9px]"
+                  }`}
+                >
                   12
                 </span>
               )}
@@ -82,24 +115,25 @@ export function StaffSidebar() {
         })}
       </nav>
 
-      {/* Bottom Actions */}
-      <div className="px-6 mt-auto flex flex-col gap-2 border-t border-gray-100 pt-4">
-        <button className="flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-900 w-full transition-colors">
-          <Settings className="w-5 h-5 text-gray-400" />
-          Preferences
-        </button>
-        <button className="flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-900 w-full transition-colors">
-          <HelpCircle className="w-5 h-5 text-gray-400" />
-          Staff Guidelines
-        </button>
+      {/* Bottom Pinned Logout Button */}
+      <div className="mt-auto border-t border-gray-100 px-3 pt-3">
         <button
-            onClick={handleLogout}
-            className="flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-medium text-gray-500 hover:bg-red-50 hover:text-red-600 w-full transition-colors mt-2"
-          >
-          <LogOut className="w-5 h-5 text-gray-400" />
-          Logout
+          onClick={handleLogout}
+          title="Đăng xuất"
+          aria-label="Đăng xuất"
+          className={`flex items-center gap-3 rounded-lg py-3 text-sm font-bold transition-all text-red-500 hover:bg-red-50 hover:text-red-600 ${
+            isSidebarOpen
+              ? "w-full justify-start px-4"
+              : "w-full justify-center px-0"
+          }`}
+        >
+          <LogOut className="w-5 h-5 shrink-0" />
+          {isSidebarOpen && <span className="truncate">Đăng xuất</span>}
         </button>
       </div>
     </aside>
   );
 }
+
+
+
