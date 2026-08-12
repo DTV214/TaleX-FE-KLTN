@@ -466,7 +466,7 @@ function IdentityTable({
                   className="text-gray-700 transition hover:bg-gray-50/50"
                 >
                   <td className="px-6 py-4 font-bold text-gray-900">
-                    {record.creatorName}
+                    {record.accountName}
                   </td>
                   <td className="px-6 py-4 font-mono text-gray-700">
                     {record.taxId}
@@ -530,7 +530,6 @@ function PaymentProfileTable({
               <th className="px-6 py-4 font-semibold">Tên Creator</th>
               <th className="px-6 py-4 font-semibold">Ngân hàng</th>
               <th className="px-6 py-4 font-semibold">Số TK</th>
-              <th className="px-6 py-4 font-semibold">Tên TK</th>
               <th className="px-6 py-4 font-semibold">Trạng thái</th>
               <th className="px-6 py-4 text-right font-semibold">Hành động</th>
             </tr>
@@ -543,16 +542,13 @@ function PaymentProfileTable({
                   className="text-gray-700 transition hover:bg-gray-50/50"
                 >
                   <td className="px-6 py-4 font-bold text-gray-900">
-                    {record.creatorName}
+                    {record.accountName}
                   </td>
                   <td className="px-6 py-4 font-mono text-gray-700">
                     {record.bankCode}
                   </td>
                   <td className="px-6 py-4 font-mono text-gray-700">
                     {record.accountNumber}
-                  </td>
-                  <td className="px-6 py-4 text-gray-700">
-                    {record.accountName}
                   </td>
                   <td className="px-6 py-4">
                     <StatusBadge
@@ -581,7 +577,7 @@ function PaymentProfileTable({
             ) : (
               <tr>
                 <td
-                  colSpan={6}
+                  colSpan={5}
                   className="px-6 py-12 text-center text-sm font-medium text-gray-400"
                 >
                   Chưa có hồ sơ thanh toán cần hiển thị.

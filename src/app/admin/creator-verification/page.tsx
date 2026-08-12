@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -432,7 +432,7 @@ function IdentityTable({
                   className="text-gray-700 transition hover:bg-gray-50/70"
                 >
                   <td className="px-4 py-4 font-semibold text-gray-900">
-                    {record.creatorName}
+                    {record.accountName}
                   </td>
                   <td className="px-4 py-4 font-mono text-gray-700">
                     {record.taxId}
@@ -496,7 +496,6 @@ function PaymentProfileTable({
               <th className="px-4 py-3 font-semibold">Tên Creator</th>
               <th className="px-4 py-3 font-semibold">Ngân hàng</th>
               <th className="px-4 py-3 font-semibold">Số TK</th>
-              <th className="px-4 py-3 font-semibold">Tên TK</th>
               <th className="px-4 py-3 font-semibold">Trạng thái</th>
               <th className="px-4 py-3 text-right font-semibold">Hành động</th>
             </tr>
@@ -509,16 +508,13 @@ function PaymentProfileTable({
                   className="text-gray-700 transition hover:bg-gray-50/70"
                 >
                   <td className="px-4 py-4 font-semibold text-gray-900">
-                    {record.creatorName}
+                    {record.accountName}
                   </td>
                   <td className="px-4 py-4 font-mono text-gray-700">
                     {record.bankCode}
                   </td>
                   <td className="px-4 py-4 font-mono text-gray-700">
                     {record.accountNumber}
-                  </td>
-                  <td className="px-4 py-4 text-gray-700">
-                    {record.accountName}
                   </td>
                   <td className="px-4 py-4">
                     <StatusBadge
@@ -547,7 +543,7 @@ function PaymentProfileTable({
             ) : (
               <tr>
                 <td
-                  colSpan={6}
+                  colSpan={5}
                   className="px-4 py-10 text-center text-sm font-medium text-gray-400"
                 >
                   Chưa có hồ sơ thanh toán cần hiển thị.
