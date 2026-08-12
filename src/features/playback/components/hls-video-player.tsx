@@ -22,7 +22,6 @@ import {
 } from "react";
 import { cn } from "@/shared/utils/utils";
 import { useHeartbeat } from "../hooks/useHeartbeat";
-import { VideoWatermarkOverlay } from "./video-watermark-overlay";
 
 type QualitySelection = "auto" | number;
 
@@ -53,6 +52,7 @@ type HlsVideoPlayerProps = {
   onEnded?: () => void;
   onTimeUpdate?: (time: number) => void;
   viewerId?: string;
+  token?: string; // Token dùng để gọi protected m3u8 API
 };
 
 /**
@@ -74,7 +74,7 @@ function extractSignatureParams(url: string): string {
   }
 }
 
-function buildHlsConfig(manifestUrl: string): Partial<HlsConfig> {
+function buildHlsConfig(manifestUrl: string, token?: string): Partial<HlsConfig> {
   const sigQuery = extractSignatureParams(manifestUrl);
   return {
     enableWorker: true,
@@ -86,19 +86,20 @@ function buildHlsConfig(manifestUrl: string): Partial<HlsConfig> {
     testBandwidth: true,
     capLevelToPlayerSize: true,
     abrEwmaDefaultEstimate: 4_500_000,
-    // Forward CloudFront signature to HLS sub-requests that lack signature
-    ...(sigQuery
-      ? {
-          xhrSetup: (xhr: XMLHttpRequest, url: string) => {
-            // Skip if URL already contains signature params (e.g. master playlist)
-            if (url.includes("Key-Pair-Id=") || url.includes("Policy=")) {
-              return;
-            }
-            const separator = url.includes("?") ? "&" : "?";
-            xhr.open("GET", url + separator + sigQuery, true);
-          },
-        }
-      : {}),
+    xhrSetup: (xhr: XMLHttpRequest, url: string) => {
+      // Forward CloudFront signature to HLS sub-requests that lack signature
+      let finalUrl = url;
+      if (sigQuery && !url.includes("Key-Pair-Id=") && !url.includes("Policy=")) {
+        const separator = url.includes("?") ? "&" : "?";
+        finalUrl = url + separator + sigQuery;
+      }
+      xhr.open("GET", finalUrl, true);
+      
+      // Nếu là API gọi vào hệ thống (bắt đầu bằng /api/ hoặc chứa api.talex) thì gắn Token
+      if (token && (url.startsWith("/") || url.includes("/api/"))) {
+        xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+      }
+    },
   };
 }
 
@@ -355,6 +356,7 @@ export function HlsVideoPlayer({
   onEnded,
   onTimeUpdate,
   viewerId,
+  token,
 }: HlsVideoPlayerProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -506,7 +508,7 @@ export function HlsVideoPlayer({
         }
 
         if (HlsConstructor.isSupported()) {
-          const hls = new HlsConstructor(buildHlsConfig(manifestUrl));
+          const hls = new HlsConstructor(buildHlsConfig(manifestUrl, token));
           hlsRef.current = hls;
           hls.attachMedia(media);
           hls.on(HlsConstructor.Events.MANIFEST_PARSED, () => {
@@ -849,8 +851,6 @@ export function HlsVideoPlayer({
       >
         Your browser does not support the video tag.
       </video>
-
-      <VideoWatermarkOverlay viewerId={viewerId} currentTime={currentTime} />
 
       {(isBuffering || !manifestUrl) && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/45">

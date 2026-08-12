@@ -49,7 +49,9 @@ export default function CopyrightCheckPage() {
       formData.append("file", file);
       formData.append("media_type", mediaType);
 
-      const response = await httpClient.post("/api/v1/admin/watermark/extract", formData);
+      const response = await httpClient.post(`/api/internal/watermark/extract`, formData, {
+        timeout: 300000 // 5 minutes timeout just in case AI takes time
+      });
       const data = response.data?.data || response.data;
       if (data) {
         finalCreatorId = data.creatorId;
@@ -254,7 +256,7 @@ export default function CopyrightCheckPage() {
               <p className="text-2xl font-black text-rose-600">{result.viewerId}</p>
               <div className="mt-4 text-xs text-rose-700">
                 {mediaType === "VIDEO" 
-                  ? "Đã trích xuất thành công từ sóng siêu âm 20kHz của Video."
+                  ? "Đã trích xuất thành công và dịch ngược từ mẫu A/B Watermarking của Video."
                   : "Đã trích xuất từ dữ liệu rò rỉ."}
               </div>
             </div>

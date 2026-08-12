@@ -401,6 +401,7 @@ export function SignedHlsPlayer({
                   storageKey={storageKey}
                   enableHeartbeat={Boolean(authUser)}
                   viewerId={resolvedViewerId}
+                  token={playbackQuery.data?.token}
                   onFatalError={handleFatalPlayerError}
                   onEnded={() => {
                     if (playbackQuery.data?.isLocked) {
