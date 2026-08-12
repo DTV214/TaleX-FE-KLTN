@@ -11,6 +11,10 @@ import {
   Settings,
   Volume2,
   VolumeX,
+  RotateCcw,
+  RotateCw,
+  Gauge,
+  X,
 } from "lucide-react";
 import {
   useCallback,
@@ -384,6 +388,8 @@ export function HlsVideoPlayer({
   const [volume, setVolume] = useState(1);
   const [muted, setMuted] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [speedOpen, setSpeedOpen] = useState(false);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [sourceError, setSourceError] = useState<string | null>(null);
 
@@ -484,6 +490,7 @@ export function HlsVideoPlayer({
       setBufferedEnd(0);
       setIsPlaying(false);
       setSettingsOpen(false);
+      setSpeedOpen(false);
       setIsBuffering(true);
       hlsRef.current?.destroy();
       hlsRef.current = null;
@@ -813,6 +820,29 @@ export function HlsVideoPlayer({
     [qualityOptions, switchNativeQuality],
   );
 
+  const handleSkipForward = () => {
+    if (videoRef.current) {
+      videoRef.current.currentTime = Math.min(
+        videoRef.current.currentTime + 5,
+        duration || videoRef.current.currentTime
+      );
+    }
+  };
+
+  const handleSkipBack = () => {
+    if (videoRef.current) {
+      videoRef.current.currentTime = Math.max(videoRef.current.currentTime - 5, 0);
+    }
+  };
+
+  const handleSpeedChange = (speed: number) => {
+    if (videoRef.current) {
+      videoRef.current.playbackRate = speed;
+      setPlaybackSpeed(speed);
+      setSettingsOpen(false);
+    }
+  };
+
   return (
     <div
       ref={containerRef}
@@ -935,74 +965,78 @@ export function HlsVideoPlayer({
 
           <div className="flex-1" />
 
-          <span className="hidden max-w-[132px] truncate text-xs font-black text-white/85 sm:block">
-            {selectedQualityLabel}
-          </span>
-
-          <div className="relative">
+          <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={() => setSettingsOpen((open) => !open)}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
-              aria-label="Settings"
+              onClick={handleSkipBack}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
+              aria-label="Back 5s"
             >
-              <Settings className="h-5 w-5" />
+              <RotateCcw className="h-4 w-4" />
             </button>
 
-            {settingsOpen && (
-              <div className="absolute bottom-12 right-0 w-44 overflow-hidden rounded-xl border border-white/15 bg-[#181818] py-1 text-sm shadow-2xl">
-                <button
-                  type="button"
-                  onClick={() => selectQuality("auto")}
-                  className={cn(
-                    "flex w-full items-center justify-between gap-3 px-3 py-2 text-left font-bold transition hover:bg-white/10",
-                    selectedQuality === "auto" && "text-[#FF7A96]",
-                  )}
-                >
-                  <span>Auto</span>
-                  {selectedQuality === "auto" && (
-                    <span className="text-xs">{selectedQualityLabel}</span>
-                  )}
-                </button>
+            <button
+              type="button"
+              onClick={handleSkipForward}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
+              aria-label="Skip 5s"
+            >
+              <RotateCw className="h-4 w-4" />
+            </button>
 
-                {qualityOptions.map((option) => (
-                  <button
-                    key={`${option.levelIndex}-${option.label}`}
-                    type="button"
-                    onClick={() => selectQuality(option.levelIndex)}
-                    className={cn(
-                      "flex w-full items-center justify-between gap-3 px-3 py-2 text-left font-bold transition hover:bg-white/10",
-                      selectedQuality === option.levelIndex && "text-[#FF7A96]",
-                    )}
-                  >
-                    <span>{option.label}</span>
-                    {selectedQuality === option.levelIndex && (
-                      <span className="text-xs">On</span>
-                    )}
-                  </button>
-                ))}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setSettingsOpen((open) => !open)}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
+                aria-label="Settings"
+              >
+                <Settings className="h-5 w-5" />
+              </button>
 
-                {qualityOptions.length === 0 && (
-                  <div className="px-3 py-2 text-xs font-bold text-white/55">
-                    Auto only
+              {settingsOpen && (
+                <div className="absolute bottom-12 right-0 w-40 overflow-hidden rounded-xl border border-white/15 bg-[#181818] text-sm shadow-2xl z-50">
+                  <div className="flex items-center justify-between border-b border-white/10 px-3 py-2">
+                    <div className="flex items-center gap-2">
+                      <Gauge className="h-4 w-4 text-white/70" />
+                      <span className="font-bold text-white/90">Speed</span>
+                    </div>
                   </div>
-                )}
-              </div>
-            )}
-          </div>
+                  <div className="max-h-60 overflow-y-auto py-1">
+                    {[0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2].map((speed) => (
+                      <button
+                        key={speed}
+                        type="button"
+                        onClick={() => handleSpeedChange(speed)}
+                        className={cn(
+                          "flex w-full items-center justify-between gap-3 px-3 py-2 text-left font-bold transition hover:bg-white/10",
+                          playbackSpeed === speed ? "text-[#FF7A96]" : "text-white/80"
+                        )}
+                      >
+                        <span>{speed}x</span>
+                        {playbackSpeed === speed && (
+                          <span className="h-1.5 w-1.5 rounded-full bg-[#FF7A96]" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
 
-          <button
-            type="button"
-            onClick={toggleFullscreen}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
-            aria-label={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
-          >
-            {isFullscreen ? (
-              <Minimize className="h-5 w-5" />
-            ) : (
-              <Maximize className="h-5 w-5" />
-            )}
-          </button>
+            <button
+              type="button"
+              onClick={toggleFullscreen}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
+              aria-label={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
+            >
+              {isFullscreen ? (
+                <Minimize className="h-5 w-5" />
+              ) : (
+                <Maximize className="h-5 w-5" />
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </div>
