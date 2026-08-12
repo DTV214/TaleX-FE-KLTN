@@ -13,7 +13,7 @@ const PUBLIC_CATEGORIES_ENDPOINT = "/api/v1/public/categories";
 const PUBLIC_TAGS_ENDPOINT = "/api/v1/public/tags";
 
 export type OnboardingGender = "MALE" | "FEMALE" | "UNKNOWN";
-export type OnboardingAgeSegment = "teen" | "mature";
+export type OnboardingAgeSegment = "TEEN" | "MATURE";
 
 export type UserFeatureProfile = {
   accountId?: string;
