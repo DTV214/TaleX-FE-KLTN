@@ -144,12 +144,12 @@ const ageOptions: Array<{
   helper: string;
 }> = [
   {
-    value: "teen",
+    value: "TEEN",
     label: "11-18",
     helper: "Teen",
   },
   {
-    value: "mature",
+    value: "MATURE",
     label: "18+",
     helper: "Mature",
   },
@@ -387,7 +387,7 @@ export function OnboardingLandingPage() {
   );
   const [step, setStep] = useState(0);
   const [gender, setGender] = useState<OnboardingGender>("UNKNOWN");
-  const [age, setAge] = useState<OnboardingAgeSegment>("mature");
+  const [age, setAge] = useState<OnboardingAgeSegment>("MATURE");
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const profileQuery = useUserFeatureProfile(isAuthenticated);
@@ -685,7 +685,7 @@ export function OnboardingLandingPage() {
                       max={80}
                       value={age}
                       onChange={(event) =>
-                        setAge(Number(event.target.value) <= 18 ? "teen" : "mature")
+                        setAge(Number(event.target.value) <= 18 ? "TEEN" : "MATURE")
                       }
                       className="h-16 w-full rounded-2xl border border-white/10 bg-white/[0.055] px-5 pr-14 text-center text-3xl font-black text-white outline-none transition placeholder:text-white/25 focus:border-[#D4AF37]/55 focus:bg-white/[0.075] sm:w-40"
                     />
