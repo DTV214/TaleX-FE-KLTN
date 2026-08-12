@@ -34,8 +34,12 @@ export function WatermarkedImage({ mediaId, fallbackUrl, className, ...props }: 
           img.onload = resolve;
           img.onerror = () => reject(new Error("Failed to load image for canvas"));
 
-          // Dùng Next.js API Route proxy để vượt qua lỗi CORS của Cloudfront/S3
-          img.src = `/api/image-proxy?url=${encodeURIComponent(fallbackUrl)}`;
+          // Dùng Next.js API Route proxy để vượt qua lỗi CORS của Cloudfront/S3 (chỉ áp dụng cho link ngoài)
+          if (fallbackUrl.startsWith("http")) {
+            img.src = `/api/image-proxy?url=${encodeURIComponent(fallbackUrl)}`;
+          } else {
+            img.src = fallbackUrl;
+          }
         });
 
         if (!isMounted) return;
