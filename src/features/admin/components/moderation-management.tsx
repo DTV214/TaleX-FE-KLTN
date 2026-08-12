@@ -176,6 +176,77 @@ function RejectReasonModal({
   );
 }
 
+function ConfirmForceHideModal({
+  isLoading,
+  media,
+  onClose,
+  onConfirm,
+  open,
+}: {
+  isLoading: boolean;
+  media: ModerationMedia | null;
+  onClose: () => void;
+  onConfirm: () => void;
+  open: boolean;
+}) {
+  if (!open || !media) return null;
+
+  return (
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+        <div className="mb-6 flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-bold text-slate-950">
+              Tạm ẩn cả episode
+            </h2>
+            <p className="mt-1 text-sm font-medium text-slate-500">
+              Toàn bộ episode sẽ ngừng hiển thị công khai ngay lập tức, creator sẽ được thông báo.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isLoading}
+            className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50"
+            aria-label="Đóng"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 p-3">
+          <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
+            Mã nội dung
+          </p>
+          <p className="mt-1 break-all text-sm font-bold text-slate-900">
+            {media.id}
+          </p>
+        </div>
+
+        <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isLoading}
+            className="inline-flex h-11 items-center justify-center rounded-lg border border-slate-200 bg-white px-5 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Hủy
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={isLoading}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-red-600 px-5 text-sm font-bold text-white shadow-sm transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+            Tạm ẩn episode
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function formatPercent(value?: number) {
   if (typeof value !== "number") return "-";
   return `${(value * 100).toFixed(1)}%`;
@@ -271,21 +342,21 @@ function ModerationDetailModal({
                 <p className="mt-1 text-slate-700">{formatApprovalStatus(media.approvalStatus)}</p>
               </div>
               <div>
-                <p className="text-slate-400">Episode</p>
+                <p className="text-slate-400">Tập</p>
                 <p className="mt-1 truncate text-slate-700">
                   {media.episodeTitle || media.episodeId || "-"}
                 </p>
               </div>
               <div>
-                <p className="text-slate-400">Series</p>
+                <p className="text-slate-400">Bộ truyện</p>
                 <p className="mt-1 truncate text-slate-700">{media.seriesTitle || "-"}</p>
               </div>
               <div>
-                <p className="text-slate-400">Season</p>
+                <p className="text-slate-400">Phần</p>
                 <p className="mt-1 truncate text-slate-700">{media.seasonTitle || "-"}</p>
               </div>
               <div>
-                <p className="text-slate-400">Creator</p>
+                <p className="text-slate-400">Người sáng tạo</p>
                 <p className="mt-1 truncate text-slate-700">{media.creatorUsername || "-"}</p>
               </div>
               <div>
@@ -635,21 +706,21 @@ function SourceMediaPreviewModal({
                   <p className="mt-1 text-slate-700">{formatApprovalStatus(detailQuery.data.approvalStatus || "-")}</p>
                 </div>
                 <div>
-                  <p className="text-slate-400">Episode</p>
+                  <p className="text-slate-400">Tập</p>
                   <p className="mt-1 truncate text-slate-700">
                     {detailQuery.data.episodeTitle || detailQuery.data.episodeId || "-"}
                   </p>
                 </div>
                 <div>
-                  <p className="text-slate-400">Series</p>
+                  <p className="text-slate-400">Bộ truyện</p>
                   <p className="mt-1 truncate text-slate-700">{detailQuery.data.seriesTitle || "-"}</p>
                 </div>
                 <div>
-                  <p className="text-slate-400">Season</p>
+                  <p className="text-slate-400">Phần</p>
                   <p className="mt-1 truncate text-slate-700">{detailQuery.data.seasonTitle || "-"}</p>
                 </div>
                 <div>
-                  <p className="text-slate-400">Creator</p>
+                  <p className="text-slate-400">Người sáng tạo</p>
                   <p className="mt-1 truncate text-slate-700">{detailQuery.data.creatorUsername || "-"}</p>
                 </div>
                 <div>
@@ -744,21 +815,21 @@ function ModerationCard({
 
         <div className="grid grid-cols-2 gap-3 rounded-xl bg-slate-50 p-3 text-xs font-semibold text-slate-500">
           <div>
-            <p className="text-slate-400">Episode</p>
+            <p className="text-slate-400">Tập</p>
             <p className="mt-1 truncate text-slate-700">
               {media.episodeTitle || media.episodeId || "-"}
             </p>
           </div>
           <div>
-            <p className="text-slate-400">Series</p>
+            <p className="text-slate-400">Bộ truyện</p>
             <p className="mt-1 truncate text-slate-700">{media.seriesTitle || "-"}</p>
           </div>
           <div>
-            <p className="text-slate-400">Season</p>
+            <p className="text-slate-400">Phần</p>
             <p className="mt-1 truncate text-slate-700">{media.seasonTitle || "-"}</p>
           </div>
           <div>
-            <p className="text-slate-400">Creator</p>
+            <p className="text-slate-400">Người sáng tạo</p>
             <p className="mt-1 truncate text-slate-700">{media.creatorUsername || "-"}</p>
           </div>
           <div>
@@ -884,21 +955,21 @@ function ApprovedMediaCard({
 
         <div className="grid grid-cols-2 gap-3 rounded-xl bg-slate-50 p-3 text-xs font-semibold text-slate-500">
           <div>
-            <p className="text-slate-400">Episode</p>
+            <p className="text-slate-400">Tập</p>
             <p className="mt-1 truncate text-slate-700">
               {media.episodeTitle || media.episodeId || "-"}
             </p>
           </div>
           <div>
-            <p className="text-slate-400">Series</p>
+            <p className="text-slate-400">Bộ truyện</p>
             <p className="mt-1 truncate text-slate-700">{media.seriesTitle || "-"}</p>
           </div>
           <div>
-            <p className="text-slate-400">Season</p>
+            <p className="text-slate-400">Phần</p>
             <p className="mt-1 truncate text-slate-700">{media.seasonTitle || "-"}</p>
           </div>
           <div>
-            <p className="text-slate-400">Creator</p>
+            <p className="text-slate-400">Người sáng tạo</p>
             <p className="mt-1 truncate text-slate-700">{media.creatorUsername || "-"}</p>
           </div>
           <div>
@@ -1076,10 +1147,10 @@ function DetailInfoGrid({ media }: { media: ModerationMedia }) {
   return (
     <div className="grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-xs font-semibold text-slate-500 backoffice-dark:border-white/10 backoffice-dark:bg-black/20 backoffice-dark:text-white/55 sm:grid-cols-2">
       {[
-        ["Episode", media.episodeTitle || media.episodeId || "-"],
-        ["Series", media.seriesTitle || "-"],
-        ["Season", media.seasonTitle || "-"],
-        ["Creator", media.creatorUsername || "-"],
+        ["Tập", media.episodeTitle || media.episodeId || "-"],
+        ["Bộ truyện", media.seriesTitle || "-"],
+        ["Phần", media.seasonTitle || "-"],
+        ["Người sáng tạo", media.creatorUsername || "-"],
         ["Ngày tạo", formatDate(media.createdAt)],
         ["Thời điểm duyệt", formatDate(media.approvalReviewedAt)],
       ].map(([label, value]) => (
@@ -1329,6 +1400,7 @@ export function ModerationManagement() {
   const [page, setPage] = useState(0);
   const [approvedPage, setApprovedPage] = useState(0);
   const [rejectTarget, setRejectTarget] = useState<ModerationMedia | null>(null);
+  const [forceHideTarget, setForceHideTarget] = useState<ModerationMedia | null>(null);
   const [detailTarget, setDetailTarget] = useState<ModerationMedia | null>(null);
   const [selectedPendingId, setSelectedPendingId] = useState<string | null>(null);
   const [selectedApprovedId, setSelectedApprovedId] = useState<string | null>(null);
@@ -1394,15 +1466,17 @@ export function ModerationManagement() {
   function handleForceHide(media: ModerationMedia) {
     // Ẩn CẢ EPISODE chứa media này (không chỉ riêng media) — episode có thể đang HIỂN
     // THỊ CÔNG KHAI, xác nhận lại trước khi thực hiện để tránh bấm nhầm giữa lúc rà danh sách.
-    if (
-      !window.confirm(
-        `Xác nhận tạm ẩn cả episode chứa nội dung ${media.id}? Toàn bộ episode sẽ ngừng hiển thị công khai ngay lập tức, creator sẽ được thông báo.`,
-      )
-    ) {
-      return;
-    }
-    forceHideMutation.mutate(media.episodeId, {
-      onSuccess: () => toast.success("Đã tạm ẩn episode. Creator đã được thông báo."),
+    // Mở modal xác nhận đúng UI app thay vì window.confirm() mặc định của trình duyệt.
+    setForceHideTarget(media);
+  }
+
+  function confirmForceHide() {
+    if (!forceHideTarget) return;
+    forceHideMutation.mutate(forceHideTarget.episodeId, {
+      onSuccess: () => {
+        toast.success("Đã tạm ẩn episode. Creator đã được thông báo.");
+        setForceHideTarget(null);
+      },
       onError: (error) => toast.error(getErrorMessage(error)),
     });
   }
@@ -1852,6 +1926,16 @@ export function ModerationManagement() {
         }}
         onSubmit={handleReject}
         open={Boolean(rejectTarget)}
+      />
+
+      <ConfirmForceHideModal
+        isLoading={forceHideMutation.isPending}
+        media={forceHideTarget}
+        onClose={() => {
+          if (!forceHideMutation.isPending) setForceHideTarget(null);
+        }}
+        onConfirm={confirmForceHide}
+        open={Boolean(forceHideTarget)}
       />
 
       <ModerationDetailModal
