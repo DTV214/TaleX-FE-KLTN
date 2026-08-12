@@ -8,11 +8,14 @@ import { logoutAction } from "@/features/auth/api/auth.actions";
 import { useAuthStore } from "@/features/auth/store/auth.store";
 import {
   BarChart as Analytics,
+  Ban,
   ChevronRight,
   CircleDollarSign,
   Clapperboard,
   CreditCard,
+  FileQuestion,
   FileText,
+  Flag,
   Folder,
   Grid3X3,
   Home,
@@ -59,6 +62,9 @@ const contentNavItems: NavItem[] = [
   { name: "Thẻ", href: "/admin/tags", icon: Tag },
   { name: "Kiểm duyệt", href: "/admin/moderation", icon: ShieldAlert },
   { name: "Xu hướng", href: "/admin/trending", icon: TrendingUp },
+  { name: "Báo cáo", href: "/admin/reports", icon: Flag },
+  { name: "Hình phạt", href: "/admin/penalties", icon: Ban },
+  { name: "Khiếu nại", href: "/admin/appeals", icon: FileQuestion },
 ];
 
 const creatorNavItems: NavItem[] = [

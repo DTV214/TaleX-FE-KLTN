@@ -7,7 +7,13 @@ export type ImagePresignedUploadRequest = {
   fileName: string;
   mimeType: string;
   fileSize: number;
-  imageContext: "cover" | "banner" | "comic-page" | "avatar";
+  imageContext:
+    | "cover"
+    | "banner"
+    | "comic-page"
+    | "avatar"
+    | "report-proof"
+    | "appeal-proof";
   entityId?: string;
   actorId?: string;
 };

@@ -18,8 +18,10 @@ import {
   ChevronDown,
   CheckCircle2,
   Heart,
+  Flag,
 } from "lucide-react";
 import { useAuthStore } from "@/features/auth/store/auth.store";
+import { ReportDialog } from "@/features/moderation-reports/components/report-dialog";
 import { cn } from "@/shared/utils/utils";
 import type { CommentDto } from "../api/comments-api";
 import { useCommentReplies, useCommentMutations } from "../hooks/use-comments";
@@ -264,6 +266,21 @@ export function CommentItem({
                     >
                       <EyeOff className="w-3.5 h-3.5" /> Ẩn
                     </button>
+                  )}
+                  {!isCommentOwner && (
+                    <ReportDialog
+                      targetType="COMMENT"
+                      targetId={comment.commentId}
+                      targetLabel={`Bình luận của @${comment.displayName || comment.username || "nguoidung"}`}
+                    >
+                      <span
+                        onClick={() => setShowMenu(false)}
+                        className="flex w-full cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-left text-red-300 hover:bg-zinc-800"
+                      >
+                        <Flag className="h-3.5 w-3.5" />
+                        Báo cáo
+                      </span>
+                    </ReportDialog>
                   )}
                 </div>
               )}

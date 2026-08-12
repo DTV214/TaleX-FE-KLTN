@@ -18,6 +18,7 @@ import {
   Megaphone,
   Home,
   Tv,
+  ShieldAlert,
 } from "lucide-react";
 import { DropdownMenu } from "radix-ui";
 import { logoutAction } from "@/features/auth/api/auth.actions";
@@ -56,6 +57,7 @@ export function CreatorLayout({
     { label: "Quản lý Combo", view: "combos", icon: Tag },
     { label: "Tăng tương tác", view: "campaign", icon: Zap },
     { label: "Chiến dịch", view: "campaigns", icon: Megaphone },
+    { label: "Vi phạm & Khiếu nại", view: "violations", icon: ShieldAlert },
   ];
 
   const handleLogout = async () => {

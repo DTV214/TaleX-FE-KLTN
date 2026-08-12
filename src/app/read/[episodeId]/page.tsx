@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ComicReader } from "@/features/comics/components/comic-reader";
 import { AntiPiracyWrapper } from "@/features/playback/components/anti-piracy-wrapper";
+import { EpisodeReportButton } from "@/features/moderation-reports/components/episode-report-button";
 
 type ReadEpisodePageProps = {
   params: Promise<{
@@ -26,6 +27,7 @@ export default async function ReadEpisodePage({
   return (
     <AntiPiracyWrapper type="comic">
       <ComicReader episodeId={episodeId} />
+      <EpisodeReportButton episodeId={episodeId} />
     </AntiPiracyWrapper>
   );
 }

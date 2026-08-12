@@ -18,6 +18,7 @@ import {
   ChevronRight,
   Heart,
   Star,
+  Flag,
 } from "lucide-react";
 import {
   getPublicSeriesDetail,
@@ -38,6 +39,7 @@ import { InteractiveStarRating } from "./interactive-star-rating";
 import { useGetSeriesRatings } from "../hooks/use-series-ratings";
 import { useAuthStore } from "@/features/auth/store/auth.store";
 import { AdSlot } from "@/shared/ui/ad-slot";
+import { ReportDialog } from "@/features/moderation-reports/components/report-dialog";
 
 interface SeriesDetailProps {
   seriesId: string;
@@ -527,12 +529,37 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
                     />
                   </div>
                 )}
+                {series.accountId && !isOwner && (
+                  <ReportDialog
+                    targetType="ACCOUNT"
+                    targetId={series.accountId}
+                    targetLabel={`Creator ${series.creatorName}`}
+                  >
+                    <span className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 text-xs font-bold text-zinc-300 transition hover:border-red-400/40 hover:bg-red-500/10 hover:text-red-300">
+                      <Flag className="h-4 w-4" />
+                      Báo cáo creator
+                    </span>
+                  </ReportDialog>
+                )}
               </div>
             )}
 
 
 
             {/* Mô tả dài */}
+            <div className="mb-8 flex flex-wrap items-center gap-3">
+              <ReportDialog
+                targetType="SERIES"
+                targetId={seriesId}
+                targetLabel={series.title}
+              >
+                <span className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 text-xs font-bold text-zinc-300 transition hover:border-[#D4AF37]/50 hover:bg-[#D4AF37]/10 hover:text-[#D4AF37]">
+                  <Flag className="h-4 w-4" />
+                  Báo cáo series
+                </span>
+              </ReportDialog>
+            </div>
+
             <div className="max-w-3xl mb-8">
               <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-2">
                 Giới thiệu nội dung

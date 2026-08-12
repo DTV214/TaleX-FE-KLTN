@@ -125,6 +125,7 @@ import { CreatorMonetizationView } from "@/features/creator-dashboard/components
 import { CreatorPaymentProfilesView } from "@/features/creator-dashboard/components/views/creator-payment-profiles-view";
 import { CreatorCampaignPurchaseView } from "@/features/creator-dashboard/components/views/creator-campaign-purchase-view";
 import { CreatorCampaignsView } from "@/features/creator-dashboard/components/views/creator-campaigns-view";
+import { CreatorViolationsView } from "@/features/moderation-reports/components/creator-violations-view";
 import { AIPolicyAndCopyright } from "@/features/creator-dashboard/components/ai-policy-and-copyright";
 import { mediaSystemConfigApi } from "@/features/admin/api/media-system-config.api";
 import {
@@ -156,6 +157,7 @@ const dashboardViews: DashboardView[] = [
   "combos",
   "monetization",
   "payment-profiles",
+  "violations",
   "campaign",
   "campaigns",
   "publish",
@@ -266,6 +268,11 @@ const viewMeta: Record<
     title: "Tài khoản thanh toán",
     description:
       "Quản lý tài khoản ngân hàng nhận doanh thu và theo dõi trạng thái duyệt hồ sơ.",
+  },
+  violations: {
+    title: "Vi phạm & Khiếu nại",
+    description:
+      "Theo dõi hình phạt vi phạm và gửi khiếu nại để admin xem lại quyết định xử lý.",
   },
   publish: {
     title: "Xuất bản",
@@ -2141,6 +2148,8 @@ function CreatorDashboardContent() {
               />
             ) : activeView === "payment-profiles" ? (
               <CreatorPaymentProfilesView />
+            ) : activeView === "violations" ? (
+              <CreatorViolationsView />
             ) : activeView === "campaign" ? (
               <CreatorCampaignPurchaseView />
             ) : activeView === "campaigns" ? (

@@ -13,6 +13,7 @@ export type DashboardView =
   | "combos"
   | "monetization"
   | "payment-profiles"
+  | "violations"
   | "campaign"
   | "campaigns"
   | "publish"
