@@ -43,7 +43,7 @@ export default function CopyrightCheckPage() {
     let finalViewerId: string | undefined = undefined;
     let finalMessage: string | undefined = undefined;
 
-    // 1. Lấy Creator ID từ Java BE
+    // 1. Lấy Creator ID và Viewer ID từ Java BE
     try {
       const formData = new FormData();
       formData.append("file", file);
@@ -56,6 +56,10 @@ export default function CopyrightCheckPage() {
       if (data) {
         finalCreatorId = data.creatorId;
         finalMessage = data.message;
+        // Với VIDEO: viewer_id đã được Java dịch ngược từ binary → UUID thật
+        if (mediaType === "VIDEO" && data.viewerId && data.viewerId !== "null") {
+          finalViewerId = data.viewerId;
+        }
       }
     } catch (err: any) {
       console.error("Lỗi khi quét Creator ID:", err);
@@ -250,19 +254,41 @@ export default function CopyrightCheckPage() {
           )}
 
           {result && result.viewerId && result.viewerId !== "null" && (
-            <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 p-6 text-center">
-              <AlertTriangle className="mx-auto mb-3 h-12 w-12 text-rose-500" />
-              <h3 className="mb-1 text-sm font-semibold text-rose-800">Thủ phạm rò rỉ (Viewer ID)</h3>
-              <p className="text-2xl font-black text-rose-600">{result.viewerId}</p>
-              <div className="mt-4 text-xs text-rose-700">
-                {mediaType === "VIDEO" 
-                  ? "Đã trích xuất thành công và dịch ngược từ mẫu A/B Watermarking của Video."
-                  : "Đã trích xuất từ dữ liệu rò rỉ."}
+            <div className="mb-4 rounded-xl border-2 border-rose-400 bg-rose-50 p-6">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-rose-500">
+                  <AlertTriangle className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-rose-800 uppercase tracking-wide">Thủ phạm rò rỉ</h3>
+                  <p className="text-xs text-rose-500">
+                    {mediaType === "VIDEO" 
+                      ? "Trích xuất từ mặt nạ A/B HLS Watermark" 
+                      : "Trích xuất từ dữ liệu rò rỉ"}
+                  </p>
+                </div>
+              </div>
+              <div className="rounded-lg bg-white border border-rose-200 px-4 py-3 font-mono text-sm break-all text-rose-700 select-all">
+                {result.viewerId}
+              </div>
+              <div className="mt-3 flex gap-2">
+                <button
+                  onClick={() => navigator.clipboard.writeText(result.viewerId!)}
+                  className="flex-1 rounded-lg border border-rose-300 bg-white py-2 text-xs font-semibold text-rose-600 hover:bg-rose-100 transition-colors"
+                >
+                  ✂️ Sao chép UUID
+                </button>
+                <a
+                  href={`/admin/users?search=${result.viewerId}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex-1 rounded-lg bg-rose-500 py-2 text-center text-xs font-semibold text-white hover:bg-rose-600 transition-colors"
+                >
+                  🔍 Tra cứu tài khoản
+                </a>
               </div>
             </div>
           )}
-
-
 
           {result && result.message && (
             <div className="rounded-xl border border-amber-200 bg-amber-50 p-6">
