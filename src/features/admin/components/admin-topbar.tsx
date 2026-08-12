@@ -75,9 +75,9 @@ export function AdminTopbar() {
         <button
           type="button"
           onClick={toggleTheme}
-          aria-label={isDark ? "Chuyen sang giao dien sang" : "Chuyen sang giao dien toi"}
-          title={isDark ? "Chuyen sang giao dien sang" : "Chuyen sang giao dien toi"}
-          className="backoffice-theme-toggle inline-flex h-9 items-center justify-center gap-2 rounded-full border px-3 text-xs font-black transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37]/35"
+          aria-label={isDark ? "Chuyển sang giao diện sáng" : "Chuyển sang giao diện tối"}
+          title={isDark ? "Chuyển sang giao diện sáng" : "Chuyển sang giao diện tối"}
+          className="backoffice-theme-toggle inline-flex h-9 items-center justify-center gap-2 rounded-full border px-3 text-xs font-black leading-none transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37]/35"
         >
           <span className="backoffice-theme-toggle-icon inline-flex h-5 w-5 items-center justify-center rounded-full">
             {isDark ? (
@@ -86,7 +86,9 @@ export function AdminTopbar() {
               <Moon className="h-3.5 w-3.5" />
             )}
           </span>
-          <span className="hidden sm:inline">{isDark ? "Sang" : "Toi"}</span>
+          <span className="hidden min-w-8 font-sans leading-none sm:inline">
+            {isDark ? "Sáng" : "Tối"}
+          </span>
         </button>
         <button
           type="button"

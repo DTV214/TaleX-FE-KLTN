@@ -26,7 +26,7 @@ const FALLBACK_ROUTES = [
   "/", "/series", "/comics", "/watch", "/read", "/intro", "/missions",
   "/profile", "/bookmarks", "/liked", "/coin-history", "/premium",
   "/premium-history", "/purchase-history", "/subscriptions",
-  "/creator-channel", "/public-channel", "/recomment-demo"
+  "/creator-channel", "/public-channel"
 ];
 
 export function PopupAdWidget() {

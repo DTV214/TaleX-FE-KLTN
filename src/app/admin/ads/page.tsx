@@ -52,7 +52,6 @@ const QUICK_ROUTES = [
   "/subscriptions",
   "/creator-channel",
   "/public-channel",
-  "/recomment-demo",
 ];
 
 const tabs: Array<{ id: AdsTab; label: string; icon: typeof Megaphone }> = [

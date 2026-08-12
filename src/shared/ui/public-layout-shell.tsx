@@ -34,7 +34,6 @@ const sidebarRoutes = [
   "/creator-channel",
   "/public-channel",
   "/history",
-  "/recomment-demo",
   "/ads",
 ] as const;
 const hiddenChromeRoutes = [

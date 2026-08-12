@@ -669,6 +669,7 @@ function SourceMediaPreviewModal({
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function ModerationCard({
   isMutating,
   media,
@@ -791,6 +792,7 @@ function ModerationCard({
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function ApprovedMediaCard({
   isMutating,
   media,
@@ -936,6 +938,389 @@ function ApprovedMediaCard({
   );
 }
 
+function ModerationPreview({
+  className = "",
+  media,
+}: {
+  className?: string;
+  media: ModerationMedia;
+}) {
+  const isVideo = media.mediaType === "VIDEO";
+  const PreviewIcon = isVideo ? Video : FileImage;
+
+  if (media.url && media.mediaType === "IMAGE") {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={media.thumbnailUrl ?? media.url}
+        alt={media.id}
+        className={`h-full w-full object-cover ${className}`}
+      />
+    );
+  }
+
+  return (
+    <div className={`flex h-full w-full flex-col items-center justify-center gap-2 bg-slate-100 text-slate-400 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/45 ${className}`}>
+      <PreviewIcon className="h-6 w-6" />
+      <span className="text-[10px] font-black uppercase tracking-wide">
+        {isVideo ? "Video" : "Ảnh"}
+      </span>
+    </div>
+  );
+}
+
+function MediaTypeBadge({ media }: { media: ModerationMedia }) {
+  const isVideo = media.mediaType === "VIDEO";
+  const Icon = isVideo ? Video : FileImage;
+
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold ${
+        isVideo
+          ? "border-cyan-200 bg-cyan-50 text-cyan-700 backoffice-dark:border-cyan-300/25 backoffice-dark:bg-cyan-300/10 backoffice-dark:text-cyan-100"
+          : "border-violet-200 bg-violet-50 text-violet-700 backoffice-dark:border-[var(--backoffice-primary)]/30 backoffice-dark:bg-[var(--backoffice-primary-soft)] backoffice-dark:text-[var(--backoffice-primary)]"
+      }`}
+    >
+      <Icon className="h-3.5 w-3.5" />
+      {formatMediaType(media.mediaType)}
+    </span>
+  );
+}
+
+function ModerationListItem({
+  isSelected,
+  media,
+  mediaCount,
+  mode,
+  onSelect,
+}: {
+  isSelected: boolean;
+  media: ModerationMedia;
+  mediaCount?: number;
+  mode: "pending" | "approved";
+  onSelect: () => void;
+}) {
+  const isEpisodeForceHidden = media.episodeStatus === "FORCE_HIDDEN";
+
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className={`group w-full rounded-2xl border p-3 text-left transition ${
+        isSelected
+          ? "border-violet-300 bg-violet-50 shadow-sm backoffice-dark:border-[var(--backoffice-primary)]/40 backoffice-dark:bg-[var(--backoffice-primary-soft)]"
+          : "border-slate-200 bg-white hover:border-violet-200 hover:bg-violet-50/60 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.035] backoffice-dark:hover:bg-white/[0.07]"
+      }`}
+    >
+      <div className="flex gap-3">
+        <div className="h-20 w-28 shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-100 backoffice-dark:border-white/10">
+          <ModerationPreview media={media} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[11px] font-black uppercase tracking-wide text-slate-400 backoffice-dark:text-white/45">
+                Mã nội dung
+              </p>
+              <p className="mt-1 truncate text-sm font-black text-slate-950 backoffice-dark:text-white">
+                {media.id}
+              </p>
+            </div>
+            <span
+              className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-black ${
+                mode === "pending"
+                  ? "bg-amber-50 text-amber-700 backoffice-dark:bg-amber-300/10 backoffice-dark:text-amber-100"
+                  : isEpisodeForceHidden
+                    ? "bg-red-50 text-red-700 backoffice-dark:bg-red-400/10 backoffice-dark:text-red-200"
+                    : "bg-emerald-50 text-emerald-700 backoffice-dark:bg-emerald-400/10 backoffice-dark:text-emerald-200"
+              }`}
+            >
+              {mode === "pending"
+                ? "Chờ duyệt"
+                : isEpisodeForceHidden
+                  ? "Đang ẩn"
+                  : "Đã duyệt"}
+            </span>
+          </div>
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            <MediaTypeBadge media={media} />
+            {mediaCount && mediaCount > 1 ? (
+              <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-bold text-slate-600 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/65">
+                {mediaCount} media
+              </span>
+            ) : null}
+          </div>
+
+          <div className="mt-3 grid gap-1 text-xs font-semibold text-slate-500 backoffice-dark:text-white/55">
+            <p className="truncate">
+              <span className="text-slate-400">Episode:</span>{" "}
+              {media.episodeTitle || media.episodeId || "-"}
+            </p>
+            <p className="truncate">
+              <span className="text-slate-400">Series:</span>{" "}
+              {media.seriesTitle || "-"}
+            </p>
+            <p className="truncate">
+              <span className="text-slate-400">Creator:</span>{" "}
+              {media.creatorUsername || "-"}
+            </p>
+          </div>
+        </div>
+      </div>
+    </button>
+  );
+}
+
+function DetailInfoGrid({ media }: { media: ModerationMedia }) {
+  return (
+    <div className="grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-xs font-semibold text-slate-500 backoffice-dark:border-white/10 backoffice-dark:bg-black/20 backoffice-dark:text-white/55 sm:grid-cols-2">
+      {[
+        ["Episode", media.episodeTitle || media.episodeId || "-"],
+        ["Series", media.seriesTitle || "-"],
+        ["Season", media.seasonTitle || "-"],
+        ["Creator", media.creatorUsername || "-"],
+        ["Ngày tạo", formatDate(media.createdAt)],
+        ["Thời điểm duyệt", formatDate(media.approvalReviewedAt)],
+      ].map(([label, value]) => (
+        <div key={label} className="min-w-0">
+          <p className="text-slate-400 backoffice-dark:text-white/40">{label}</p>
+          <p className="mt-1 truncate text-slate-800 backoffice-dark:text-white/85">
+            {value}
+          </p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PendingDetailPanel({
+  isMutating,
+  media,
+  onApprove,
+  onReject,
+  onViewDetail,
+}: {
+  isMutating: boolean;
+  media: ModerationMedia | null;
+  onApprove: (media: ModerationMedia) => void;
+  onReject: (media: ModerationMedia) => void;
+  onViewDetail: (media: ModerationMedia) => void;
+}) {
+  if (!media) {
+    return (
+      <div className="flex min-h-[520px] items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
+        <p className="text-sm font-semibold text-slate-500 backoffice-dark:text-white/55">
+          Chọn một nội dung ở danh sách bên trái để xem chi tiết.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
+      <div className="aspect-video overflow-hidden border-b border-slate-200 bg-slate-100 backoffice-dark:border-white/10">
+        <ModerationPreview media={media} />
+      </div>
+
+      <div className="space-y-5 p-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <p className="text-xs font-black uppercase tracking-wide text-slate-400 backoffice-dark:text-white/45">
+              Mã nội dung
+            </p>
+            <h2 className="mt-1 break-all text-xl font-black text-slate-950 backoffice-dark:text-white">
+              {media.id}
+            </h2>
+          </div>
+          <div className="flex shrink-0 flex-wrap gap-2">
+            <MediaTypeBadge media={media} />
+            <span className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700 backoffice-dark:border-amber-300/25 backoffice-dark:bg-amber-300/10 backoffice-dark:text-amber-100">
+              {formatApprovalStatus(media.approvalStatus)}
+            </span>
+          </div>
+        </div>
+
+        <DetailInfoGrid media={media} />
+
+        <div className="grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
+          <button
+            type="button"
+            onClick={() => onApprove(media)}
+            disabled={isMutating}
+            className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 text-sm font-black text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <Check className="h-4 w-4" />
+            Duyệt
+          </button>
+          <button
+            type="button"
+            onClick={() => onReject(media)}
+            disabled={isMutating}
+            className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-red-600 px-5 text-sm font-black text-white shadow-sm transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <X className="h-4 w-4" />
+            Từ chối
+          </button>
+          <button
+            type="button"
+            onClick={() => onViewDetail(media)}
+            className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 text-sm font-bold text-slate-700 transition hover:bg-slate-50 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/10"
+          >
+            <Eye className="h-4 w-4" />
+            Chi tiết
+          </button>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function ApprovedDetailPanel({
+  isMutating,
+  media,
+  mediaCount,
+  onForceHide,
+  onForceUnhide,
+  onViewDetail,
+}: {
+  isMutating: boolean;
+  media: ModerationMedia | null;
+  mediaCount: number;
+  onForceHide: (media: ModerationMedia) => void;
+  onForceUnhide: (media: ModerationMedia) => void;
+  onViewDetail: (media: ModerationMedia) => void;
+}) {
+  if (!media) {
+    return (
+      <div className="flex min-h-[520px] items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
+        <p className="text-sm font-semibold text-slate-500 backoffice-dark:text-white/55">
+          Chọn một nội dung đã duyệt để xem thông tin episode.
+        </p>
+      </div>
+    );
+  }
+
+  const isEpisodeForceHidden = media.episodeStatus === "FORCE_HIDDEN";
+
+  return (
+    <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
+      <div className="aspect-video overflow-hidden border-b border-slate-200 bg-slate-100 backoffice-dark:border-white/10">
+        <ModerationPreview media={media} />
+      </div>
+
+      <div className="space-y-5 p-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <p className="text-xs font-black uppercase tracking-wide text-slate-400 backoffice-dark:text-white/45">
+              Episode đã duyệt
+            </p>
+            <h2 className="mt-1 break-all text-xl font-black text-slate-950 backoffice-dark:text-white">
+              {media.episodeTitle || media.episodeId || media.id}
+            </h2>
+          </div>
+          <div className="flex shrink-0 flex-wrap gap-2">
+            <MediaTypeBadge media={media} />
+            <span
+              className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-bold ${
+                isEpisodeForceHidden
+                  ? "border-red-200 bg-red-50 text-red-700 backoffice-dark:border-red-400/30 backoffice-dark:bg-red-400/10 backoffice-dark:text-red-200"
+                  : "border-emerald-200 bg-emerald-50 text-emerald-700 backoffice-dark:border-emerald-400/30 backoffice-dark:bg-emerald-400/10 backoffice-dark:text-emerald-200"
+              }`}
+            >
+              {isEpisodeForceHidden ? "Episode đang bị ẩn" : "Episode đang hiển thị"}
+            </span>
+            {mediaCount > 1 ? (
+              <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-bold text-slate-600 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/65">
+                {mediaCount} media
+              </span>
+            ) : null}
+          </div>
+        </div>
+
+        <DetailInfoGrid media={media} />
+
+        <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+          {isEpisodeForceHidden ? (
+            <button
+              type="button"
+              onClick={() => onForceUnhide(media)}
+              disabled={isMutating}
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 text-sm font-black text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <Check className="h-4 w-4" />
+              Gỡ ẩn episode
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => onForceHide(media)}
+              disabled={isMutating}
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-red-600 px-5 text-sm font-black text-white shadow-sm transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <X className="h-4 w-4" />
+              Tạm ẩn cả episode
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => onViewDetail(media)}
+            className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 text-sm font-bold text-slate-700 transition hover:bg-slate-50 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/10"
+          >
+            <Eye className="h-4 w-4" />
+            Chi tiết
+          </button>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function ModerationPagination({
+  isFetching,
+  isFirst,
+  isLast,
+  label,
+  onNext,
+  onPrevious,
+}: {
+  isFetching: boolean;
+  isFirst: boolean;
+  isLast: boolean;
+  label: string;
+  onNext: () => void;
+  onPrevious: () => void;
+}) {
+  return (
+    <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-5 py-3 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
+      <p className="text-sm font-semibold text-slate-500 backoffice-dark:text-white/55">
+        {label}
+      </p>
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={onPrevious}
+          disabled={isFirst || isFetching}
+          className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 backoffice-dark:border-white/10 backoffice-dark:text-white/60 backoffice-dark:hover:bg-white/10"
+          aria-label="Trang trước"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </button>
+        <button
+          type="button"
+          onClick={onNext}
+          disabled={isLast || isFetching}
+          className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 backoffice-dark:border-white/10 backoffice-dark:text-white/60 backoffice-dark:hover:bg-white/10"
+          aria-label="Trang sau"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function ModerationManagement() {
   const [activeTab, setActiveTab] = useState<"pending" | "approved">("pending");
   const [approvedFilter, setApprovedFilter] = useState<"all" | "manual" | "clean">("all");
@@ -945,6 +1330,8 @@ export function ModerationManagement() {
   const [approvedPage, setApprovedPage] = useState(0);
   const [rejectTarget, setRejectTarget] = useState<ModerationMedia | null>(null);
   const [detailTarget, setDetailTarget] = useState<ModerationMedia | null>(null);
+  const [selectedPendingId, setSelectedPendingId] = useState<string | null>(null);
+  const [selectedApprovedId, setSelectedApprovedId] = useState<string | null>(null);
   const pendingQuery = useGetPendingMedia(page, PAGE_SIZE, pendingTypeFilter);
   // Lọc "manual"/"clean" chạy ở BE (MediaServiceImpl.listApproved) — approvalReviewedBy
   // KHÔNG đủ để tự lọc ở FE: pipeline tự duyệt sạch cũng ghi giá trị actor hệ thống vào
@@ -965,6 +1352,18 @@ export function ModerationManagement() {
   const approvedItems = approvedQuery.data?.content ?? [];
   const isMutating = approveMutation.isPending || rejectMutation.isPending;
   const isApprovedMutating = forceHideMutation.isPending || forceUnhideMutation.isPending;
+  const selectedPendingMedia =
+    (selectedPendingId
+      ? items.find((media) => media.id === selectedPendingId)
+      : null) ??
+    items[0] ??
+    null;
+  const selectedApprovedMedia =
+    (selectedApprovedId
+      ? approvedItems.find((media) => media.id === selectedApprovedId)
+      : null) ??
+    approvedItems[0] ??
+    null;
 
   function handleApprove(media: ModerationMedia) {
     approveMutation.mutate(media.id, {
@@ -1028,7 +1427,104 @@ export function ModerationManagement() {
         </p>
       </div>
 
-      <div className="flex gap-2 border-b border-slate-200">
+      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <div className="flex flex-wrap gap-2 rounded-xl border border-slate-200 bg-slate-100 p-1 backoffice-dark:border-white/10 backoffice-dark:bg-black/25">
+            {(
+              [
+                { key: "pending", label: "Chờ duyệt", count: pendingPage?.totalElements ?? items.length },
+                { key: "approved", label: "Đã duyệt", count: approvedQuery.data?.totalElements ?? approvedItems.length },
+              ] as const
+            ).map((option) => (
+              <button
+                key={option.key}
+                type="button"
+                onClick={() => setActiveTab(option.key)}
+                className={`inline-flex h-10 items-center gap-2 rounded-lg px-4 text-sm font-black transition ${
+                  activeTab === option.key
+                    ? "bg-white text-slate-950 shadow-sm backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black"
+                    : "text-slate-500 hover:text-slate-950 backoffice-dark:text-white/55 backoffice-dark:hover:text-white"
+                }`}
+              >
+                {option.label}
+                <span
+                  className={`rounded-full px-2 py-0.5 text-[11px] ${
+                    activeTab === option.key
+                      ? "bg-slate-100 text-slate-600 backoffice-dark:bg-black/15 backoffice-dark:text-black"
+                      : "bg-white text-slate-500 backoffice-dark:bg-white/10 backoffice-dark:text-white/60"
+                  }`}
+                >
+                  {option.count}
+                </span>
+              </button>
+            ))}
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {(
+              [
+                { key: "all", label: "Tất cả" },
+                { key: "IMAGE", label: "Ảnh" },
+                { key: "VIDEO", label: "Video" },
+              ] as const
+            ).map((option) => {
+              const isActive =
+                activeTab === "pending"
+                  ? pendingTypeFilter === option.key
+                  : approvedTypeFilter === option.key;
+
+              return (
+                <button
+                  key={option.key}
+                  type="button"
+                  onClick={() => {
+                    if (activeTab === "pending") {
+                      setPendingTypeFilter(option.key);
+                      setPage(0);
+                      return;
+                    }
+
+                    setApprovedTypeFilter(option.key);
+                    setApprovedPage(0);
+                  }}
+                  className={`h-10 rounded-lg border px-4 text-xs font-black transition ${
+                    isActive
+                      ? "border-violet-500 bg-violet-600 text-white shadow-sm backoffice-dark:border-[var(--backoffice-primary)] backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black"
+                      : "border-slate-200 bg-white text-slate-600 hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/65 backoffice-dark:hover:bg-white/10 backoffice-dark:hover:text-white"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              );
+            })}
+
+            {activeTab === "approved" &&
+              ([
+                { key: "all", label: "Tất cả trạng thái" },
+                { key: "manual", label: "Duyệt tay" },
+                { key: "clean", label: "Không vi phạm" },
+              ] as const).map((option) => (
+                <button
+                  key={option.key}
+                  type="button"
+                  onClick={() => {
+                    setApprovedFilter(option.key);
+                    setApprovedPage(0);
+                  }}
+                  className={`h-10 rounded-lg border px-4 text-xs font-black transition ${
+                    approvedFilter === option.key
+                      ? "border-slate-950 bg-slate-950 text-white backoffice-dark:border-[var(--backoffice-primary)] backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black"
+                      : "border-slate-200 bg-white text-slate-600 hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/65 backoffice-dark:hover:bg-white/10 backoffice-dark:hover:text-white"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+          </div>
+        </div>
+      </section>
+
+      <div className="hidden">
         <button
           type="button"
           onClick={() => setActiveTab("pending")}
@@ -1054,7 +1550,7 @@ export function ModerationManagement() {
       </div>
 
       {activeTab === "pending" && (
-        <div className="flex flex-wrap gap-2">
+        <div className="hidden flex-wrap gap-2">
           {(
             [
               { key: "all", label: "Tất cả" },
@@ -1113,17 +1609,44 @@ export function ModerationManagement() {
 
       {activeTab === "pending" && items.length > 0 && (
         <>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {items.map((media) => (
-              <ModerationCard
-                key={media.id}
+          <div className="grid gap-6 xl:grid-cols-[430px_minmax(0,1fr)]">
+            <aside className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-base font-black text-slate-950 backoffice-dark:text-white">
+                    Hàng đợi duyệt
+                  </h2>
+                  <p className="mt-1 text-xs font-semibold text-slate-500 backoffice-dark:text-white/55">
+                    Chọn một nội dung để xử lý ở panel bên phải.
+                  </p>
+                </div>
+                <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-black text-amber-700 backoffice-dark:border-amber-300/25 backoffice-dark:bg-amber-300/10 backoffice-dark:text-amber-100">
+                  {pendingPage?.totalElements ?? items.length}
+                </span>
+              </div>
+
+              <div className="max-h-[680px] space-y-3 overflow-y-auto pr-1 [scrollbar-width:thin] [scrollbar-color:rgba(148,163,184,0.55)_transparent] backoffice-dark:[scrollbar-color:rgba(212,175,55,0.38)_transparent]">
+                {items.map((media) => (
+                  <ModerationListItem
+                    key={media.id}
+                    isSelected={selectedPendingMedia?.id === media.id}
+                    media={media}
+                    mode="pending"
+                    onSelect={() => setSelectedPendingId(media.id)}
+                  />
+                ))}
+              </div>
+            </aside>
+
+            <div className="xl:sticky xl:top-24 xl:self-start">
+              <PendingDetailPanel
                 isMutating={isMutating}
-                media={media}
+                media={selectedPendingMedia}
                 onApprove={handleApprove}
                 onReject={setRejectTarget}
                 onViewDetail={setDetailTarget}
               />
-            ))}
+            </div>
           </div>
 
           {pendingPage && pendingPage.totalPages > 1 && (
@@ -1158,7 +1681,7 @@ export function ModerationManagement() {
       )}
 
       {activeTab === "approved" && (
-        <div className="flex flex-wrap gap-2">
+        <div className="hidden flex-wrap gap-2">
           {(
             [
               { key: "all", label: "Tất cả" },
@@ -1186,7 +1709,7 @@ export function ModerationManagement() {
       )}
 
       {activeTab === "approved" && (
-        <div className="flex flex-wrap gap-2">
+        <div className="hidden flex-wrap gap-2">
           {(
             [
               { key: "all", label: "Tất cả" },
@@ -1248,18 +1771,46 @@ export function ModerationManagement() {
 
       {activeTab === "approved" && approvedItems.length > 0 && (
         <>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {approvedItems.map((media) => (
-              <ApprovedMediaCard
-                key={media.episodeId || media.id}
+          <div className="grid gap-6 xl:grid-cols-[430px_minmax(0,1fr)]">
+            <aside className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-base font-black text-slate-950 backoffice-dark:text-white">
+                    Nội dung đã duyệt
+                  </h2>
+                  <p className="mt-1 text-xs font-semibold text-slate-500 backoffice-dark:text-white/55">
+                    Chọn episode để xem trạng thái và thao tác ẩn/hiện.
+                  </p>
+                </div>
+                <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700 backoffice-dark:border-emerald-400/30 backoffice-dark:bg-emerald-400/10 backoffice-dark:text-emerald-200">
+                  {approvedQuery.data?.totalElements ?? approvedItems.length}
+                </span>
+              </div>
+
+              <div className="max-h-[680px] space-y-3 overflow-y-auto pr-1 [scrollbar-width:thin] [scrollbar-color:rgba(148,163,184,0.55)_transparent] backoffice-dark:[scrollbar-color:rgba(212,175,55,0.38)_transparent]">
+                {approvedItems.map((media) => (
+                  <ModerationListItem
+                    key={media.episodeId || media.id}
+                    isSelected={selectedApprovedMedia?.id === media.id}
+                    media={media}
+                    mediaCount={media.episodeMediaCount ?? 1}
+                    mode="approved"
+                    onSelect={() => setSelectedApprovedId(media.id)}
+                  />
+                ))}
+              </div>
+            </aside>
+
+            <div className="xl:sticky xl:top-24 xl:self-start">
+              <ApprovedDetailPanel
                 isMutating={isApprovedMutating}
-                media={media}
-                mediaCount={media.episodeMediaCount ?? 1}
+                media={selectedApprovedMedia}
+                mediaCount={selectedApprovedMedia?.episodeMediaCount ?? 1}
                 onForceHide={handleForceHide}
                 onForceUnhide={handleForceUnhide}
                 onViewDetail={setDetailTarget}
               />
-            ))}
+            </div>
           </div>
 
           {approvedQuery.data && approvedQuery.data.totalPages > 1 && (
