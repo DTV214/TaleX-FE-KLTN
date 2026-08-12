@@ -19,7 +19,7 @@ export type PaymentVerificationStatus =
 export type CreatorIdentityRecord = {
   id: string;
   creatorIdentityId: string;
-  creatorName: string;
+  accountName: string;
   taxId: string;
   status: IdentityVerificationStatus;
   verifiedNote?: string;
@@ -27,10 +27,9 @@ export type CreatorIdentityRecord = {
 
 export type PaymentProfileRecord = {
   id: string;
-  creatorName: string;
+  accountName: string;
   bankCode: string;
   accountNumber: string;
-  accountName: string;
   status: PaymentVerificationStatus;
   verifiedNote?: string;
 };
@@ -39,10 +38,7 @@ type CreatorIdentityDto = Partial<CreatorIdentityRecord> & {
   creatorIdentityId?: string;
   identityId?: string;
   creatorId?: string;
-  creatorName?: string;
-  displayName?: string;
-  fullName?: string;
-  username?: string;
+  accountName?: string;
   taxCode?: string;
   taxId?: string;
   verifiedNote?: string;
@@ -52,12 +48,9 @@ type CreatorIdentityDto = Partial<CreatorIdentityRecord> & {
 type PaymentProfileDto = Partial<PaymentProfileRecord> & {
   paymentProfileId?: string;
   creatorId?: string;
-  creatorName?: string;
-  displayName?: string;
-  username?: string;
+  accountName?: string;
   bankCode?: string;
   accountNumber?: string;
-  accountName?: string;
   verifiedNote?: string;
   status?: string;
 };
@@ -137,10 +130,7 @@ function normalizeIdentity(item: CreatorIdentityDto): CreatorIdentityRecord {
   return {
     id: creatorIdentityId,
     creatorIdentityId,
-    creatorName: getString(
-      item.creatorName ?? item.fullName ?? item.displayName ?? item.username,
-      "Creator",
-    ),
+    accountName: getString(item.accountName, "Creator"),
     taxId: getString(item.taxId ?? item.taxCode, "-"),
     status: normalizeIdentityStatus(item.status),
     verifiedNote: item.verifiedNote,
@@ -150,13 +140,9 @@ function normalizeIdentity(item: CreatorIdentityDto): CreatorIdentityRecord {
 function normalizePaymentProfile(item: PaymentProfileDto): PaymentProfileRecord {
   return {
     id: getString(item.paymentProfileId ?? item.id, ""),
-    creatorName: getString(
-      item.creatorName ?? item.displayName ?? item.username,
-      "Creator",
-    ),
+    accountName: getString(item.accountName, "Creator"),
     bankCode: getString(item.bankCode, "-"),
     accountNumber: getString(item.accountNumber, "-"),
-    accountName: getString(item.accountName, "-"),
     status: normalizePaymentStatus(item.status),
     verifiedNote: item.verifiedNote,
   };
