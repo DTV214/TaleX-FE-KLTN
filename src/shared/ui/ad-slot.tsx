@@ -7,6 +7,7 @@ import { adsApi } from "@/features/ads/api/ads-api";
 import { useAuthStore } from "@/features/auth/store/auth.store";
 import { useActiveSubscription } from "@/features/payment/api/payment.api";
 import { cn } from "@/shared/utils/utils";
+import { usePathname } from "next/navigation";
 
 type AdFormat = "auto" | "horizontal" | "rectangle";
 
@@ -41,16 +42,32 @@ export function AdSlot({ slotId, adData, format = "auto", className, objectFit =
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const activeSubscriptionQuery = useActiveSubscription(isAuthenticated);
   const isAdBlocked = Boolean(activeSubscriptionQuery.data?.isAdBlocked);
+  const pathname = usePathname();
 
-  // Fetch ad for this slot if adData is not provided
-  const { data: fetchedAd, isLoading, isError } = useQuery({
-    queryKey: ["serve-ad", slotId],
-    queryFn: () => adsApi.serveAd(slotId!),
-    staleTime: 0, // Always fetch fresh ad
+  // Fetch all ads for this slot if adData is not provided
+  const { data: ads, isLoading, isError } = useQuery({
+    queryKey: ["serve-ads", slotId],
+    queryFn: () => adsApi.serveAllAds(slotId!),
+    staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
     retry: false,
     enabled: !isAdBlocked && !adData && !!slotId,
   });
+
+  const [fetchedAd, setFetchedAd] = useState<any>(null);
+
+  useEffect(() => {
+    if (ads && ads.length > 0) {
+      const lastIndexStr = localStorage.getItem(`last_ad_index_${slotId}`);
+      let nextIndex = lastIndexStr ? parseInt(lastIndexStr, 10) + 1 : 0;
+      if (nextIndex >= ads.length) nextIndex = 0;
+      localStorage.setItem(`last_ad_index_${slotId}`, nextIndex.toString());
+      
+      setFetchedAd(ads[nextIndex]);
+    } else if (ads && ads.length === 0) {
+      setFetchedAd(null);
+    }
+  }, [ads, pathname, slotId]);
 
   const ad = adData || fetchedAd;
 

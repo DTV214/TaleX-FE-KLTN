@@ -80,7 +80,7 @@ export function ExportModal({ isOpen, onClose, onExport, campaignName }: ExportM
               id="select-all"
               checked={selectedFields.length === FIELD_OPTIONS.length}
               onChange={handleSelectAll}
-              className="w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500 cursor-pointer"
+              className="w-4 h-4 text-[#161823] bg-gray-100 border-gray-300 rounded focus:ring-slate-800 cursor-pointer"
             />
             <label htmlFor="select-all" className="ml-3 text-sm font-semibold text-slate-800 cursor-pointer">
               Chọn tất cả
@@ -95,7 +95,7 @@ export function ExportModal({ isOpen, onClose, onExport, campaignName }: ExportM
                   id={`field-${field.id}`}
                   checked={selectedFields.includes(field.id)}
                   onChange={() => toggleField(field.id)}
-                  className="w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500 cursor-pointer"
+                  className="w-4 h-4 text-[#161823] bg-gray-100 border-gray-300 rounded focus:ring-slate-800 cursor-pointer"
                 />
                 <label
                   htmlFor={`field-${field.id}`}
@@ -119,7 +119,7 @@ export function ExportModal({ isOpen, onClose, onExport, campaignName }: ExportM
                 type="date" 
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 outline-none focus:border-teal-500"
+                className="w-full text-sm text-slate-800 border border-slate-200 rounded-lg px-3 py-2 outline-none focus:border-slate-800"
               />
             </div>
             <div className="flex-1">
@@ -128,7 +128,7 @@ export function ExportModal({ isOpen, onClose, onExport, campaignName }: ExportM
                 type="date" 
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 outline-none focus:border-teal-500"
+                className="w-full text-sm text-slate-800 border border-slate-200 rounded-lg px-3 py-2 outline-none focus:border-slate-800"
               />
             </div>
           </div>
@@ -144,7 +144,7 @@ export function ExportModal({ isOpen, onClose, onExport, campaignName }: ExportM
           <button
             onClick={handleExport}
             disabled={selectedFields.length === 0}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-teal-600 rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm shadow-teal-600/20"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#161823] rounded-lg hover:bg-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm shadow-teal-600/20"
           >
             <Download className="h-4 w-4" />
             Xuất Excel
