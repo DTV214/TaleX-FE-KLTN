@@ -14,7 +14,7 @@ import {
   Video,
   X,
 } from "lucide-react";
-import { type FormEvent, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import {
   type ModerationMedia,
@@ -77,47 +77,39 @@ function formatApprovalStatus(status: string) {
   return APPROVAL_STATUS_VI[status] || status;
 }
 
-function RejectReasonModal({
+// Duyệt/Từ chối chỉ cần xác nhận ngắn gọn — creator đã nhận lý do vi phạm cụ thể
+// từ AI (fingerprint/Rekognition) ngay lúc upload, Staff không cần nhập lại lý do thủ công.
+function ConfirmModerationActionModal({
+  action,
   isLoading,
   media,
   onClose,
-  onSubmit,
+  onConfirm,
   open,
 }: {
+  action: "approve" | "reject";
   isLoading: boolean;
   media: ModerationMedia | null;
   onClose: () => void;
-  onSubmit: (reason: string) => void;
+  onConfirm: () => void;
   open: boolean;
 }) {
   if (!open || !media) return null;
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    const reason = String(formData.get("reason") ?? "").trim();
-
-    if (!reason) {
-      toast.error("Vui lòng nhập lý do từ chối.");
-      return;
-    }
-
-    onSubmit(reason);
-  }
+  const isApprove = action === "approve";
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm animate-in fade-in duration-200">
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200"
-      >
+      <div className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
         <div className="mb-6 flex items-start justify-between gap-4">
           <div>
             <h2 className="text-xl font-bold text-slate-950">
-              Từ chối nội dung
+              {isApprove ? "Duyệt nội dung" : "Từ chối nội dung"}
             </h2>
             <p className="mt-1 text-sm font-medium text-slate-500">
-              Nhập lý do để creator biết cần chỉnh sửa nội dung nào.
+              {isApprove
+                ? "Nội dung sẽ được xuất bản, hiển thị công khai ngay sau khi duyệt. Bạn có chắc chắn không?"
+                : "Nội dung sẽ bị từ chối, creator đã được AI thông báo lý do vi phạm cụ thể khi upload. Bạn có chắc chắn không?"}
             </p>
           </div>
           <button
@@ -140,19 +132,6 @@ function RejectReasonModal({
           </p>
         </div>
 
-        <label className="block">
-          <span className="mb-2 block text-sm font-bold text-slate-700">
-            Lý do từ chối
-          </span>
-          <textarea
-            name="reason"
-            required
-            rows={5}
-            className="w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-red-500 focus:ring-4 focus:ring-red-100"
-            placeholder="Ví dụ: Nội dung chứa hình ảnh không phù hợp..."
-          />
-        </label>
-
         <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
           <button
             type="button"
@@ -163,15 +142,18 @@ function RejectReasonModal({
             Hủy
           </button>
           <button
-            type="submit"
+            type="button"
+            onClick={onConfirm}
             disabled={isLoading}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-red-600 px-5 text-sm font-bold text-white shadow-sm transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className={`inline-flex h-11 items-center justify-center gap-2 rounded-lg px-5 text-sm font-bold text-white shadow-sm transition disabled:cursor-not-allowed disabled:opacity-60 ${
+              isApprove ? "bg-emerald-600 hover:bg-emerald-700" : "bg-red-600 hover:bg-red-700"
+            }`}
           >
             {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-            Từ chối
+            {isApprove ? "Duyệt" : "Từ chối"}
           </button>
         </div>
-      </form>
+      </div>
     </div>
   );
 }
@@ -1399,6 +1381,7 @@ export function ModerationManagement() {
   const [approvedTypeFilter, setApprovedTypeFilter] = useState<ModerationTypeFilter>("all");
   const [page, setPage] = useState(0);
   const [approvedPage, setApprovedPage] = useState(0);
+  const [approveTarget, setApproveTarget] = useState<ModerationMedia | null>(null);
   const [rejectTarget, setRejectTarget] = useState<ModerationMedia | null>(null);
   const [forceHideTarget, setForceHideTarget] = useState<ModerationMedia | null>(null);
   const [detailTarget, setDetailTarget] = useState<ModerationMedia | null>(null);
@@ -1437,21 +1420,25 @@ export function ModerationManagement() {
     approvedItems[0] ??
     null;
 
-  function handleApprove(media: ModerationMedia) {
-    approveMutation.mutate(media.id, {
+  function confirmApprove() {
+    if (!approveTarget) return;
+    approveMutation.mutate(approveTarget.id, {
       onSuccess: () => {
         toast.success("Đã duyệt nội dung.");
+        setApproveTarget(null);
         setDetailTarget(null);
       },
       onError: (error) => toast.error(getErrorMessage(error)),
     });
   }
 
-  function handleReject(reason: string) {
+  function confirmReject() {
     if (!rejectTarget) return;
 
+    // Không cần nhập lý do thủ công — creator đã nhận lý do vi phạm cụ thể từ AI
+    // (fingerprint/Rekognition) ngay lúc upload, Staff chỉ cần xác nhận duyệt hay không.
     rejectMutation.mutate(
-      { id: rejectTarget.id, reason },
+      { id: rejectTarget.id, reason: "" },
       {
         onSuccess: () => {
           toast.success("Đã từ chối nội dung.");
@@ -1716,7 +1703,7 @@ export function ModerationManagement() {
               <PendingDetailPanel
                 isMutating={isMutating}
                 media={selectedPendingMedia}
-                onApprove={handleApprove}
+                onApprove={setApproveTarget}
                 onReject={setRejectTarget}
                 onViewDetail={setDetailTarget}
               />
@@ -1918,13 +1905,25 @@ export function ModerationManagement() {
         </>
       )}
 
-      <RejectReasonModal
+      <ConfirmModerationActionModal
+        action="approve"
+        isLoading={approveMutation.isPending}
+        media={approveTarget}
+        onClose={() => {
+          if (!approveMutation.isPending) setApproveTarget(null);
+        }}
+        onConfirm={confirmApprove}
+        open={Boolean(approveTarget)}
+      />
+
+      <ConfirmModerationActionModal
+        action="reject"
         isLoading={rejectMutation.isPending}
         media={rejectTarget}
         onClose={() => {
           if (!rejectMutation.isPending) setRejectTarget(null);
         }}
-        onSubmit={handleReject}
+        onConfirm={confirmReject}
         open={Boolean(rejectTarget)}
       />
 
@@ -1941,7 +1940,7 @@ export function ModerationManagement() {
       <ModerationDetailModal
         isMutating={isMutating}
         media={detailTarget}
-        onApprove={handleApprove}
+        onApprove={setApproveTarget}
         onClose={() => setDetailTarget(null)}
         onReject={setRejectTarget}
         open={Boolean(detailTarget)}
