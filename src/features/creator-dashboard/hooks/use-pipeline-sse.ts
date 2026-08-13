@@ -119,6 +119,22 @@ export function usePipelineSSE({
                   duration: Infinity,
                 });
               }
+            } else if (data.approvalStatus === "APPROVED") {
+              // MỚI: AI phát hiện nhãn nhạy cảm (isSafe=false) nhưng series đã khai báo
+              // trước đúng "Cảnh báo nội dung" + đủ 18+ (xem ContentPipelineServiceImpl.
+              // areAllViolationsShieldedByDeclaredWarnings) — hệ thống tự động duyệt,
+              // KHÔNG đẩy Staff review. Phải tách riêng khỏi nhánh isSafe true ở trên vì
+              // lý do khác nhau (nội dung sạch hoàn toàn vs nội dung nhạy cảm đã được khai
+              // báo trước) — Creator nên biết rõ AI thực sự có phát hiện gì hay không.
+              if (!shouldSuppressToastRef.current?.(data.mediaId)) {
+                const id = pipelineToastId("moderation-ok", data.mediaId);
+                registerToast(id);
+                toast.success("Nội dung đã qua kiểm duyệt", {
+                  id,
+                  description: `Phát hiện ${label} nhưng đã tự động duyệt vì series đã khai báo trước cảnh báo nội dung phù hợp. Sẵn sàng để xuất bản.`,
+                  duration: Infinity,
+                });
+              }
             } else if (data.approvalStatus === "PENDING_REVIEW") {
               // Nhãn nhạy cảm có thể hợp lệ tùy bối cảnh — không tự động từ chối, đẩy qua
               // đội kiểm duyệt xét duyệt thủ công (khác hẳn bị từ chối vĩnh viễn).

@@ -94,6 +94,7 @@ export type SeriesResponse = {
   status: SeriesStatus;
   visibility?: Visibility;
   ageRating?: string;
+  contentWarnings?: string[];
   language?: string;
   totalViews?: number;
   totalSubscriptions?: number;
@@ -164,6 +165,7 @@ export type MediaResponse = {
   duration?: number;
   displayOrder?: number;
   contentId?: string;
+  hasWatermark?: boolean;
   status: MediaStatus;
   approvalStatus?: ContentApprovalStatus;
   approvalReviewedAt?: string;
@@ -191,6 +193,7 @@ export type SeriesRequest = {
   status?: SeriesStatus;
   visibility?: Visibility;
   ageRating?: string;
+  contentWarnings?: string[];
   language?: string;
   categoryIds?: string[];
   tagIds?: string[];

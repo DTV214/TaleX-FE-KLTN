@@ -44,6 +44,7 @@ interface FinalReviewStepProps {
   approvalStatus?: ContentApprovalStatus;
   errorMessage?: string;
   contentId?: string;
+  hasWatermark?: boolean;
   video?: any; // the whole MediaResponse for processing state
   isPublishing?: boolean;
   onPublish: () => void;
@@ -71,6 +72,7 @@ export function FinalReviewStep({
   approvalStatus,
   errorMessage,
   contentId,
+  hasWatermark,
   video,
   isPublishing,
   onPublish,
@@ -388,6 +390,7 @@ export function FinalReviewStep({
           approvalStatus={approvalStatus}
           errorMessage={errorMessage}
           contentId={contentId}
+          hasWatermark={hasWatermark}
         />
 
         {!isPublished && (

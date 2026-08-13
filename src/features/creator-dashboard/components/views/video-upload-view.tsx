@@ -426,6 +426,7 @@ export function VideoUploadView({
           approvalStatus={videos[0]?.approvalStatus}
           errorMessage={videos[0]?.errorMessage}
           contentId={videos[0]?.contentId}
+          hasWatermark={videos[0]?.hasWatermark}
         />
       </div>
     </div>

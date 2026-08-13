@@ -74,6 +74,7 @@ export type CreateSeriesInput = {
   contentType: ContentType;
   visibility: Visibility;
   ageRating: string;
+  contentWarnings: string[];
   language: string;
   categoryIds: string[];
   tagIds: string[];
@@ -108,6 +109,7 @@ export type SeriesRow = {
   status: SeriesStatus;
   visibility: Visibility;
   ageRating: string;
+  contentWarnings: string[];
   language: string;
   categoryIds: string[];
   tagIds: string[];
@@ -169,5 +171,6 @@ export type ComicPage = {
   approvalStatus?: ContentApprovalStatus;
   errorMessage?: string;
   contentId?: string;
+  hasWatermark?: boolean;
   file?: File;
 };

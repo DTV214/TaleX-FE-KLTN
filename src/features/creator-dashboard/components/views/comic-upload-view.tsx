@@ -453,6 +453,9 @@ export function ComicUploadView({
           contentId={
             pages.find((page) => !page.id.startsWith("LOCAL-"))?.contentId
           }
+          hasWatermark={
+            pages.find((page) => !page.id.startsWith("LOCAL-"))?.hasWatermark
+          }
           pages={pages}
         />
       </div>

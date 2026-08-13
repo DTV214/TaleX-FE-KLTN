@@ -21,6 +21,9 @@ export type ModerationMedia = {
   approvalReviewedBy?: string;
   approvalReviewedByName?: string;
   approvalReviewedByRole?: string;
+  // Số trang trong episode (ảnh comic nhiều trang) — Staff cần biết CHÍNH XÁC trang nào
+  // đang vi phạm, không chỉ tên episode chung chung.
+  displayOrder?: number;
   // Chỉ có giá trị ở listPendingReview/listApproved — số Media khác trong CÙNG episode
   // này khớp cùng bộ filter, BE đã group theo episode nên đây là media đại diện.
   episodeMediaCount?: number;
@@ -61,6 +64,7 @@ type ModerationMediaApiItem = {
   approvalReviewedBy?: string;
   approvalReviewedByName?: string;
   approvalReviewedByRole?: string;
+  displayOrder?: number;
   episodeMediaCount?: number;
   episodeTitle?: string;
   seasonTitle?: string;
@@ -109,6 +113,7 @@ function normalizeMedia(item: ModerationMediaApiItem): ModerationMedia {
     approvalReviewedBy: item.approvalReviewedBy,
     approvalReviewedByName: item.approvalReviewedByName,
     approvalReviewedByRole: item.approvalReviewedByRole,
+    displayOrder: item.displayOrder,
     episodeMediaCount: item.episodeMediaCount,
     episodeTitle: item.episodeTitle,
     seasonTitle: item.seasonTitle,
@@ -315,6 +320,7 @@ export type MediaDetail = {
   approvalStatus?: string;
   createdAt?: string;
   isDeleted?: boolean;
+  displayOrder?: number;
   episodeTitle?: string;
   seasonTitle?: string;
   seriesTitle?: string;

@@ -6,6 +6,14 @@ export interface ComicPageSummary {
   status?: MediaStatus;
   approvalStatus?: ContentApprovalStatus;
   errorMessage?: string;
+  // Số trang hiển thị trên khung ảnh (badge "1", "2"...) — dùng để báo CHÍNH XÁC trang
+  // nào bị vi phạm thay vì chỉ nói chung chung "di chuột vào từng trang để xem".
+  displayOrder?: number;
+}
+
+function formatPageList(pageNumbers: number[]): string {
+  const sorted = [...pageNumbers].sort((a, b) => a - b);
+  return sorted.map((n) => `Trang ${n}`).join(", ");
 }
 
 interface CountRowProps {
@@ -45,13 +53,27 @@ export function ComicPipelineAggregateSummary({ pages }: { pages: ComicPageSumma
   // "Sẵn sàng" — đã qua pipeline, KHÔNG phải "đã xuất bản" (đó là hành động Creator
   // chủ động bấm ở bước cuối XUẤT BẢN, độc lập với trạng thái từng trang ở đây).
   const readyCount = pages.filter((p) => p.status === "ACTIVE" || p.status === "HLS_READY").length;
-  const pendingReviewCount = pages.filter(
+  const pendingReviewPages = pages.filter(
     (p) => p.status === "INACTIVE" && p.approvalStatus === "PENDING_REVIEW",
-  ).length;
-  const rejectedCount = pages.filter(
+  );
+  const rejectedPages = pages.filter(
     (p) => p.status === "INACTIVE" && p.approvalStatus === "REJECTED",
-  ).length;
-  const failedCount = pages.filter((p) => p.status === "FAILED").length;
+  );
+  const failedPages = pages.filter((p) => p.status === "FAILED");
+  const pendingReviewCount = pendingReviewPages.length;
+  const rejectedCount = rejectedPages.length;
+  const failedCount = failedPages.length;
+  // displayOrder có thể chưa kịp trả về (undefined) ngay lúc mới upload — lọc bỏ trước
+  // khi hiện số trang, tránh in ra "Trang undefined".
+  const pendingReviewPageNumbers = pendingReviewPages
+    .map((p) => p.displayOrder)
+    .filter((n): n is number => typeof n === "number");
+  const rejectedPageNumbers = rejectedPages
+    .map((p) => p.displayOrder)
+    .filter((n): n is number => typeof n === "number");
+  const failedPageNumbers = failedPages
+    .map((p) => p.displayOrder)
+    .filter((n): n is number => typeof n === "number");
 
   const doneCount = readyCount + pendingReviewCount + rejectedCount + failedCount;
   // "Đã xử lý" = số trang đã CÓ KẾT QUẢ (dù đạt hay không) — 100% nghĩa là hệ thống đã
@@ -119,20 +141,27 @@ export function ComicPipelineAggregateSummary({ pages }: { pages: ComicPageSumma
           </div>
         </div>
 
-        {hasIssue && (
-          <p className="mt-4 text-[11px] leading-relaxed text-creator-muted">
-            {rejectedCount > 0 && failedCount > 0
-              ? "Có trang bị từ chối và trang lỗi hệ thống — "
-              : rejectedCount > 0
-                ? "Có trang bị từ chối — "
-                : "Có trang lỗi hệ thống — "}
-            di chuột vào từng trang tương ứng trong lưới ảnh bên trái để xem chi tiết{failedCount > 0 ? " và thử lại" : ""}.
+        {rejectedCount > 0 && (
+          <p className="mt-4 text-[11px] leading-relaxed text-red-400">
+            {rejectedCount} trang bị từ chối
+            {rejectedPageNumbers.length > 0 && ` (${formatPageList(rejectedPageNumbers)})`}
+            — di chuột vào từng trang tương ứng trong lưới ảnh bên trái để xem lý do chi tiết.
+          </p>
+        )}
+
+        {failedCount > 0 && (
+          <p className="mt-2 text-[11px] leading-relaxed text-red-400">
+            {failedCount} trang lỗi hệ thống
+            {failedPageNumbers.length > 0 && ` (${formatPageList(failedPageNumbers)})`}
+            — di chuột vào từng trang tương ứng để thử lại.
           </p>
         )}
 
         {pendingReviewCount > 0 && (
           <p className="mt-2 text-[11px] leading-relaxed text-amber-400/90">
-            {pendingReviewCount} trang có nội dung tương đồng với creator khác hoặc chứa yếu tố nhạy cảm — vui lòng chờ kiểm duyệt thủ công trước khi xuất bản.
+            {pendingReviewCount} trang có nội dung tương đồng với creator khác hoặc chứa yếu tố nhạy cảm
+            {pendingReviewPageNumbers.length > 0 && ` (${formatPageList(pendingReviewPageNumbers)})`}
+            — vui lòng chờ kiểm duyệt thủ công trước khi xuất bản.
           </p>
         )}
       </div>

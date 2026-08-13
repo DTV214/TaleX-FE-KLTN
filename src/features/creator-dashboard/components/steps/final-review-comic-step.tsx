@@ -319,6 +319,7 @@ export function FinalReviewComicStep({
           approvalStatus={firstPersistedPage?.approvalStatus}
           errorMessage={firstPersistedPage?.errorMessage}
           contentId={firstPersistedPage?.contentId}
+          hasWatermark={firstPersistedPage?.hasWatermark}
           pages={persistedPages}
         />
 
