@@ -1,14 +1,27 @@
-import { useState, useEffect } from "react";
+import {
+  type CSSProperties,
+  type DragEvent,
+  type MouseEvent,
+  useEffect,
+  useState,
+} from "react";
 import { useAuthStore } from "@/features/auth/store/auth.store";
 import { Loader2 } from "lucide-react";
-import { API_BASE_URL } from "@/core/config/api";
 
 interface WatermarkedImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   mediaId: string;
   fallbackUrl?: string;
 }
 
-export function WatermarkedImage({ mediaId, fallbackUrl, className, ...props }: WatermarkedImageProps) {
+export function WatermarkedImage({
+  mediaId,
+  fallbackUrl,
+  className,
+  style,
+  onDragStart,
+  onContextMenu,
+  ...props
+}: WatermarkedImageProps) {
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -126,7 +139,7 @@ export function WatermarkedImage({ mediaId, fallbackUrl, className, ...props }: 
           }
         }, "image/png");
 
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Error creating watermarked canvas:", err);
         if (isMounted) {
           setError(true);
@@ -149,15 +162,43 @@ export function WatermarkedImage({ mediaId, fallbackUrl, className, ...props }: 
 
   if (isLoading && !srcToUse) {
     return (
-      <div className={`flex items-center justify-center bg-black/50 ${className}`} style={props.style}>
+      <div className={`flex items-center justify-center bg-black/50 ${className}`} style={style}>
         <Loader2 className="h-8 w-8 animate-spin text-white/50" />
       </div>
     );
   }
 
   if (!srcToUse) {
-    return <div className={`bg-red-900/20 ${className}`} style={props.style} />;
+    return <div className={`bg-red-900/20 ${className}`} style={style} />;
   }
 
-  return <img src={srcToUse} className={className} {...props} />;
+  const protectedStyle: CSSProperties = {
+    ...style,
+    userSelect: "none",
+    WebkitUserSelect: "none",
+  };
+
+  const handleDragStart = (event: DragEvent<HTMLImageElement>) => {
+    event.preventDefault();
+    onDragStart?.(event);
+  };
+
+  const handleContextMenu = (event: MouseEvent<HTMLImageElement>) => {
+    event.preventDefault();
+    onContextMenu?.(event);
+  };
+
+  return (
+    // eslint-disable-next-line @next/next/no-img-element -- Watermarking needs a canvas-generated blob URL.
+    <img
+      {...props}
+      src={srcToUse}
+      alt={props.alt ?? ""}
+      className={`${className ?? ""} select-none`}
+      style={protectedStyle}
+      draggable={false}
+      onDragStart={handleDragStart}
+      onContextMenu={handleContextMenu}
+    />
+  );
 }
