@@ -27,14 +27,21 @@ interface AdAnalyticsChartProps {
   campaignId: string;
 }
 
-const METRIC_CONFIG = {
+type MetricConfigDef = {
+  label: string;
+  color: string;
+  yAxisId: string;
+  unit: string;
+};
+
+const METRIC_CONFIG: Record<string, MetricConfigDef> = {
   spend: { label: 'Total cost', color: '#3b82f6', yAxisId: 'left', unit: '₫' },
   impressions: { label: 'Impressions', color: '#10b981', yAxisId: 'left', unit: '' },
   clicks: { label: 'Clicks', color: '#8b5cf6', yAxisId: 'left', unit: '' },
   focusedViews6s: { label: 'View 6s', color: '#f59e0b', yAxisId: 'left', unit: '' },
-} as const;
+};
 
-type MetricKey = keyof typeof METRIC_CONFIG;
+type MetricKey = 'spend' | 'impressions' | 'clicks' | 'focusedViews6s';
 type SelectedMetric = MetricKey | 'none';
 
 function formatDateForInput(date: Date) {
