@@ -313,16 +313,16 @@ export default function AdminDashboardPage() {
                           <Calendar className="w-4 h-4 text-violet-600" />
                           {item.period}
                         </td>
-                        <td className="px-6 py-4 font-mono font-medium text-right text-blue-600">
+                        <td className="px-6 py-4 font-medium text-right text-blue-600">
                           {formatVND(item.gmv)}
                         </td>
-                        <td className="px-6 py-4 font-mono font-medium text-right text-emerald-600">
+                        <td className="px-6 py-4 font-medium text-right text-emerald-600">
                           {formatVND(item.netRevenue)}
                         </td>
-                        <td className="px-6 py-4 font-mono font-medium text-right text-amber-600">
+                        <td className="px-6 py-4 font-medium text-right text-amber-600">
                           {formatVND(item.vatAmount)}
                         </td>
-                        <td className="px-6 py-4 font-mono font-medium text-right text-purple-600">
+                        <td className="px-6 py-4 font-medium text-right text-purple-600">
                           {formatNumber(item.totalCoin)} Coin
                         </td>
                       </tr>

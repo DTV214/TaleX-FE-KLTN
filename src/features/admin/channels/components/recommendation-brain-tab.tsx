@@ -234,7 +234,7 @@ export function RecommendationBrainTab() {
                 <Server className="h-3.5 w-3.5 text-emerald-400" />
                 File Model Storage
               </div>
-              <p className="text-xs font-mono font-bold text-emerald-200 mt-1 truncate">
+              <p className="text-xs font-bold text-emerald-200 mt-1 truncate">
                 data/lgb_ranking_model.txt
               </p>
             </div>
@@ -254,7 +254,7 @@ export function RecommendationBrainTab() {
               value={token}
               onChange={(e) => setToken(e.target.value)}
               placeholder="Nhập secret token..."
-              className="w-full sm:w-80 rounded-xl border border-white/20 bg-white/10 px-3.5 py-1.5 text-xs text-white placeholder-slate-400 outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-400 transition-all font-mono"
+              className="w-full sm:w-80 rounded-xl border border-white/20 bg-white/10 px-3.5 py-1.5 text-xs text-white placeholder-slate-400 outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-400 transition-all"
             />
             <span className="text-[10px] text-emerald-400 font-semibold flex items-center gap-1 bg-emerald-950/50 px-2 py-1 rounded-lg border border-emerald-800/40 whitespace-nowrap">
               <ShieldCheck className="h-3 w-3" /> Token hợp lệ
@@ -289,7 +289,7 @@ export function RecommendationBrainTab() {
             <div className="rounded-xl bg-slate-50 p-3 border border-slate-100 space-y-1.5">
               <div className="flex justify-between text-xs">
                 <span className="text-slate-500">Mẫu khởi tạo:</span>
-                <span className="font-bold text-slate-800 font-mono">12,000 samples</span>
+                <span className="font-bold text-slate-800">12,000 samples</span>
               </div>
               <div className="flex justify-between text-xs">
                 <span className="text-slate-500">Mô hình:</span>
@@ -343,7 +343,7 @@ export function RecommendationBrainTab() {
                   <Sliders className="h-3.5 w-3.5 text-indigo-600" />
                   Max Samples:
                 </label>
-                <span className="font-mono font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md">
+                <span className="font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md">
                   {maxSamples.toLocaleString("vi-VN")}
                 </span>
               </div>
@@ -401,11 +401,11 @@ export function RecommendationBrainTab() {
             <div className="rounded-xl bg-white p-3 border border-emerald-100 space-y-1.5">
               <div className="flex justify-between text-xs">
                 <span className="text-slate-500">Định dạng file:</span>
-                <span className="font-bold text-emerald-700 font-mono">Microsoft Excel (.xlsx)</span>
+                <span className="font-bold text-emerald-700">Microsoft Excel (.xlsx)</span>
               </div>
               <div className="flex justify-between text-xs">
                 <span className="text-slate-500">Endpoint:</span>
-                <span className="font-mono text-[11px] text-slate-600">/recommendations/train-data/download</span>
+                <span className="text-[11px] text-slate-600">/recommendations/train-data/download</span>
               </div>
             </div>
           </div>
@@ -484,7 +484,7 @@ export function RecommendationBrainTab() {
                 value={candidateIdsInput}
                 onChange={(e) => setCandidateIdsInput(e.target.value)}
                 placeholder="SERIES_001, SERIES_002, SERIES_003..."
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs font-mono text-slate-800 outline-none focus:border-violet-500 focus:bg-white transition-all"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-800 outline-none focus:border-violet-500 focus:bg-white transition-all"
               />
             </div>
 
@@ -511,7 +511,7 @@ export function RecommendationBrainTab() {
                 Kết Quả Xếp Hạng Candidate Model:
               </h4>
               {rankingResult && (
-                <span className="text-[11px] font-mono text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                <span className="text-[11px] text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
                   HTTP 200 OK
                 </span>
               )}
@@ -529,7 +529,7 @@ export function RecommendationBrainTab() {
                         <th className="p-3 w-40">Trực Quan Hóa</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 font-mono text-slate-800">
+                    <tbody className="divide-y divide-slate-100 text-slate-800">
                       {(
                         rankingResult.rankedCandidates ||
                         rankingResult.ranked_candidates ||
@@ -591,14 +591,14 @@ export function RecommendationBrainTab() {
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400">
               <Terminal className="h-4 w-4" />
             </div>
-            <h4 className="text-xs font-bold font-mono text-slate-200">
+            <h4 className="text-xs font-bold text-slate-200">
               API Execution Log Console
             </h4>
           </div>
 
           {activeLog && (
             <span
-              className={`rounded-md px-2 py-0.5 text-[10px] font-mono font-bold ${
+              className={`rounded-md px-2 py-0.5 text-[10px] font-bold ${
                 activeLog.status === "success"
                   ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
                   : activeLog.status === "error"
@@ -612,7 +612,7 @@ export function RecommendationBrainTab() {
         </div>
 
         {activeLog ? (
-          <div className="space-y-2 font-mono text-xs">
+          <div className="space-y-2 text-xs">
             <div className="text-slate-400 flex items-center gap-2">
               <span className="text-violet-400 font-bold">$</span>
               <span>Executing Endpoint:</span>
@@ -635,7 +635,7 @@ export function RecommendationBrainTab() {
             )}
           </div>
         ) : (
-          <div className="py-6 text-center text-xs font-mono text-slate-500">
+          <div className="py-6 text-center text-xs text-slate-500">
             Sẵn sàng nhận lệnh API. Bấm nút thao tác bất kỳ để xem log thời gian thực.
           </div>
         )}

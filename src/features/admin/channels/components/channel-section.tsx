@@ -3,7 +3,7 @@
 import { useAdminChannelCards } from "../hooks/use-admin-channels";
 import type { ChannelMeta, ChannelSeriesCard } from "../types/channels.types";
 import { ChannelCardItem } from "./channel-card-item";
-import { AlertCircle, RefreshCw, Layers } from "lucide-react";
+import { AlertCircle, Layers } from "lucide-react";
 
 interface ChannelSectionProps {
   meta: ChannelMeta;
@@ -11,7 +11,7 @@ interface ChannelSectionProps {
 }
 
 export function ChannelSection({ meta, onSelectCard }: ChannelSectionProps) {
-  const { data: cards, isLoading, isError, error, refetch, isRefetching } = useAdminChannelCards(meta.key);
+  const { data: cards, isLoading, isError, error, refetch } = useAdminChannelCards(meta.key);
 
   return (
     <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm transition-all">
@@ -30,19 +30,6 @@ export function ChannelSection({ meta, onSelectCard }: ChannelSectionProps) {
             </div>
             <p className="text-xs text-slate-500 mt-0.5">{meta.description}</p>
           </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => refetch()}
-            disabled={isRefetching}
-            className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 transition-all hover:bg-slate-100 hover:text-slate-900 disabled:opacity-50"
-            title="Tải lại kênh này"
-          >
-            <RefreshCw className={`h-3.5 w-3.5 ${isRefetching ? "animate-spin text-violet-600" : ""}`} />
-            <span>Tải lại dữ liệu</span>
-          </button>
         </div>
       </div>
 
@@ -92,7 +79,7 @@ export function ChannelSection({ meta, onSelectCard }: ChannelSectionProps) {
             <Layers className="h-10 w-10 text-slate-300 stroke-[1.5]" />
             <p className="mt-3 text-sm font-semibold text-slate-700">Kênh này chưa có dữ liệu series nào</p>
             <p className="mt-1 text-xs text-slate-500">
-              Nhấn &quot;Cập nhật Pool Kênh&quot; ở trên hoặc nút &quot;Tải lại dữ liệu&quot; để làm mới danh sách.
+              Nhấn &quot;Cập nhật&quot; ở trên để làm mới danh sách.
             </p>
           </div>
         )}

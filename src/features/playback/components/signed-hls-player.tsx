@@ -48,6 +48,7 @@ import {
   getCreatorDetail,
   getFollowers,
 } from "@/features/series/api/creator-follows-api";
+import { useRecommendationFeedInfinite } from "@/features/recommendations/hooks/use-home-feed";
 import { AdSlot } from "@/shared/ui/ad-slot";
 
 type SignedHlsPlayerProps = {
@@ -208,6 +209,21 @@ export function SignedHlsPlayer({
 
   const [selectedFilter, setSelectedFilter] = useState<"all" | "creator" | "newest">("all");
 
+  // Call GET /api/v1/recommendations/feed for watch page sidebar with fresh sessionId on reload
+  const {
+    data: watchFeedData,
+    fetchNextPage: fetchNextWatchPage,
+    hasNextPage: hasNextWatchPage,
+    isFetchingNextPage: isFetchingNextWatchPage,
+    isLoading: isWatchFeedLoading,
+  } = useRecommendationFeedInfinite(12, "WATCH", {
+    forceNewSessionOnMount: true,
+  });
+
+  const watchFeedSeries = useMemo(() => {
+    return watchFeedData?.pages.flatMap((page) => page.items) ?? [];
+  }, [watchFeedData]);
+
   const filteredSeriesList = useMemo(() => {
     if (!publicSeriesData?.content) return [];
     const currentSeriesId = matchedSeries?.seriesId;
@@ -219,6 +235,16 @@ export function SignedHlsPlayer({
     }
     return list;
   }, [publicSeriesData, matchedSeries, selectedFilter, episodeDetail]);
+
+  const displaySidebarList = useMemo(() => {
+    if (selectedFilter === "creator") {
+      return filteredSeriesList;
+    }
+    if (watchFeedSeries.length > 0) {
+      return watchFeedSeries;
+    }
+    return filteredSeriesList;
+  }, [selectedFilter, watchFeedSeries, filteredSeriesList]);
 
   const creatorAccountId =
     creatorDetail?.accountId ||
@@ -703,50 +729,75 @@ export function SignedHlsPlayer({
 
             {/* Danh Sách Thẻ Phim Đề Xuất Dọc Kiểu YouTube */}
             <div className="space-y-3">
-              {filteredSeriesList.length > 0 ? (
-                filteredSeriesList.map((series) => (
-                  <Link
-                    key={series.seriesId}
-                    href={`/series/${series.seriesId}`}
-                    className="group flex gap-3 rounded-xl hover:bg-white/[0.06] p-1.5 transition-all cursor-pointer"
-                  >
-                    {/* 16:9 Thumbnail Youtube style */}
-                    <div className="relative aspect-video w-40 shrink-0 overflow-hidden rounded-xl bg-zinc-900 border border-white/10">
-                      {series.coverUrl || series.bannerUrl ? (
-                        <img
-                          src={series.coverUrl || series.bannerUrl}
-                          alt={series.title}
-                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center">
-                          <Film className="h-6 w-6 text-white/20" />
+              {isWatchFeedLoading && displaySidebarList.length === 0 ? (
+                <div className="space-y-3">
+                  {Array.from({ length: 4 }).map((_, idx) => (
+                    <div key={idx} className="flex gap-3 p-1.5 animate-pulse">
+                      <div className="aspect-video w-40 shrink-0 rounded-xl bg-white/5" />
+                      <div className="flex-1 space-y-2 py-1">
+                        <div className="h-3 w-4/5 rounded bg-white/10" />
+                        <div className="h-2 w-1/2 rounded bg-white/5" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : displaySidebarList.length > 0 ? (
+                <>
+                  {displaySidebarList.map((series, idx) => (
+                    <Link
+                      key={`${series.seriesId}-${idx}`}
+                      href={`/series/${series.seriesId}`}
+                      className="group flex gap-3 rounded-xl hover:bg-white/[0.06] p-1.5 transition-all cursor-pointer"
+                    >
+                      {/* 16:9 Thumbnail Youtube style */}
+                      <div className="relative aspect-video w-40 shrink-0 overflow-hidden rounded-xl bg-zinc-900 border border-white/10">
+                        {series.coverUrl || series.bannerUrl ? (
+                          <img
+                            src={(series.coverUrl || series.bannerUrl) ?? undefined}
+                            alt={series.title}
+                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center">
+                            <Film className="h-6 w-6 text-white/20" />
+                          </div>
+                        )}
+                        {/* Thời lượng video badge */}
+                        <div className="absolute bottom-1 right-1 bg-black/80 text-white font-extrabold text-[10px] px-1.5 py-0.5 rounded">
+                          15:00
                         </div>
-                      )}
-                      {/* Thời lượng video badge */}
-                      <div className="absolute bottom-1 right-1 bg-black/80 text-white font-extrabold text-[10px] px-1.5 py-0.5 rounded">
-                        15:00
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+                          <PlayCircle className="h-7 w-7 text-[#D4AF37] shadow-md" />
+                        </div>
                       </div>
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
-                        <PlayCircle className="h-7 w-7 text-[#D4AF37] shadow-md" />
-                      </div>
-                    </div>
 
-                    {/* Chi tiết thông tin phim */}
-                    <div className="min-w-0 flex-1 flex flex-col justify-start py-0.5">
-                      <h4 className="line-clamp-2 text-xs font-bold text-white group-hover:text-[#D4AF37] transition-colors leading-snug">
-                        {series.title}
-                      </h4>
-                      <p className="mt-1 text-[11px] font-medium text-zinc-400 flex items-center gap-1">
-                        <span className="truncate">{series.creatorName || "TaleX Official"}</span>
-                        <CheckCircle2 className="w-3 h-3 text-zinc-400 shrink-0" />
-                      </p>
-                      <p className="text-[11px] text-zinc-400 font-medium mt-0.5">
-                        {(series.totalViews || (series as any).views || 0).toLocaleString("vi-VN")} lượt xem • Mới
-                      </p>
-                    </div>
-                  </Link>
-                ))
+                      {/* Chi tiết thông tin phim */}
+                      <div className="min-w-0 flex-1 flex flex-col justify-start py-0.5">
+                        <h4 className="line-clamp-2 text-xs font-bold text-white group-hover:text-[#D4AF37] transition-colors leading-snug">
+                          {series.title}
+                        </h4>
+                        <p className="mt-1 text-[11px] font-medium text-zinc-400 flex items-center gap-1">
+                          <span className="truncate">{series.creatorName || "TaleX Official"}</span>
+                          <CheckCircle2 className="w-3 h-3 text-zinc-400 shrink-0" />
+                        </p>
+                        <p className="text-[11px] text-zinc-400 font-medium mt-0.5">
+                          {((series as any).totalViews || (series as any).views || 0).toLocaleString("vi-VN")} lượt xem • Đề xuất
+                        </p>
+                      </div>
+                    </Link>
+                  ))}
+
+                  {hasNextWatchPage && (
+                    <button
+                      type="button"
+                      onClick={() => void fetchNextWatchPage()}
+                      disabled={isFetchingNextWatchPage}
+                      className="w-full mt-2 py-2 rounded-xl border border-white/10 bg-white/5 text-xs font-bold text-gray-300 hover:bg-white/10 transition-colors"
+                    >
+                      {isFetchingNextWatchPage ? "Đang tải..." : "Tải thêm đề xuất"}
+                    </button>
+                  )}
+                </>
               ) : (
                 <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-4 text-xs text-zinc-400 text-center">
                   Chưa có phim đề xuất khác.

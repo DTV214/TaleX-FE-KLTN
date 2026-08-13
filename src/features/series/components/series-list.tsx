@@ -14,7 +14,9 @@ import {
   Star,
   Tag,
 } from "lucide-react";
+import { useEffect, useMemo, useRef } from "react";
 import { usePublicSidebarStore } from "@/shared/stores/public-sidebar.store";
+import { useRecommendationFeedInfinite } from "@/features/recommendations/hooks/use-home-feed";
 import { AdSlot } from "@/shared/ui/ad-slot";
 import { searchSeries } from "@/features/search/api/search-api";
 import type { SearchSeries } from "@/features/search/types/search.types";
@@ -173,6 +175,8 @@ export function SeriesList() {
               ))}
             </div>
           )}
+          {/* MỤC 5: TẤT CẢ PHIM ĐỀ XUẤT (CUỘN VÔ CÙNG - API RECOMMENDATIONS FEED) */}
+          <MovieRecommendationSection />
         </section>
       </div>
     </div>
@@ -340,7 +344,7 @@ function FeaturedBanner({
 }
 
 function CatalogCard({ item }: { item: SearchSeries }) {
-  const views = item.totalViews ?? 0;
+  const views = item.totalViews ?? (item as any).views ?? (item as any).analyticData?.views ?? 0;
 
   return (
     <Link href={`/series/${item.seriesId}`} className="group block min-w-0">
@@ -460,5 +464,94 @@ function PageAtmosphere() {
       <Sparkles className="absolute right-[10%] top-[80%] h-9 w-9 text-[#D4AF37]/20" />
       <Star className="absolute left-[48%] top-[85%] h-8 w-8 text-[#D4AF37]/16" />
     </div>
+  );
+}
+
+function MovieRecommendationSection() {
+  const isSidebarOpen = usePublicSidebarStore((state) => state.isSidebarOpen);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+
+  // Calls GET /api/v1/recommendations/feed with pageType="MOVIES"
+  // and forceNewSessionOnMount=true so sessionId refreshes on every page reload!
+  const {
+    data: feedData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+  } = useRecommendationFeedInfinite(12, "MOVIES", {
+    forceNewSessionOnMount: true,
+  });
+
+  const movies = useMemo(() => {
+    return feedData?.pages.flatMap((page) => page.items) ?? [];
+  }, [feedData]);
+
+  useEffect(() => {
+    const target = loadMoreRef.current;
+    if (!target || !hasNextPage || isFetchingNextPage) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting && hasNextPage && !isFetchingNextPage) {
+          void fetchNextPage();
+        }
+      },
+      { rootMargin: "520px 0px 520px 0px" },
+    );
+
+    observer.observe(target);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  const catalogGridClass = isSidebarOpen
+    ? "grid grid-cols-2 gap-x-5 gap-y-9 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5"
+    : "grid grid-cols-2 gap-x-5 gap-y-9 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5";
+
+  return (
+    <section id="movies-all-recommendations" className="pt-4 space-y-6">
+      <SectionTitle
+        eyebrow="Cá nhân hóa & Tất cả phim"
+        title="Tất Cả Phim Đề Xuất (Cuộn Vô Cùng)"
+        icon={Clapperboard}
+      />
+
+      {isLoading && movies.length === 0 ? (
+        <ListSkeleton isSidebarOpen={isSidebarOpen} />
+      ) : movies.length === 0 ? (
+        <EmptyState title="Chưa có dữ liệu phim đề xuất" />
+      ) : (
+        <>
+          <div className={catalogGridClass}>
+            {movies.map((movie, idx) => (
+              <CatalogCard
+                key={`${movie.seriesId || idx}-${idx}`}
+                item={movie as unknown as SearchSeries}
+              />
+            ))}
+          </div>
+
+          {isFetchingNextPage ? (
+            <div className="pt-6">
+              <ListSkeleton isSidebarOpen={isSidebarOpen} />
+            </div>
+          ) : null}
+
+          <div
+            ref={loadMoreRef}
+            className="flex min-h-16 items-center justify-center py-6"
+          >
+            {hasNextPage && !isFetchingNextPage ? (
+              <span className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-bold text-white/38">
+                Đang tải thêm phim đề xuất...
+              </span>
+            ) : null}
+          </div>
+        </>
+      )}
+    </section>
   );
 }

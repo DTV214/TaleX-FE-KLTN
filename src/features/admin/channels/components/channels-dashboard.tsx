@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import {
   GENERAL_CHANNELS,
   type ChannelKey,
@@ -50,18 +51,24 @@ export function AdminChannelsDashboard() {
     setNotification(null);
     try {
       await triggerPoolMutation.mutateAsync();
+      const successMsg = "Khởi tạo thành công";
+      toast.success(successMsg, { duration: 3000 });
       setNotification({
         type: "success",
-        message: "Kích hoạt tiến trình tạo pool cho các series thành công!",
+        message: successMsg,
       });
+      setTimeout(() => setNotification(null), 3000);
     } catch (err) {
+      const errorMsg =
+        err instanceof Error
+          ? err.message
+          : "Có lỗi xảy ra khi kích hoạt tiến trình tạo pool.";
+      toast.error(errorMsg, { duration: 3000 });
       setNotification({
         type: "error",
-        message:
-          err instanceof Error
-            ? err.message
-            : "Có lỗi xảy ra khi kích hoạt tiến trình tạo pool.",
+        message: errorMsg,
       });
+      setTimeout(() => setNotification(null), 3000);
     }
   };
 
@@ -88,13 +95,13 @@ export function AdminChannelsDashboard() {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Notification Toast Banner */}
+      {/* Top-Right Notification Toast */}
       {notification && (
         <div
-          className={`flex items-center justify-between rounded-xl p-4 text-xs font-medium shadow-sm transition-all animate-in fade-in ${
+          className={`fixed top-6 right-6 z-50 flex items-center justify-between gap-4 rounded-xl p-4 text-xs font-medium shadow-xl border transition-all animate-in fade-in slide-in-from-top-2 min-w-[280px] max-w-md ${
             notification.type === "success"
-              ? "border border-emerald-200 bg-emerald-50 text-emerald-800"
-              : "border border-red-200 bg-red-50 text-red-800"
+              ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+              : "border-red-200 bg-red-50 text-red-800"
           }`}
         >
           <div className="flex items-center gap-2.5">
@@ -103,7 +110,7 @@ export function AdminChannelsDashboard() {
             ) : (
               <AlertCircle className="h-5 w-5 text-red-600 shrink-0" />
             )}
-            <span>{notification.message}</span>
+            <span className="font-semibold">{notification.message}</span>
           </div>
           <button
             type="button"
@@ -131,19 +138,21 @@ export function AdminChannelsDashboard() {
           </div>
         </div>
 
-        {/* Action Button: POST /api/v1/channels/pool */}
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={handleTriggerPool}
-            disabled={triggerPoolMutation.isPending}
-            className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 shadow-sm transition-all hover:bg-slate-50 hover:text-slate-900 active:scale-95 disabled:opacity-50"
-            title="Cập nhật pool kênh (POST /api/v1/channels/pool)"
-          >
-            <RefreshCw className={`h-4 w-4 text-violet-600 ${triggerPoolMutation.isPending ? "animate-spin" : ""}`} />
-            <span>Cập nhật</span>
-          </button>
-        </div>
+        {/* Action Button: Cập nhật Pool Kênh (only on Kênh chung tab) */}
+        {activeMainTab === "general" && (
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleTriggerPool}
+              disabled={triggerPoolMutation.isPending}
+              className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 shadow-sm transition-all hover:bg-slate-50 hover:text-slate-900 active:scale-95 disabled:opacity-50"
+              title="Cập nhật pool kênh"
+            >
+              <RefreshCw className={`h-4 w-4 text-violet-600 ${triggerPoolMutation.isPending ? "animate-spin" : ""}`} />
+              <span>Cập nhật</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Main Top-Level Tabs (2 Mục Con: Kênh chung & Kênh đề xuất cá nhân) */}
