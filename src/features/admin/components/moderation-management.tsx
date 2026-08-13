@@ -562,9 +562,6 @@ function ModerationDetailModal({
                                           <span className="font-semibold text-slate-700">{timeRange}</span>
                                         </>
                                       )}
-                                      {detail.suggestion && (
-                                        <span className="block text-slate-400">{detail.suggestion}</span>
-                                      )}
                                     </span>
                                   </li>
                                 );
