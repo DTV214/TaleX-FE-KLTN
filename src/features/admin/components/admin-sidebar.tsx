@@ -93,7 +93,7 @@ const creatorVerificationNavItems: NavItem[] = [
 ];
 
 const financialNavItems: NavItem[] = [
-  { name: "Tổng quan tài chính", href: "/admin/financials", icon: CircleDollarSign },
+  { name: "Quyết toán Creator", href: "/admin/financials", icon: CircleDollarSign },
   { name: "Thuế", href: "/admin/tax-config", icon: Percent },
 ];
 

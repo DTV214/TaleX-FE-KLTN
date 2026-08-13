@@ -126,6 +126,7 @@ import { CreatorPaymentProfilesView } from "@/features/creator-dashboard/compone
 import { CreatorCampaignPurchaseView } from "@/features/creator-dashboard/components/views/creator-campaign-purchase-view";
 import { CreatorCampaignsView } from "@/features/creator-dashboard/components/views/creator-campaigns-view";
 import { CreatorViolationsView } from "@/features/moderation-reports/components/creator-violations-view";
+import { CreatorSettlementsView } from "@/features/creator-settlements/components/creator-settlements-view";
 import { AIPolicyAndCopyright } from "@/features/creator-dashboard/components/ai-policy-and-copyright";
 import { mediaSystemConfigApi } from "@/features/admin/api/media-system-config.api";
 import {
@@ -297,7 +298,7 @@ const viewMeta: Record<
   },
   revenue: {
     title: "Doanh thu",
-    description: "Quản lý ví thu nhập và lịch sử rút tiền thanh toán.",
+    description: "Theo dõi quyết toán doanh thu, thuế PIT và trạng thái chi trả theo tháng.",
   },
 };
 
@@ -2120,17 +2121,7 @@ function CreatorDashboardContent() {
                 }
               />
             ) : activeView === "revenue" ? (
-              <DashboardOverviewView
-                onNavigate={(view) =>
-                  setDashboardRouteState({
-                    view: view as any,
-                    seriesId: "",
-                    seasonId: "",
-                    episodeId: "",
-                  })
-                }
-                initialTab="revenue"
-              />
+              <CreatorSettlementsView />
             ) : activeView === "analytics" ? (
               <CreatorAnalyticsLogsView />
             ) : activeView === "combos" ? (
