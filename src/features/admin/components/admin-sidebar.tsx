@@ -33,6 +33,7 @@ import {
   Tag,
   Target,
   TrendingUp,
+  Tv,
   UserCheck,
   Users,
 } from "lucide-react";
@@ -65,6 +66,7 @@ const contentNavItems: NavItem[] = [
   { name: "Báo cáo", href: "/admin/reports", icon: Flag },
   { name: "Hình phạt", href: "/admin/penalties", icon: Ban },
   { name: "Khiếu nại", href: "/admin/appeals", icon: FileQuestion },
+  { name: "Quản lý Kênh", href: "/admin/channels", icon: Tv },
 ];
 
 const creatorNavItems: NavItem[] = [
