@@ -15,6 +15,7 @@ export const reportTargetOptions: Array<{
   { value: "SERIES", label: "Series" },
   { value: "ACCOUNT", label: "Tài khoản" },
   { value: "COMMENT", label: "Bình luận" },
+  { value: "OTHER", label: "Hệ thống / Vấn đề khác" },
 ];
 
 export const reportReasonOptions: Array<{

@@ -8,6 +8,7 @@ import {
   Clapperboard,
   CircleDollarSign,
   Crown,
+  Flag,
   History,
   Layers3,
   LayoutDashboard,
@@ -24,6 +25,7 @@ import { CoinWalletWidget } from "@/features/coin";
 import { useMissionHeartbeat } from "@/features/mission/hooks/useMissionHeartbeat";
 import { NotificationBell } from "@/features/notifications/components/notification-bell";
 import { useActiveSubscription } from "@/features/payment/api/payment.api";
+import { ReportDialog } from "@/features/moderation-reports/components/report-dialog";
 import { usePublicSidebarStore } from "@/shared/stores/public-sidebar.store";
 
 export function SiteHeader() {
@@ -45,6 +47,7 @@ export function SiteHeader() {
 
   const [isTransactionHistoryOpen, setIsTransactionHistoryOpen] =
     useState(false);
+  const [isReportOpen, setIsReportOpen] = useState(false);
   const [headerSearch, setHeaderSearch] = useState("");
   const router = useRouter();
   const toggleSidebar = usePublicSidebarStore((state) => state.toggleSidebar);
@@ -180,6 +183,15 @@ export function SiteHeader() {
 
               <CoinWalletWidget />
 
+              <ReportDialog 
+                targetType="OTHER" 
+                defaultReason="OTHER" 
+                fixedReason={true}
+                targetLabel="Hệ thống TaleX" 
+                open={isReportOpen} 
+                onOpenChange={setIsReportOpen} 
+              />
+
               <DropdownMenu.Root
                 onOpenChange={(open) => {
                   if (!open) {
@@ -311,6 +323,16 @@ export function SiteHeader() {
 
                       </div>
                     )}
+
+                    <DropdownMenu.Separator className="my-1 h-px bg-white/10" />
+
+                    <DropdownMenu.Item
+                      onSelect={() => setIsReportOpen(true)}
+                      className="flex w-full cursor-pointer select-none items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium outline-none transition-colors hover:bg-white/5 hover:text-amber-500 focus:bg-white/5 focus:text-amber-500"
+                    >
+                      <Flag className="h-4 w-4" />
+                      Báo cáo
+                    </DropdownMenu.Item>
 
                     <DropdownMenu.Separator className="my-1 h-px bg-white/10" />
 

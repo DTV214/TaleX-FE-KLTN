@@ -2,7 +2,7 @@
 
 import { httpClient, unwrapBaseResponse, type BasePageResponse } from "@/shared/api/http-client";
 
-export type ReportTargetType = "EPISODE" | "SERIES" | "ACCOUNT" | "COMMENT";
+export type ReportTargetType = "EPISODE" | "SERIES" | "ACCOUNT" | "COMMENT" | "OTHER";
 export type ReportReason =
   | "COPYRIGHT"
   | "ADULT_CONTENT"
