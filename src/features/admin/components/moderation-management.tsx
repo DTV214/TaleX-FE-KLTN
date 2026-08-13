@@ -9,6 +9,7 @@ import {
   FileImage,
   Fingerprint,
   Loader2,
+  Search,
   ShieldAlert,
   Smile,
   Video,
@@ -52,11 +53,12 @@ function formatMediaType(mediaType: string) {
   return mediaType === "VIDEO" ? "Video" : "Ảnh";
 }
 
-// Phải khớp PIPELINE_REVIEWER_ACTOR ở MediaServiceImpl (BE) — hiện actorId thô "content-pipeline"
-// cho Staff sẽ khó hiểu, cần đổi thành nhãn dễ đọc.
-function formatReviewer(reviewedBy?: string) {
-  if (!reviewedBy) return "-";
-  return reviewedBy === "content-pipeline" ? "Hệ thống (tự động)" : reviewedBy;
+// BE (MediaServiceImpl.resolveReviewerName/resolveReviewerRole) đã tra sẵn tên hiển thị
+// + role code (ADMIN/STAFF) từ accountId thô — FE chỉ cần ghép nhãn, không tự tra cứu.
+function formatRoleLabel(role?: string) {
+  if (role === "ADMIN") return "Admin";
+  if (role === "STAFF") return "Staff";
+  return null;
 }
 
 // ContentCensorship.reviewedBy chỉ nhận đúng 2 giá trị cố định ở BE (xem
@@ -347,7 +349,16 @@ function ModerationDetailModal({
               </div>
               <div>
                 <p className="text-slate-400">Người duyệt</p>
-                <p className="mt-1 truncate text-slate-700">{formatReviewer(media.approvalReviewedBy)}</p>
+                {/* Tên đầy đủ có thể dài (kèm ghi chú trong ngoặc) — tách vai trò ra dòng
+                    riêng thay vì nối chung 1 chuỗi, tránh bị truncate cụt mất chữ "(Admin)". */}
+                <p className="mt-1 truncate text-slate-700" title={media.approvalReviewedByName || undefined}>
+                  {media.approvalReviewedByName || "-"}
+                </p>
+                {formatRoleLabel(media.approvalReviewedByRole) && (
+                  <p className="text-xs font-semibold text-violet-600">
+                    {formatRoleLabel(media.approvalReviewedByRole)}
+                  </p>
+                )}
               </div>
               {media.approvalReviewedAt && (
                 <div>
@@ -551,9 +562,6 @@ function ModerationDetailModal({
                                           {" "}— vi phạm từ giây{" "}
                                           <span className="font-semibold text-slate-700">{timeRange}</span>
                                         </>
-                                      )}
-                                      {detail.suggestion && (
-                                        <span className="block text-slate-400">{detail.suggestion}</span>
                                       )}
                                     </span>
                                   </li>
@@ -1379,6 +1387,10 @@ export function ModerationManagement() {
   const [approvedFilter, setApprovedFilter] = useState<"all" | "manual" | "clean">("all");
   const [pendingTypeFilter, setPendingTypeFilter] = useState<ModerationTypeFilter>("all");
   const [approvedTypeFilter, setApprovedTypeFilter] = useState<ModerationTypeFilter>("all");
+  // Riêng theo từng tab (giống pendingTypeFilter/approvedTypeFilter) — đổi tab không nên
+  // xóa mất từ khóa đang gõ dở ở tab kia.
+  const [pendingKeyword, setPendingKeyword] = useState("");
+  const [approvedKeyword, setApprovedKeyword] = useState("");
   const [page, setPage] = useState(0);
   const [approvedPage, setApprovedPage] = useState(0);
   const [approveTarget, setApproveTarget] = useState<ModerationMedia | null>(null);
@@ -1387,12 +1399,18 @@ export function ModerationManagement() {
   const [detailTarget, setDetailTarget] = useState<ModerationMedia | null>(null);
   const [selectedPendingId, setSelectedPendingId] = useState<string | null>(null);
   const [selectedApprovedId, setSelectedApprovedId] = useState<string | null>(null);
-  const pendingQuery = useGetPendingMedia(page, PAGE_SIZE, pendingTypeFilter);
+  const pendingQuery = useGetPendingMedia(page, PAGE_SIZE, pendingTypeFilter, pendingKeyword);
   // Lọc "manual"/"clean" chạy ở BE (MediaServiceImpl.listApproved) — approvalReviewedBy
   // KHÔNG đủ để tự lọc ở FE: pipeline tự duyệt sạch cũng ghi giá trị actor hệ thống vào
   // field này (không phải null), lọc sai sẽ lẫn nội dung không vi phạm vào "Duyệt tay".
   // Lọc ở BE cũng giúp phân trang (totalPages/totalElements) phản ánh đúng số lượng đã lọc.
-  const approvedQuery = useGetApprovedMedia(approvedPage, PAGE_SIZE, approvedFilter, approvedTypeFilter);
+  const approvedQuery = useGetApprovedMedia(
+    approvedPage,
+    PAGE_SIZE,
+    approvedFilter,
+    approvedTypeFilter,
+    approvedKeyword,
+  );
   const approveMutation = useApproveMedia();
   const rejectMutation = useRejectMedia();
   const forceHideMutation = useForceHideEpisode();
@@ -1419,6 +1437,16 @@ export function ModerationManagement() {
       : null) ??
     approvedItems[0] ??
     null;
+
+  function handlePendingKeywordChange(value: string) {
+    setPendingKeyword(value);
+    setPage(0);
+  }
+
+  function handleApprovedKeywordChange(value: string) {
+    setApprovedKeyword(value);
+    setApprovedPage(0);
+  }
 
   function confirmApprove() {
     if (!approveTarget) return;
@@ -1582,6 +1610,21 @@ export function ModerationManagement() {
                 </button>
               ))}
           </div>
+        </div>
+
+        <div className="relative mt-4">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Tìm theo tên tập/phần/bộ truyện hoặc mã nội dung..."
+            value={activeTab === "pending" ? pendingKeyword : approvedKeyword}
+            onChange={(event) =>
+              activeTab === "pending"
+                ? handlePendingKeywordChange(event.target.value)
+                : handleApprovedKeywordChange(event.target.value)
+            }
+            className="h-11 w-full rounded-lg border border-slate-200 bg-white pl-10 pr-4 text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-violet-500 focus:ring-4 focus:ring-violet-100 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white backoffice-dark:placeholder:text-white/40"
+          />
         </div>
       </section>
 

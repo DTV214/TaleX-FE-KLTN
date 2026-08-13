@@ -19,6 +19,8 @@ export type ModerationMedia = {
   createdAt?: string;
   approvalReviewedAt?: string;
   approvalReviewedBy?: string;
+  approvalReviewedByName?: string;
+  approvalReviewedByRole?: string;
   // Chỉ có giá trị ở listPendingReview/listApproved — số Media khác trong CÙNG episode
   // này khớp cùng bộ filter, BE đã group theo episode nên đây là media đại diện.
   episodeMediaCount?: number;
@@ -57,6 +59,8 @@ type ModerationMediaApiItem = {
   createdAt?: string;
   approvalReviewedAt?: string;
   approvalReviewedBy?: string;
+  approvalReviewedByName?: string;
+  approvalReviewedByRole?: string;
   episodeMediaCount?: number;
   episodeTitle?: string;
   seasonTitle?: string;
@@ -103,6 +107,8 @@ function normalizeMedia(item: ModerationMediaApiItem): ModerationMedia {
     createdAt: item.createdAt,
     approvalReviewedAt: item.approvalReviewedAt,
     approvalReviewedBy: item.approvalReviewedBy,
+    approvalReviewedByName: item.approvalReviewedByName,
+    approvalReviewedByRole: item.approvalReviewedByRole,
     episodeMediaCount: item.episodeMediaCount,
     episodeTitle: item.episodeTitle,
     seasonTitle: item.seasonTitle,
@@ -172,11 +178,17 @@ export async function getPendingMedia(
   page = 0,
   size = 12,
   mediaType: ModerationTypeFilter = "all",
+  keyword = "",
 ) {
   const response = await httpClient.get<BaseResponse<ModerationPagePayload> | ModerationPagePayload>(
     `${MODERATION_ENDPOINT}/pending-review`,
     {
-      params: { page, size, mediaType: mediaType === "all" ? undefined : mediaType },
+      params: {
+        page,
+        size,
+        mediaType: mediaType === "all" ? undefined : mediaType,
+        keyword: keyword.trim() || undefined,
+      },
     },
   );
 
@@ -190,6 +202,7 @@ export async function getApprovedMedia(
   size = 12,
   filter: ApprovedReviewFilter = "all",
   mediaType: ModerationTypeFilter = "all",
+  keyword = "",
 ) {
   const response = await httpClient.get<BaseResponse<ModerationPagePayload> | ModerationPagePayload>(
     `${MODERATION_ENDPOINT}/approved`,
@@ -199,6 +212,7 @@ export async function getApprovedMedia(
         size,
         filter: filter === "all" ? undefined : filter,
         mediaType: mediaType === "all" ? undefined : mediaType,
+        keyword: keyword.trim() || undefined,
       },
     },
   );

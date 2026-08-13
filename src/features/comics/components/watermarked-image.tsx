@@ -13,6 +13,9 @@ interface WatermarkedImageProps extends React.ImgHTMLAttributes<HTMLImageElement
   fallbackUrl?: string;
 }
 
+const isAntiPiracyEnabled = () =>
+  typeof window === "undefined" || sessionStorage.getItem("antiPiracyDisabled") !== "true";
+
 export function WatermarkedImage({
   mediaId,
   fallbackUrl,
@@ -25,8 +28,27 @@ export function WatermarkedImage({
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [antiPiracyEnabled, setAntiPiracyEnabled] = useState(true);
   const { user } = useAuthStore();
   const accountId = user?.accountId;
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      setAntiPiracyEnabled(isAntiPiracyEnabled());
+    });
+
+    const handleAntiPiracyToggle = (event: Event) => {
+      const { detail } = event as CustomEvent<{ isDisabled?: boolean }>;
+      setAntiPiracyEnabled(detail?.isDisabled !== true);
+    };
+
+    window.addEventListener("talex:anti-piracy-toggle", handleAntiPiracyToggle);
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("talex:anti-piracy-toggle", handleAntiPiracyToggle);
+    };
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -179,12 +201,16 @@ export function WatermarkedImage({
   };
 
   const handleDragStart = (event: DragEvent<HTMLImageElement>) => {
-    event.preventDefault();
+    if (antiPiracyEnabled) {
+      event.preventDefault();
+    }
     onDragStart?.(event);
   };
 
   const handleContextMenu = (event: MouseEvent<HTMLImageElement>) => {
-    event.preventDefault();
+    if (antiPiracyEnabled) {
+      event.preventDefault();
+    }
     onContextMenu?.(event);
   };
 
@@ -196,7 +222,7 @@ export function WatermarkedImage({
       alt={props.alt ?? ""}
       className={`${className ?? ""} select-none`}
       style={protectedStyle}
-      draggable={false}
+      draggable={!antiPiracyEnabled}
       onDragStart={handleDragStart}
       onContextMenu={handleContextMenu}
     />

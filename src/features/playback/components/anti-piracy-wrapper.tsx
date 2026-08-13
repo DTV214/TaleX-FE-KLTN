@@ -163,6 +163,11 @@ export function AntiPiracyWrapper({
           setIsDisabled(newValue);
           if (typeof window !== "undefined") {
             sessionStorage.setItem("antiPiracyDisabled", newValue.toString());
+            window.dispatchEvent(
+              new CustomEvent("talex:anti-piracy-toggle", {
+                detail: { isDisabled: newValue },
+              })
+            );
           }
         }}
         className={`fixed bottom-5 left-5 z-40 rounded-full border px-3 py-1.5 text-xs font-bold shadow-lg backdrop-blur-md transition-all ${

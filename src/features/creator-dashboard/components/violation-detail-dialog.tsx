@@ -15,6 +15,7 @@ import {
   getBlockingCopyrightViolations,
   getPermittedCopyrightMatches,
   getRejectedCensorshipResults,
+  translateViolationLabel,
 } from "@/features/creator-dashboard/utils/media-violations";
 
 interface ViolationDetailDialogProps {
@@ -156,7 +157,7 @@ export function ViolationDetailDialog({
                             className="text-sm rounded bg-amber-500/5 p-2"
                           >
                             <div className="font-medium text-amber-300">
-                              {d.label}
+                              {translateViolationLabel(d.label)}
                             </div>
                             <div className="text-muted-foreground">
                               {d.violationAt != null &&
@@ -164,11 +165,6 @@ export function ViolationDetailDialog({
                               {d.confidence != null &&
                                 ` — Độ chính xác phát hiện: ${d.confidence.toFixed(0)}%`}
                             </div>
-                            {d.suggestion && (
-                              <div className="text-xs text-muted-foreground mt-1">
-                                {d.suggestion}
-                              </div>
-                            )}
                           </div>
                         ))}
                       </div>

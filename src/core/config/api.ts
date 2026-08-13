@@ -15,3 +15,8 @@ export const CLOUDINARY_FOLDER =
 
 export const CLOUDINARY_HLS_STREAMING_PROFILE =
   process.env.NEXT_PUBLIC_CLOUDINARY_HLS_STREAMING_PROFILE || "sp_auto";
+
+export const AI_RECOMMENDATION_API_URL =
+  process.env.NEXT_PUBLIC_AI_RECOMMENDATION_API_URL?.replace(/\/$/, "") || "";
+
+
