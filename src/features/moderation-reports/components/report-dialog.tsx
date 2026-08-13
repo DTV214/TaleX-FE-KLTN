@@ -9,7 +9,6 @@ import { uploadImageToS3 } from "@/features/creator-dashboard/api/s3-upload-api"
 import {
   type ReportReason,
   type ReportTargetType,
-  stringifyProofUrls,
 } from "../api/moderation-reports.api";
 import { useCreateReport } from "../hooks/use-moderation-reports";
 import {
@@ -17,8 +16,9 @@ import {
   reportReasonOptions,
 } from "../utils/moderation-labels";
 
-const MAX_FILES = 3;
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const MAX_FILES = 5;
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+const MAX_VIDEO_SIZE = 20 * 1024 * 1024;
 
 type ReportDialogProps = {
   targetType: ReportTargetType;
@@ -29,14 +29,18 @@ type ReportDialogProps = {
 
 function validateFiles(files: File[]) {
   if (files.length > MAX_FILES) {
-    return `Chỉ được gửi tối đa ${MAX_FILES} ảnh bằng chứng.`;
+    return `Chỉ được gửi tối đa ${MAX_FILES} file bằng chứng.`;
   }
 
-  const invalidType = files.find((file) => !file.type.startsWith("image/"));
-  if (invalidType) return "Vui lòng chỉ chọn file ảnh.";
-
-  const oversized = files.find((file) => file.size > MAX_FILE_SIZE);
-  if (oversized) return "Mỗi ảnh bằng chứng không được vượt quá 5MB.";
+  for (const file of files) {
+    if (file.type.startsWith("image/")) {
+      if (file.size > MAX_IMAGE_SIZE) return `Ảnh "${file.name}" vượt quá 5MB.`;
+    } else if (file.type.startsWith("video/")) {
+      if (file.size > MAX_VIDEO_SIZE) return `Video "${file.name}" vượt quá 20MB.`;
+    } else {
+      return "Vui lòng chỉ chọn file ảnh hoặc video.";
+    }
+  }
 
   return null;
 }
@@ -133,18 +137,18 @@ export function ReportDialog({
                     <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#D4AF37]/10 text-[#D4AF37]">
                       <Upload className="h-5 w-5" />
                     </span>
-                    Ảnh bằng chứng
+                    Ảnh/Video bằng chứng
                   </span>
                   <input
                     type="file"
-                    accept="image/*"
+                    accept="image/*, video/*"
                     multiple
                     onChange={handleFileChange}
                     className="mt-3 block w-full text-xs font-semibold text-zinc-400 file:mr-3 file:rounded-lg file:border-0 file:bg-[#D4AF37] file:px-3 file:py-2 file:text-xs file:font-black file:text-black"
                   />
                   <p className="mt-2 text-xs text-zinc-500">
-                    Tối đa {MAX_FILES} ảnh, mỗi ảnh không quá 5MB. FE sẽ upload ảnh lên media trước,
-                    rồi gửi publicUrl trong `proofImages`.
+                    Tối đa {MAX_FILES} file (Ảnh &lt; 5MB, Video &lt; 20MB). FE sẽ upload lên media trước,
+                    rồi gửi url trong `proofImages` / `proofVideos`.
                   </p>
                   {files.length > 0 && (
                     <div className="mt-3 space-y-2">
@@ -158,6 +162,13 @@ export function ReportDialog({
                           <span className="text-zinc-500">
                             {(file.size / 1024 / 1024).toFixed(2)}MB
                           </span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveFile(file)}
+                            className="ml-auto rounded p-1 text-zinc-400 hover:bg-white/10 hover:text-white"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
                         </div>
                       ))}
                     </div>
@@ -200,13 +211,27 @@ export function ReportDialog({
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const nextFiles = Array.from(event.target.files ?? []);
-    const error = validateFiles(nextFiles);
+    if (nextFiles.length === 0) return;
+
+    const combinedFiles = [...files, ...nextFiles].reduce((acc, curr) => {
+        if (!acc.some(f => f.name === curr.name && f.size === curr.size)) {
+            acc.push(curr);
+        }
+        return acc;
+    }, [] as File[]);
+
+    const error = validateFiles(combinedFiles);
     if (error) {
       toast.error(error);
       event.target.value = "";
       return;
     }
-    setFiles(nextFiles);
+    setFiles(combinedFiles);
+    event.target.value = "";
+  }
+
+  function handleRemoveFile(fileToRemove: File) {
+    setFiles(files.filter((f) => f !== fileToRemove));
   }
 
   async function handleSubmit() {
@@ -223,7 +248,9 @@ export function ReportDialog({
 
     try {
       setIsUploading(true);
-      const uploadedUrls = [];
+      const uploadedImages: string[] = [];
+      const uploadedVideos: string[] = [];
+      
       for (const file of files) {
         const uploaded = await uploadImageToS3(
           file,
@@ -231,7 +258,11 @@ export function ReportDialog({
           targetId,
           user?.accountId,
         );
-        uploadedUrls.push(uploaded.publicUrl);
+        if (file.type.startsWith("video/")) {
+          uploadedVideos.push(uploaded.publicUrl);
+        } else {
+          uploadedImages.push(uploaded.publicUrl);
+        }
       }
 
       await createReportMutation.mutateAsync({
@@ -239,7 +270,8 @@ export function ReportDialog({
         targetId,
         reason,
         description: trimmedDescription,
-        proofImages: uploadedUrls.length ? stringifyProofUrls(uploadedUrls) : undefined,
+        proofImages: uploadedImages.length ? uploadedImages : undefined,
+        proofVideos: uploadedVideos.length ? uploadedVideos : undefined,
       });
 
       setOpen(false);

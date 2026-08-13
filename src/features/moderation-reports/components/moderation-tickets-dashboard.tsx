@@ -6,6 +6,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Eye,
+  Film,
   Flag,
   Image as ImageIcon,
   Loader2,
@@ -15,7 +16,6 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import {
-  parseProofUrls,
   type ModerationTicket,
   type PenaltyLevel,
   type ReportTargetType,
@@ -52,17 +52,19 @@ function statusBadge(status?: string) {
   );
 }
 
-function ProofLinks({ value }: { value?: string }) {
-  const urls = parseProofUrls(value);
-  if (!urls.length) {
-    return <span className="text-xs font-semibold text-slate-400">Không có ảnh</span>;
+function ProofLinks({ images, videos }: { images?: string[], videos?: string[] }) {
+  const hasImages = images && images.length > 0;
+  const hasVideos = videos && videos.length > 0;
+
+  if (!hasImages && !hasVideos) {
+    return <span className="text-xs font-semibold text-slate-400">Không có bằng chứng (ảnh/video)</span>;
   }
 
   return (
     <div className="max-h-80 space-y-3 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-3 [scrollbar-width:thin] [scrollbar-color:rgba(148,163,184,0.55)_transparent] backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.03]">
-      {urls.map((url, index) => (
+      {images?.map((url, index) => (
         <a
-          key={`${url}-${index}`}
+          key={`img-${index}`}
           href={url}
           target="_blank"
           rel="noreferrer"
@@ -78,6 +80,27 @@ function ProofLinks({ value }: { value?: string }) {
               src={url}
               alt={`Ảnh minh chứng ${index + 1}`}
               loading="lazy"
+              className="max-h-56 w-full rounded-lg object-contain"
+            />
+          </div>
+        </a>
+      ))}
+      {videos?.map((url, index) => (
+        <a
+          key={`vid-${index}`}
+          href={url}
+          target="_blank"
+          rel="noreferrer"
+          className="group block overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:border-amber-300 hover:shadow-md backoffice-dark:border-white/10 backoffice-dark:bg-black/25"
+        >
+          <div className="flex items-center gap-2 border-b border-slate-100 px-3 py-2 text-xs font-black text-slate-600 group-hover:text-amber-700 backoffice-dark:border-white/10 backoffice-dark:text-white/70">
+            <Film className="h-3.5 w-3.5" />
+            Video minh chứng {index + 1}
+          </div>
+          <div className="bg-slate-950/5 p-2 backoffice-dark:bg-black/30">
+            <video
+              src={url}
+              controls
               className="max-h-56 w-full rounded-lg object-contain"
             />
           </div>
@@ -202,7 +225,7 @@ function TicketDetailModal({
                   <p className="mb-3 whitespace-pre-line text-sm font-medium leading-relaxed text-slate-700">
                     {report.description || "Không có mô tả."}
                   </p>
-                  <ProofLinks value={report.proofImages} />
+                  <ProofLinks images={report.proofImages} videos={report.proofVideos} />
                 </article>
               ))}
 

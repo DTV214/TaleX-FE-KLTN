@@ -28,7 +28,8 @@ export type CreateReportRequest = {
   targetId: string;
   reason: ReportReason;
   description: string;
-  proofImages?: string;
+  proofImages?: string[];
+  proofVideos?: string[];
 };
 
 export type ReportItem = {
@@ -40,7 +41,8 @@ export type ReportItem = {
   targetId: string;
   reason: ReportReason;
   description?: string;
-  proofImages?: string;
+  proofImages?: string[];
+  proofVideos?: string[];
   status?: ReportStatus;
   createdAt?: string;
 };
