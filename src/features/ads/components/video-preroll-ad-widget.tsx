@@ -31,14 +31,29 @@ export function VideoPrerollAdWidget({ onAdFinished }: VideoPrerollAdWidgetProps
   const [isFullscreen, setIsFullscreen] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
-  const { data: ad, isLoading, isError } = useQuery({
-    queryKey: ["serve-ad-preroll", SLOT_CODE],
-    queryFn: () => adsApi.serveAd(SLOT_CODE),
-    staleTime: 0,
+  const { data: ads, isLoading, isError } = useQuery({
+    queryKey: ["serve-ads-preroll", SLOT_CODE],
+    queryFn: () => adsApi.serveAllAds(SLOT_CODE),
+    staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
     retry: false,
     enabled: !isAdBlocked,
   });
+
+  const [ad, setAd] = useState<any>(null);
+
+  useEffect(() => {
+    if (ads && ads.length > 0) {
+      const lastIndexStr = localStorage.getItem(`last_ad_index_${SLOT_CODE}`);
+      let nextIndex = lastIndexStr ? parseInt(lastIndexStr, 10) + 1 : 0;
+      if (nextIndex >= ads.length) nextIndex = 0;
+      localStorage.setItem(`last_ad_index_${SLOT_CODE}`, nextIndex.toString());
+      
+      setAd(ads[nextIndex]);
+    } else if (ads && ads.length === 0) {
+      setAd(null);
+    }
+  }, [ads]);
 
   // Nếu user có Premium, hoặc API lỗi, hoặc không có ad -> Bỏ qua ad ngay lập tức
   useEffect(() => {

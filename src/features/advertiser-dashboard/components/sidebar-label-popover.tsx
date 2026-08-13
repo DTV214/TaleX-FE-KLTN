@@ -53,7 +53,7 @@ export function SidebarLabelPopover() {
                   placeholder="Search by label name" 
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-full pl-8 pr-3 py-1.5 border border-slate-300 rounded-sm text-sm outline-none focus:border-teal-500"
+                  className="w-full pl-8 pr-3 py-1.5 border border-slate-300 rounded-sm text-sm outline-none focus:border-slate-800"
                 />
               </div>
               <button 
@@ -81,7 +81,7 @@ export function SidebarLabelPopover() {
                         <span className="text-sm font-medium">{l.name}</span>
                       </div>
                       <div className="hidden group-hover:flex items-center gap-1">
-                        <button onClick={() => setEditingLabel(l)} className="p-1 text-slate-400 hover:text-teal-600 rounded-sm hover:bg-slate-200" title="Edit">
+                        <button onClick={() => setEditingLabel(l)} className="p-1 text-slate-400 hover:text-[#161823] rounded-sm hover:bg-slate-200" title="Edit">
                           <Edit2 className="h-3.5 w-3.5" />
                         </button>
                         <button onClick={() => { if(window.confirm('Delete this label?')) removeLabel(l.labelId) }} className="p-1 text-slate-400 hover:text-red-600 rounded-sm hover:bg-slate-200" title="Delete">
@@ -143,7 +143,7 @@ function LabelModal({ onClose, initialData }: { onClose: () => void, initialData
                 placeholder="Enter label name"
                 value={name}
                 onChange={(e) => setName(e.target.value.substring(0, 80))}
-                className="w-full border border-slate-300 rounded-sm px-3 py-2 outline-none focus:border-teal-500 pr-12 text-sm text-slate-900 placeholder:text-slate-400 bg-white"
+                className="w-full border border-slate-300 rounded-sm px-3 py-2 outline-none focus:border-slate-800 pr-12 text-sm text-slate-900 placeholder:text-slate-400 bg-white"
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">
                 {name.length}/80
@@ -174,7 +174,7 @@ function LabelModal({ onClose, initialData }: { onClose: () => void, initialData
           <button 
             onClick={handleSave}
             disabled={!name.trim()}
-            className="px-5 py-2 bg-[#00D6BA] hover:bg-[#00BFA5] text-white rounded-sm text-sm font-bold disabled:opacity-50"
+            className="px-5 py-2 bg-[#161823] hover:bg-black text-white rounded-sm text-sm font-bold disabled:opacity-50"
           >
             {initialData ? 'Save' : 'Create'}
           </button>

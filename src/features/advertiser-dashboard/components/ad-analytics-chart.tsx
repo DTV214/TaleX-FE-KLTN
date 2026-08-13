@@ -31,9 +31,7 @@ const METRIC_CONFIG = {
   spend: { label: 'Total cost', color: '#3b82f6', yAxisId: 'left', unit: '₫' },
   impressions: { label: 'Impressions', color: '#10b981', yAxisId: 'left', unit: '' },
   clicks: { label: 'Clicks', color: '#8b5cf6', yAxisId: 'left', unit: '' },
-  ctr: { label: 'CTR', color: '#06b6d4', yAxisId: 'right', unit: '%' },
   focusedViews6s: { label: 'View 6s', color: '#f59e0b', yAxisId: 'left', unit: '' },
-  paidFocusedViews6s: { label: 'Paid View 6s', color: '#ec4899', yAxisId: 'left', unit: '' },
 } as const;
 
 type MetricKey = keyof typeof METRIC_CONFIG;
@@ -105,9 +103,7 @@ export function AdAnalyticsChart({ campaignId }: AdAnalyticsChartProps) {
         impressions: m.impressions || 0,
         clicks: m.clicks || 0,
         focusedViews6s: m.focusedViews6s || 0,
-        paidFocusedViews6s: m.paidFocusedViews6s || 0,
         spend: m.spend || 0,
-        ctr: m.ctr ? Number(m.ctr.toFixed(2)) : 0,
         rawDate: m.reportDate
       }));
   }, [metrics, startDate, endDate]);
@@ -120,13 +116,10 @@ export function AdAnalyticsChart({ campaignId }: AdAnalyticsChartProps) {
       totalImpressions += d.impressions;
       totalClicks += d.clicks;
     });
-    const ctr = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
-
     return {
       totalCost: totalSpend,
       impressions: totalImpressions,
-      clicks: totalClicks,
-      ctr: ctr.toFixed(2)
+      clicks: totalClicks
     };
   }, [filteredChartData]);
 
@@ -222,10 +215,6 @@ export function AdAnalyticsChart({ campaignId }: AdAnalyticsChartProps) {
               <div className="text-xs text-slate-500 font-medium mb-1">Clicks</div>
               <div className="text-xl font-bold text-slate-800">{new Intl.NumberFormat('vi-VN').format(summary.clicks)}</div>
             </div>
-            <div>
-              <div className="text-xs text-slate-500 font-medium mb-1">CTR</div>
-              <div className="text-xl font-bold text-slate-800">{summary.ctr}%</div>
-            </div>
           </div>
         )}
       </div>
@@ -280,7 +269,9 @@ export function AdAnalyticsChart({ campaignId }: AdAnalyticsChartProps) {
                       >
                         Select Metric
                       </button>
-                      {(Object.keys(METRIC_CONFIG) as MetricKey[]).map(key => (
+                      {(Object.keys(METRIC_CONFIG) as MetricKey[])
+                        .filter(key => !selectedMetrics.includes(key) || key === metric)
+                        .map(key => (
                         <button
                           key={key}
                           onClick={() => { updateMetric(index, key); setOpenDropdownIndex(null); }}

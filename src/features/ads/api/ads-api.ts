@@ -1,5 +1,31 @@
 import { httpClient as api } from "@/shared/api/http-client";
 
+export interface AdCreative {
+  creativeId: string;
+  mediaType: string;
+  mediaUrl: string;
+  targetUrl: string;
+}
+
+export interface AdCampaign {
+  campaignId: string;
+  profileId: string;
+  slotId: string;
+  slotCodeName: string;
+  slotType?: string;
+  name: string;
+  targetImpressions: number;
+  spentImpressions: number;
+  campaignBudget: number;
+  spentBudget: number;
+  status: "PENDING" | "RUNNING" | "PAUSED" | "COMPLETED" | "CANCELLED";
+  startDate?: string;
+  endDate?: string;
+  createdAt: string;
+  labels?: string[];
+  creatives?: AdCreative[];
+}
+
 export interface AdLabel {
   labelId: string;
   name: string;
@@ -155,9 +181,19 @@ export const adsApi = {
   updateCampaignSchedule: (campaignId: string, data: { startDate?: string, endDate?: string }) =>
     api.patch(`/api/v1/ads/campaigns/${campaignId}/schedule`, data).then((res) => res.data),
 
-  topupCampaign: (campaignId: string, amount: number) =>
-    api.post(`/api/v1/ads/campaigns/${campaignId}/topup`, { amount }).then((res) => res.data),
+  cloneCampaign: (data: { campaignId: string, campaignBudget: number, targetImpressions: number, startDate?: string, endDate?: string }) =>
+    api.post(`/api/v1/ads/campaigns/${data.campaignId}/clone`, { 
+      campaignBudget: data.campaignBudget, 
+      targetImpressions: data.targetImpressions,
+      startDate: data.startDate,
+      endDate: data.endDate
+    }).then((res) => res.data),
 
+  renameCampaign: (campaignId: string, name: string) =>
+    api.patch(`/api/v1/ads/campaigns/${campaignId}/name`, { name }).then((res) => res.data),
+
+  bulkCancelCampaigns: (campaignIds: string[]) =>
+    api.post(`/api/v1/ads/campaigns/bulk-cancel`, { campaignIds }).then((res) => res.data),
   // ---- System Config ----
   /** Lấy cấu hình Popup (public, FE dùng khi load) */
   getPopupConfig: (): Promise<PopupConfig> =>

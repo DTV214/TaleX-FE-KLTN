@@ -52,22 +52,22 @@ export function AdvertiserLayout({
 
           <nav className="flex flex-1 flex-col gap-1 overflow-y-auto overflow-x-hidden py-4 text-sm font-medium">
             <div className="px-2">
-              <Link href="/advertiser-dashboard?view=dashboard" className={`flex items-center gap-3 rounded-md p-2 hover:bg-slate-100 ${activeView === 'dashboard' ? 'bg-teal-50 text-teal-600 font-bold' : 'text-slate-500 hover:text-[#161823]'}`}>
-                <LayoutDashboard className={`h-5 w-5 shrink-0 ${activeView === 'dashboard' ? 'text-teal-500' : ''}`} />
+              <Link href="/advertiser-dashboard?view=dashboard" className={`flex items-center gap-3 rounded-md p-2 hover:bg-slate-100 ${activeView === 'dashboard' ? 'bg-slate-100 text-[#161823] font-bold' : 'text-slate-500 hover:text-[#161823]'}`}>
+                <LayoutDashboard className={`h-5 w-5 shrink-0 ${activeView === 'dashboard' ? 'text-[#161823]' : ''}`} />
                 <span className="opacity-0 transition-opacity duration-300 group-hover:opacity-100 whitespace-nowrap">Dashboard</span>
               </Link>
             </div>
             
             <div className="px-2">
-              <Link href="/advertiser-dashboard?view=campaigns" className={`flex items-center gap-3 rounded-md p-2 hover:bg-slate-100 ${activeView === 'campaigns' ? 'bg-teal-50 text-teal-600 font-bold' : 'text-slate-500 hover:text-[#161823]'}`}>
-                <Megaphone className={`h-5 w-5 shrink-0 ${activeView === 'campaigns' ? 'text-teal-500' : ''}`} />
+              <Link href="/advertiser-dashboard?view=campaigns" className={`flex items-center gap-3 rounded-md p-2 hover:bg-slate-100 ${activeView === 'campaigns' ? 'bg-slate-100 text-[#161823] font-bold' : 'text-slate-500 hover:text-[#161823]'}`}>
+                <Megaphone className={`h-5 w-5 shrink-0 ${activeView === 'campaigns' ? 'text-[#161823]' : ''}`} />
                 <span className="opacity-0 transition-opacity duration-300 group-hover:opacity-100 whitespace-nowrap">Campaigns</span>
               </Link>
             </div>
 
             <div className="px-2">
-              <Link href="/advertiser-dashboard?view=wallet" className={`flex items-center gap-3 rounded-md p-2 hover:bg-slate-100 ${activeView === 'wallet' ? 'bg-teal-50 text-teal-600 font-bold' : 'text-slate-500 hover:text-[#161823]'}`}>
-                <CreditCard className={`h-5 w-5 shrink-0 ${activeView === 'wallet' ? 'text-teal-500' : ''}`} />
+              <Link href="/advertiser-dashboard?view=wallet" className={`flex items-center gap-3 rounded-md p-2 hover:bg-slate-100 ${activeView === 'wallet' ? 'bg-slate-100 text-[#161823] font-bold' : 'text-slate-500 hover:text-[#161823]'}`}>
+                <CreditCard className={`h-5 w-5 shrink-0 ${activeView === 'wallet' ? 'text-[#161823]' : ''}`} />
                 <span className="opacity-0 transition-opacity duration-300 group-hover:opacity-100 whitespace-nowrap">Ví tiền</span>
               </Link>
             </div>

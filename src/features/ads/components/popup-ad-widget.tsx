@@ -87,14 +87,29 @@ export function PopupAdWidget() {
       })()
     : false;
 
-  const { data: ad } = useQuery({
-    queryKey: ["serve-ad-popup", SLOT_CODE],
-    queryFn: () => adsApi.serveAd(SLOT_CODE),
-    staleTime: 0,
+  const { data: ads } = useQuery({
+    queryKey: ["serve-ads-popup", SLOT_CODE],
+    queryFn: () => adsApi.serveAllAds(SLOT_CODE),
+    staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
     retry: false,
     enabled: isOnAllowedRoute && !isAdBlocked && !isDismissed,
   });
+
+  const [ad, setAd] = useState<any>(null);
+
+  useEffect(() => {
+    if (ads && ads.length > 0) {
+      const lastIndexStr = localStorage.getItem(`last_ad_index_${SLOT_CODE}`);
+      let nextIndex = lastIndexStr ? parseInt(lastIndexStr, 10) + 1 : 0;
+      if (nextIndex >= ads.length) nextIndex = 0;
+      localStorage.setItem(`last_ad_index_${SLOT_CODE}`, nextIndex.toString());
+      
+      setAd(ads[nextIndex]);
+    } else if (ads && ads.length === 0) {
+      setAd(null);
+    }
+  }, [ads, pathname]);
 
   // Tự động hiển thị popup sau effectiveDelayMs
   useEffect(() => {

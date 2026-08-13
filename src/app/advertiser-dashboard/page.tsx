@@ -12,7 +12,7 @@ import { createPortal } from "react-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { adsApi, AdSlot } from "@/features/ads/api/ads-api";
 import { toast } from "sonner";
-import { Loader2, Plus, Search, Calendar, ChevronDown, Columns, RefreshCw, MoreVertical, X, Check, Tag, Megaphone, PlusCircle, Coins, HelpCircle, BarChart2, Trash2, Download } from "lucide-react";
+import { Loader2, Plus, Search, Calendar, ChevronDown, Columns, RefreshCw, MoreVertical, X, Check, Tag, Megaphone, PlusCircle, Coins, HelpCircle, BarChart2, Trash2, Download, Edit2 } from "lucide-react";
 import { useAuthStore } from "@/features/auth/store/auth.store";
 import { useLabels, AdLabel } from "@/features/ads/hooks/use-labels";
 import * as XLSX from "xlsx";
@@ -95,18 +95,18 @@ function SetupProfileView({ profile }: { profile: any }) {
           <form onSubmit={handleSubmit} className="space-y-5 max-w-lg">
             <div>
               <label className="mb-1 block text-sm font-medium">Tên Doanh Nghiệp / Thương Hiệu *</label>
-              <input name="companyName" required className="w-full rounded-md border border-slate-300 px-4 py-2.5 outline-none focus:border-teal-500" />
+              <input name="companyName" required className="w-full rounded-md border border-slate-300 px-4 py-2.5 outline-none focus:border-slate-800" />
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium">Số điện thoại liên hệ *</label>
-              <input name="phone" required className="w-full rounded-md border border-slate-300 px-4 py-2.5 outline-none focus:border-teal-500" />
+              <input name="phone" required className="w-full rounded-md border border-slate-300 px-4 py-2.5 outline-none focus:border-slate-800" />
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium">Website (Tùy chọn)</label>
-              <input name="website" type="url" className="w-full rounded-md border border-slate-300 px-4 py-2.5 outline-none focus:border-teal-500" />
+              <input name="website" type="url" className="w-full rounded-md border border-slate-300 px-4 py-2.5 outline-none focus:border-slate-800" />
             </div>
             <div className="pt-6">
-              <button type="submit" disabled={setupMutation.isPending} className="rounded-md bg-teal-500 px-8 py-2.5 font-bold text-white hover:bg-teal-600">
+              <button type="submit" disabled={setupMutation.isPending} className="rounded-md bg-slate-1000 px-8 py-2.5 font-bold text-white hover:bg-[#161823]">
                 {setupMutation.isPending ? "Processing..." : "Xác nhận"}
               </button>
             </div>
@@ -140,19 +140,33 @@ function CampaignManagementView({ profile }: { profile: any }) {
     onError: (err: any) => toast.error(err.response?.data?.message || err.message)
   });
 
-  const cancelMutation = useMutation({
-    mutationFn: adsApi.cancelCampaign,
+  const bulkCancelMutation = useMutation({
+    mutationFn: adsApi.bulkCancelCampaigns,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-campaigns"] });
       queryClient.invalidateQueries({ queryKey: ["ad-wallet-balance"] });
-      toast.success("Campaign cancelled and refunded!");
+      toast.success("Các chiến dịch đã được hủy và hoàn tiền (nếu có)!");
+    },
+    onError: (err: any) => toast.error(err.response?.data?.message || err.message)
+  });
+
+  const [cloneCampaignToRun, setCloneCampaignToRun] = useState<any>(null);
+  const [previewCampaign, setPreviewCampaign] = useState<any>(null);
+  
+  const [editingCampaignId, setEditingCampaignId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState<string>("");
+
+  const renameMutation = useMutation({
+    mutationFn: (variables: { id: string, name: string }) => adsApi.renameCampaign(variables.id, variables.name),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["my-campaigns"] });
+      toast.success("Đổi tên thành công!");
     },
     onError: (err: any) => toast.error(err.response?.data?.message || err.message)
   });
 
   const [activeReportCampaignId, setActiveReportCampaignId] = useState<string | null>(null);
   const [scheduleCampaign, setScheduleCampaign] = useState<any>(null);
-  const [topupCampaign, setTopupCampaign] = useState<any>(null);
   const [isBulkExportModalOpen, setIsBulkExportModalOpen] = useState(false);
   const { labels } = useLabels();
   const selectedLabel = searchParams.get("labelId");
@@ -254,7 +268,7 @@ function CampaignManagementView({ profile }: { profile: any }) {
       <div className="flex items-center gap-4 p-3 border-b border-slate-200 bg-[#F4F5F6]">
         <button 
           onClick={() => setIsCreating(true)}
-          className="flex-shrink-0 flex items-center gap-1.5 bg-[#00D6BA] hover:bg-[#00BFA5] text-white px-4 py-1.5 rounded-sm font-medium transition-colors"
+          className="flex-shrink-0 flex items-center gap-1.5 bg-[#161823] hover:bg-black text-white px-4 py-1.5 rounded-sm font-medium transition-colors"
         >
           <Plus className="h-4 w-4" />
           Create
@@ -269,14 +283,14 @@ function CampaignManagementView({ profile }: { profile: any }) {
             placeholder="Search & filter (/)"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 pr-4 py-1.5 w-full text-sm border border-slate-300 rounded-sm outline-none focus:border-teal-500 bg-white"
+            className="pl-9 pr-4 py-1.5 w-full text-sm border border-slate-300 rounded-sm outline-none focus:border-slate-800 bg-white"
           />
         </div>
         
         <div className="flex items-center gap-3 flex-shrink-0">
           <button 
             onClick={() => setIsTopupOpen(true)}
-            className="flex items-center gap-2 text-sm font-medium text-teal-600 hover:bg-teal-50 px-3 py-1.5 rounded-sm transition-colors border border-teal-200 bg-white"
+            className="flex items-center gap-2 text-sm font-medium text-[#161823] hover:bg-slate-100 px-3 py-1.5 rounded-sm transition-colors border border-slate-300 bg-white"
           >
             Balance: {profile?.walletBalance?.toLocaleString() || 0} VND
           </button>
@@ -296,19 +310,19 @@ function CampaignManagementView({ profile }: { profile: any }) {
         <aside className="hidden w-[220px] flex-col border-r border-slate-200 bg-white lg:flex z-0">
           <div className="flex-1 overflow-y-auto">
             <nav className="flex flex-col py-4">
-              <Link href="/advertiser-dashboard?view=campaigns" className={`group flex items-center justify-between px-6 py-2.5 ${!selectedLabel ? 'bg-teal-50 text-teal-600 border-r-2 border-teal-500' : 'text-[#757575] hover:bg-slate-50'}`}>
+              <Link href="/advertiser-dashboard?view=campaigns" className={`group flex items-center justify-between px-6 py-2.5 ${!selectedLabel ? 'bg-slate-100 text-[#161823] border-r-2 border-[#161823]' : 'text-[#757575] hover:bg-slate-50'}`}>
                 <div className="flex items-center gap-3">
-                  <Megaphone className={`h-5 w-5 ${!selectedLabel ? 'text-teal-500' : ''}`} />
+                  <Megaphone className={`h-5 w-5 ${!selectedLabel ? 'text-[#161823]' : ''}`} />
                   <span className="text-sm font-medium">All Campaigns</span>
                 </div>
-                <PlusCircle className={`h-4 w-4 ${!selectedLabel ? 'text-teal-500' : 'text-transparent'}`} />
+                <PlusCircle className={`h-4 w-4 ${!selectedLabel ? 'text-[#161823]' : 'text-transparent'}`} />
               </Link>
               
               {labels.map(l => (
                 <Link 
                   key={l.labelId}
                   href={`/advertiser-dashboard?view=campaigns&labelId=${l.labelId}`} 
-                  className={`flex items-center px-6 py-2.5 cursor-pointer ${selectedLabel === l.labelId ? 'bg-teal-50 text-teal-600 border-r-2 border-teal-500' : 'text-[#757575] hover:bg-slate-50'}`}
+                  className={`flex items-center px-6 py-2.5 cursor-pointer ${selectedLabel === l.labelId ? 'bg-slate-100 text-[#161823] border-r-2 border-[#161823]' : 'text-[#757575] hover:bg-slate-50'}`}
                 >
                   <div className="flex items-center gap-3">
                     <Tag className="h-4 w-4" style={{ color: l.color }} />
@@ -357,20 +371,22 @@ function CampaignManagementView({ profile }: { profile: any }) {
                   <div 
                   className="flex items-center justify-start gap-3 px-6 py-2.5 text-red-500 hover:bg-red-50 cursor-pointer transition-colors"
                   onClick={() => {
-                    const cId = selectedCampaignIds[0];
-                    const c = campaigns?.find((cmp: any) => cmp.campaignId === cId);
-                    if (c && (c.status === 'ACTIVE' || c.status === 'PAUSED' || c.status === 'PENDING_REVIEW')) {
-                      if (confirm(`Are you sure you want to cancel this campaign? Any unspent balance (≈ ${((c.totalBudget - (c.campaignBalance || 0))).toLocaleString()} VND) will be refunded to your Master Wallet.`)) {
-                        cancelMutation.mutate(cId);
-                        setSelectedCampaignIds(prev => prev.filter(id => id !== cId));
-                      }
-                    } else {
-                      toast.error("Chiến dịch này đã hoàn thành hoặc đã hủy, không thể thao tác.");
+                    const validIds = selectedCampaignIds.filter(id => {
+                      const c = campaigns?.find((cmp: any) => cmp.campaignId === id);
+                      return c && (c.status === 'ACTIVE' || c.status === 'PAUSED' || c.status === 'PENDING_REVIEW');
+                    });
+                    if (validIds.length === 0) {
+                      toast.error("Các chiến dịch đã chọn đã hoàn thành hoặc đã hủy, không thể thao tác.");
+                      return;
+                    }
+                    if (confirm(`Bạn có chắc chắn muốn hủy ${validIds.length} chiến dịch? Số dư chưa dùng sẽ được hoàn trả vào Ví tổng.`)) {
+                      bulkCancelMutation.mutate(validIds);
+                      setSelectedCampaignIds([]);
                     }
                   }}
                 >
                   <Trash2 className="h-4 w-4" />
-                  <span className="text-sm font-medium">Cancel campaign</span>
+                  <span className="text-sm font-medium">Cancel campaigns</span>
                 </div>
                 </>
               )}
@@ -388,6 +404,7 @@ function CampaignManagementView({ profile }: { profile: any }) {
               <th className="px-4 py-2 border-r border-slate-200">On/off</th>
               <th className="px-4 py-2 border-r border-slate-200">Name</th>
               <th className="px-4 py-2 border-r border-slate-200">Status</th>
+              <th className="px-4 py-2 border-r border-slate-200">Slot Type</th>
               <th className="px-4 py-2 border-r border-slate-200 text-right">Start Date</th>
               <th className="px-4 py-2 border-r border-slate-200 text-right">End Date</th>
               <th className="px-4 py-2 border-r border-slate-200 text-right">
@@ -444,15 +461,7 @@ function CampaignManagementView({ profile }: { profile: any }) {
                   </div>
                 </div>
               </th>
-              <th className="px-4 py-2 border-r border-slate-200 text-right">
-                <div className="flex items-center justify-end gap-1 relative group cursor-help">
-                  6-second focused views (paid views)
-                  <HelpCircle className="h-3 w-3 text-slate-400" />
-                  <div className="absolute top-full right-0 mt-1 hidden group-hover:block w-56 p-2 bg-slate-800 text-white font-normal text-xs rounded shadow-lg z-50 text-left whitespace-normal">
-                    Số lượt xem 6 giây mà bạn đã trả phí để có được.
-                  </div>
-                </div>
-              </th>
+
               <th className="px-4 py-2 border-r border-slate-200 text-right">
                 <div className="flex items-center justify-end gap-1 relative group cursor-help">
                   Focused view 6-second view rate (impression)
@@ -494,7 +503,7 @@ function CampaignManagementView({ profile }: { profile: any }) {
           <tbody>
             {!filteredCampaigns || filteredCampaigns.length === 0 ? (
               <tr>
-                <td colSpan={17} className="px-4 py-32 text-center text-[#757575]">
+                <td colSpan={16} className="px-4 py-32 text-center text-[#757575]">
                   No data to display. Please create a campaign.
                 </td>
               </tr>
@@ -504,7 +513,7 @@ function CampaignManagementView({ profile }: { profile: any }) {
                   <td className="px-4 py-3 border-r border-slate-100 text-center">
                     <input 
                       type="checkbox" 
-                      className="rounded-sm cursor-pointer w-4 h-4 text-teal-500 focus:ring-teal-500" 
+                      className="rounded-sm cursor-pointer w-4 h-4 text-slate-800 focus:ring-slate-800" 
                       checked={selectedCampaignIds.includes(c.campaignId)}
                       onChange={() => handleSelectCampaign(c.campaignId)}
                     />
@@ -520,10 +529,54 @@ function CampaignManagementView({ profile }: { profile: any }) {
                     </div>
                   </td>
                   <td className="px-4 py-3 border-r border-slate-100 min-w-[250px] relative align-top">
-                    <div className="font-medium text-[#161823] flex items-start justify-between gap-2">
-                      <span className="pr-20">{c.name}</span>
-                      <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col items-end gap-1 opacity-0 group-hover:opacity-100 bg-slate-50 pl-4 py-1 z-10">
-                        <button onClick={() => setActiveReportCampaignId(c.campaignId)} className="text-teal-600 hover:underline text-xs font-medium">View Report</button>
+                    <div className="font-medium text-[#161823] flex items-start justify-between gap-2 group/name relative">
+                      {editingCampaignId === c.campaignId ? (
+                        <input
+                          autoFocus
+                          type="text"
+                          className="border-b border-slate-800 outline-none w-full bg-transparent pr-4 text-sm font-medium"
+                          value={editingName}
+                          onChange={(e) => setEditingName(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              if (editingName.trim() && editingName.trim() !== c.name) {
+                                renameMutation.mutate({ id: c.campaignId, name: editingName.trim() });
+                              }
+                              setEditingCampaignId(null);
+                            } else if (e.key === 'Escape') {
+                              setEditingCampaignId(null);
+                            }
+                          }}
+                          onBlur={() => {
+                            if (editingName.trim() && editingName.trim() !== c.name) {
+                              renameMutation.mutate({ id: c.campaignId, name: editingName.trim() });
+                            }
+                            setEditingCampaignId(null);
+                          }}
+                        />
+                      ) : (
+                        <div 
+                          className="flex items-center gap-2 pr-20 cursor-pointer" 
+                          onDoubleClick={() => {
+                            setEditingCampaignId(c.campaignId);
+                            setEditingName(c.name);
+                          }}
+                          title="Double-click to rename"
+                        >
+                          <span>{c.name}</span>
+                          <button 
+                            onClick={() => {
+                              setEditingCampaignId(c.campaignId);
+                              setEditingName(c.name);
+                            }}
+                            className="opacity-0 group-hover/name:opacity-100 p-1 hover:bg-slate-100 rounded text-slate-400 hover:text-slate-600 transition-opacity"
+                          >
+                            <Edit2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      )}
+                      <div className="absolute right-4 top-0 flex flex-col items-end gap-1 opacity-0 group-hover:opacity-100 bg-slate-50 pl-4 py-1 z-10">
+                        <button onClick={() => setActiveReportCampaignId(c.campaignId)} className="text-[#00D6BA] hover:underline text-xs font-medium">View Report</button>
                         {(c.status === 'PAUSED' || c.status === 'PENDING_REVIEW') && (
                           <button 
                             onClick={() => setScheduleCampaign(c)} 
@@ -532,12 +585,12 @@ function CampaignManagementView({ profile }: { profile: any }) {
                             Edit Schedule
                           </button>
                         )}
-                        {(c.status === 'ACTIVE' || c.status === 'PAUSED' || c.status === 'PENDING_REVIEW') && (
+                        {(c.status === 'CANCELLED' || c.status === 'COMPLETED') && (
                           <button 
-                            onClick={() => setTopupCampaign(c)} 
-                            className="text-yellow-600 hover:underline text-xs font-medium"
+                            onClick={() => setCloneCampaignToRun(c)} 
+                            className="text-green-600 hover:underline text-xs font-medium"
                           >
-                            Top-up Budget
+                            Run Again
                           </button>
                         )}
                       </div>
@@ -546,10 +599,30 @@ function CampaignManagementView({ profile }: { profile: any }) {
                   </td>
                   <td className="px-4 py-3 border-r border-slate-100">
                     <div className="flex items-center gap-1.5">
-                      <div className={`w-2 h-2 rounded-full ${c.status === 'ACTIVE' ? 'bg-green-500' : c.status === 'PENDING_REVIEW' ? 'bg-yellow-400' : 'bg-slate-300'}`}></div>
-                      <span className="text-[#161823]">{c.status === 'PENDING_REVIEW' ? 'Not Delivering' : c.status}</span>
+                      {(() => {
+                        const isScheduled = c.status === 'ACTIVE' && c.startDate && new Date(c.startDate).getTime() > Date.now();
+                        const displayStatus = c.status === 'PENDING_REVIEW' ? 'Not Delivering' : (isScheduled ? 'Scheduled' : c.status);
+                        const statusColor = c.status === 'PENDING_REVIEW' ? 'bg-yellow-400' : (isScheduled ? 'bg-blue-400' : (c.status === 'ACTIVE' ? 'bg-green-500' : 'bg-slate-300'));
+                        return (
+                          <>
+                            <div className={`w-2 h-2 rounded-full ${statusColor}`}></div>
+                            <span className="text-[#161823]">{displayStatus}</span>
+                          </>
+                        );
+                      })()}
                     </div>
                     <div className="text-[10px] text-slate-400 mt-0.5">Last edit: {new Date(c.createdAt).toLocaleDateString()}</div>
+                  </td>
+                  <td className="px-4 py-3 border-r border-slate-100 group/slot relative">
+                    <span className="text-[#161823] capitalize">{c.slotType ? c.slotType.replace('_', ' ').toLowerCase() : '-'}</span>
+                    {c.creatives && c.creatives.length > 0 && (
+                      <button
+                        onClick={() => setPreviewCampaign(c)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover/slot:opacity-100 bg-slate-100 text-[#161823] hover:bg-slate-200 px-2 py-1 rounded text-[10px] font-medium transition-opacity"
+                      >
+                        View Content
+                      </button>
+                    )}
                   </td>
                   <td className="px-4 py-3 border-r border-slate-100 text-right">{c.startDate ? new Date(c.startDate).toLocaleDateString() : '-'}</td>
                   <td className="px-4 py-3 border-r border-slate-100 text-right">{c.endDate ? new Date(c.endDate).toLocaleDateString() : '-'}</td>
@@ -571,7 +644,7 @@ function CampaignManagementView({ profile }: { profile: any }) {
                       ? ((c.currentClicks / c.currentImpressions) * 100).toFixed(2) + '%' 
                       : '-'}
                   </td>
-                  <td className="px-4 py-3 border-r border-slate-100 text-right">{c.paidFocusedViews6s || 0}</td>
+
                   <td className="px-4 py-3 border-r border-slate-100 text-right">
                     {c.currentImpressions && c.currentImpressions > 0 
                       ? (((c.focusedViews6s || 0) / c.currentImpressions) * 100).toFixed(2) + '%' 
@@ -616,8 +689,11 @@ function CampaignManagementView({ profile }: { profile: any }) {
       {scheduleCampaign && (
         <ScheduleUpdateModal campaign={scheduleCampaign} onClose={() => setScheduleCampaign(null)} />
       )}
-      {topupCampaign && (
-        <CampaignTopupModal campaign={topupCampaign} onClose={() => setTopupCampaign(null)} />
+      {cloneCampaignToRun && (
+        <CloneCampaignModal campaign={cloneCampaignToRun} onClose={() => setCloneCampaignToRun(null)} />
+      )}
+      {previewCampaign && (
+        <CreativePreviewModal campaign={previewCampaign} onClose={() => setPreviewCampaign(null)} />
       )}
       {isBulkExportModalOpen && (
         <ExportModal 
@@ -683,7 +759,7 @@ function LabelManager({ campaign }: { campaign: any }) {
       <div className="relative">
         <button 
           onClick={() => setIsOpen(!isOpen)} 
-          className="inline-flex items-center justify-center w-5 h-5 rounded-sm border border-dashed border-slate-400 text-slate-500 hover:text-teal-600 hover:border-teal-500 transition-colors"
+          className="inline-flex items-center justify-center w-5 h-5 rounded-sm border border-dashed border-slate-400 text-slate-500 hover:text-[#161823] hover:border-slate-800 transition-colors"
         >
           <Plus className="h-3 w-3" />
         </button>
@@ -697,7 +773,7 @@ function LabelManager({ campaign }: { campaign: any }) {
                 placeholder="Search to assign label..." 
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-7 pr-3 py-1.5 border border-slate-300 rounded-sm text-xs outline-none focus:border-teal-500"
+                className="w-full pl-7 pr-3 py-1.5 border border-slate-300 rounded-sm text-xs outline-none focus:border-slate-800"
               />
             </div>
             <div className="max-h-48 overflow-y-auto p-1">
@@ -768,7 +844,7 @@ function ScheduleUpdateModal({ campaign, onClose }: { campaign: any, onClose: ()
               type="datetime-local" 
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="w-full border border-slate-300 rounded-sm px-3 py-2 outline-none focus:border-teal-500 text-sm"
+              className="w-full border border-slate-300 rounded-sm px-3 py-2 outline-none focus:border-slate-800 text-sm"
             />
           </div>
           <div>
@@ -777,14 +853,14 @@ function ScheduleUpdateModal({ campaign, onClose }: { campaign: any, onClose: ()
               type="datetime-local" 
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="w-full border border-slate-300 rounded-sm px-3 py-2 outline-none focus:border-teal-500 text-sm"
+              className="w-full border border-slate-300 rounded-sm px-3 py-2 outline-none focus:border-slate-800 text-sm"
             />
           </div>
           <div className="pt-2">
             <button 
               onClick={handleSubmit}
               disabled={updateMutation.isPending}
-              className="w-full py-2.5 bg-[#00D6BA] text-white font-bold rounded-sm hover:bg-[#00BFA5] transition-colors disabled:opacity-50"
+              className="w-full py-2.5 bg-[#161823] text-white font-bold rounded-sm hover:bg-black transition-colors disabled:opacity-50"
             >
               {updateMutation.isPending ? "Updating..." : "Save Schedule"}
             </button>
@@ -795,64 +871,197 @@ function ScheduleUpdateModal({ campaign, onClose }: { campaign: any, onClose: ()
   );
 }
 
-function CampaignTopupModal({ campaign, onClose }: { campaign: any, onClose: () => void }) {
+function CloneCampaignModal({ campaign, onClose }: { campaign: any, onClose: () => void }) {
   const queryClient = useQueryClient();
-  const [amount, setAmount] = useState<number>(100000);
+  const { data: slots } = useQuery({ queryKey: ["ad-slots"], queryFn: adsApi.getAllSlots });
+  const { data: profile } = useQuery({ queryKey: ["ad-wallet-balance"], queryFn: adsApi.getWalletBalance });
+  
+  const currentSlot = slots?.find((s: any) => s.slotId === campaign.slotId);
+  const currentPrice = currentSlot?.price || 0;
+  const currentTotalViewOfPrice = currentSlot?.totalViewOfPrice || 1000;
 
-  const topupMutation = useMutation({
-    mutationFn: (topupAmount: number) => adsApi.topupCampaign(campaign.campaignId, topupAmount),
+  const [budget, setBudget] = useState<number>(campaign.totalBudget || 100000);
+  const [impressions, setImpressions] = useState<number>(campaign.targetImpressions || 1000);
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
+
+  // Khởi tạo dựa theo giá hiện tại nếu slots đã được fetch
+  useEffect(() => {
+    if (currentSlot && currentPrice > 0) {
+      setImpressions(Math.round((budget / currentPrice) * currentTotalViewOfPrice));
+    }
+  }, [currentSlot, currentPrice, currentTotalViewOfPrice]);
+
+  const handleBudgetChange = (val: number) => {
+    setBudget(val);
+    if (currentPrice > 0) {
+      setImpressions(Math.round((val / currentPrice) * currentTotalViewOfPrice));
+    }
+  };
+
+  const handleImpressionsChange = (val: number) => {
+    setImpressions(val);
+    if (currentPrice > 0) {
+      setBudget(Math.round((val / currentTotalViewOfPrice) * currentPrice));
+    }
+  };
+
+  const cloneMutation = useMutation({
+    mutationFn: adsApi.cloneCampaign,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-campaigns"] });
       queryClient.invalidateQueries({ queryKey: ["ad-wallet-balance"] });
-      toast.success("Campaign topped up successfully!");
+      toast.success("Đã clone chiến dịch thành công!");
       onClose();
     },
-    onError: (err: any) => toast.error("Error: " + (err.response?.data?.message || err.message))
+    onError: (err: any) => toast.error(err.response?.data?.message || err.message)
   });
 
   const handleSubmit = () => {
-    if (amount < 10000) {
-      return toast.error("Minimum top-up amount is 10,000 VND");
+    if (!profile || profile.walletBalance < budget) {
+      return toast.error("Số dư Ví tổng không đủ để cấp ngân sách cho chiến dịch này.");
     }
-    topupMutation.mutate(amount);
+    if (startDate && endDate && new Date(endDate) <= new Date(startDate)) {
+      return toast.error("Ngày kết thúc phải sau ngày bắt đầu.");
+    }
+    cloneMutation.mutate({
+      campaignId: campaign.campaignId,
+      campaignBudget: budget,
+      targetImpressions: impressions,
+      startDate: startDate ? new Date(startDate).toISOString() : undefined,
+      endDate: endDate ? new Date(endDate).toISOString() : undefined
+    });
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in">
-      <div className="bg-white rounded-md shadow-lg w-[400px] overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
-          <h3 className="font-bold text-[#161823]">Top-up Campaign Budget</h3>
-          <button onClick={onClose} className="p-1 rounded-full hover:bg-slate-100">
+      <div className="bg-white rounded-md shadow-lg w-[450px] overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-[#F8F8F8]">
+          <h3 className="font-bold text-[#161823]">Chạy lại chiến dịch</h3>
+          <button onClick={onClose} className="p-1 rounded-full hover:bg-slate-200">
             <X className="h-4 w-4 text-slate-500" />
           </button>
         </div>
-        <div className="p-4 space-y-4">
-          <div>
-            <label className="block text-xs font-semibold mb-1">Campaign: {campaign.name}</label>
-            <p className="text-xs text-slate-500">Current Balance: {campaign.campaignBalance?.toLocaleString()} VND</p>
+        <div className="p-4 space-y-4 text-sm">
+          <div className="bg-slate-50 border border-slate-200 p-3 rounded-sm">
+            <div className="font-semibold">{campaign.name}</div>
+            <div className="text-xs text-slate-500 mt-1">
+              Vị trí (Slot): {currentSlot ? currentSlot.displayName : campaign.slotCodeName} <br/>
+              Giá hiện tại: {currentPrice.toLocaleString()} VND / {currentTotalViewOfPrice} lượt xem
+            </div>
           </div>
+
           <div>
-            <label className="block text-xs font-semibold mb-1">Top-up Amount (VND)</label>
+            <label className="block text-xs font-semibold mb-1">Ngân sách dự kiến (VND)</label>
             <input 
               type="number" 
-              value={amount} 
-              onChange={(e) => setAmount(Number(e.target.value))}
-              className="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm outline-none focus:border-teal-500" 
+              value={budget} 
+              onChange={(e) => handleBudgetChange(Number(e.target.value))}
+              className="w-full border border-slate-300 rounded-sm px-3 py-2 outline-none focus:border-slate-800" 
             />
           </div>
+          <div>
+            <label className="block text-xs font-semibold mb-1">Mục tiêu lượt hiển thị (Impressions)</label>
+            <input 
+              type="number" 
+              value={impressions} 
+              onChange={(e) => handleImpressionsChange(Number(e.target.value))}
+              className="w-full border border-slate-300 rounded-sm px-3 py-2 outline-none focus:border-slate-800" 
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold mb-1">Ngày bắt đầu (Tùy chọn)</label>
+              <input 
+                type="datetime-local" 
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-full border border-slate-300 rounded-sm px-3 py-2 text-xs outline-none focus:border-slate-800" 
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold mb-1">Ngày kết thúc (Tùy chọn)</label>
+              <input 
+                type="datetime-local" 
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-full border border-slate-300 rounded-sm px-3 py-2 text-xs outline-none focus:border-slate-800" 
+              />
+            </div>
+          </div>
+
+          <div className="text-xs text-slate-500">
+            Số dư ví tổng hiện tại: <span className="font-semibold text-[#161823]">{profile?.walletBalance?.toLocaleString() || 0} VND</span>
+          </div>
         </div>
-        <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+        <div className="p-4 border-t border-slate-100 flex justify-end gap-3">
           <button onClick={onClose} className="px-4 py-1.5 text-sm font-medium rounded-sm border border-slate-300 bg-white hover:bg-slate-50 transition-colors">
-            Cancel
+            Hủy
           </button>
           <button 
             onClick={handleSubmit} 
-            disabled={topupMutation.isPending}
-            className="px-4 py-1.5 text-sm font-medium rounded-sm bg-teal-500 text-white hover:bg-teal-600 transition-colors disabled:opacity-70 flex items-center gap-2"
+            disabled={cloneMutation.isPending || !currentSlot}
+            className="px-4 py-1.5 text-sm font-medium rounded-sm bg-slate-1000 text-white hover:bg-[#161823] transition-colors disabled:opacity-70 flex items-center gap-2"
           >
-            {topupMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-            Confirm Top-up
+            {cloneMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+            Xác nhận tạo lại
           </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CreativePreviewModal({ campaign, onClose }: { campaign: any, onClose: () => void }) {
+  const creative = campaign.creatives?.[0];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in" onClick={onClose}>
+      <div className="bg-white rounded-md shadow-2xl overflow-hidden max-w-[800px] w-[90vw] max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-[#F8F8F8]">
+          <h3 className="font-bold text-[#161823]">Ad Content Preview - {campaign.name}</h3>
+          <button onClick={onClose} className="p-1 rounded-full hover:bg-slate-200">
+            <X className="h-4 w-4 text-slate-500" />
+          </button>
+        </div>
+        <div className="p-6 overflow-y-auto bg-slate-50 flex-1 flex flex-col items-center justify-center min-h-[300px]">
+          {!creative ? (
+            <p className="text-slate-500">No creative content found for this campaign.</p>
+          ) : (
+            <div className="flex flex-col items-center gap-4 w-full">
+              {creative.mediaType === 'VIDEO' ? (
+                <video 
+                  src={creative.mediaUrl} 
+                  controls 
+                  className="max-w-full max-h-[60vh] object-contain rounded border border-slate-200 shadow-sm bg-black"
+                />
+              ) : creative.mediaType === 'IMAGE' ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img 
+                  src={creative.mediaUrl} 
+                  alt="Ad Creative" 
+                  className="max-w-full max-h-[60vh] object-contain rounded border border-slate-200 shadow-sm"
+                />
+              ) : (
+                <div className="p-8 bg-white border border-slate-200 rounded text-center">
+                  <span className="text-slate-500">Unsupported media format: {creative.mediaType}</span>
+                </div>
+              )}
+              
+              <div className="w-full bg-white p-4 rounded border border-slate-200 shadow-sm mt-4">
+                <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Target URL</div>
+                <a 
+                  href={creative.targetUrl} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-[#161823] hover:underline break-all"
+                >
+                  {creative.targetUrl}
+                </a>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -942,9 +1151,9 @@ function CreateCampaignPanel({ onClose }: { onClose: () => void }) {
       <div className="flex-1 overflow-y-auto p-6">
         {/* Step Indicator */}
         <div className="flex gap-2 mb-8">
-          <div className={`h-1 flex-1 rounded-full ${step >= 1 ? 'bg-[#00D6BA]' : 'bg-slate-200'}`} />
-          <div className={`h-1 flex-1 rounded-full ${step >= 2 ? 'bg-[#00D6BA]' : 'bg-slate-200'}`} />
-          <div className={`h-1 flex-1 rounded-full ${step >= 3 ? 'bg-[#00D6BA]' : 'bg-slate-200'}`} />
+          <div className={`h-1 flex-1 rounded-full ${step >= 1 ? 'bg-[#161823]' : 'bg-slate-200'}`} />
+          <div className={`h-1 flex-1 rounded-full ${step >= 2 ? 'bg-[#161823]' : 'bg-slate-200'}`} />
+          <div className={`h-1 flex-1 rounded-full ${step >= 3 ? 'bg-[#161823]' : 'bg-slate-200'}`} />
         </div>
 
         {step === 1 && (
@@ -965,15 +1174,15 @@ function CreateCampaignPanel({ onClose }: { onClose: () => void }) {
                       }
                       setFormData({...formData, slotId: newSlotId, targetImpressions: newImpressions});
                     }}
-                    className={`cursor-pointer rounded-sm border-2 p-4 transition-all ${formData.slotId === slot.slotId ? 'border-[#00D6BA] bg-teal-50/50' : 'border-slate-200 bg-white hover:border-slate-300'}`}
+                    className={`cursor-pointer rounded-sm border-2 p-4 transition-all ${formData.slotId === slot.slotId ? 'border-[#161823] bg-slate-50' : 'border-slate-200 bg-white hover:border-slate-300'}`}
                   >
                     <div className="flex items-center justify-between">
                       <div>
                         <h4 className="font-bold text-[#161823]">{slot.displayName}</h4>
                         <p className="text-xs text-[#757575] mt-1">{(slot.price || 0).toLocaleString()} VND / {slot.totalViewOfPrice} Views</p>
                       </div>
-                      <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${formData.slotId === slot.slotId ? 'border-[#00D6BA]' : 'border-slate-300'}`}>
-                        {formData.slotId === slot.slotId && <div className="w-2 h-2 rounded-full bg-[#00D6BA]" />}
+                      <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${formData.slotId === slot.slotId ? 'border-[#161823]' : 'border-slate-300'}`}>
+                        {formData.slotId === slot.slotId && <div className="w-2 h-2 rounded-full bg-[#161823]" />}
                       </div>
                     </div>
                   </div>
@@ -1009,7 +1218,7 @@ function CreateCampaignPanel({ onClose }: { onClose: () => void }) {
                       }
                       setFormData({...formData, campaignBudget: budget, targetImpressions: newImpressions});
                     }}
-                    className="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm outline-none focus:border-teal-500" 
+                    className="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm outline-none focus:border-slate-800" 
                   />
                 </div>
 
@@ -1027,7 +1236,7 @@ function CreateCampaignPanel({ onClose }: { onClose: () => void }) {
                       }
                       setFormData({...formData, targetImpressions: impressions, campaignBudget: newBudget});
                     }}
-                    className="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm outline-none focus:border-teal-500" 
+                    className="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm outline-none focus:border-slate-800" 
                   />
                 </div>
                 <div className="flex items-center gap-3 pt-2 pb-1 border-t border-slate-100 mt-2">
@@ -1038,7 +1247,7 @@ function CreateCampaignPanel({ onClose }: { onClose: () => void }) {
                         setFormData({...formData, startDate: "", endDate: ""});
                       }
                     }}
-                    className={`w-8 h-4 rounded-full flex items-center p-0.5 cursor-pointer ${isScheduled ? 'bg-[#00D6BA]' : 'bg-slate-300'}`}
+                    className={`w-8 h-4 rounded-full flex items-center p-0.5 cursor-pointer ${isScheduled ? 'bg-[#161823]' : 'bg-slate-300'}`}
                   >
                     <div className={`w-3 h-3 rounded-full bg-white transition-transform ${isScheduled ? 'translate-x-4' : 'translate-x-0'}`}></div>
                   </div>
@@ -1053,7 +1262,7 @@ function CreateCampaignPanel({ onClose }: { onClose: () => void }) {
                         type="datetime-local" 
                         value={formData.startDate} 
                         onChange={(e) => setFormData({...formData, startDate: e.target.value})}
-                        className="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm outline-none focus:border-teal-500" 
+                        className="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm outline-none focus:border-slate-800" 
                       />
                     </div>
                     <div>
@@ -1062,7 +1271,7 @@ function CreateCampaignPanel({ onClose }: { onClose: () => void }) {
                         type="datetime-local" 
                         value={formData.endDate} 
                         onChange={(e) => setFormData({...formData, endDate: e.target.value})}
-                        className="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm outline-none focus:border-teal-500" 
+                        className="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm outline-none focus:border-slate-800" 
                       />
                     </div>
                   </div>
@@ -1085,7 +1294,7 @@ function CreateCampaignPanel({ onClose }: { onClose: () => void }) {
                     value={formData.name} 
                     onChange={(e) => setFormData({...formData, name: e.target.value})}
                     placeholder="e.g., Summer Sale"
-                    className="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm outline-none focus:border-teal-500" 
+                    className="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm outline-none focus:border-slate-800" 
                   />
                 </div>
                 
@@ -1112,7 +1321,7 @@ function CreateCampaignPanel({ onClose }: { onClose: () => void }) {
                     value={formData.targetUrl} 
                     onChange={(e) => setFormData({...formData, targetUrl: e.target.value})}
                     placeholder="https://..."
-                    className="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm outline-none focus:border-teal-500" 
+                    className="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm outline-none focus:border-slate-800" 
                   />
                 </div>
                 
@@ -1163,9 +1372,9 @@ function CreateCampaignPanel({ onClose }: { onClose: () => void }) {
         ) : <div></div>}
         
         {step < 3 ? (
-          <button onClick={handleNext} className="px-6 py-2 bg-[#00D6BA] text-white rounded-sm text-sm font-semibold hover:bg-[#00BFA5] transition-colors">Next</button>
+          <button onClick={handleNext} className="px-6 py-2 bg-[#161823] text-white rounded-sm text-sm font-semibold hover:bg-black transition-colors">Next</button>
         ) : (
-          <button onClick={handleSubmit} disabled={isUploading || createCampaignMutation.isPending} className="px-6 py-2 bg-[#00D6BA] text-white rounded-sm text-sm font-semibold hover:bg-[#00BFA5] disabled:opacity-50 transition-colors">
+          <button onClick={handleSubmit} disabled={isUploading || createCampaignMutation.isPending} className="px-6 py-2 bg-[#161823] text-white rounded-sm text-sm font-semibold hover:bg-black disabled:opacity-50 transition-colors">
             {isUploading || createCampaignMutation.isPending ? "Submitting..." : "Submit"}
           </button>
         )}
@@ -1251,7 +1460,7 @@ function TopupModal({ onClose, balance }: { onClose: () => void, balance: number
         <div className="p-6 space-y-4">
           <div className="bg-slate-50 p-4 rounded-sm border border-slate-200 text-center">
             <div className="text-sm text-[#757575] mb-1">Current Balance</div>
-            <div className="text-2xl font-bold text-[#00D6BA]">{balance.toLocaleString()} VND</div>
+            <div className="text-2xl font-bold text-[#161823]">{balance.toLocaleString()} VND</div>
           </div>
           <div>
             <label className="block text-sm font-medium mb-2">Amount to add (VND)</label>
@@ -1259,7 +1468,7 @@ function TopupModal({ onClose, balance }: { onClose: () => void, balance: number
               type="number" 
               value={topupAmount}
               onChange={(e) => setTopupAmount(Number(e.target.value))}
-              className="w-full border border-slate-300 rounded-sm px-3 py-2 outline-none focus:border-teal-500"
+              className="w-full border border-slate-300 rounded-sm px-3 py-2 outline-none focus:border-slate-800"
             />
           </div>
           <button 
@@ -1284,7 +1493,7 @@ function OverviewView({ profile }: { profile: any }) {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white p-6 rounded-md shadow-sm border border-slate-200">
           <div className="text-sm text-slate-500 mb-2">Số dư ví (VND)</div>
-          <div className="text-3xl font-bold text-teal-600">{profile?.walletBalance?.toLocaleString() || 0}</div>
+          <div className="text-3xl font-bold text-[#161823]">{profile?.walletBalance?.toLocaleString() || 0}</div>
         </div>
         <div className="bg-white p-6 rounded-md shadow-sm border border-slate-200">
           <div className="text-sm text-slate-500 mb-2">Chiến dịch đang chạy</div>
@@ -1315,7 +1524,7 @@ function WalletView({ profile }: { profile: any }) {
         </div>
         <button 
           onClick={() => setIsTopupOpen(true)}
-          className="flex items-center gap-1.5 bg-[#00D6BA] hover:bg-[#00BFA5] text-white px-4 py-2 rounded-sm font-medium transition-colors"
+          className="flex items-center gap-1.5 bg-[#161823] hover:bg-black text-white px-4 py-2 rounded-sm font-medium transition-colors"
         >
           <Plus className="h-4 w-4" />
           Nạp Tiền
@@ -1411,7 +1620,9 @@ function CustomerReportView({ campaignId, onClose }: { campaignId?: string; onCl
           "Ngân sách": campaign.campaignBudget,
           "Ngày bắt đầu": campaign.startDate ? new Date(campaign.startDate).toLocaleDateString("vi-VN") : "",
           "Ngày kết thúc": campaign.endDate ? new Date(campaign.endDate).toLocaleDateString("vi-VN") : "",
-          "Trạng thái": campaign.status === "ACTIVE" ? "Đang chạy" : (campaign.status === "PAUSED" ? "Tạm dừng" : "Đã xong"),
+          "Trạng thái": campaign.status === "ACTIVE" 
+            ? (campaign.startDate && new Date(campaign.startDate).getTime() > Date.now() ? "Đã lên lịch" : "Đang chạy") 
+            : (campaign.status === "PAUSED" ? "Tạm dừng" : "Đã xong"),
           "Tổng lượt hiển thị (Impressions)": totalImpressions,
           "Tổng lượt click (Clicks)": totalClicks,
           "Tỉ lệ click tổng (CTR)": overallCTR,
@@ -1478,7 +1689,7 @@ function CustomerReportView({ campaignId, onClose }: { campaignId?: string; onCl
               <select 
                 value={selectedCampaignId}
                 onChange={(e) => setSelectedCampaignId(e.target.value)}
-                className="border border-slate-200 rounded-lg px-4 py-2 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 min-w-[300px] text-sm font-medium text-slate-800 bg-slate-50 transition-all cursor-pointer"
+                className="border border-slate-200 rounded-lg px-4 py-2 outline-none focus:border-slate-800 focus:ring-2 focus:ring-slate-800/20 min-w-[300px] text-sm font-medium text-slate-800 bg-slate-50 transition-all cursor-pointer"
               >
                 <option value="">-- Chọn một chiến dịch --</option>
                 {campaigns?.map((c: any) => (
