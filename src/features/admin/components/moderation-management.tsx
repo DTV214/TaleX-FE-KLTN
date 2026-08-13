@@ -61,12 +61,6 @@ function formatRoleLabel(role?: string) {
   return null;
 }
 
-function formatReviewer(name?: string, role?: string) {
-  if (!name) return "-";
-  const roleLabel = formatRoleLabel(role);
-  return roleLabel ? `${name} (${roleLabel})` : name;
-}
-
 // ContentCensorship.reviewedBy chỉ nhận đúng 2 giá trị cố định ở BE (xem
 // ContentPipelineServiceImpl/rejectWithReason) — khác hẳn formatReviewer() ở trên (actorId).
 function formatCensorshipReviewer(reviewedBy?: string) {
@@ -355,9 +349,16 @@ function ModerationDetailModal({
               </div>
               <div>
                 <p className="text-slate-400">Người duyệt</p>
-                <p className="mt-1 truncate text-slate-700">
-                  {formatReviewer(media.approvalReviewedByName, media.approvalReviewedByRole)}
+                {/* Tên đầy đủ có thể dài (kèm ghi chú trong ngoặc) — tách vai trò ra dòng
+                    riêng thay vì nối chung 1 chuỗi, tránh bị truncate cụt mất chữ "(Admin)". */}
+                <p className="mt-1 truncate text-slate-700" title={media.approvalReviewedByName || undefined}>
+                  {media.approvalReviewedByName || "-"}
                 </p>
+                {formatRoleLabel(media.approvalReviewedByRole) && (
+                  <p className="text-xs font-semibold text-violet-600">
+                    {formatRoleLabel(media.approvalReviewedByRole)}
+                  </p>
+                )}
               </div>
               {media.approvalReviewedAt && (
                 <div>
