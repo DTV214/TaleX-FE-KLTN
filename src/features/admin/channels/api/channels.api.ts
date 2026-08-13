@@ -1,4 +1,6 @@
+import axios from "axios";
 import { httpClient, unwrapBaseResponse } from "@/shared/api/http-client";
+import { AI_RECOMMENDATION_API_URL } from "@/core/config/api";
 import type {
   ChannelKey,
   ChannelSeriesCard,
@@ -221,8 +223,8 @@ export const adminChannelsApi = {
 
   // 15. Trigger Train Init (POST /api/v1/recommendations/train-init?token=...)
   async trainInit(token: string = "talex_secret_demo_2026"): Promise<TrainInitResponse> {
-    const response = await httpClient.post(
-      `/api/v1/recommendations/train-init?token=${encodeURIComponent(token)}`,
+    const response = await recommendationBrainClient.post(
+      getBrainUrl(`/recommendations/train-init?token=${encodeURIComponent(token)}`),
       {}
     );
     return response.data?.data || response.data;
@@ -233,8 +235,8 @@ export const adminChannelsApi = {
     token: string = "talex_secret_demo_2026",
     maxSamples: number = 10000
   ): Promise<TrainInitResponse> {
-    const response = await httpClient.post(
-      `/api/v1/recommendations/train-init-real?token=${encodeURIComponent(token)}&max_samples=${maxSamples}`,
+    const response = await recommendationBrainClient.post(
+      getBrainUrl(`/recommendations/train-init-real?token=${encodeURIComponent(token)}&max_samples=${maxSamples}`),
       {}
     );
     return response.data?.data || response.data;
@@ -242,16 +244,40 @@ export const adminChannelsApi = {
 
   // 17. Rank Candidates (POST /api/v1/recommendations/rank)
   async rankCandidates(payload: RankCandidatesRequest): Promise<RankCandidatesResponse> {
-    const response = await httpClient.post("/api/v1/recommendations/rank", payload);
+    const response = await recommendationBrainClient.post(
+      getBrainUrl("/recommendations/rank"),
+      payload
+    );
     return response.data?.data || response.data;
   },
 
   // 18. Download train data Excel file (GET /api/v1/recommendations/train-data/download)
   async downloadTrainData(): Promise<Blob> {
-    const response = await httpClient.get("/api/v1/recommendations/train-data/download", {
-      responseType: "blob",
-    });
+    const response = await recommendationBrainClient.get(
+      getBrainUrl("/recommendations/train-data/download"),
+      {
+        responseType: "blob",
+      }
+    );
     return response.data;
   },
 };
+
+const recommendationBrainClient = axios.create({
+  withCredentials: true,
+});
+
+function getBrainUrl(endpoint: string): string {
+  const base = AI_RECOMMENDATION_API_URL.replace(/\/$/, "");
+  const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+
+  if (base.endsWith("/api/v1") && cleanEndpoint.startsWith("/api/v1")) {
+    return `${base}${cleanEndpoint.substring(7)}`;
+  }
+  if (!base.endsWith("/api/v1") && !cleanEndpoint.startsWith("/api/v1")) {
+    return `${base}/api/v1${cleanEndpoint}`;
+  }
+  return `${base}${cleanEndpoint}`;
+}
+
 
