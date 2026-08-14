@@ -1,4 +1,4 @@
-import type { BaseResponse } from "@/shared/api/http-client";
+import type { BasePageResponse, BaseResponse } from "@/shared/api/http-client";
 
 export type TrendingConfig = {
   configId?: string;
@@ -24,6 +24,14 @@ export type TrendingConfigRequest = {
 export type TrendingCandidateParams = {
   page: number;
   size: number;
+};
+
+export type TrendingEvaluationStatus = "ON_GOING" | "SUCCESS" | "FAILED";
+
+export type TrendingEvaluatedParams = {
+  page: number;
+  size: number;
+  statuses?: TrendingEvaluationStatus[];
 };
 
 export type TrendingAnalyticData = {
@@ -77,4 +85,5 @@ export type TrendingSeries = {
 export type TrendingConfigResponse = BaseResponse<TrendingConfig | null>;
 export type TrendingConfigMutationResponse = BaseResponse<TrendingConfig>;
 export type TrendingSeriesListResponse = BaseResponse<TrendingSeries[]>;
+export type TrendingSeriesPageResponse = BaseResponse<BasePageResponse<TrendingSeries>>;
 export type ForceThresholdResponse = BaseResponse<string | null>;

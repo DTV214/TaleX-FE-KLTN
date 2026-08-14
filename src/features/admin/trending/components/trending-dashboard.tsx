@@ -17,6 +17,7 @@ import {
   useAdminTrendingCandidates,
   useAdminTrendingCards,
   useAdminTrendingConfig,
+  useAdminTrendingEvaluatedSeries,
   useAdminTrendingPool,
   useCreateAdminTrendingConfig,
   useForceTrendingThreshold,
@@ -26,6 +27,7 @@ import {
 import type {
   TrendingConfig,
   TrendingConfigRequest,
+  TrendingEvaluationStatus,
   TrendingSeries,
 } from "../types/trending.types";
 
@@ -38,6 +40,16 @@ const DEFAULT_CONFIG_FORM: TrendingConfigRequest = {
 };
 
 const POOL_PAGE_SIZE = 5;
+
+const EVALUATED_STATUS_OPTIONS: Array<{
+  label: string;
+  value: TrendingEvaluationStatus | "ALL";
+}> = [
+  { label: "Tất cả đã đánh giá", value: "ALL" },
+  { label: "Thành công", value: "SUCCESS" },
+  { label: "Thất bại", value: "FAILED" },
+  { label: "Đang chạy", value: "ON_GOING" },
+];
 
 const CONFIG_FIELD_HELP: Record<keyof TrendingConfigRequest, string> = {
   minBatch:
@@ -561,13 +573,18 @@ function SeriesTable({
 export function AdminTrendingDashboard() {
   const [isConfigFormOpen, setIsConfigFormOpen] = useState(false);
   const [isForceConfirmOpen, setIsForceConfirmOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"candidates" | "pool">(
+  const [activeTab, setActiveTab] = useState<"candidates" | "evaluated" | "pool">(
     "candidates",
   );
   const [poolRound, setPoolRound] = useState<"round1" | "round2">("round1");
   const [poolPage, setPoolPage] = useState(1);
   const [candidatePage, setCandidatePage] = useState(0);
   const [candidateSize, setCandidateSize] = useState(10);
+  const [evaluatedPage, setEvaluatedPage] = useState(0);
+  const [evaluatedSize, setEvaluatedSize] = useState(10);
+  const [evaluatedStatus, setEvaluatedStatus] = useState<
+    TrendingEvaluationStatus | "ALL"
+  >("ALL");
 
   const configQuery = useAdminTrendingConfig();
   const createConfigMutation = useCreateAdminTrendingConfig();
@@ -578,11 +595,18 @@ export function AdminTrendingDashboard() {
     page: candidatePage,
     size: candidateSize,
   });
+  const evaluatedQuery = useAdminTrendingEvaluatedSeries({
+    page: evaluatedPage,
+    size: evaluatedSize,
+    statuses: evaluatedStatus === "ALL" ? undefined : [evaluatedStatus],
+  });
   const poolQuery = useAdminTrendingPool();
   const trendingCardsQuery = useAdminTrendingCards();
 
   const config = configQuery.data ?? null;
   const candidates = candidatesQuery.data ?? [];
+  const evaluatedPageData = evaluatedQuery.data;
+  const evaluatedSeries = evaluatedPageData?.content ?? [];
   const pool = poolQuery.data ?? [];
   const trendingCards = trendingCardsQuery.data ?? [];
   const isRoundOne = poolRound === "round1";
@@ -595,18 +619,31 @@ export function AdminTrendingDashboard() {
   const poolItems = poolRound === "round1" ? pool : trendingCards;
   const poolTotalPages = Math.max(1, Math.ceil(poolItems.length / POOL_PAGE_SIZE));
   const safePoolPage = Math.min(poolPage, poolTotalPages);
+  const evaluatedTotalPages = Math.max(1, evaluatedPageData?.totalPages ?? 1);
+  const evaluatedPageNumber = evaluatedPageData?.pageNumber ?? evaluatedPage;
+  const isEvaluatedFirst = Boolean(evaluatedPageData?.isFirst) || evaluatedPageNumber <= 0;
+  const isEvaluatedLast =
+    Boolean(evaluatedPageData?.isLast) ||
+    evaluatedPageNumber >= evaluatedTotalPages - 1 ||
+    evaluatedSeries.length < evaluatedSize;
   const paginatedPoolItems = poolItems.slice(
     (safePoolPage - 1) * POOL_PAGE_SIZE,
     safePoolPage * POOL_PAGE_SIZE,
   );
   const activeItems =
-    activeTab === "candidates" && isRoundOne ? candidates : paginatedPoolItems;
+    activeTab === "candidates" && isRoundOne
+      ? candidates
+      : activeTab === "evaluated" && isRoundOne
+        ? evaluatedSeries
+        : paginatedPoolItems;
   const isActiveLoading =
     activeTab === "candidates" && isRoundOne
       ? candidatesQuery.isLoading
-      : poolRound === "round1"
-        ? poolQuery.isLoading
-        : trendingCardsQuery.isLoading;
+      : activeTab === "evaluated" && isRoundOne
+        ? evaluatedQuery.isLoading
+        : poolRound === "round1"
+          ? poolQuery.isLoading
+          : trendingCardsQuery.isLoading;
 
   const handleSubmitConfig = (payload: TrendingConfigRequest) => {
     const mutation = config ? updateConfigMutation : createConfigMutation;
@@ -841,6 +878,16 @@ export function AdminTrendingDashboard() {
               </button>
               <button
                 type="button"
+                onClick={() => setActiveTab("evaluated")}
+                className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${activeTab === "evaluated"
+                  ? "bg-white text-slate-950 shadow-sm backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black"
+                  : "text-slate-500 hover:text-slate-900 backoffice-dark:text-white/55 backoffice-dark:hover:text-white"
+                  }`}
+              >
+                Đã đánh giá
+              </button>
+              <button
+                type="button"
                 onClick={() => setActiveTab("pool")}
                 className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${activeTab === "pool"
                   ? "bg-white text-slate-950 shadow-sm backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black"
@@ -855,11 +902,13 @@ export function AdminTrendingDashboard() {
               type="button"
               onClick={() => {
                 candidatesQuery.refetch();
+                evaluatedQuery.refetch();
                 poolQuery.refetch();
                 trendingCardsQuery.refetch();
               }}
               disabled={
                 candidatesQuery.isFetching ||
+                evaluatedQuery.isFetching ||
                 poolQuery.isFetching ||
                 trendingCardsQuery.isFetching
               }
@@ -868,6 +917,7 @@ export function AdminTrendingDashboard() {
               <RefreshCw
                 className={`h-4 w-4 ${
                   candidatesQuery.isFetching ||
+                  evaluatedQuery.isFetching ||
                   poolQuery.isFetching ||
                   trendingCardsQuery.isFetching
                     ? "animate-spin"
@@ -891,11 +941,42 @@ export function AdminTrendingDashboard() {
           </div>
         </div>
 
+        {activeTab === "evaluated" && isRoundOne && (
+          <div className="mt-5 flex flex-col gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-4 backoffice-dark:border-white/10 backoffice-dark:bg-black/20 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400 backoffice-dark:text-white/40">
+                Bộ lọc
+              </p>
+              <p className="mt-1 text-sm font-bold text-slate-700 backoffice-dark:text-white/75">
+                Trạng thái đánh giá vòng 1
+              </p>
+            </div>
+            <select
+              value={evaluatedStatus}
+              onChange={(event) => {
+                setEvaluatedStatus(
+                  event.target.value as TrendingEvaluationStatus | "ALL",
+                );
+                setEvaluatedPage(0);
+              }}
+              className="h-11 min-w-56 rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700 outline-none transition hover:border-slate-300 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white backoffice-dark:hover:border-white/20"
+            >
+              {EVALUATED_STATUS_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         <div className="mt-5">
           <SeriesTable
             emptyText={
               activeTab === "candidates" && isRoundOne
                 ? "Không có ứng viên chờ phân phối trong trang hiện tại."
+                : activeTab === "evaluated" && isRoundOne
+                  ? "Chưa có series nào hoàn tất đánh giá vòng 1 theo bộ lọc hiện tại."
                 : poolRound === "round1"
                   ? "Pool New Releases hiện chưa có series đang phân phối."
                   : "Kênh Trending vòng 2 hiện chưa có series cards."
@@ -939,6 +1020,54 @@ export function AdminTrendingDashboard() {
                   candidatesQuery.isFetching || candidates.length < candidateSize
                 }
                 className="rounded-xl border border-slate-200 p-2 text-slate-500 transition hover:bg-white hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40 backoffice-dark:border-white/10 backoffice-dark:hover:bg-white/10 backoffice-dark:hover:text-white"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "evaluated" && isRoundOne && (
+          <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+            <div className="text-sm font-bold text-slate-500 backoffice-dark:text-white/55">
+              {evaluatedPageData
+                ? `Trang ${evaluatedPageNumber + 1} / ${evaluatedTotalPages} · ${formatNumber(
+                    evaluatedPageData.totalElements,
+                  )} series`
+                : "Đang tải danh sách đã đánh giá"}
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <select
+                value={evaluatedSize}
+                onChange={(event) => {
+                  setEvaluatedSize(Number(event.target.value));
+                  setEvaluatedPage(0);
+                }}
+                className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700 outline-none backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white"
+              >
+                <option value={5}>5 / trang</option>
+                <option value={10}>10 / trang</option>
+                <option value={20}>20 / trang</option>
+              </select>
+              <button
+                type="button"
+                onClick={() => setEvaluatedPage((page) => Math.max(0, page - 1))}
+                disabled={isEvaluatedFirst || evaluatedQuery.isFetching}
+                className="rounded-xl border border-slate-200 p-2 text-slate-500 transition hover:bg-white hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40 backoffice-dark:border-white/10 backoffice-dark:hover:bg-white/10 backoffice-dark:hover:text-white"
+                aria-label="Trang trước của danh sách đã đánh giá"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  setEvaluatedPage((page) =>
+                    Math.min(evaluatedTotalPages - 1, page + 1),
+                  )
+                }
+                disabled={isEvaluatedLast || evaluatedQuery.isFetching}
+                className="rounded-xl border border-slate-200 p-2 text-slate-500 transition hover:bg-white hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40 backoffice-dark:border-white/10 backoffice-dark:hover:bg-white/10 backoffice-dark:hover:text-white"
+                aria-label="Trang sau của danh sách đã đánh giá"
               >
                 <ChevronRight className="h-5 w-5" />
               </button>

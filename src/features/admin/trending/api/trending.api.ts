@@ -7,8 +7,10 @@ import type {
   TrendingConfigMutationResponse,
   TrendingConfigRequest,
   TrendingConfigResponse,
+  TrendingEvaluatedParams,
   TrendingSeries,
   TrendingSeriesListResponse,
+  TrendingSeriesPageResponse,
 } from "../types/trending.types";
 
 const TRENDING_CONFIGS_ENDPOINT = "/api/v1/trending-configs";
@@ -75,6 +77,15 @@ export const adminTrendingApi = {
     return unwrapBaseResponse<TrendingSeries[]>(
       httpClient.get<TrendingSeriesListResponse>(
         `${TRENDING_DASHBOARD_ENDPOINT}/new-releases-pool`,
+      ),
+    );
+  },
+
+  getEvaluatedSeries(params: TrendingEvaluatedParams) {
+    return unwrapBaseResponse<TrendingSeriesPageResponse["data"]>(
+      httpClient.get<TrendingSeriesPageResponse>(
+        `${TRENDING_DASHBOARD_ENDPOINT}/evaluated-series`,
+        { params },
       ),
     );
   },
