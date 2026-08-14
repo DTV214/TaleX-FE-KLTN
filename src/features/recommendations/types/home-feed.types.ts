@@ -46,3 +46,10 @@ export type HomeFeedSeries = {
 };
 
 export type HomeFeedResponse = Record<HomeFeedPoolKey, HomeFeedSeries[]>;
+
+export type RecommendationFeedRequest = {
+  sessionId: string;
+  pageType?: string;
+  limit?: number;
+  offset?: number;
+};

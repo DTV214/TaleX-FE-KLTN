@@ -14,7 +14,6 @@ import {
   User,
   Sparkles,
   ChevronDown,
-  RefreshCw,
   Clock,
   AlertCircle,
   X,
@@ -128,8 +127,8 @@ export function PersonalRecommendationsTab({
     <div className="space-y-6">
       {/* 1. Account Selector Bar */}
       <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-start gap-4 sm:gap-6">
+          <div className="flex items-center gap-3 shrink-0">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-violet-700 font-bold border border-violet-200">
               <User className="h-5 w-5" />
             </div>
@@ -138,47 +137,35 @@ export function PersonalRecommendationsTab({
                 Chọn Tài Khoản Người Dùng
               </h3>
               <p className="text-xs text-slate-500">
-                Chọn tài khoản để xem top 5 series xem gần đây, thuật toán tương tự & dữ liệu Recommendation Pool
+                Chọn tài khoản để xem chi tiết
               </p>
             </div>
           </div>
 
-          {/* Account Dropdown */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            <div className="relative min-w-[280px] sm:w-96">
-              {isLoadingAccounts ? (
-                <div className="h-10 w-full animate-pulse rounded-xl bg-slate-100" />
-              ) : (
-                <div className="relative">
-                  <select
-                    id="account-dropdown"
-                    value={selectedAccountId}
-                    onChange={(e) => {
-                      setSelectedAccountId(e.target.value);
-                      setTargetSimilarSeries(null); // reset similar view when account changes
-                    }}
-                    className="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-3.5 pr-10 text-xs font-bold text-slate-800 transition-all focus:border-violet-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-violet-500 cursor-pointer"
-                  >
-                    {accounts?.map((acc) => (
-                      <option key={acc.accountId} value={acc.accountId}>
-                        {acc.email} — {acc.fullName || acc.username} ({acc.roleName})
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                </div>
-              )}
-            </div>
-
-            <button
-              type="button"
-              onClick={() => refetchAccounts()}
-              className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-100"
-              title="Làm mới danh sách tài khoản"
-            >
-              <RefreshCw className="h-3.5 w-3.5 text-violet-600" />
-              <span>Tải lại tài khoản</span>
-            </button>
+          {/* Account Dropdown Inline (Same Row, Left Side) */}
+          <div className="relative min-w-[280px] sm:w-96">
+            {isLoadingAccounts ? (
+              <div className="h-10 w-full animate-pulse rounded-xl bg-slate-100" />
+            ) : (
+              <div className="relative">
+                <select
+                  id="account-dropdown"
+                  value={selectedAccountId}
+                  onChange={(e) => {
+                    setSelectedAccountId(e.target.value);
+                    setTargetSimilarSeries(null); // reset similar view when account changes
+                  }}
+                  className="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-3.5 pr-10 text-xs font-bold text-slate-800 transition-all focus:border-violet-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-violet-500 cursor-pointer"
+                >
+                  {accounts?.map((acc) => (
+                    <option key={acc.accountId} value={acc.accountId}>
+                      {acc.email} — {acc.fullName || acc.username} ({acc.roleName})
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              </div>
+            )}
           </div>
         </div>
 
@@ -218,7 +205,7 @@ export function PersonalRecommendationsTab({
                     <Mail className="h-3 w-3 text-slate-400" />
                     {currentAccount.email}
                   </span>
-                  <span className="font-mono text-[11px] text-slate-400">
+                  <span className="text-[11px] text-slate-400">
                     ID: {currentAccount.accountId}
                   </span>
                 </div>
@@ -250,20 +237,11 @@ export function PersonalRecommendationsTab({
                 </span>
               </div>
               <p className="text-xs text-slate-500">
-                Danh sách series người dùng xem gần nhất (GET /api/v1/recommendations/recent-series)
+                Danh sách series người dùng xem gần nhất
               </p>
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => refetchRecent()}
-            disabled={isLoadingRecent}
-            className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50"
-          >
-            <RefreshCw className={`h-3.5 w-3.5 text-violet-600 ${isLoadingRecent ? "animate-spin" : ""}`} />
-            <span>Tải lại</span>
-          </button>
         </div>
 
         {/* Recent Series Content Grid */}
@@ -356,23 +334,10 @@ export function PersonalRecommendationsTab({
                     Tương tự với: &quot;{targetSimilarSeries.title}&quot;
                   </span>
                 </div>
-                <p className="text-xs text-slate-600 mt-0.5">
-                  Kết quả thuật toán gợi ý dựa trên seriesId: <code className="font-mono text-[11px] bg-amber-100/60 px-1 py-0.5 rounded">{targetSimilarSeries.seriesId}</code> (GET /api/v1/recommendations/similar)
-                </p>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => refetchSimilar()}
-                disabled={isLoadingSimilar}
-                className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-              >
-                <RefreshCw className={`h-3.5 w-3.5 text-amber-600 ${isLoadingSimilar ? "animate-spin" : ""}`} />
-                <span>Tải lại</span>
-              </button>
-
               <button
                 type="button"
                 onClick={() => setTargetSimilarSeries(null)}
@@ -456,20 +421,11 @@ export function PersonalRecommendationsTab({
                 </span>
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
-                Danh sách toàn bộ các Series thuộc Already Watched Pool của người dùng (GET /api/v1/recommendations/pools/already-watched)
+                Danh sách toàn bộ các Series thuộc Already Watched Pool của người dùng
               </p>
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => refetchWatchedPool()}
-            disabled={isLoadingWatchedPool}
-            className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50 shadow-sm"
-          >
-            <RefreshCw className={`h-3.5 w-3.5 text-emerald-600 ${isLoadingWatchedPool ? "animate-spin" : ""}`} />
-            <span>Tải lại</span>
-          </button>
         </div>
 
         {/* Already Watched Pool Grid */}
@@ -549,7 +505,7 @@ export function PersonalRecommendationsTab({
                 </span>
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
-                Danh sách Series kèm Điểm số AI Score trong Recommendation Pool (GET /api/v1/recommendations/pools/recommendation)
+                Danh sách Series kèm Điểm số AI Score trong Recommendation Pool
               </p>
             </div>
           </div>
@@ -582,16 +538,6 @@ export function PersonalRecommendationsTab({
                 <span>Bảng Leaderboard</span>
               </button>
             </div>
-
-            <button
-              type="button"
-              onClick={() => refetchPool()}
-              disabled={isLoadingPool}
-              className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50 shadow-sm"
-            >
-              <RefreshCw className={`h-3.5 w-3.5 text-indigo-600 ${isLoadingPool ? "animate-spin" : ""}`} />
-              <span>Tải lại Pool</span>
-            </button>
           </div>
         </div>
 
@@ -747,9 +693,9 @@ export function PersonalRecommendationsTab({
                             </span>
                           ) : (
                             <div className="space-y-1">
-                              <div className="flex items-center justify-between text-xs font-bold text-indigo-700 font-mono">
+                              <div className="flex items-center justify-between text-xs font-bold text-indigo-700">
                                 <span>{formatScore(scoreVal)}</span>
-                                <span className="text-[10px] text-slate-400 font-sans font-medium">
+                                <span className="text-[10px] text-slate-400 font-medium">
                                   ({percentage}%)
                                 </span>
                               </div>

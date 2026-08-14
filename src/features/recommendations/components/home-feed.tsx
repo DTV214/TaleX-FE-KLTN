@@ -31,7 +31,7 @@ import {
 import {
   DEFAULT_HOME_FEED_LIMITS,
 } from "../api/home-feed.api";
-import { useHomeFeed } from "../hooks/use-home-feed";
+import { useHomeFeed, useRecommendationFeedInfinite } from "../hooks/use-home-feed";
 import type {
   HomeFeedPoolKey,
   HomeFeedRequest,
@@ -282,13 +282,6 @@ export function HomeFeed({
 }: {
   promotedComicAfter?: ReactNode;
 }) {
-  const [visibleRecommendationCount, setVisibleRecommendationCount] = useState(
-    MIXED_INITIAL_VISIBLE,
-  );
-  const [isAppending, setIsAppending] = useState(false);
-  const loadMoreRef = useRef<HTMLDivElement | null>(null);
-  const appendTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const appendingRef = useRef(false);
   const queryParams = useMemo<HomeFeedRequest>(
     () => ({
       ...DEFAULT_HOME_FEED_LIMITS,
@@ -309,59 +302,16 @@ export function HomeFeed({
     () => buildMixedRecommendations(feed, channelSections),
     [feed, channelSections],
   );
-  const visibleRecommendations = mixedRecommendations.slice(
-    0,
-    visibleRecommendationCount,
-  );
-  const canRevealMore =
-    visibleRecommendationCount < mixedRecommendations.length;
   const navSections = useMemo(
     () => [
       ...channelSections,
-      ...(mixedRecommendations.length > 0
-        ? [
-            {
-              id: "mixed-recommendations",
-              title: "Đề xuất cho bạn",
-            },
-          ]
-        : []),
-    ],
-    [channelSections, mixedRecommendations.length],
-  );
-
-  useEffect(() => {
-    const target = loadMoreRef.current;
-    if (!target || !canRevealMore) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry?.isIntersecting || appendingRef.current) return;
-
-        appendingRef.current = true;
-        setIsAppending(true);
-        appendTimerRef.current = setTimeout(() => {
-          setVisibleRecommendationCount((current) =>
-            Math.min(current + MIXED_LOAD_STEP, mixedRecommendations.length),
-          );
-          appendingRef.current = false;
-          setIsAppending(false);
-        }, 420);
+      {
+        id: "mixed-recommendations",
+        title: "Đề xuất cho bạn",
       },
-      { rootMargin: "520px 0px 520px 0px" },
-    );
-
-    observer.observe(target);
-
-    return () => {
-      observer.disconnect();
-      if (appendTimerRef.current) {
-        clearTimeout(appendTimerRef.current);
-        appendTimerRef.current = null;
-      }
-      appendingRef.current = false;
-    };
-  }, [canRevealMore, mixedRecommendations.length]);
+    ],
+    [channelSections],
+  );
 
   if (isLoading) {
     return <HomeFeedSkeleton />;
@@ -452,14 +402,7 @@ export function HomeFeed({
         );
       })}
 
-      {mixedRecommendations.length > 0 ? (
-        <MixedRecommendationSection
-          items={visibleRecommendations}
-          canRevealMore={canRevealMore}
-          isAppending={isAppending}
-          loadMoreRef={loadMoreRef}
-        />
-      ) : null}
+      <MixedRecommendationSection fallbackItems={mixedRecommendations} />
     </div>
   );
 }
@@ -1501,16 +1444,68 @@ function TypedSpotlightSection({ section }: { section: TypedHomeSection }) {
 }
 
 function MixedRecommendationSection({
-  items,
-  canRevealMore,
-  isAppending,
-  loadMoreRef,
+  fallbackItems = [],
 }: {
-  items: HomeFeedSeries[];
-  canRevealMore: boolean;
-  isAppending: boolean;
-  loadMoreRef: React.RefObject<HTMLDivElement | null>;
+  fallbackItems?: HomeFeedSeries[];
 }) {
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const {
+    data: feedData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+  } = useRecommendationFeedInfinite(12, "HOME", {
+    forceNewSessionOnMount: true,
+  });
+
+  const fetchedItems = useMemo(() => {
+    return feedData?.pages.flatMap((page) => page.items) ?? [];
+  }, [feedData]);
+
+  const items = fetchedItems.length > 0 ? fetchedItems : fallbackItems;
+
+  useEffect(() => {
+    const target = loadMoreRef.current;
+    if (!target || !hasNextPage || isFetchingNextPage) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting && hasNextPage && !isFetchingNextPage) {
+          void fetchNextPage();
+        }
+      },
+      { rootMargin: "520px 0px 520px 0px" },
+    );
+
+    observer.observe(target);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  if (isLoading && items.length === 0) {
+    return (
+      <section id="mixed-recommendations" className="scroll-mt-24">
+        <div className="mb-5 flex items-end justify-between gap-4">
+          <SectionHeading
+            section={{
+              eyebrow: "TaleX đề xuất",
+              title: "Đề xuất cho bạn",
+              description:
+                "Video và truyện tranh được gợi ý cá nhân hóa bởi AI LightGBM (Cuộn vô cùng).",
+            }}
+            icon={<Sparkles className="h-5 w-5" />}
+          />
+        </div>
+        <MixedRecommendationSkeleton />
+      </section>
+    );
+  }
+
+  if (items.length === 0) return null;
+
   return (
     <section id="mixed-recommendations" className="scroll-mt-24">
       <div className="mb-5 flex items-end justify-between gap-4">
@@ -1519,7 +1514,7 @@ function MixedRecommendationSection({
             eyebrow: "TaleX đề xuất",
             title: "Đề xuất cho bạn",
             description:
-              "Video và truyện tranh được gợi ý chung trong một dòng xem tự nhiên.",
+              "Video và truyện tranh được gợi ý cá nhân hóa dựa trên thói quen xem & AI LightGBM.",
           }}
           icon={<Sparkles className="h-5 w-5" />}
         />
@@ -1535,15 +1530,15 @@ function MixedRecommendationSection({
         ))}
       </div>
 
-      {isAppending ? <MixedRecommendationSkeleton /> : null}
+      {isFetchingNextPage ? <MixedRecommendationSkeleton /> : null}
 
       <div
         ref={loadMoreRef}
         className="flex min-h-16 items-center justify-center py-6"
       >
-        {canRevealMore && !isAppending ? (
+        {hasNextPage && !isFetchingNextPage ? (
           <span className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-bold text-white/38">
-            Đang chuẩn bị thêm đề xuất...
+            Đang tải thêm đề xuất cá nhân hóa...
           </span>
         ) : null}
       </div>

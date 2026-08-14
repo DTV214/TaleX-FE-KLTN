@@ -1,6 +1,11 @@
 "use client";
 
-import { httpClient, unwrapBaseResponse, type BasePageResponse } from "@/shared/api/http-client";
+import {
+  httpClient,
+  unwrapBaseResponse,
+  type BasePageResponse,
+  type BaseResponse,
+} from "@/shared/api/http-client";
 
 export type ReportTargetType = "EPISODE" | "SERIES" | "ACCOUNT" | "COMMENT" | "OTHER";
 export type ReportReason =
@@ -140,6 +145,17 @@ export type ProcessAppealRequest = {
   adminNote: string;
 };
 
+export type ModerationTargetDetail = {
+  targetType: ReportTargetType;
+  targetId: string;
+  title: string;
+  subtitle?: string;
+  imageUrl?: string | null;
+  metadata: Array<{ label: string; value: string | number | null | undefined }>;
+};
+
+type TargetDetailRecord = Record<string, unknown>;
+
 function normalizePageParams(params: { page?: number; pageSize?: number }) {
   return {
     ...params,
@@ -152,6 +168,106 @@ function cleanFilters<T extends Record<string, unknown>>(params: T) {
   return Object.fromEntries(
     Object.entries(params).filter(([, value]) => value !== undefined && value !== "" && value !== "ALL"),
   );
+}
+
+function isRecord(value: unknown): value is TargetDetailRecord {
+  return typeof value === "object" && value !== null;
+}
+
+function unwrapFlexiblePayload<T>(payload: BaseResponse<T> | T): T {
+  if (isRecord(payload) && "data" in payload) {
+    return payload.data as T;
+  }
+
+  return payload as T;
+}
+
+function toText(value: unknown) {
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
+}
+
+function toNumber(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+}
+
+function compactMetadata(
+  entries: Array<{ label: string; value: string | number | null | undefined }>,
+) {
+  return entries.filter((entry) => entry.value !== undefined && entry.value !== null && entry.value !== "");
+}
+
+function normalizeAccountTarget(
+  payload: unknown,
+  targetId: string,
+): ModerationTargetDetail {
+  const record = isRecord(payload) ? payload : {};
+  const username = toText(record.username);
+  const fullName = toText(record.fullName) ?? toText(record.name);
+  const email = toText(record.email);
+
+  return {
+    targetType: "ACCOUNT",
+    targetId,
+    title: fullName ?? username ?? "Tài khoản bị báo cáo",
+    subtitle: username ? `@${username}` : email,
+    imageUrl: toText(record.avatarUrl) ?? toText(record.avatar),
+    metadata: compactMetadata([
+      { label: "Email", value: email },
+      { label: "Vai trò", value: toText(record.roleName) ?? toText(record.role) },
+      { label: "Trạng thái", value: toText(record.status) },
+      { label: "Ngày tạo", value: toText(record.createdAt) },
+    ]),
+  };
+}
+
+function normalizeSeriesTarget(
+  payload: unknown,
+  targetId: string,
+): ModerationTargetDetail {
+  const record = isRecord(payload) ? payload : {};
+
+  return {
+    targetType: "SERIES",
+    targetId,
+    title: toText(record.title) ?? "Series bị báo cáo",
+    subtitle:
+      toText(record.creatorName) ??
+      toText(record.username) ??
+      toText(record.creatorId),
+    imageUrl: toText(record.coverUrl) ?? toText(record.bannerUrl),
+    metadata: compactMetadata([
+      { label: "Loại nội dung", value: toText(record.contentType) },
+      { label: "Độ tuổi", value: toText(record.ageRating) },
+      { label: "Ngôn ngữ", value: toText(record.language) },
+      { label: "Lượt xem", value: toNumber(record.totalViews) ?? toNumber(record.views) },
+      { label: "Đánh giá", value: toNumber(record.averageRating) },
+      { label: "Cập nhật", value: toText(record.updatedAt) },
+    ]),
+  };
+}
+
+function normalizeEpisodeTarget(
+  payload: unknown,
+  targetId: string,
+): ModerationTargetDetail {
+  const record = isRecord(payload) ? payload : {};
+  const episodeNumber = toNumber(record.episodeNumber);
+
+  return {
+    targetType: "EPISODE",
+    targetId,
+    title: toText(record.title) ?? "Tập nội dung bị báo cáo",
+    subtitle: episodeNumber ? `Tập ${episodeNumber}` : toText(record.seasonId),
+    imageUrl: toText(record.thumbnail),
+    metadata: compactMetadata([
+      { label: "Loại nội dung", value: toText(record.contentType) },
+      { label: "Trạng thái", value: toText(record.status) },
+      { label: "Unlock", value: toText(record.unlockType) },
+      { label: "Lượt xem", value: toNumber(record.views) },
+      { label: "Đánh giá", value: toNumber(record.averageRating) },
+      { label: "Cập nhật", value: toText(record.updatedAt) },
+    ]),
+  };
 }
 
 export function parseProofUrls(value?: string | null) {
@@ -208,6 +324,37 @@ export function processTicket(ticketId: string, payload: TicketProcessRequest) {
   return unwrapBaseResponse<Penalty | null>(
     httpClient.post(`/api/v1/moderation/tickets/${ticketId}/process`, payload),
   );
+}
+
+export async function getModerationTargetDetail(
+  targetType: ReportTargetType,
+  targetId: string,
+) {
+  if (targetType === "ACCOUNT") {
+    const response = await httpClient.get<BaseResponse<TargetDetailRecord> | TargetDetailRecord>(
+      `/api/v1/admin/accounts/${targetId}`,
+    );
+
+    return normalizeAccountTarget(unwrapFlexiblePayload(response.data), targetId);
+  }
+
+  if (targetType === "SERIES") {
+    const response = await httpClient.get<BaseResponse<TargetDetailRecord> | TargetDetailRecord>(
+      `/api/v1/public/series/${targetId}`,
+    );
+
+    return normalizeSeriesTarget(unwrapFlexiblePayload(response.data), targetId);
+  }
+
+  if (targetType === "EPISODE") {
+    const response = await httpClient.get<BaseResponse<TargetDetailRecord> | TargetDetailRecord>(
+      `/api/v1/public/episodes/${targetId}`,
+    );
+
+    return normalizeEpisodeTarget(unwrapFlexiblePayload(response.data), targetId);
+  }
+
+  return null;
 }
 
 export function searchPenalties(params: PenaltySearchParams = {}) {

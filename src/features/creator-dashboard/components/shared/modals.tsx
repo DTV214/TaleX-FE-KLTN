@@ -411,6 +411,7 @@ export function EditEntityModal({
                 contentType: modal.value.contentType,
                 visibility: modal.value.visibility,
                 ageRating: modal.value.ageRating,
+                contentWarnings: modal.value.contentWarnings,
                 language: modal.value.language,
                 categoryIds: modal.value.categoryIds,
                 tagIds: modal.value.tagIds,

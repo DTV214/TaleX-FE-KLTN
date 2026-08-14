@@ -22,8 +22,8 @@ import {
   getPermittedCopyrightMatches,
   getRejectedCensorshipResults,
   isMediaPipelinePending,
-  translateViolationLabel,
 } from "@/features/creator-dashboard/utils/media-violations";
+import { useViolationLabelMap } from "@/shared/hooks/use-violation-label-map";
 import {
   ComicPipelineAggregateSummary,
   type ComicPageSummary,
@@ -39,6 +39,9 @@ interface AIPolicyAndCopyrightProps {
    * bước "Kiểm tra bản quyền" đã hoàn tất, không dùng việc violations query trả về hay
    * chưa (API vẫn trả mảng rỗng hợp lệ ngay cả khi chưa xử lý gì, dễ hiểu nhầm là đã xong). */
   contentId?: string;
+  /** Kết quả THẬT của bước nhúng watermark chống đạo nhái (có thể fail âm thầm, không
+   * chặn cả pipeline) — xem Media.hasWatermark ở BE. */
+  hasWatermark?: boolean;
   /** Truyền khi episode có nhiều trang (comic) — hiển thị tổng hợp thay vì bám 1 trang. */
   pages?: ComicPageSummary[];
 }
@@ -84,16 +87,18 @@ function buildSteps(params: {
   approvalStatus?: ContentApprovalStatus;
   hasContentId: boolean;
   hasCensorshipResult: boolean;
+  hasWatermark?: boolean;
   isFailed: boolean;
   isForceHidden: boolean;
 }): Step[] {
-  const { mediaId, mediaType, mediaStatus, approvalStatus, hasContentId, hasCensorshipResult, isFailed, isForceHidden } = params;
+  const { mediaId, mediaType, mediaStatus, approvalStatus, hasContentId, hasCensorshipResult, hasWatermark, isFailed, isForceHidden } = params;
   const steps: Step[] = [];
 
   if (!mediaId) {
     steps.push({ key: "upload", label: "Tải lên nội dung", state: "pending" });
-    steps.push({ key: "copyright", label: "Kiểm tra bản quyền", state: "pending" });
     steps.push({ key: "moderation", label: "Kiểm duyệt nội dung", state: "pending" });
+    steps.push({ key: "copyright", label: "Kiểm tra bản quyền", state: "pending" });
+    steps.push({ key: "watermark", label: "Nhúng watermark chống đạo nhái", state: "pending" });
     steps.push({ key: "done", label: "Sẵn sàng xuất bản", state: "pending" });
     return steps;
   }
@@ -114,15 +119,47 @@ function buildSteps(params: {
   const moderationPendingReview = isPendingReview && hasCensorshipResult;
 
   if (mediaType === "VIDEO") {
-    const transcodeDone = mediaStatus !== "HLS_PROCESSING";
+    // Video mới upload có status=PENDING (BE cố ý chưa submit job HLS ngay — xem comment
+    // ở S3MediaProviderService — để AI Watermark/Copyright/Moderation chạy trước), MediaConvert
+    // chỉ thật sự submit job VÀ chuyển status sang HLS_PROCESSING SAU KHI Copyright/Fingerprint
+    // trả kết quả (bước cuối cùng, có thể mất vài phút). Trước đây check "!== HLS_PROCESSING"
+    // coi PENDING cũng là "đã xong" — báo ✓ xanh ngay từ lúc mới upload dù chưa hề bắt đầu
+    // convert. Phải liệt kê rõ đúng trạng thái NÀO là thật sự xong (HLS_READY/ACTIVE).
+    const transcodeDone = mediaStatus === "HLS_READY" || mediaStatus === "ACTIVE";
+    const transcodeStarted = mediaStatus === "HLS_PROCESSING" || transcodeDone;
     steps.push({
       key: "transcode",
       label: "Xử lý video",
-      state: isFailed && !transcodeDone ? "failed" : transcodeDone ? "done" : "active",
+      state: isFailed && !transcodeDone
+        ? "failed"
+        : transcodeDone
+          ? "done"
+          : transcodeStarted
+            ? "active"
+            : "pending",
     });
   }
 
+  // Hiển thị "Kiểm duyệt nội dung" TRƯỚC "Kiểm tra bản quyền" — dù AI tính Fingerprint
+  // trước Moderation nội bộ, nhưng kết quả Moderation LUÔN được gửi về BE trước (AI gửi
+  // ngay khi xong), còn Copyright phải đợi thêm bước nhúng watermark + tạo preview mới
+  // gửi (video A/B HLS có thể mất vài phút). Hiển thị đúng thứ tự HOÀN TẤT thật để tránh
+  // cảm giác "bước 2 xong trước bước 1" — trước đây thứ tự hiển thị bị ngược với thứ tự
+  // hoàn tất thật, gây hiểu lầm hệ thống chạy lộn xộn (đặc biệt rõ với video, độ trễ tới
+  // vài phút giữa 2 bước).
   const transcodeBlocking = mediaType === "VIDEO" && mediaStatus === "HLS_PROCESSING";
+  steps.push({
+    key: "moderation",
+    label: "Kiểm duyệt nội dung",
+    state: !hasCensorshipResult
+      ? (isFailed ? "failed" : "active")
+      : isRejected
+        ? "failed"
+        : moderationPendingReview
+          ? "review"
+          : "done",
+  });
+
   steps.push({
     key: "copyright",
     label: "Kiểm tra bản quyền",
@@ -133,19 +170,27 @@ function buildSteps(params: {
         : "done",
   });
 
+  // "Sẵn sàng xuất bản" chỉ cần 3 bước trên xong — watermark nhúng THÀNH CÔNG HAY KHÔNG
+  // không chặn xuất bản (AI bắt exception, tự bỏ qua watermark nếu lỗi chứ không làm
+  // hỏng cả pipeline — xem kafka_consumer_service.py), nên tính allPriorDone TRƯỚC khi
+  // thêm bước watermark vào mảng, tránh 1 lần nhúng watermark lỗi chặn nhầm publish.
+  const allPriorDone = steps.every((s) => s.state === "done");
+
+  // Nhúng watermark hoàn tất CÙNG LÚC với Kiểm tra bản quyền (2 kết quả gửi chung 1
+  // message từ AI — xem CopyrightResultMessage.watermarkedS3Key), nên dùng chung tín hiệu
+  // hasContentId để biết ĐÃ CÓ kết quả hay chưa; hasWatermark mới là kết quả THẬT (đạt hay
+  // fail). Media cũ tạo trước khi có field này sẽ mặc định hasWatermark=false — không phân
+  // biệt được với "thật sự fail", chấp nhận rủi ro nhỏ này thay vì thêm phức tạp không cần thiết.
   steps.push({
-    key: "moderation",
-    label: "Kiểm duyệt nội dung",
-    state: !hasCensorshipResult
-      ? (isFailed ? (hasContentId ? "failed" : "pending") : hasContentId ? "active" : "pending")
-      : isRejected
-        ? "failed"
-        : moderationPendingReview
-          ? "review"
-          : "done",
+    key: "watermark",
+    label: "Nhúng watermark chống đạo nhái",
+    state: !hasContentId
+      ? (isFailed ? "failed" : transcodeBlocking ? "pending" : "active")
+      : hasWatermark
+        ? "done"
+        : "failed",
   });
 
-  const allPriorDone = steps.every((s) => s.state === "done");
   // isForceHidden: nội dung ĐÃ qua hết pipeline và từng được duyệt (2 bước trên vẫn đúng
   // là "done") nhưng sau đó bị quản trị viên tạm ẩn khỏi công khai — khác hẳn "chưa xong"
   // hay "bị từ chối", nên tách riêng label/state thay vì lẫn vào "Sẵn sàng xuất bản".
@@ -181,6 +226,7 @@ function SingleMediaPipelinePanel({
   approvalStatus,
   errorMessage,
   contentId,
+  hasWatermark,
 }: AIPolicyAndCopyrightProps) {
   const queryClient = useQueryClient();
   const mediaState = { status: mediaStatus, approvalStatus };
@@ -207,6 +253,7 @@ function SingleMediaPipelinePanel({
     refetchInterval: pipelinePending ? 5000 : false,
   });
 
+  const { translate: translateViolationLabel } = useViolationLabelMap();
   const violations = violationsQuery.data;
   const blockingCopyright = getBlockingCopyrightViolations(violations);
   const permittedCopyright = getPermittedCopyrightMatches(violations);
@@ -248,6 +295,7 @@ function SingleMediaPipelinePanel({
     mediaStatus,
     approvalStatus,
     hasContentId: copyrightResolved,
+    hasWatermark,
     // Ưu tiên mediaStatus==="ACTIVE" — BE CHỈ set ACTIVE sau khi kiểm duyệt pass thật
     // (xem ContentPipelineServiceImpl.handleModerationResult), tín hiệu này cập nhật
     // nhanh cùng lúc với toast SSE. Không dựa DUY NHẤT vào violations query — nó là 1

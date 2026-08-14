@@ -1,5 +1,6 @@
 import { getMediaViolations } from "@/features/creator-dashboard/api/creator-content-api";
-import { isMediaReadyForPublish, isMediaPipelinePending, getBlockingCopyrightViolations, getRejectedCensorshipResults, translateViolationLabel } from "@/features/creator-dashboard/utils/media-violations";
+import { isMediaReadyForPublish, isMediaPipelinePending, getBlockingCopyrightViolations, getRejectedCensorshipResults } from "@/features/creator-dashboard/utils/media-violations";
+import { useViolationLabelMap } from "@/shared/hooks/use-violation-label-map";
 import React, { useState, useRef, useEffect, useMemo, useCallback, FormEvent, DragEvent, ReactNode } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { PlayCircle, ImagePlus, Video, ShieldAlert, AlertTriangle, Fingerprint, BarChart3, ArrowDown, ArrowUp, BookOpen, Calendar, ChevronDown, ChevronLeft, ChevronRight, CircleAlert, Clapperboard, CloudUpload, Edit3, Eye, FileVideo, GripVertical, Image as ImageIcon, Info, Library, Loader2, Lock, Plus, RefreshCw, Search, Settings2, Tag, Trash2, UploadCloud, Wallet, X, Zap, type LucideIcon } from 'lucide-react';
@@ -453,6 +454,9 @@ export function ComicUploadView({
           contentId={
             pages.find((page) => !page.id.startsWith("LOCAL-"))?.contentId
           }
+          hasWatermark={
+            pages.find((page) => !page.id.startsWith("LOCAL-"))?.hasWatermark
+          }
           pages={pages}
         />
       </div>
@@ -495,6 +499,7 @@ export function ComicPageCard({
       : false,
   });
 
+  const { translate: translateViolationLabel } = useViolationLabelMap();
   const violations = violationsQuery.data;
   const copyrightViolations = getBlockingCopyrightViolations(violations);
   const censorshipViolations = getRejectedCensorshipResults(violations);

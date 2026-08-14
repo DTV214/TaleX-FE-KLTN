@@ -126,6 +126,7 @@ import { CreatorPaymentProfilesView } from "@/features/creator-dashboard/compone
 import { CreatorCampaignPurchaseView } from "@/features/creator-dashboard/components/views/creator-campaign-purchase-view";
 import { CreatorCampaignsView } from "@/features/creator-dashboard/components/views/creator-campaigns-view";
 import { CreatorViolationsView } from "@/features/moderation-reports/components/creator-violations-view";
+import { CreatorSettlementsView } from "@/features/creator-settlements/components/creator-settlements-view";
 import { AIPolicyAndCopyright } from "@/features/creator-dashboard/components/ai-policy-and-copyright";
 import { mediaSystemConfigApi } from "@/features/admin/api/media-system-config.api";
 import {
@@ -133,7 +134,6 @@ import {
   getRejectedCensorshipResults,
   isMediaPipelinePending,
   isMediaReadyForPublish,
-  translateViolationLabel,
 } from "@/features/creator-dashboard/utils/media-violations";
 import { DashboardView, DashboardRouteState, ContentType, ApiLifecycleStatus, SeriesStatus, SeasonStatus, EpisodeStatus, ContentApprovalStatus, Visibility, EditModalState, EditSubmitState, CreateSeriesInput, DeleteModalState, ScheduleModalState, ActiveScheduleModal, SeriesRow, SeasonRow, EpisodeRow, EpisodeUnlockSettingsUpdate, ComicPage } from "@/features/creator-dashboard/types/dashboard.types";
 import { cx, formatNumber, formatBytes, formatApprovalStatusLabel, getApprovalChipClass, formatMediaStatusLabel, formatDateTime, splitDateTimeLocalValue, isPastDateTimeLocalValue, combineDateAndTimeLocalValue, getStatusBadgeStyle, formatStatusLabel, reorderPages, isLocalPageId, isRenderableAssetUrl, normalizeAssetUrl, readFormString, readFormNumber, splitIdList, openNativePicker, isPlayableVideoStatus, isProcessingVideoStatus, isBackendMediaTarget, getMediaTargetId, FORCE_HIDDEN_REASON_TOOLTIP } from "@/features/creator-dashboard/components/shared/utils";
@@ -297,7 +297,7 @@ const viewMeta: Record<
   },
   revenue: {
     title: "Doanh thu",
-    description: "Quản lý ví thu nhập và lịch sử rút tiền thanh toán.",
+    description: "Theo dõi quyết toán doanh thu, thuế PIT và trạng thái chi trả theo tháng.",
   },
 };
 
@@ -350,6 +350,7 @@ function mapSeriesResponse(series: SeriesResponse): SeriesRow {
     status: series.status,
     visibility: series.visibility || "PUBLIC",
     ageRating: series.ageRating || "",
+    contentWarnings: series.contentWarnings || [],
     language: series.language || "",
     categoryIds:
       series.categories?.map((category) => category.categoryId) ?? [],
@@ -411,6 +412,7 @@ function mapMediaResponseToComicPage(media: MediaResponse): ComicPage {
     approvalStatus: media.approvalStatus,
     errorMessage: media.errorMessage,
     contentId: media.contentId,
+    hasWatermark: media.hasWatermark,
   };
 }
 
@@ -675,24 +677,38 @@ function CreatorDashboardContent() {
       !isBatchPending &&
       isMultiPageImageBatch
     ) {
-      const readyCount = imagePages.filter(
+      // displayOrder = số trang hiển thị trên khung ảnh (badge "1", "2"...) — liệt kê rõ
+      // trang nào cần chú ý thay vì chỉ nói số lượng chung chung, Creator đỡ phải dò từng
+      // trang một trong lưới ảnh để tìm ra trang nào bị vấn đề.
+      const formatPages = (list: typeof imagePages) => {
+        const numbers = list
+          .map((m) => m.displayOrder)
+          .filter((n): n is number => typeof n === "number")
+          .sort((a, b) => a - b);
+        return numbers.length > 0 ? ` (trang ${numbers.join(", ")})` : "";
+      };
+      const readyPages = imagePages.filter(
         (m) => m.status === "ACTIVE" || m.status === "HLS_READY",
-      ).length;
-      const pendingReviewCount = imagePages.filter(
+      );
+      const pendingReviewPages = imagePages.filter(
         (m) => m.status === "INACTIVE" && m.approvalStatus === "PENDING_REVIEW",
-      ).length;
-      const rejectedCount = imagePages.filter(
+      );
+      const rejectedPages = imagePages.filter(
         (m) => m.status === "INACTIVE" && m.approvalStatus === "REJECTED",
-      ).length;
-      const failedCount = imagePages.filter(
+      );
+      const failedPages = imagePages.filter(
         (m) => m.status === "FAILED",
-      ).length;
+      );
+      const readyCount = readyPages.length;
+      const pendingReviewCount = pendingReviewPages.length;
+      const rejectedCount = rejectedPages.length;
+      const failedCount = failedPages.length;
       const total = imagePages.length;
       const parts: string[] = [];
       if (readyCount > 0) parts.push(`${readyCount} đạt`);
-      if (pendingReviewCount > 0) parts.push(`${pendingReviewCount} chờ kiểm duyệt thủ công`);
-      if (rejectedCount > 0) parts.push(`${rejectedCount} bị từ chối`);
-      if (failedCount > 0) parts.push(`${failedCount} lỗi hệ thống`);
+      if (pendingReviewCount > 0) parts.push(`${pendingReviewCount} chờ kiểm duyệt thủ công${formatPages(pendingReviewPages)}`);
+      if (rejectedCount > 0) parts.push(`${rejectedCount} bị từ chối${formatPages(rejectedPages)}`);
+      if (failedCount > 0) parts.push(`${failedCount} lỗi hệ thống${formatPages(failedPages)}`);
       const hasIssue =
         rejectedCount > 0 || failedCount > 0 || pendingReviewCount > 0;
       const batchToastId = pipelineToastId(
@@ -819,6 +835,7 @@ function CreatorDashboardContent() {
         contentType: input.contentType,
         visibility: input.visibility,
         ageRating: input.ageRating,
+        contentWarnings: input.contentWarnings,
         language: input.language,
         categoryIds: input.categoryIds,
         tagIds: input.tagIds,
@@ -936,6 +953,7 @@ function CreatorDashboardContent() {
         contentType: series.contentType,
         visibility: series.visibility,
         ageRating: series.ageRating,
+        contentWarnings: series.contentWarnings,
         language: series.language,
         categoryIds: series.categoryIds,
         tagIds: series.tagIds,
@@ -1775,6 +1793,7 @@ function CreatorDashboardContent() {
                   contentType: selectedSeries?.contentType || "COMIC",
                   visibility: selectedSeries?.visibility || "PUBLIC",
                   ageRating: selectedSeries?.ageRating || "EVERYONE",
+                  contentWarnings: selectedSeries?.contentWarnings || [],
                   language: selectedSeries?.language || "vi",
                   categoryIds: selectedSeries?.categoryIds || [],
                   tagIds: selectedSeries?.tagIds || [],
@@ -2059,6 +2078,7 @@ function CreatorDashboardContent() {
                   approvalStatus={existingVideoMedia[0]?.approvalStatus}
                   errorMessage={existingVideoMedia[0]?.errorMessage}
                   contentId={existingVideoMedia[0]?.contentId}
+                  hasWatermark={existingVideoMedia[0]?.hasWatermark}
                   video={existingVideoMedia[0]}
                   isPublishing={publishEpisodeMutation.isPending}
                   onPublish={() =>
@@ -2120,17 +2140,7 @@ function CreatorDashboardContent() {
                 }
               />
             ) : activeView === "revenue" ? (
-              <DashboardOverviewView
-                onNavigate={(view) =>
-                  setDashboardRouteState({
-                    view: view as any,
-                    seriesId: "",
-                    seasonId: "",
-                    episodeId: "",
-                  })
-                }
-                initialTab="revenue"
-              />
+              <CreatorSettlementsView />
             ) : activeView === "analytics" ? (
               <CreatorAnalyticsLogsView />
             ) : activeView === "combos" ? (

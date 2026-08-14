@@ -44,6 +44,7 @@ interface FinalReviewStepProps {
   approvalStatus?: ContentApprovalStatus;
   errorMessage?: string;
   contentId?: string;
+  hasWatermark?: boolean;
   video?: any; // the whole MediaResponse for processing state
   isPublishing?: boolean;
   onPublish: () => void;
@@ -71,6 +72,7 @@ export function FinalReviewStep({
   approvalStatus,
   errorMessage,
   contentId,
+  hasWatermark,
   video,
   isPublishing,
   onPublish,
@@ -128,7 +130,10 @@ export function FinalReviewStep({
       setThumbnailPreview(selectedEpisode.thumbnail || null);
       setThumbnailFile(undefined);
     }
-  }, [selectedEpisode]);
+    // Chỉ resync form khi chuyển sang episode khác — resync theo toàn bộ object
+    // selectedEpisode sẽ fire lại mỗi khi "Lưu chi tiết"/"Lưu giá" invalidate query
+    // episodes (refetch cùng episode), ghi đè mất giá trị chưa lưu của form còn lại.
+  }, [selectedEpisode?.id]);
 
   const isPublished = selectedEpisode?.status === "PUBLISHED";
   const isScheduled = selectedEpisode?.status === "SCHEDULED";
@@ -388,6 +393,7 @@ export function FinalReviewStep({
           approvalStatus={approvalStatus}
           errorMessage={errorMessage}
           contentId={contentId}
+          hasWatermark={hasWatermark}
         />
 
         {!isPublished && (

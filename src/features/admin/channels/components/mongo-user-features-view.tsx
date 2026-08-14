@@ -7,7 +7,6 @@ import {
 } from "../hooks/use-admin-channels";
 import {
   Database,
-  RefreshCw,
   AlertCircle,
   Clock,
   MousePointer,
@@ -21,9 +20,6 @@ import {
   Tag,
   FolderTree,
   BarChart3,
-  FileCode,
-  Copy,
-  Check,
   Flame,
   Sparkles,
   Zap,
@@ -53,7 +49,7 @@ export function MongoUserFeaturesView({ accountId }: MongoUserFeaturesViewProps)
   } = useMongoUserDynamicFeatures(accountId);
 
   const [copiedJson, setCopiedJson] = useState(false);
-  const [activeTab, setActiveTab] = useState<"overview" | "genres" | "tags" | "raw">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "genres" | "tags">("overview");
 
   const handleCopyJson = () => {
     if (userFeatures) {
@@ -102,30 +98,15 @@ export function MongoUserFeaturesView({ accountId }: MongoUserFeaturesViewProps)
               <h3 className="text-base font-bold text-slate-900">
                 Đặc Điểm Người Dùng (Mongo Features Profile)
               </h3>
-              <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-800 border border-emerald-200">
-                GET /api/v1/mongo/features/user/{accountId}
-              </span>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
               Hồ sơ phân tích đặc điểm cố định & đặc điểm động (Top 5 danh mục/thẻ xem nhiều nhất)
             </p>
           </div>
         </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={handleRefreshAll}
-            disabled={isRefetchingStatic}
-            className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50 shadow-sm"
-          >
-            <RefreshCw className={`h-3.5 w-3.5 text-emerald-600 ${isRefetchingStatic ? "animate-spin" : ""}`} />
-            <span>Tải lại MongoDB Data</span>
-          </button>
-        </div>
       </div>
 
-      {/* Dynamic Top 5 Highlights Section (GET /api/v1/mongo/features/user/{id}/dynamic) */}
+      {/* Dynamic Top 5 Highlights Section */}
       <div className="rounded-xl border border-amber-200 bg-gradient-to-r from-amber-50/70 via-orange-50/50 to-amber-50/70 p-4 space-y-3">
         <div className="flex items-center justify-between border-b border-amber-200/60 pb-2">
           <div className="flex items-center gap-2">
@@ -133,19 +114,7 @@ export function MongoUserFeaturesView({ accountId }: MongoUserFeaturesViewProps)
             <h4 className="font-bold text-xs text-amber-950 uppercase tracking-wider">
               Top 5 Sở Thích Động AI (Dynamic User Features)
             </h4>
-            <span className="rounded-full bg-amber-200/80 px-2 py-0.5 text-[10px] font-bold text-amber-900">
-              GET /api/v1/mongo/features/user/{accountId}/dynamic
-            </span>
           </div>
-
-          <button
-            type="button"
-            onClick={() => refetchDynamic()}
-            className="text-[11px] font-semibold text-amber-700 hover:text-amber-900 flex items-center gap-1"
-          >
-            <RefreshCw className={`h-3 w-3 ${isLoadingDynamic ? "animate-spin" : ""}`} />
-            <span>Làm mới động</span>
-          </button>
         </div>
 
         {/* Dynamic Categories & Tags Grid */}
@@ -283,21 +252,7 @@ export function MongoUserFeaturesView({ accountId }: MongoUserFeaturesViewProps)
             >
               <Tag className="h-4 w-4" />
               <span>Phân Tích Thẻ Tag ({Object.keys(userFeatures.preferences?.tagsClicksRaw || {}).length})</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab("raw")}
-              className={`flex items-center gap-1.5 border-b-2 px-4 py-2.5 transition-all ml-auto ${
-                activeTab === "raw"
-                  ? "border-emerald-600 font-bold text-emerald-700"
-                  : "border-transparent text-slate-500 hover:text-slate-900"
-              }`}
-            >
-              <FileCode className="h-4 w-4" />
-              <span>Raw JSON Data</span>
-            </button>
-          </div>
+            </button>          </div>
 
           {/* TAB 1: OVERVIEW & INTERACTIONS */}
           {activeTab === "overview" && (
@@ -313,11 +268,11 @@ export function MongoUserFeaturesView({ accountId }: MongoUserFeaturesViewProps)
                   <div className="grid grid-cols-2 gap-3 text-xs">
                     <div>
                       <span className="text-slate-400 block text-[11px]">Account ID</span>
-                      <span className="font-mono font-semibold text-slate-900 truncate block">
+                      <span className="font-semibold text-slate-900 truncate block">
                         {accountId}
                       </span>
                       {userFeatures.accountId && userFeatures.accountId !== accountId && (
-                        <span className="text-[10px] text-amber-600 font-mono block">
+                        <span className="text-[10px] text-amber-600 block">
                           (Backend JSON: {userFeatures.accountId})
                         </span>
                       )}
@@ -398,7 +353,7 @@ export function MongoUserFeaturesView({ accountId }: MongoUserFeaturesViewProps)
                     <span className="text-xl font-black text-emerald-900 block mt-1">
                       {formatSeconds(userFeatures.deepEngagement?.totalWatchTime)}
                     </span>
-                    <span className="text-[11px] text-emerald-600 font-mono">
+                    <span className="text-[11px] text-emerald-600 font-medium">
                       ({userFeatures.deepEngagement?.totalWatchTime || 0}s)
                     </span>
                   </div>
@@ -408,7 +363,7 @@ export function MongoUserFeaturesView({ accountId }: MongoUserFeaturesViewProps)
                     <span className="text-xl font-black text-sky-900 block mt-1">
                       {formatSeconds(userFeatures.deepEngagement?.watchTimeLast7d)}
                     </span>
-                    <span className="text-[11px] text-sky-600 font-mono">
+                    <span className="text-[11px] text-sky-600 font-medium">
                       ({userFeatures.deepEngagement?.watchTimeLast7d || 0}s)
                     </span>
                   </div>
@@ -418,7 +373,7 @@ export function MongoUserFeaturesView({ accountId }: MongoUserFeaturesViewProps)
                     <span className="text-xl font-black text-violet-900 block mt-1">
                       {formatSeconds(userFeatures.deepEngagement?.watchTimeLast24h)}
                     </span>
-                    <span className="text-[11px] text-violet-600 font-mono">
+                    <span className="text-[11px] text-violet-600 font-medium">
                       ({userFeatures.deepEngagement?.watchTimeLast24h || 0}s)
                     </span>
                   </div>
@@ -500,12 +455,12 @@ export function MongoUserFeaturesView({ accountId }: MongoUserFeaturesViewProps)
                       Lượt Comments
                     </span>
                     <span className="text-lg font-bold text-slate-900 block">
-                      {userFeatures.interactions?.totalComments ?? 0}
+                      {Math.max(0, userFeatures.interactions?.totalComments ?? 0)}
                     </span>
                     <div className="mt-1 pt-1 border-t border-slate-200 text-[10px] text-slate-400 space-x-1">
-                      <span>7d: <b>{userFeatures.interactions?.commentsLast7d ?? 0}</b></span>
+                      <span>7d: <b>{Math.max(0, userFeatures.interactions?.commentsLast7d ?? 0)}</b></span>
                       <span>•</span>
-                      <span>24h: <b>{userFeatures.interactions?.commentsLast24h ?? 0}</b></span>
+                      <span>24h: <b>{Math.max(0, userFeatures.interactions?.commentsLast24h ?? 0)}</b></span>
                     </div>
                   </div>
                 </div>
@@ -521,7 +476,7 @@ export function MongoUserFeaturesView({ accountId }: MongoUserFeaturesViewProps)
                         <th className="py-2.5 px-4 text-center">24 Giờ Gần Đây (24h)</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 font-mono">
+                    <tbody className="divide-y divide-slate-100">
                       <tr>
                         <td className="py-2.5 px-4 font-sans font-semibold text-slate-900">Like / Click Ratio</td>
                         <td className="py-2.5 px-4 text-center font-bold text-slate-800">{formatPercentage(userFeatures.interactions?.likeToClickRatio)}</td>
@@ -590,15 +545,15 @@ export function MongoUserFeaturesView({ accountId }: MongoUserFeaturesViewProps)
                             <td className="py-2.5 px-4 font-bold text-slate-900">
                               {genreKey}
                             </td>
-                            <td className="py-2.5 px-4 text-center font-mono font-semibold text-slate-800">
+                            <td className="py-2.5 px-4 text-center font-semibold text-slate-800">
                               {rawClick}
                             </td>
-                            <td className="py-2.5 px-4 text-center font-mono font-semibold text-slate-800">
+                            <td className="py-2.5 px-4 text-center font-semibold text-slate-800">
                               {formatSeconds(rawTime)} ({rawTime}s)
                             </td>
                             <td className="py-2.5 px-4">
                               <div className="flex items-center gap-2">
-                                <span className="font-mono font-bold text-violet-700 w-12 text-right">
+                                <span className="font-bold text-violet-700 w-12 text-right">
                                   {formatPercentage(prefClick)}
                                 </span>
                                 <div className="h-2 flex-1 rounded-full bg-slate-100 overflow-hidden min-w-[60px]">
@@ -611,7 +566,7 @@ export function MongoUserFeaturesView({ accountId }: MongoUserFeaturesViewProps)
                             </td>
                             <td className="py-2.5 px-4">
                               <div className="flex items-center gap-2">
-                                <span className="font-mono font-bold text-emerald-700 w-12 text-right">
+                                <span className="font-bold text-emerald-700 w-12 text-right">
                                   {formatPercentage(prefTime)}
                                 </span>
                                 <div className="h-2 flex-1 rounded-full bg-slate-100 overflow-hidden min-w-[60px]">
@@ -668,15 +623,15 @@ export function MongoUserFeaturesView({ accountId }: MongoUserFeaturesViewProps)
                             <td className="py-2.5 px-4 font-bold text-slate-900">
                               {tagKey}
                             </td>
-                            <td className="py-2.5 px-4 text-center font-mono font-semibold text-slate-800">
+                            <td className="py-2.5 px-4 text-center font-semibold text-slate-800">
                               {rawClick}
                             </td>
-                            <td className="py-2.5 px-4 text-center font-mono font-semibold text-slate-800">
+                            <td className="py-2.5 px-4 text-center font-semibold text-slate-800">
                               {formatSeconds(rawTime)} ({rawTime}s)
                             </td>
                             <td className="py-2.5 px-4">
                               <div className="flex items-center gap-2">
-                                <span className="font-mono font-bold text-indigo-700 w-12 text-right">
+                                <span className="font-bold text-indigo-700 w-12 text-right">
                                   {formatPercentage(prefClick)}
                                 </span>
                                 <div className="h-2 flex-1 rounded-full bg-slate-100 overflow-hidden min-w-[60px]">
@@ -689,7 +644,7 @@ export function MongoUserFeaturesView({ accountId }: MongoUserFeaturesViewProps)
                             </td>
                             <td className="py-2.5 px-4">
                               <div className="flex items-center gap-2">
-                                <span className="font-mono font-bold text-teal-700 w-12 text-right">
+                                <span className="font-bold text-teal-700 w-12 text-right">
                                   {formatPercentage(prefTime)}
                                 </span>
                                 <div className="h-2 flex-1 rounded-full bg-slate-100 overflow-hidden min-w-[60px]">
@@ -709,46 +664,7 @@ export function MongoUserFeaturesView({ accountId }: MongoUserFeaturesViewProps)
             </div>
           )}
 
-          {/* TAB 4: RAW JSON DATA */}
-          {activeTab === "raw" && (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h4 className="font-bold text-xs text-slate-800 uppercase tracking-wider flex items-center gap-2">
-                  <FileCode className="h-4 w-4 text-emerald-600" />
-                  MongoDB User Features Raw JSON (Static Profile & Dynamic Top 5)
-                </h4>
 
-                <button
-                  type="button"
-                  onClick={handleCopyJson}
-                  className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-                >
-                  {copiedJson ? (
-                    <>
-                      <Check className="h-3.5 w-3.5 text-emerald-600" />
-                      <span className="text-emerald-700">Đã copy JSON</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="h-3.5 w-3.5 text-slate-500" />
-                      <span>Copy Full JSON</span>
-                    </>
-                  )}
-                </button>
-              </div>
-
-              <pre className="max-h-96 w-full overflow-auto rounded-xl bg-slate-900 p-4 text-[11px] font-mono text-emerald-400 border border-slate-800 shadow-inner">
-                {JSON.stringify(
-                  {
-                    staticProfile: userFeatures,
-                    dynamicTop5: dynamicFeatures,
-                  },
-                  null,
-                  2
-                )}
-              </pre>
-            </div>
-          )}
         </div>
       )}
     </div>

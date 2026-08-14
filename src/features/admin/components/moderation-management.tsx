@@ -31,7 +31,7 @@ import {
   useMediaViolations,
   useRejectMedia,
 } from "@/features/admin/hooks/use-moderation";
-import { translateViolationLabel } from "@/features/creator-dashboard/utils/media-violations";
+import { useViolationLabelMap } from "@/shared/hooks/use-violation-label-map";
 
 const PAGE_SIZE = 12;
 
@@ -264,6 +264,7 @@ function ModerationDetailModal({
 }) {
   const violationsQuery = useMediaViolations(open ? media?.id ?? null : null);
   const violations = violationsQuery.data;
+  const { translate: translateViolationLabel } = useViolationLabelMap();
   const [previewSourceId, setPreviewSourceId] = useState<string | null>(null);
 
   if (!open || !media) return null;
@@ -331,6 +332,14 @@ function ModerationDetailModal({
                   {media.episodeTitle || media.episodeId || "-"}
                 </p>
               </div>
+              {media.mediaType === "IMAGE" && (
+                <div>
+                  <p className="text-slate-400">Trang</p>
+                  <p className="mt-1 text-slate-700">
+                    {typeof media.displayOrder === "number" ? `Trang ${media.displayOrder}` : "-"}
+                  </p>
+                </div>
+              )}
               <div>
                 <p className="text-slate-400">Bộ truyện</p>
                 <p className="mt-1 truncate text-slate-700">{media.seriesTitle || "-"}</p>
@@ -701,6 +710,14 @@ function SourceMediaPreviewModal({
                     {detailQuery.data.episodeTitle || detailQuery.data.episodeId || "-"}
                   </p>
                 </div>
+                {detailQuery.data.mediaType === "IMAGE" && (
+                  <div>
+                    <p className="text-slate-400">Trang</p>
+                    <p className="mt-1 text-slate-700">
+                      {typeof detailQuery.data.displayOrder === "number" ? `Trang ${detailQuery.data.displayOrder}` : "-"}
+                    </p>
+                  </div>
+                )}
                 <div>
                   <p className="text-slate-400">Bộ truyện</p>
                   <p className="mt-1 truncate text-slate-700">{detailQuery.data.seriesTitle || "-"}</p>
@@ -810,6 +827,14 @@ function ModerationCard({
               {media.episodeTitle || media.episodeId || "-"}
             </p>
           </div>
+          {media.mediaType === "IMAGE" && (
+            <div>
+              <p className="text-slate-400">Trang</p>
+              <p className="mt-1 text-slate-700">
+                {typeof media.displayOrder === "number" ? `Trang ${media.displayOrder}` : "-"}
+              </p>
+            </div>
+          )}
           <div>
             <p className="text-slate-400">Bộ truyện</p>
             <p className="mt-1 truncate text-slate-700">{media.seriesTitle || "-"}</p>
@@ -950,6 +975,14 @@ function ApprovedMediaCard({
               {media.episodeTitle || media.episodeId || "-"}
             </p>
           </div>
+          {media.mediaType === "IMAGE" && (
+            <div>
+              <p className="text-slate-400">Trang</p>
+              <p className="mt-1 text-slate-700">
+                {typeof media.displayOrder === "number" ? `Trang ${media.displayOrder}` : "-"}
+              </p>
+            </div>
+          )}
           <div>
             <p className="text-slate-400">Bộ truyện</p>
             <p className="mt-1 truncate text-slate-700">{media.seriesTitle || "-"}</p>
@@ -1118,6 +1151,11 @@ function ModerationListItem({
               <span className="text-slate-400">Episode:</span>{" "}
               {media.episodeTitle || media.episodeId || "-"}
             </p>
+            {media.mediaType === "IMAGE" && typeof media.displayOrder === "number" && (
+              <p className="truncate">
+                <span className="text-slate-400">Trang:</span> {media.displayOrder}
+              </p>
+            )}
             <p className="truncate">
               <span className="text-slate-400">Series:</span>{" "}
               {media.seriesTitle || "-"}
@@ -1134,16 +1172,22 @@ function ModerationListItem({
 }
 
 function DetailInfoGrid({ media }: { media: ModerationMedia }) {
+  const rows: [string, string][] = [
+    ["Tập", media.episodeTitle || media.episodeId || "-"],
+  ];
+  if (media.mediaType === "IMAGE") {
+    rows.push(["Trang", typeof media.displayOrder === "number" ? `Trang ${media.displayOrder}` : "-"]);
+  }
+  rows.push(
+    ["Bộ truyện", media.seriesTitle || "-"],
+    ["Phần", media.seasonTitle || "-"],
+    ["Người sáng tạo", media.creatorUsername || "-"],
+    ["Ngày tạo", formatDate(media.createdAt)],
+    ["Thời điểm duyệt", formatDate(media.approvalReviewedAt)],
+  );
   return (
     <div className="grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-xs font-semibold text-slate-500 backoffice-dark:border-white/10 backoffice-dark:bg-black/20 backoffice-dark:text-white/55 sm:grid-cols-2">
-      {[
-        ["Tập", media.episodeTitle || media.episodeId || "-"],
-        ["Bộ truyện", media.seriesTitle || "-"],
-        ["Phần", media.seasonTitle || "-"],
-        ["Người sáng tạo", media.creatorUsername || "-"],
-        ["Ngày tạo", formatDate(media.createdAt)],
-        ["Thời điểm duyệt", formatDate(media.approvalReviewedAt)],
-      ].map(([label, value]) => (
+      {rows.map(([label, value]) => (
         <div key={label} className="min-w-0">
           <p className="text-slate-400 backoffice-dark:text-white/40">{label}</p>
           <p className="mt-1 truncate text-slate-800 backoffice-dark:text-white/85">

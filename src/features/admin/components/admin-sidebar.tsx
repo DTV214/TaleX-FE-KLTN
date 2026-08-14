@@ -20,11 +20,13 @@ import {
   Grid3X3,
   Home,
   Image as ImageIcon,
+  Languages,
   LayoutDashboard,
   LogOut,
   Megaphone,
   Percent,
   Plus,
+  Receipt,
   Scan,
   Settings,
   ShieldAlert,
@@ -62,6 +64,7 @@ const contentNavItems: NavItem[] = [
   { name: "Thể loại", href: "/admin/categories", icon: Grid3X3 },
   { name: "Thẻ", href: "/admin/tags", icon: Tag },
   { name: "Kiểm duyệt", href: "/admin/moderation", icon: ShieldAlert },
+  { name: "Nhãn kiểm duyệt", href: "/admin/violation-labels", icon: Languages },
   { name: "Xu hướng", href: "/admin/trending", icon: TrendingUp },
   { name: "Báo cáo", href: "/admin/reports", icon: Flag },
   { name: "Hình phạt", href: "/admin/penalties", icon: Ban },
@@ -93,8 +96,9 @@ const creatorVerificationNavItems: NavItem[] = [
 ];
 
 const financialNavItems: NavItem[] = [
-  { name: "Tổng quan tài chính", href: "/admin/financials", icon: CircleDollarSign },
-  { name: "Thuế", href: "/admin/tax-config", icon: Percent },
+  { name: "Quyết toán Creator", href: "/admin/financials", icon: CircleDollarSign },
+  { name: "Tax & Settlement", href: "/admin/tax-summary", icon: Receipt },
+  { name: "Cấu hình Thuế", href: "/admin/tax-config", icon: Percent },
 ];
 
 const interactionNavItems: NavItem[] = [

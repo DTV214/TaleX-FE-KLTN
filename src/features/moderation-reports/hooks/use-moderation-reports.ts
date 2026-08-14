@@ -11,6 +11,7 @@ import {
   getMyAppeals,
   getMyPenalties,
   getMyReports,
+  getModerationTargetDetail,
   getPenalty,
   processAppeal,
   processTicket,
@@ -21,6 +22,7 @@ import {
   type AppealSearchParams,
   type CreateAppealRequest,
   type CreateReportRequest,
+  type ModerationTicket,
   type PenaltySearchParams,
   type ProcessAppealRequest,
   type TicketProcessRequest,
@@ -33,6 +35,8 @@ export const moderationReportKeys = {
     [...moderationReportKeys.all, "my-reports", params] as const,
   tickets: (params?: Record<string, unknown>) =>
     [...moderationReportKeys.all, "tickets", params] as const,
+  targetDetail: (targetType?: string | null, targetId?: string | null) =>
+    [...moderationReportKeys.all, "target-detail", targetType, targetId] as const,
   penalties: (params?: Record<string, unknown>) =>
     [...moderationReportKeys.all, "penalties", params] as const,
   myPenalties: (params?: Record<string, unknown>) =>
@@ -74,6 +78,25 @@ export function useTickets(params: TicketSearchParams) {
   return useQuery({
     queryKey: moderationReportKeys.tickets(params),
     queryFn: () => searchTickets(params),
+  });
+}
+
+export function useModerationTargetDetail(ticket?: ModerationTicket | null) {
+  const canFetch =
+    Boolean(ticket?.targetId) &&
+    (ticket?.targetType === "ACCOUNT" ||
+      ticket?.targetType === "SERIES" ||
+      ticket?.targetType === "EPISODE");
+
+  return useQuery({
+    queryKey: moderationReportKeys.targetDetail(
+      ticket?.targetType,
+      ticket?.targetId,
+    ),
+    queryFn: () => getModerationTargetDetail(ticket!.targetType, ticket!.targetId),
+    enabled: canFetch,
+    retry: false,
+    staleTime: 60 * 1000,
   });
 }
 

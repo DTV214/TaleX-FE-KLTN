@@ -1,6 +1,19 @@
 import React, { useState, useRef } from "react";
 import { Upload, X, ChevronDown, Check, ImageIcon } from "lucide-react";
 
+// Khớp enum ContentWarningGroup bên BE (ContentPipelineServiceImpl) — chỉ có ý nghĩa khi
+// ageRating=MATURE, dùng để AI tự động duyệt vi phạm đã được khai báo trước thay vì luôn
+// đẩy Staff review.
+export const CONTENT_WARNING_OPTIONS: { id: string; label: string }[] = [
+  { id: "SEXUAL_NUDITY", label: "Khỏa thân / Nội dung tình dục" },
+  { id: "VIOLENCE_GORE", label: "Bạo lực / Máu me" },
+  { id: "DRUGS_TOBACCO", label: "Ma túy / Thuốc lá" },
+  { id: "ALCOHOL", label: "Rượu bia" },
+  { id: "GAMBLING", label: "Cờ bạc" },
+  { id: "HATE_SYMBOLS", label: "Biểu tượng thù hận" },
+  { id: "RUDE_GESTURES", label: "Cử chỉ thô tục" },
+];
+
 export interface CoreIdentityData {
   title: string;
   description: string;
@@ -10,6 +23,7 @@ export interface CoreIdentityData {
   language: string;
   categoryIds: string[];
   tagIds: string[];
+  contentWarnings: string[];
   coverFile?: File;
   bannerFile?: File;
   coverUrl?: string; // for edit mode
@@ -35,6 +49,7 @@ export function CoreIdentityStep({ initialData, onSave, onCancel, categories, ta
     language: initialData?.language || "vi",
     categoryIds: initialData?.categoryIds || [],
     tagIds: initialData?.tagIds || [],
+    contentWarnings: initialData?.contentWarnings || [],
     coverFile: initialData?.coverFile,
     bannerFile: initialData?.bannerFile,
     coverUrl: initialData?.coverUrl,
@@ -77,6 +92,23 @@ export function CoreIdentityStep({ initialData, onSave, onCancel, categories, ta
       ? formData.tagIds.filter(t => t !== id)
       : [...formData.tagIds, id];
     setFormData({ ...formData, tagIds: updated });
+  };
+
+  const toggleContentWarning = (id: string) => {
+    const updated = formData.contentWarnings.includes(id)
+      ? formData.contentWarnings.filter(w => w !== id)
+      : [...formData.contentWarnings, id];
+    setFormData({ ...formData, contentWarnings: updated });
+  };
+
+  const handleAgeRatingChange = (value: string) => {
+    // Đổi khỏi 18+ thì xóa luôn cảnh báo đã chọn — field này chỉ có ý nghĩa khi đủ 18+,
+    // giữ lại giá trị cũ ẩn đi dễ gây hiểu nhầm là vẫn đang áp dụng.
+    setFormData({
+      ...formData,
+      ageRating: value,
+      contentWarnings: value === "MATURE" ? formData.contentWarnings : [],
+    });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -193,7 +225,7 @@ export function CoreIdentityStep({ initialData, onSave, onCancel, categories, ta
               <div className="relative">
                 <select
                   value={formData.ageRating}
-                  onChange={(e) => setFormData({ ...formData, ageRating: e.target.value })}
+                  onChange={(e) => handleAgeRatingChange(e.target.value)}
                   className="w-full bg-creator-sidebar border border-creator-border rounded-md px-4 py-3 text-white appearance-none focus:outline-none focus:border-creator-gold"
                 >
                   <option value="EVERYONE">Mọi người (G)</option>
@@ -204,6 +236,31 @@ export function CoreIdentityStep({ initialData, onSave, onCancel, categories, ta
               </div>
             </div>
           </div>
+
+          {formData.ageRating === "MATURE" && (
+            <div>
+              <label className="block text-sm font-medium mb-2">Cảnh báo nội dung</label>
+              <p className="text-xs text-creator-muted mb-2">
+                Khai đúng nội dung nhạy cảm series thực sự có — hệ thống sẽ tự động duyệt các
+                vi phạm AI phát hiện thuộc đúng nhóm đã khai, không cần chờ Staff xem lại.
+              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {CONTENT_WARNING_OPTIONS.map((warning) => (
+                  <button
+                    key={warning.id}
+                    type="button"
+                    onClick={() => toggleContentWarning(warning.id)}
+                    className={`px-3 py-2 rounded-md text-sm transition-colors border ${formData.contentWarnings.includes(warning.id)
+                      ? "bg-creator-gold text-black font-semibold border-creator-gold"
+                      : "bg-creator-sidebar border-creator-border text-creator-muted hover:border-white/30"
+                      }`}
+                  >
+                    {warning.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

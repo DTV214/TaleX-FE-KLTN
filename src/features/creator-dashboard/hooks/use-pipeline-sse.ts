@@ -5,7 +5,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { fetchEventSource } from "@microsoft/fetch-event-source";
 import { toast } from "sonner";
 import type { PipelineEvent } from "../api/pipeline-api";
-import { translateViolationLabel } from "../utils/media-violations";
+import { useViolationLabelMap, violationLabelMapQueryKey } from "@/shared/hooks/use-violation-label-map";
+import { makeTranslate } from "@/shared/utils/violation-label-translate";
 
 interface UsePipelineSSEOptions {
   enabled?: boolean;
@@ -44,6 +45,10 @@ export function usePipelineSSE({
   shouldSuppressToast,
 }: UsePipelineSSEOptions = {}) {
   const queryClient = useQueryClient();
+  // Chỉ để làm nóng cache violationLabelMapQueryKey lúc mount — onmessage bên dưới chạy
+  // trong callback imperative (SSE), không gọi hook render được nên phải đọc thẳng từ
+  // queryClient.getQueryData() thay vì destructure translate() ở đây.
+  useViolationLabelMap();
   const ctrlRef = useRef<AbortController | null>(null);
   const activeToastIdsRef = useRef<Set<string>>(new Set());
   // Ref để onmessage (đóng 1 lần khi effect mount, xem dep [enabled, queryClient] bên
@@ -104,7 +109,9 @@ export function usePipelineSSE({
               });
             }
           } else if (ev.event === "pipeline:moderation_complete") {
-            const label = translateViolationLabel(data.primaryLabel);
+            const violationLabelMap =
+              queryClient.getQueryData<Record<string, string>>(violationLabelMapQueryKey) ?? {};
+            const label = makeTranslate(violationLabelMap)(data.primaryLabel);
 
             if (data.isSafe) {
               // "Đã qua kiểm duyệt" — KHÔNG phải "đã xuất bản". Xuất bản là hành động
@@ -116,6 +123,22 @@ export function usePipelineSSE({
                 toast.success("Nội dung đã qua kiểm duyệt", {
                   id,
                   description: "Trang đã kiểm duyệt thành công, sẵn sàng để xuất bản. Nhấn Xuất bản ở bước cuối để công khai.",
+                  duration: Infinity,
+                });
+              }
+            } else if (data.approvalStatus === "APPROVED") {
+              // MỚI: AI phát hiện nhãn nhạy cảm (isSafe=false) nhưng series đã khai báo
+              // trước đúng "Cảnh báo nội dung" + đủ 18+ (xem ContentPipelineServiceImpl.
+              // areAllViolationsShieldedByDeclaredWarnings) — hệ thống tự động duyệt,
+              // KHÔNG đẩy Staff review. Phải tách riêng khỏi nhánh isSafe true ở trên vì
+              // lý do khác nhau (nội dung sạch hoàn toàn vs nội dung nhạy cảm đã được khai
+              // báo trước) — Creator nên biết rõ AI thực sự có phát hiện gì hay không.
+              if (!shouldSuppressToastRef.current?.(data.mediaId)) {
+                const id = pipelineToastId("moderation-ok", data.mediaId);
+                registerToast(id);
+                toast.success("Nội dung đã qua kiểm duyệt", {
+                  id,
+                  description: `Phát hiện ${label} nhưng đã tự động duyệt vì series đã khai báo trước cảnh báo nội dung phù hợp. Sẵn sàng để xuất bản.`,
                   duration: Infinity,
                 });
               }
