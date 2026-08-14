@@ -49,8 +49,21 @@ export type SeriesAnalyticData = {
 export type TrendingSeries = {
   seriesId: string;
   title: string;
+  accountId?: string | null;
+  creatorId?: string | null;
+  creatorName?: string | null;
+  creatorAvatar?: string | null;
+  totalCreatorFollowers?: number | null;
+  description?: string | null;
   coverUrl?: string | null;
   bannerUrl?: string | null;
+  contentType?: string | null;
+  ageRating?: string | null;
+  language?: string | null;
+  totalViews?: number | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+  releasedUpdateTime?: string | null;
   trendingAnalyticData?: Partial<TrendingAnalyticData> | null;
   analyticData?: Partial<SeriesAnalyticData> | null;
   totalRating?: number | null;

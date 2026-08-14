@@ -17,6 +17,7 @@ export const adminTrendingKeys = {
   candidateList: (params: TrendingCandidateParams) =>
     [...adminTrendingKeys.candidates(), params] as const,
   pool: () => [...adminTrendingKeys.all, "new-releases-pool"] as const,
+  trendingCards: () => [...adminTrendingKeys.all, "trending-cards"] as const,
 };
 
 export function useAdminTrendingConfig() {
@@ -70,6 +71,27 @@ export function useAdminTrendingPool() {
   });
 }
 
+export function useAdminTrendingCards() {
+  return useQuery({
+    queryKey: adminTrendingKeys.trendingCards(),
+    queryFn: () => adminTrendingApi.getTrendingCards(),
+    staleTime: 30 * 1000,
+  });
+}
+
+export function useTriggerTrendingChannelsPool() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => adminTrendingApi.triggerChannelsPool(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminTrendingKeys.candidates() });
+      queryClient.invalidateQueries({ queryKey: adminTrendingKeys.pool() });
+      queryClient.invalidateQueries({ queryKey: adminTrendingKeys.trendingCards() });
+    },
+  });
+}
+
 export function useForceTrendingThreshold() {
   const queryClient = useQueryClient();
 
@@ -78,6 +100,7 @@ export function useForceTrendingThreshold() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: adminTrendingKeys.candidates() });
       queryClient.invalidateQueries({ queryKey: adminTrendingKeys.pool() });
+      queryClient.invalidateQueries({ queryKey: adminTrendingKeys.trendingCards() });
     },
   });
 }

@@ -11,14 +11,16 @@ import {
   RotateCcw,
   X,
 } from "lucide-react";
-import { useMemo, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import {
   useAdminTrendingCandidates,
+  useAdminTrendingCards,
   useAdminTrendingConfig,
   useAdminTrendingPool,
   useCreateAdminTrendingConfig,
   useForceTrendingThreshold,
+  useTriggerTrendingChannelsPool,
   useUpdateAdminTrendingConfig,
 } from "../hooks/use-admin-trending";
 import type {
@@ -34,6 +36,8 @@ const DEFAULT_CONFIG_FORM: TrendingConfigRequest = {
   maxImpression: 100,
   gravity: 0.1,
 };
+
+const POOL_PAGE_SIZE = 5;
 
 const CONFIG_FIELD_HELP: Record<keyof TrendingConfigRequest, string> = {
   minBatch:
@@ -397,10 +401,12 @@ function SeriesTable({
   emptyText,
   isLoading,
   items,
+  variant = "metrics",
 }: {
   emptyText: string;
   isLoading: boolean;
   items: TrendingSeries[];
+  variant?: "metrics" | "cards";
 }) {
   if (isLoading) {
     return (
@@ -431,16 +437,31 @@ function SeriesTable({
           <thead className="bg-slate-50 text-left backoffice-dark:bg-white/5">
             <tr className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500 backoffice-dark:text-white/45">
               <th className="px-5 py-4">Series</th>
-              <th className="px-5 py-4">Lượt hiển thị</th>
-              <th className="px-5 py-4">Lượt xem</th>
-              <th className="px-5 py-4">Tỷ lệ xem</th>
-              <th className="px-5 py-4">Điểm Wilson</th>
+              {variant === "cards" ? (
+                <>
+                  <th className="px-5 py-4">Creator</th>
+                  <th className="px-5 py-4">Follower</th>
+                  <th className="px-5 py-4">Lượt xem</th>
+                  <th className="px-5 py-4">Đánh giá</th>
+                  <th className="px-5 py-4">Cập nhật</th>
+                </>
+              ) : (
+                <>
+                  <th className="px-5 py-4">Lượt hiển thị</th>
+                  <th className="px-5 py-4">Lượt xem</th>
+                  <th className="px-5 py-4">Tỷ lệ xem</th>
+                  <th className="px-5 py-4">Điểm Wilson</th>
+                </>
+              )}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 backoffice-dark:divide-white/10">
             {items.map((series) => {
               const trending = series.trendingAnalyticData ?? {};
-              const analytic = series.analyticData ?? {};
+              const statusLabel = getStatusLabel(trending.impressionStatus);
+              const statusClassName = getStatusClassName(
+                trending.impressionStatus,
+              );
 
               return (
                 <tr
@@ -454,21 +475,79 @@ function SeriesTable({
                         <p className="max-w-[150px] truncate text-sm font-bold text-slate-950 backoffice-dark:text-white">
                           {series.title || "Chưa có tiêu đề"}
                         </p>
+                        {variant === "metrics" && (
+                          <span
+                            className={`mt-2 inline-flex rounded-full border px-2.5 py-1 text-[11px] font-bold ${statusClassName}`}
+                          >
+                            {statusLabel}
+                          </span>
+                        )}
+                        {variant === "cards" && (
+                          <p className="mt-1 text-xs font-semibold text-slate-500 backoffice-dark:text-white/45">
+                            {series.contentType || "-"} · {series.ageRating || "-"}
+                          </p>
+                        )}
                       </div>
                     </div>
                   </td>
-                  <td className="px-5 py-4 text-sm font-semibold text-slate-800 backoffice-dark:text-white/85">
-                    {formatNumber(trending.totalImpression)}
-                  </td>
-                  <td className="px-5 py-4 text-sm font-semibold text-slate-600 backoffice-dark:text-white/65">
-                    {formatNumber(trending.engageClick)}
-                  </td>
-                  <td className="px-5 py-4 text-sm font-semibold text-slate-800 backoffice-dark:text-white/85">
-                    {formatScore(trending.sampleRatio)}
-                  </td>
-                  <td className="px-5 py-4 text-sm font-semibold text-slate-600 backoffice-dark:text-white/65">
-                    {formatScore(trending.wilsonScore)}
-                  </td>
+                  {variant === "cards" ? (
+                    <>
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="h-9 w-9 overflow-hidden rounded-full border border-slate-200 bg-slate-100 backoffice-dark:border-white/10 backoffice-dark:bg-white/5">
+                            {series.creatorAvatar ? (
+                              // eslint-disable-next-line @next/next/no-img-element -- Admin preview uses backend-provided remote avatar URLs.
+                              <img
+                                src={series.creatorAvatar}
+                                alt={series.creatorName || "Creator"}
+                                className="h-full w-full object-cover"
+                                loading="lazy"
+                              />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center text-xs font-black text-slate-400">
+                                C
+                              </div>
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="max-w-[150px] truncate text-sm font-bold text-slate-800 backoffice-dark:text-white/85">
+                              {series.creatorName || "-"}
+                            </p>
+                            <p className="mt-0.5 max-w-[150px] truncate text-xs font-semibold text-slate-400">
+                              {series.creatorId || "-"}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-5 py-4 text-sm font-semibold text-slate-800 backoffice-dark:text-white/85">
+                        {formatNumber(series.totalCreatorFollowers)}
+                      </td>
+                      <td className="px-5 py-4 text-sm font-semibold text-slate-600 backoffice-dark:text-white/65">
+                        {formatNumber(series.totalViews)}
+                      </td>
+                      <td className="px-5 py-4 text-sm font-semibold text-amber-600 backoffice-dark:text-[var(--backoffice-primary)]">
+                        {formatScore(series.averageRating)}
+                      </td>
+                      <td className="px-5 py-4 text-sm font-semibold text-slate-600 backoffice-dark:text-white/65">
+                        {formatDate(series.releasedUpdateTime || series.updatedAt)}
+                      </td>
+                    </>
+                  ) : (
+                    <>
+                      <td className="px-5 py-4 text-sm font-semibold text-slate-800 backoffice-dark:text-white/85">
+                        {formatNumber(trending.totalImpression)}
+                      </td>
+                      <td className="px-5 py-4 text-sm font-semibold text-slate-600 backoffice-dark:text-white/65">
+                        {formatNumber(trending.engageClick)}
+                      </td>
+                      <td className="px-5 py-4 text-sm font-semibold text-slate-800 backoffice-dark:text-white/85">
+                        {formatScore(trending.sampleRatio)}
+                      </td>
+                      <td className="px-5 py-4 text-sm font-semibold text-slate-600 backoffice-dark:text-white/65">
+                        {formatScore(trending.wilsonScore)}
+                      </td>
+                    </>
+                  )}
                 </tr>
               );
             })}
@@ -485,6 +564,8 @@ export function AdminTrendingDashboard() {
   const [activeTab, setActiveTab] = useState<"candidates" | "pool">(
     "candidates",
   );
+  const [poolRound, setPoolRound] = useState<"round1" | "round2">("round1");
+  const [poolPage, setPoolPage] = useState(1);
   const [candidatePage, setCandidatePage] = useState(0);
   const [candidateSize, setCandidateSize] = useState(10);
 
@@ -492,32 +573,40 @@ export function AdminTrendingDashboard() {
   const createConfigMutation = useCreateAdminTrendingConfig();
   const updateConfigMutation = useUpdateAdminTrendingConfig();
   const forceThresholdMutation = useForceTrendingThreshold();
+  const triggerChannelsPoolMutation = useTriggerTrendingChannelsPool();
   const candidatesQuery = useAdminTrendingCandidates({
     page: candidatePage,
     size: candidateSize,
   });
   const poolQuery = useAdminTrendingPool();
+  const trendingCardsQuery = useAdminTrendingCards();
 
   const config = configQuery.data ?? null;
   const candidates = candidatesQuery.data ?? [];
   const pool = poolQuery.data ?? [];
-  const activeItems = activeTab === "candidates" ? candidates : pool;
+  const trendingCards = trendingCardsQuery.data ?? [];
+  const isRoundOne = poolRound === "round1";
+  const distributionTitle = isRoundOne
+    ? "Kênh phân phối vòng 1"
+    : "Kênh xu hướng";
+  const distributionDescription = isRoundOne
+    ? "Theo dõi ứng viên chờ vào vòng phân phối đầu tiên và series đang nằm trong kênh."
+    : "Theo dõi các series card đang được đẩy vào kênh xu hướng vòng 2.";
+  const poolItems = poolRound === "round1" ? pool : trendingCards;
+  const poolTotalPages = Math.max(1, Math.ceil(poolItems.length / POOL_PAGE_SIZE));
+  const safePoolPage = Math.min(poolPage, poolTotalPages);
+  const paginatedPoolItems = poolItems.slice(
+    (safePoolPage - 1) * POOL_PAGE_SIZE,
+    safePoolPage * POOL_PAGE_SIZE,
+  );
+  const activeItems =
+    activeTab === "candidates" && isRoundOne ? candidates : paginatedPoolItems;
   const isActiveLoading =
-    activeTab === "candidates" ? candidatesQuery.isLoading : poolQuery.isLoading;
-
-  const currentTotals = useMemo(() => {
-    return activeItems.reduce(
-      (totals, item) => {
-        const trending = item.trendingAnalyticData ?? {};
-        totals.impression += toNumber(trending.totalImpression);
-        totals.engageClick += toNumber(trending.engageClick);
-        totals.interactionClick += toNumber(trending.interactionClick);
-        totals.views += toNumber(item.analyticData?.views);
-        return totals;
-      },
-      { engageClick: 0, impression: 0, interactionClick: 0, views: 0 },
-    );
-  }, [activeItems]);
+    activeTab === "candidates" && isRoundOne
+      ? candidatesQuery.isLoading
+      : poolRound === "round1"
+        ? poolQuery.isLoading
+        : trendingCardsQuery.isLoading;
 
   const handleSubmitConfig = (payload: TrendingConfigRequest) => {
     const mutation = config ? updateConfigMutation : createConfigMutation;
@@ -555,6 +644,28 @@ export function AdminTrendingDashboard() {
         );
       },
     });
+  };
+
+  const handleTriggerChannelsPool = () => {
+    triggerChannelsPoolMutation.mutate(undefined, {
+      onSuccess: () => {
+        toast.success("Đã kích hoạt cập nhật lại kênh phân phối.");
+        setPoolPage(1);
+      },
+      onError: (error) => {
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "Không thể cập nhật lại kênh phân phối.",
+        );
+      },
+    });
+  };
+
+  const handleSelectRound = (round: "round1" | "round2") => {
+    setPoolRound(round);
+    setPoolPage(1);
+    setActiveTab(round === "round1" ? "candidates" : "pool");
   };
 
   return (
@@ -675,18 +786,49 @@ export function AdminTrendingDashboard() {
         )}
       </Panel>
 
+      <div className="flex flex-col gap-3 rounded-3xl border border-slate-200 bg-white p-3 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400 backoffice-dark:text-white/40">
+            Vòng phân phối
+          </p>
+          <p className="mt-1 text-sm font-semibold text-slate-600 backoffice-dark:text-white/60">
+            Chọn vòng để xem đúng nhóm dữ liệu kênh xu hướng.
+          </p>
+        </div>
+        <div className="inline-flex rounded-2xl border border-slate-200 bg-slate-100 p-1 backoffice-dark:border-white/10 backoffice-dark:bg-black/25">
+          {[
+            { label: "Vòng 1", value: "round1" as const },
+            { label: "Vòng 2", value: "round2" as const },
+          ].map((round) => (
+            <button
+              key={round.value}
+              type="button"
+              onClick={() => handleSelectRound(round.value)}
+              className={`rounded-xl px-5 py-2.5 text-sm font-bold transition ${
+                poolRound === round.value
+                  ? "bg-slate-950 text-white shadow-sm backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black"
+                  : "text-slate-500 hover:text-slate-900 backoffice-dark:text-white/55 backoffice-dark:hover:text-white"
+              }`}
+            >
+              {round.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <Panel className="p-6">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
             <h2 className="mt-1 text-2xl font-bold text-amber-500 backoffice-dark:text-white">
-              Kênh phân phối
+              {distributionTitle}
             </h2>
             <p className="mt-1 text-sm font-medium text-slate-500 backoffice-dark:text-white/55">
-              Theo dõi series ứng viên đang chờ phân phối và series đang nằm trong kênh
+              {distributionDescription}
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div className="inline-flex rounded-2xl border border-slate-200 bg-slate-100 p-1 backoffice-dark:border-white/10 backoffice-dark:bg-black/25">
+            {isRoundOne && (
+              <div className="inline-flex rounded-2xl border border-slate-200 bg-slate-100 p-1 backoffice-dark:border-white/10 backoffice-dark:bg-black/25">
               <button
                 type="button"
                 onClick={() => setActiveTab("candidates")}
@@ -707,16 +849,44 @@ export function AdminTrendingDashboard() {
               >
                 Kênh phân phối
               </button>
-            </div>
+              </div>
+            )}
             <button
               type="button"
               onClick={() => {
                 candidatesQuery.refetch();
                 poolQuery.refetch();
+                trendingCardsQuery.refetch();
               }}
+              disabled={
+                candidatesQuery.isFetching ||
+                poolQuery.isFetching ||
+                trendingCardsQuery.isFetching
+              }
               className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 backoffice-dark:border-white/10 backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/10"
             >
-              <RefreshCw className="h-4 w-4" />
+              <RefreshCw
+                className={`h-4 w-4 ${
+                  candidatesQuery.isFetching ||
+                  poolQuery.isFetching ||
+                  trendingCardsQuery.isFetching
+                    ? "animate-spin"
+                    : ""
+                }`}
+              />
+            </button>
+            <button
+              type="button"
+              onClick={handleTriggerChannelsPool}
+              disabled={triggerChannelsPoolMutation.isPending}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60 backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black backoffice-dark:hover:bg-[var(--backoffice-primary-bright)]"
+            >
+              {triggerChannelsPoolMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RotateCcw className="h-4 w-4" />
+              )}
+              Cập nhật lại kênh
             </button>
           </div>
         </div>
@@ -724,16 +894,19 @@ export function AdminTrendingDashboard() {
         <div className="mt-5">
           <SeriesTable
             emptyText={
-              activeTab === "candidates"
+              activeTab === "candidates" && isRoundOne
                 ? "Không có ứng viên chờ phân phối trong trang hiện tại."
-                : "Pool New Releases hiện chưa có series đang phân phối."
+                : poolRound === "round1"
+                  ? "Pool New Releases hiện chưa có series đang phân phối."
+                  : "Kênh Trending vòng 2 hiện chưa có series cards."
             }
             isLoading={isActiveLoading}
             items={activeItems}
+            variant={activeTab === "pool" && poolRound === "round2" ? "cards" : "metrics"}
           />
         </div>
 
-        {activeTab === "candidates" && (
+        {activeTab === "candidates" && isRoundOne && (
           <div className="mt-5 flex flex-wrap items-center justify-between gap-3 ">
             <div className="text-sm font-bold text-slate-500 backoffice-dark:text-white/55">
               Trang {candidatePage + 1}
@@ -766,6 +939,48 @@ export function AdminTrendingDashboard() {
                   candidatesQuery.isFetching || candidates.length < candidateSize
                 }
                 className="rounded-xl border border-slate-200 p-2 text-slate-500 transition hover:bg-white hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40 backoffice-dark:border-white/10 backoffice-dark:hover:bg-white/10 backoffice-dark:hover:text-white"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "pool" && (
+          <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+            <div className="text-sm font-bold text-slate-500 backoffice-dark:text-white/55">
+              {poolItems.length === 0
+                ? "Chưa có series"
+                : `Hiển thị ${
+                    (safePoolPage - 1) * POOL_PAGE_SIZE + 1
+                  }-${Math.min(safePoolPage * POOL_PAGE_SIZE, poolItems.length)} / ${
+                    poolItems.length
+                  } series`}
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-500 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white/55">
+                5 / trang
+              </span>
+              <button
+                type="button"
+                onClick={() => setPoolPage((page) => Math.max(1, page - 1))}
+                disabled={safePoolPage <= 1 || isActiveLoading}
+                className="rounded-xl border border-slate-200 p-2 text-slate-500 transition hover:bg-white hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40 backoffice-dark:border-white/10 backoffice-dark:hover:bg-white/10 backoffice-dark:hover:text-white"
+                aria-label="Trang trước của kênh phân phối"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+              <span className="min-w-20 text-center text-sm font-bold text-slate-500 backoffice-dark:text-white/55">
+                Trang {safePoolPage}/{poolTotalPages}
+              </span>
+              <button
+                type="button"
+                onClick={() =>
+                  setPoolPage((page) => Math.min(poolTotalPages, page + 1))
+                }
+                disabled={safePoolPage >= poolTotalPages || isActiveLoading}
+                className="rounded-xl border border-slate-200 p-2 text-slate-500 transition hover:bg-white hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40 backoffice-dark:border-white/10 backoffice-dark:hover:bg-white/10 backoffice-dark:hover:text-white"
+                aria-label="Trang sau của kênh phân phối"
               >
                 <ChevronRight className="h-5 w-5" />
               </button>

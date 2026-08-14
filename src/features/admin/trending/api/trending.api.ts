@@ -13,6 +13,21 @@ import type {
 
 const TRENDING_CONFIGS_ENDPOINT = "/api/v1/trending-configs";
 const TRENDING_DASHBOARD_ENDPOINT = "/api/v1/trending/dashboard";
+const TRENDING_CHANNEL_CARDS_ENDPOINT = "/api/v1/channels/trending/cards";
+const CHANNEL_POOL_ENDPOINT = "/api/v1/channels/pool";
+
+function unwrapSeriesListPayload(payload: unknown): TrendingSeries[] {
+  if (Array.isArray(payload)) {
+    return payload as TrendingSeries[];
+  }
+
+  if (payload && typeof payload === "object" && "data" in payload) {
+    const data = (payload as { data?: unknown }).data;
+    return Array.isArray(data) ? (data as TrendingSeries[]) : [];
+  }
+
+  return [];
+}
 
 export const adminTrendingApi = {
   async getConfig() {
@@ -62,6 +77,18 @@ export const adminTrendingApi = {
         `${TRENDING_DASHBOARD_ENDPOINT}/new-releases-pool`,
       ),
     );
+  },
+
+  async getTrendingCards() {
+    const response = await httpClient.get<
+      TrendingSeriesListResponse | TrendingSeries[]
+    >(TRENDING_CHANNEL_CARDS_ENDPOINT);
+
+    return unwrapSeriesListPayload(response.data);
+  },
+
+  async triggerChannelsPool() {
+    await httpClient.post(CHANNEL_POOL_ENDPOINT);
   },
 
   forceThreshold() {
