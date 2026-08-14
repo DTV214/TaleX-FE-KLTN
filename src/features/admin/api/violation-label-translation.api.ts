@@ -10,25 +10,27 @@ export type ViolationLabelTranslation = {
   id: string;
   awsLabel: string;
   vietnameseText: string;
-  category: string;
+  categoryId: string | null;
+  categoryName: string;
 };
 
 export type ViolationLabelTranslationCreatePayload = {
   awsLabel: string;
   vietnameseText: string;
-  category?: string;
+  categoryId?: string | null;
 };
 
 export type ViolationLabelTranslationUpdatePayload = {
   vietnameseText: string;
-  category?: string;
+  categoryId?: string | null;
 };
 
 type ViolationLabelTranslationApiItem = {
   translationId?: string;
   awsLabel?: string;
   vietnameseText?: string;
-  category?: string | null;
+  categoryId?: string | null;
+  categoryName?: string | null;
 };
 
 function normalize(item: ViolationLabelTranslationApiItem): ViolationLabelTranslation {
@@ -36,7 +38,8 @@ function normalize(item: ViolationLabelTranslationApiItem): ViolationLabelTransl
     id: item.translationId ?? "",
     awsLabel: item.awsLabel ?? "",
     vietnameseText: item.vietnameseText ?? "",
-    category: item.category ?? "",
+    categoryId: item.categoryId ?? null,
+    categoryName: item.categoryName ?? "",
   };
 }
 
@@ -55,7 +58,7 @@ export async function createViolationLabelTranslation(
     httpClient.post(ADMIN_ENDPOINT, {
       awsLabel: payload.awsLabel.trim(),
       vietnameseText: payload.vietnameseText.trim(),
-      category: payload.category?.trim() || undefined,
+      categoryId: payload.categoryId || undefined,
     }),
   );
 
@@ -69,7 +72,7 @@ export async function updateViolationLabelTranslation(
   const data = await unwrapBaseResponse<ViolationLabelTranslationApiItem>(
     httpClient.put(`${ADMIN_ENDPOINT}/${id}`, {
       vietnameseText: payload.vietnameseText.trim(),
-      category: payload.category?.trim() || undefined,
+      categoryId: payload.categoryId || undefined,
     }),
   );
 

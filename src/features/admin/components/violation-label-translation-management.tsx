@@ -1,6 +1,6 @@
 "use client";
 
-import { Edit3, Loader2, Plus, Search, Trash2 } from "lucide-react";
+import { Edit3, Loader2, Plus, Search, Settings2, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { type ViolationLabelTranslation, type ViolationLabelTranslationCreatePayload } from "@/features/admin/api/violation-label-translation.api";
@@ -14,6 +14,7 @@ import {
   ViolationLabelTranslationConfirmModal,
   ViolationLabelTranslationFormModal,
 } from "@/features/admin/components/violation-label-translation-form-modal";
+import { ViolationLabelCategoryManagerModal } from "@/features/admin/components/violation-label-category-manager-modal";
 
 function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Thao tác thất bại.";
@@ -26,6 +27,7 @@ export function ViolationLabelTranslationManagement() {
   const deleteMutation = useDeleteViolationLabelTranslation();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false);
   const [selected, setSelected] = useState<ViolationLabelTranslation | null>(null);
   const [keyword, setKeyword] = useState("");
 
@@ -37,7 +39,7 @@ export function ViolationLabelTranslationManagement() {
       (item) =>
         item.awsLabel.toLowerCase().includes(normalized) ||
         item.vietnameseText.toLowerCase().includes(normalized) ||
-        item.category.toLowerCase().includes(normalized),
+        item.categoryName.toLowerCase().includes(normalized),
     );
   }, [all, keyword]);
 
@@ -75,7 +77,7 @@ export function ViolationLabelTranslationManagement() {
   function handleSubmit(payload: ViolationLabelTranslationCreatePayload) {
     if (selected) {
       updateMutation.mutate(
-        { id: selected.id, payload: { vietnameseText: payload.vietnameseText, category: payload.category } },
+        { id: selected.id, payload: { vietnameseText: payload.vietnameseText, categoryId: payload.categoryId } },
         {
           onSuccess: () => {
             toast.success("Đã cập nhật bản dịch.");
@@ -122,15 +124,25 @@ export function ViolationLabelTranslationManagement() {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={openCreateModal}
-          disabled={isMutating}
-          className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-violet-600 px-5 text-sm font-bold text-white shadow-sm transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          <Plus className="h-5 w-5" />
-          Thêm mới
-        </button>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={() => setIsCategoryManagerOpen(true)}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-5 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
+          >
+            <Settings2 className="h-5 w-5" />
+            Quản lý nhóm
+          </button>
+          <button
+            type="button"
+            onClick={openCreateModal}
+            disabled={isMutating}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-violet-600 px-5 text-sm font-bold text-white shadow-sm transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <Plus className="h-5 w-5" />
+            Thêm mới
+          </button>
+        </div>
       </div>
 
       <div className="relative max-w-sm">
@@ -184,7 +196,7 @@ export function ViolationLabelTranslationManagement() {
                 <tr key={item.id} className="transition hover:bg-slate-50/80 backoffice-dark:hover:bg-white/[0.05]">
                   <td className="px-6 py-4 font-mono text-xs text-slate-600">{item.awsLabel}</td>
                   <td className="px-6 py-4 font-bold text-slate-950">{item.vietnameseText}</td>
-                  <td className="px-6 py-4 text-slate-500">{item.category || "-"}</td>
+                  <td className="px-6 py-4 text-slate-500">{item.categoryName || "-"}</td>
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-end gap-2">
                       <button
@@ -228,6 +240,11 @@ export function ViolationLabelTranslationManagement() {
         onConfirm={handleDelete}
         open={isConfirmOpen}
         translation={selected}
+      />
+
+      <ViolationLabelCategoryManagerModal
+        open={isCategoryManagerOpen}
+        onClose={() => setIsCategoryManagerOpen(false)}
       />
     </div>
   );

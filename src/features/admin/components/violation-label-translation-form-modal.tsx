@@ -1,12 +1,14 @@
 "use client";
 
-import { Loader2, X } from "lucide-react";
-import { type FormEvent } from "react";
+import { Loader2, Settings2, X } from "lucide-react";
+import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
 import {
   type ViolationLabelTranslation,
   type ViolationLabelTranslationCreatePayload,
 } from "@/features/admin/api/violation-label-translation.api";
+import { useGetViolationLabelCategories } from "@/features/admin/hooks/use-violation-label-category";
+import { ViolationLabelCategoryManagerModal } from "@/features/admin/components/violation-label-category-manager-modal";
 
 export function ViolationLabelTranslationFormModal({
   isSaving,
@@ -21,8 +23,12 @@ export function ViolationLabelTranslationFormModal({
   open: boolean;
   translation: ViolationLabelTranslation | null;
 }) {
+  const categoriesQuery = useGetViolationLabelCategories();
+  const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false);
+
   if (!open) return null;
 
+  const categories = categoriesQuery.data ?? [];
   const isEditing = Boolean(translation);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -30,7 +36,7 @@ export function ViolationLabelTranslationFormModal({
     const formData = new FormData(event.currentTarget);
     const awsLabel = String(formData.get("awsLabel") ?? "").trim();
     const vietnameseText = String(formData.get("vietnameseText") ?? "").trim();
-    const category = String(formData.get("category") ?? "").trim();
+    const categoryId = String(formData.get("categoryId") ?? "").trim();
 
     if (!isEditing && !awsLabel) {
       toast.error("Nhãn AWS là bắt buộc.");
@@ -44,11 +50,12 @@ export function ViolationLabelTranslationFormModal({
     onSubmit({
       awsLabel: isEditing ? translation!.awsLabel : awsLabel,
       vietnameseText,
-      category,
+      categoryId: categoryId || null,
     });
   }
 
   return (
+    <>
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm animate-in fade-in duration-200">
       <form
         onSubmit={handleSubmit}
@@ -108,15 +115,29 @@ export function ViolationLabelTranslationFormModal({
           </label>
 
           <label className="block">
-            <span className="mb-2 block text-sm font-bold text-slate-700">
-              Nhóm (tùy chọn)
-            </span>
-            <input
-              name="category"
-              defaultValue={translation?.category ?? ""}
-              className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-violet-500 focus:ring-4 focus:ring-violet-100"
-              placeholder="Ví dụ: Violence"
-            />
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-sm font-bold text-slate-700">Nhóm (tùy chọn)</span>
+              <button
+                type="button"
+                onClick={() => setIsCategoryManagerOpen(true)}
+                className="inline-flex items-center gap-1 text-xs font-bold text-violet-600 hover:text-violet-700"
+              >
+                <Settings2 className="h-3.5 w-3.5" />
+                Quản lý nhóm
+              </button>
+            </div>
+            <select
+              name="categoryId"
+              defaultValue={translation?.categoryId ?? ""}
+              className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-900 outline-none transition focus:border-violet-500 focus:ring-4 focus:ring-violet-100"
+            >
+              <option value="">Không chọn nhóm</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
           </label>
         </div>
 
@@ -140,6 +161,11 @@ export function ViolationLabelTranslationFormModal({
         </div>
       </form>
     </div>
+    <ViolationLabelCategoryManagerModal
+      open={isCategoryManagerOpen}
+      onClose={() => setIsCategoryManagerOpen(false)}
+    />
+    </>
   );
 }
 
