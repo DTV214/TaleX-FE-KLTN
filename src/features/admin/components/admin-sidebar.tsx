@@ -26,6 +26,7 @@ import {
   Megaphone,
   Percent,
   Plus,
+  Receipt,
   Scan,
   Settings,
   ShieldAlert,
@@ -96,7 +97,8 @@ const creatorVerificationNavItems: NavItem[] = [
 
 const financialNavItems: NavItem[] = [
   { name: "Quyết toán Creator", href: "/admin/financials", icon: CircleDollarSign },
-  { name: "Thuế", href: "/admin/tax-config", icon: Percent },
+  { name: "Tax & Settlement", href: "/admin/tax-summary", icon: Receipt },
+  { name: "Cấu hình Thuế", href: "/admin/tax-config", icon: Percent },
 ];
 
 const interactionNavItems: NavItem[] = [
