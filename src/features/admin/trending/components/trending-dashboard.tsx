@@ -37,23 +37,23 @@ const DEFAULT_CONFIG_FORM: TrendingConfigRequest = {
 
 const CONFIG_FIELD_HELP: Record<keyof TrendingConfigRequest, string> = {
   minBatch:
-    "Số lượng series tối thiểu trong một batch trước khi hệ thống bắt đầu đánh giá xu hướng.",
+    "Số lượng series tối thiểu đã thực hiện xong vòng 1 để hệ thống tự động kích hoạt tính toán điểm mốc xu hướng trên toàn hệ thống.",
   percentile:
-    "Ngưỡng percentile dùng để chọn nhóm series nổi bật trong tập dữ liệu hiện tại.",
+    "Ngưỡng phân vị dùng để suy ra điểm mốc xu hướng trong tập dữ liệu hiện tại. Ví dụ phân vị là 60 thì điểm mốc xu hướng tại vị trí phân vị 60 sẽ đảm bảo có 40% series có số điểm lớn hơn mốc này và 60% còn lại thì nhỏ hơn.",
   minImpression:
-    "Số lượt hiển thị tối thiểu cần đạt trước khi series được xem là đủ dữ liệu.",
+    "Số lượt hiển thị tối thiểu cần đạt để series được chấm điểm và so sánh với điểm mốc xu hướng.",
   maxImpression:
-    "Giới hạn lượt hiển thị tối đa trong một vòng phân phối để tránh lệch mẫu.",
+    "Số lượt hiển thị tối đa của series trong vòng phân phối.",
   gravity:
-    "Hệ số điều chỉnh điểm xếp hạng, thường dùng để cân bằng độ mới và hiệu suất.",
+    "Hệ số điều chỉnh tốc độ suy giảm điểm số của series theo thời gian. Giá trị càng lớn thì điểm số series giảm cực kì nhanh theo thời gian, ngược lại điểm số càng nhỏ thì các series có hạng cao sẽ được giữ lâu hơn.",
 };
 
 const CONFIG_EXTRA_HELP = {
   impressionRange:
     "Khoảng lượt hiển thị tối thiểu và tối đa mà hệ thống dùng cho vòng phân phối.",
-  totalBatch: "Tổng số batch hệ thống đã ghi nhận cho cấu hình hiện tại.",
-  currentBatch: "Batch đang được dùng trong vòng phân phối hiện tại.",
-  threshold: "Ngưỡng điểm hệ thống đang áp dụng sau khi tính toán cấu hình.",
+  totalBatch: "Tổng số series đã chấm điểm xong vòng 1.",
+  currentBatch: "Số series hiện tại cho đến khi đạt số lượng lô tối thiểu để tính lại điểm mốc xu hướng.",
+  threshold: "Điểm mốc xu hướng hệ thống đang áp dụng sau khi tính toán cấu hình.",
 };
 
 function toNumber(value: unknown, fallback = 0) {
@@ -179,12 +179,12 @@ function ConfigSummary({ config }: { config: TrendingConfig | null }) {
   return (
     <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
       <MetricCard
-        label="Batch tối thiểu"
+        label="Lô tối thiểu"
         tooltip={CONFIG_FIELD_HELP.minBatch}
         value={config ? formatNumber(config.minBatch) : "-"}
       />
       <MetricCard
-        label="Ngưỡng percentile"
+        label="Ngưỡng phân vị"
         tooltip={CONFIG_FIELD_HELP.percentile}
         value={config ? `${formatScore(config.percentile)}%` : "-"}
       />
@@ -194,14 +194,14 @@ function ConfigSummary({ config }: { config: TrendingConfig | null }) {
         value={
           config
             ? `${formatNumber(config.minImpression)} - ${formatNumber(
-                config.maxImpression,
-              )}`
+              config.maxImpression,
+            )}`
             : "-"
         }
         helper="Tối thiểu - tối đa"
       />
       <MetricCard
-        label="Hệ số gravity"
+        label="Hệ số trọng lực"
         tooltip={CONFIG_FIELD_HELP.gravity}
         value={config ? formatScore(config.gravity) : "-"}
       />
@@ -223,12 +223,12 @@ function ConfigFormModal({
   const [form, setForm] = useState<TrendingConfigRequest>(
     config
       ? {
-          minBatch: config.minBatch,
-          percentile: config.percentile,
-          minImpression: config.minImpression,
-          maxImpression: config.maxImpression,
-          gravity: config.gravity,
-        }
+        minBatch: config.minBatch,
+        percentile: config.percentile,
+        minImpression: config.minImpression,
+        maxImpression: config.maxImpression,
+        gravity: config.gravity,
+      }
       : DEFAULT_CONFIG_FORM,
   );
 
@@ -261,16 +261,10 @@ function ConfigFormModal({
       <div className="w-full max-w-2xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl backoffice-dark:border-white/10 backoffice-dark:bg-[#121213]">
         <div className="flex items-start justify-between border-b border-slate-200 p-6 backoffice-dark:border-white/10">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-500 backoffice-dark:text-[var(--backoffice-primary)]">
-              Trending Config
-            </p>
             <h2 className="mt-2 text-2xl font-bold text-slate-950 backoffice-dark:text-white">
               {config ? "Cập nhật cấu hình xu hướng" : "Tạo cấu hình xu hướng"}
             </h2>
-            <p className="mt-1 text-sm font-medium text-slate-500 backoffice-dark:text-white/55">
-              Các tham số này sẽ ảnh hưởng trực tiếp đến danh sách series được
-              đưa vào pool xu hướng.
-            </p>
+
           </div>
           <button
             type="button"
@@ -284,11 +278,11 @@ function ConfigFormModal({
         <div className="grid gap-4 p-6 sm:grid-cols-2">
           {(
             [
-              ["minBatch", "Batch tối thiểu", "1"],
-              ["percentile", "Ngưỡng percentile", "40"],
+              ["minBatch", "Lô tối thiểu", "1"],
+              ["percentile", "Ngưỡng phân vị", "40"],
               ["minImpression", "Hiển thị tối thiểu", "100"],
               ["maxImpression", "Hiển thị tối đa", "200"],
-              ["gravity", "Hệ số gravity", "1.8"],
+              ["gravity", "Hệ số trọng lực", "1.8"],
             ] as const
           ).map(([field, label, placeholder]) => (
             <label key={field} className="space-y-2">
@@ -348,7 +342,7 @@ function ConfirmForceModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm">
       <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl backoffice-dark:border-white/10 backoffice-dark:bg-[#121213]">
         <h2 className="text-xl font-bold text-slate-950 backoffice-dark:text-white">
-          Áp dụng ngưỡng hiện tại?
+          Cập nhập điểm mốc?
         </h2>
         <p className="mt-2 text-sm font-medium leading-relaxed text-slate-500 backoffice-dark:text-white/55">
           Hành động này gọi API force-threshold để hệ thống áp dụng lại cấu hình
@@ -437,13 +431,10 @@ function SeriesTable({
           <thead className="bg-slate-50 text-left backoffice-dark:bg-white/5">
             <tr className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500 backoffice-dark:text-white/45">
               <th className="px-5 py-4">Series</th>
-              <th className="px-5 py-4">Trạng thái</th>
-              <th className="px-5 py-4">Impression</th>
-              <th className="px-5 py-4">Click</th>
-              <th className="px-5 py-4">Sample</th>
-              <th className="px-5 py-4">Score</th>
-              <th className="px-5 py-4">Tương tác</th>
-              <th className="px-5 py-4">Đánh giá</th>
+              <th className="px-5 py-4">Lượt hiển thị</th>
+              <th className="px-5 py-4">Lượt xem</th>
+              <th className="px-5 py-4">Tỷ lệ xem</th>
+              <th className="px-5 py-4">Điểm Wilson</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 backoffice-dark:divide-white/10">
@@ -460,47 +451,23 @@ function SeriesTable({
                     <div className="flex items-center gap-4">
                       <SeriesThumb series={series} />
                       <div className="min-w-0">
-                        <p className="max-w-[260px] truncate text-sm font-bold text-slate-950 backoffice-dark:text-white">
+                        <p className="max-w-[150px] truncate text-sm font-bold text-slate-950 backoffice-dark:text-white">
                           {series.title || "Chưa có tiêu đề"}
-                        </p>
-                        <p className="mt-1 text-xs font-semibold text-slate-400">
-                          ID: {series.seriesId}
                         </p>
                       </div>
                     </div>
-                  </td>
-                  <td className="px-5 py-4">
-                    <span
-                      className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${getStatusClassName(
-                        trending.impressionStatus,
-                      )}`}
-                    >
-                      {getStatusLabel(trending.impressionStatus)}
-                    </span>
                   </td>
                   <td className="px-5 py-4 text-sm font-semibold text-slate-800 backoffice-dark:text-white/85">
                     {formatNumber(trending.totalImpression)}
                   </td>
                   <td className="px-5 py-4 text-sm font-semibold text-slate-600 backoffice-dark:text-white/65">
-                    <div>Engage: {formatNumber(trending.engageClick)}</div>
-                    <div>Interaction: {formatNumber(trending.interactionClick)}</div>
+                    {formatNumber(trending.engageClick)}
                   </td>
                   <td className="px-5 py-4 text-sm font-semibold text-slate-800 backoffice-dark:text-white/85">
                     {formatScore(trending.sampleRatio)}
                   </td>
                   <td className="px-5 py-4 text-sm font-semibold text-slate-600 backoffice-dark:text-white/65">
-                    <div>Wilson: {formatScore(trending.wilsonScore)}</div>
-                    <div>Ranking: {formatScore(trending.rankingScore)}</div>
-                  </td>
-                  <td className="px-5 py-4 text-sm font-semibold text-slate-600 backoffice-dark:text-white/65">
-                    <div>Views: {formatNumber(analytic.views)}</div>
-                    <div>Likes: {formatNumber(analytic.likes)}</div>
-                    <div>Comments: {formatNumber(analytic.comments)}</div>
-                    <div>Shares: {formatNumber(analytic.shares)}</div>
-                  </td>
-                  <td className="px-5 py-4 text-sm font-semibold text-slate-600 backoffice-dark:text-white/65">
-                    <div>Avg: {formatScore(series.averageRating)}</div>
-                    <div>Count: {formatNumber(series.ratingCount)}</div>
+                    {formatScore(trending.wilsonScore)}
                   </td>
                 </tr>
               );
@@ -592,55 +559,53 @@ export function AdminTrendingDashboard() {
 
   return (
     <PageShell>
-      <section className="flex flex-col gap-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <div className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-amber-600 backoffice-dark:border-[var(--backoffice-primary-soft)] backoffice-dark:bg-[var(--backoffice-primary-soft)] backoffice-dark:text-[var(--backoffice-primary)]">
-              Trending Dashboard
-            </div>
-            <h1 className="mt-4 text-3xl font-bold tracking-tight text-slate-950 backoffice-dark:text-white">
-              Quản lý Xu hướng
-            </h1>
-            <p className="mt-2 max-w-2xl text-sm font-medium leading-relaxed text-slate-500 backoffice-dark:text-white/55">
-              Theo dõi cấu hình phân phối, ứng viên chờ vào pool và danh sách
-              series đang được hệ thống đẩy xu hướng.
-            </p>
-          </div>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:w-[520px]">
-            <MetricCard
-              label="Ứng viên"
-              value={formatNumber(candidates.length)}
-            />
-            <MetricCard
-              label="Trong pool"
-              value={formatNumber(pool.length)}
-            />
-            <MetricCard
-              label="Impression"
-              value={formatNumber(currentTotals.impression)}
-            />
-            <MetricCard
-              label="Click"
-              value={formatNumber(
-                currentTotals.engageClick + currentTotals.interactionClick,
-              )}
-            />
-          </div>
-      </section>
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight text-slate-950 backoffice-dark:text-white">
+          Quản lý Xu hướng
+        </h1>
+        <p className="mt-2 max-w-3xl text-sm font-medium leading-6 text-slate-500 backoffice-dark:text-white/55">
+          Theo dõi cấu hình phân phối, ứng viên chờ vào kênh và danh sách
+          series đang được hệ thống đẩy xu hướng.
+        </p>
+      </div>
+      {/* <section className="flex flex-col gap-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] lg:flex-row lg:items-end lg:justify-between">
+
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:w-[520px]">
+          <MetricCard
+            label="Ứng viên"
+            value={formatNumber(candidates.length)}
+          />
+          <MetricCard
+            label="Trong pool"
+            value={formatNumber(pool.length)}
+          />
+          <MetricCard
+            label="Impression"
+            value={formatNumber(currentTotals.impression)}
+          />
+          <MetricCard
+            label="Click"
+            value={formatNumber(
+              currentTotals.engageClick + currentTotals.interactionClick,
+            )}
+          />
+        </div>
+      </section> */}
 
       <Panel className="p-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-500 backoffice-dark:text-[var(--backoffice-primary)]">
-                Cấu hình phân phối
-              </p>
-              <h2 className="mt-1 text-xl font-bold text-slate-950 backoffice-dark:text-white">
-                {config ? "Config đang hoạt động" : "Chưa có config trending"}
-              </h2>
-              <p className="mt-1 text-sm font-medium text-slate-500 backoffice-dark:text-white/55">
-                {config
-                  ? `Cập nhật lần cuối: ${formatDate(config.updatedAt)}`
-                  : "Tạo config đầu tiên để hệ thống có tham số phân phối xu hướng."}
-              </p>
+            <h2 className="mt-1 text-2xl font-bold text-amber-500 backoffice-dark:text-white">
+              Cấu hình phân phối
+            </h2>
+            <h2 className="mt-1 text-xl font-bold text-slate-950 backoffice-dark:text-white">
+              {config ? null : "Chưa có config trending"}
+            </h2>
+            <p className="mt-1 text-sm font-medium text-slate-500 backoffice-dark:text-white/55">
+              {config
+                ? `Cập nhật lần cuối: ${formatDate(config.updatedAt)}`
+                : "Tạo config đầu tiên để hệ thống có tham số phân phối xu hướng."}
+            </p>
           </div>
           <div className="flex flex-wrap gap-3">
             {config && (
@@ -651,7 +616,7 @@ export function AdminTrendingDashboard() {
                 className="inline-flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm font-semibold text-amber-700 transition hover:bg-amber-100 disabled:opacity-60 backoffice-dark:border-[var(--backoffice-primary-soft)] backoffice-dark:bg-[var(--backoffice-primary-soft)] backoffice-dark:text-[var(--backoffice-primary)] backoffice-dark:hover:bg-[rgba(214,184,79,0.18)]"
               >
                 <RotateCcw className="h-4 w-4" />
-                Áp dụng ngưỡng hiện tại
+                Cập nhập điểm mốc
               </button>
             )}
             <button
@@ -661,7 +626,7 @@ export function AdminTrendingDashboard() {
               className="inline-flex items-center gap-2 rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-60 backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black backoffice-dark:hover:bg-[var(--backoffice-primary-bright)]"
             >
               {config ? <Pencil className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-              {config ? "Cập nhật config" : "Tạo mới config"}
+              {config ? "Sửa cấu hình" : "Tạo cấu hình"}
             </button>
           </div>
         </div>
@@ -681,7 +646,7 @@ export function AdminTrendingDashboard() {
           <div className="mt-4 grid gap-3 rounded-3xl border border-slate-200 bg-slate-50 p-4 text-sm font-semibold text-slate-500 backoffice-dark:border-white/10 backoffice-dark:bg-black/20 backoffice-dark:text-white/55 md:grid-cols-3">
             <div className="flex items-center justify-between gap-3 rounded-2xl bg-white px-4 py-3 backoffice-dark:bg-white/[0.04]">
               <span className="flex items-center gap-2">
-                Tổng batch
+                Tổng lô ghi nhận
                 <FieldHelp>{CONFIG_EXTRA_HELP.totalBatch}</FieldHelp>
               </span>
               <span className="whitespace-nowrap text-slate-950 backoffice-dark:text-white">
@@ -690,7 +655,7 @@ export function AdminTrendingDashboard() {
             </div>
             <div className="flex items-center justify-between gap-3 rounded-2xl bg-white px-4 py-3 backoffice-dark:bg-white/[0.04]">
               <span className="flex items-center gap-2">
-                Batch hiện tại
+                Lô hiện tại
                 <FieldHelp>{CONFIG_EXTRA_HELP.currentBatch}</FieldHelp>
               </span>
               <span className="whitespace-nowrap text-slate-950 backoffice-dark:text-white">
@@ -699,7 +664,7 @@ export function AdminTrendingDashboard() {
             </div>
             <div className="flex items-center justify-between gap-3 rounded-2xl bg-white px-4 py-3 backoffice-dark:bg-white/[0.04]">
               <span className="flex items-center gap-2">
-                Ngưỡng hiện tại
+                Điểm mốc xu hướng
                 <FieldHelp>{CONFIG_EXTRA_HELP.threshold}</FieldHelp>
               </span>
               <span className="whitespace-nowrap text-slate-950 backoffice-dark:text-white">
@@ -713,15 +678,11 @@ export function AdminTrendingDashboard() {
       <Panel className="p-6">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-500 backoffice-dark:text-[var(--backoffice-primary)]">
-              Dữ liệu trending
-            </p>
-            <h2 className="mt-1 text-xl font-bold text-slate-950 backoffice-dark:text-white">
-              Danh sách phân phối
+            <h2 className="mt-1 text-2xl font-bold text-amber-500 backoffice-dark:text-white">
+              Kênh phân phối
             </h2>
             <p className="mt-1 text-sm font-medium text-slate-500 backoffice-dark:text-white/55">
-              Theo dõi series đang chờ vào pool và series đang nằm trong pool
-              New Releases.
+              Theo dõi series ứng viên đang chờ phân phối và series đang nằm trong kênh
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -729,24 +690,22 @@ export function AdminTrendingDashboard() {
               <button
                 type="button"
                 onClick={() => setActiveTab("candidates")}
-                className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
-                  activeTab === "candidates"
-                    ? "bg-white text-slate-950 shadow-sm backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black"
-                    : "text-slate-500 hover:text-slate-900 backoffice-dark:text-white/55 backoffice-dark:hover:text-white"
-                }`}
+                className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${activeTab === "candidates"
+                  ? "bg-white text-slate-950 shadow-sm backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black"
+                  : "text-slate-500 hover:text-slate-900 backoffice-dark:text-white/55 backoffice-dark:hover:text-white"
+                  }`}
               >
                 Ứng viên
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab("pool")}
-                className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
-                  activeTab === "pool"
-                    ? "bg-white text-slate-950 shadow-sm backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black"
-                    : "text-slate-500 hover:text-slate-900 backoffice-dark:text-white/55 backoffice-dark:hover:text-white"
-                }`}
+                className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${activeTab === "pool"
+                  ? "bg-white text-slate-950 shadow-sm backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black"
+                  : "text-slate-500 hover:text-slate-900 backoffice-dark:text-white/55 backoffice-dark:hover:text-white"
+                  }`}
               >
-                Pool phân phối
+                Kênh phân phối
               </button>
             </div>
             <button
@@ -758,16 +717,26 @@ export function AdminTrendingDashboard() {
               className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 backoffice-dark:border-white/10 backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/10"
             >
               <RefreshCw className="h-4 w-4" />
-              Làm mới
             </button>
           </div>
         </div>
 
+        <div className="mt-5">
+          <SeriesTable
+            emptyText={
+              activeTab === "candidates"
+                ? "Không có ứng viên chờ phân phối trong trang hiện tại."
+                : "Pool New Releases hiện chưa có series đang phân phối."
+            }
+            isLoading={isActiveLoading}
+            items={activeItems}
+          />
+        </div>
+
         {activeTab === "candidates" && (
-          <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-slate-200 bg-slate-50 p-4 backoffice-dark:border-white/10 backoffice-dark:bg-black/20">
+          <div className="mt-5 flex flex-wrap items-center justify-between gap-3 ">
             <div className="text-sm font-bold text-slate-500 backoffice-dark:text-white/55">
-              Trang {candidatePage + 1} · {formatNumber(candidates.length)} ứng
-              viên đang hiển thị
+              Trang {candidatePage + 1}
             </div>
             <div className="flex items-center gap-2">
               <select
@@ -803,18 +772,6 @@ export function AdminTrendingDashboard() {
             </div>
           </div>
         )}
-
-        <div className="mt-5">
-          <SeriesTable
-            emptyText={
-              activeTab === "candidates"
-                ? "Không có ứng viên chờ phân phối trong trang hiện tại."
-                : "Pool New Releases hiện chưa có series đang phân phối."
-            }
-            isLoading={isActiveLoading}
-            items={activeItems}
-          />
-        </div>
       </Panel>
 
       {isConfigFormOpen && (
