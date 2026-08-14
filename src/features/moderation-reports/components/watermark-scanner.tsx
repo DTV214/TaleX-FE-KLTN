@@ -10,6 +10,29 @@ type WatermarkScannerProps = {
   mediaType: "IMAGE" | "VIDEO";
 };
 
+function getScannerErrorMessage(error: unknown, fallback: string) {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "response" in error &&
+    typeof error.response === "object" &&
+    error.response !== null &&
+    "data" in error.response &&
+    typeof error.response.data === "object" &&
+    error.response.data !== null &&
+    "message" in error.response.data &&
+    typeof error.response.data.message === "string"
+  ) {
+    return error.response.data.message;
+  }
+
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return fallback;
+}
+
 export function WatermarkScanner({ url, mediaType }: WatermarkScannerProps) {
   const [isScanning, setIsScanning] = useState(false);
   const [result, setResult] = useState<{ creatorId?: string; viewerId?: string; message?: string } | null>(null);
@@ -56,9 +79,9 @@ export function WatermarkScanner({ url, mediaType }: WatermarkScannerProps) {
             finalViewerId = data.viewerId;
           }
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Lỗi khi quét Creator ID:", err);
-        setError(err.response?.data?.message || "Lỗi khi quét Creator ID từ Backend.");
+        setError(getScannerErrorMessage(err, "Lỗi khi quét Creator ID từ Backend."));
       }
 
       // 2. Decode LSB / OCR cho IMAGE
@@ -145,8 +168,8 @@ export function WatermarkScanner({ url, mediaType }: WatermarkScannerProps) {
         viewerId: finalViewerId,
         message: finalMessage
       });
-    } catch (err: any) {
-      setError(err.message || "Lỗi không xác định khi tải hoặc quét file");
+    } catch (err: unknown) {
+      setError(getScannerErrorMessage(err, "Lỗi không xác định khi tải hoặc quét file"));
     } finally {
       setIsScanning(false);
       setScanningStatus("");

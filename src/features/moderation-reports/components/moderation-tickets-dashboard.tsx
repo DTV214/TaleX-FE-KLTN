@@ -23,6 +23,7 @@ import {
 } from "../api/moderation-reports.api";
 import {
   useAssignTicket,
+  useModerationTargetDetail,
   useProcessTicket,
   useTickets,
 } from "../hooks/use-moderation-reports";
@@ -51,6 +52,41 @@ function statusBadge(status?: string) {
       {labelForTicketStatus(status)}
     </span>
   );
+}
+
+function getDominantReason(ticket: ModerationTicket) {
+  if (ticket.dominantReason) return ticket.dominantReason;
+
+  const reasons = ticket.reports?.map((report) => report.reason).filter(Boolean) ?? [];
+  if (!reasons.length) return undefined;
+
+  const counts = new Map<string, number>();
+  reasons.forEach((reason) => counts.set(reason, (counts.get(reason) ?? 0) + 1));
+
+  return reasons.reduce((best, reason) =>
+    (counts.get(reason) ?? 0) > (counts.get(best) ?? 0) ? reason : best,
+  );
+}
+
+function getTargetPreview(ticket: ModerationTicket, index: number) {
+  const ordinal = index + 1;
+
+  switch (ticket.targetType) {
+    case "ACCOUNT":
+      return "Tài khoản creator";
+    case "SERIES":
+      return `Series ${ordinal}`;
+    case "EPISODE":
+      return `Tập nội dung ${ordinal}`;
+    case "COMMENT":
+      return `Bình luận ${ordinal}`;
+    default:
+      return "Vấn đề hệ thống";
+  }
+}
+
+function isFinalTicket(status?: TicketStatus) {
+  return status === "RESOLVED" || status === "DISMISSED";
 }
 
 function ProofLinks({ images, videos, targetType }: { images?: string[], videos?: string[], targetType?: string }) {
@@ -120,10 +156,14 @@ function ProofLinks({ images, videos, targetType }: { images?: string[], videos?
 }
 
 function TicketDetailModal({
+  isAssigning,
+  onAssign,
   ticket,
   onClose,
   onProcessed,
 }: {
+  isAssigning: boolean;
+  onAssign: (ticket: ModerationTicket) => Promise<void>;
   ticket: ModerationTicket | null;
   onClose: () => void;
   onProcessed: () => void;
@@ -132,10 +172,14 @@ function TicketDetailModal({
   const [penaltyLevel, setPenaltyLevel] = useState<PenaltyLevel>("WARNING_EPISODE");
   const [reason, setReason] = useState("");
   const processMutation = useProcessTicket(ticket?.ticketId);
+  const targetDetailQuery = useModerationTargetDetail(ticket);
 
   if (!ticket) return null;
 
   const canProcess = ticket.status === "IN_PROGRESS";
+  const canAssign = !canProcess && !isFinalTicket(ticket.status);
+  const dominantReason = getDominantReason(ticket);
+  const targetDetail = targetDetailQuery.data;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -158,25 +202,31 @@ function TicketDetailModal({
     onProcessed();
   }
 
+  async function handleAssignInModal() {
+    if (!ticket) return;
+    await onAssign(ticket);
+  }
+
   return (
     <div className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/60 px-4 py-8 backdrop-blur-sm">
-      <div className="flex max-h-full w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
-        <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-4">
+      <div className="flex max-h-full w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl backoffice-dark:border-white/10 backoffice-dark:bg-[#111113]">
+        <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-4 backoffice-dark:border-white/10">
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-lg font-black text-slate-950">
-                Ticket {ticket.ticketId}
+              <h2 className="text-lg font-black text-slate-950 backoffice-dark:text-white">
+                Chi tiết ticket báo cáo
               </h2>
               {statusBadge(ticket.status)}
             </div>
-            <p className="mt-1 break-all text-xs font-semibold text-slate-500">
-              {labelForTargetType(ticket.targetType)} · {ticket.targetId}
+            <p className="mt-1 text-xs font-semibold text-slate-500 backoffice-dark:text-white/50">
+              {labelForTargetType(ticket.targetType)} · tạo {formatDateTime(ticket.createdAt)} · cập nhật{" "}
+              {formatDateTime(ticket.updatedAt)}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+            className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 backoffice-dark:hover:bg-white/10 backoffice-dark:hover:text-white"
             aria-label="Đóng"
           >
             <X className="h-5 w-5" />
@@ -184,7 +234,67 @@ function TicketDetailModal({
         </div>
 
         <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[1fr_360px]">
-          <div className="min-h-0 overflow-y-auto p-5">
+          <div className="min-h-0 overflow-y-auto p-5 [scrollbar-width:thin] [scrollbar-color:rgba(148,163,184,0.55)_transparent]">
+            <section className="mb-4 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
+              <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
+                <div className="flex h-24 w-full shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white sm:w-32 backoffice-dark:border-white/10 backoffice-dark:bg-black/25">
+                  {targetDetail?.imageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- Moderation detail previews backend/public media URLs.
+                    <img
+                      src={targetDetail.imageUrl}
+                      alt={targetDetail.title}
+                      className="h-full w-full object-cover"
+                      loading="lazy"
+                    />
+                  ) : targetDetailQuery.isLoading ? (
+                    <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
+                  ) : (
+                    <Flag className="h-8 w-8 text-slate-300 backoffice-dark:text-white/25" />
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-black uppercase tracking-[0.16em] text-amber-600 backoffice-dark:text-[var(--backoffice-primary)]">
+                    Đối tượng bị báo cáo
+                  </p>
+                  <h3 className="mt-1 truncate text-xl font-black text-slate-950 backoffice-dark:text-white">
+                    {targetDetailQuery.isLoading
+                      ? "Đang tải chi tiết..."
+                      : targetDetail?.title || labelForTargetType(ticket.targetType)}
+                  </h3>
+                  <p className="mt-1 text-sm font-semibold text-slate-500 backoffice-dark:text-white/55">
+                    {targetDetail?.subtitle ||
+                      (targetDetailQuery.isError
+                        ? "Chưa lấy được chi tiết đối tượng từ API."
+                        : "Chi tiết sẽ hiển thị khi API trả dữ liệu.")}
+                  </p>
+                  <p className="mt-2 break-all text-xs font-semibold text-slate-400 backoffice-dark:text-white/35">
+                    ID: {ticket.targetId}
+                  </p>
+                </div>
+              </div>
+              {targetDetail?.metadata.length ? (
+                <div className="grid gap-2 border-t border-slate-200 p-4 backoffice-dark:border-white/10 sm:grid-cols-2 lg:grid-cols-3">
+                  {targetDetail.metadata.map((item) => (
+                    <div
+                      key={`${item.label}-${String(item.value)}`}
+                      className="rounded-xl bg-white px-3 py-2 backoffice-dark:bg-black/25"
+                    >
+                      <p className="text-[11px] font-bold uppercase text-slate-400">
+                        {item.label}
+                      </p>
+                      <p className="mt-1 truncate text-sm font-black text-slate-800 backoffice-dark:text-white/80">
+                        {typeof item.value === "string" &&
+                        item.value.includes("T") &&
+                        !Number.isNaN(new Date(item.value).getTime())
+                          ? formatDateTime(item.value)
+                          : item.value}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </section>
+
             <div className="mb-4 grid gap-3 sm:grid-cols-4">
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
                 <p className="text-xs font-bold text-slate-400">Số report</p>
@@ -197,7 +307,7 @@ function TicketDetailModal({
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
                 <p className="text-xs font-bold text-slate-400">Lý do chính</p>
                 <p className="mt-1 text-sm font-black text-slate-950">
-                  {labelForReason(ticket.dominantReason)}
+                  {labelForReason(dominantReason)}
                 </p>
               </div>
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
@@ -248,7 +358,7 @@ function TicketDetailModal({
 
           <form
             onSubmit={handleSubmit}
-            className="border-t border-slate-200 bg-slate-50 p-5 lg:border-l lg:border-t-0"
+            className="border-t border-slate-200 bg-slate-50 p-5 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.05] lg:border-l lg:border-t-0"
           >
             <h3 className="text-base font-black text-slate-950">Xử lý ticket</h3>
             <p className="mt-1 text-xs font-semibold leading-relaxed text-slate-500">
@@ -259,6 +369,22 @@ function TicketDetailModal({
               <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs font-bold text-amber-700">
                 Hãy bấm “Nhận xử lý” trước, hoặc ticket này đã được xử lý xong.
               </div>
+            )}
+
+            {canAssign && (
+              <button
+                type="button"
+                onClick={handleAssignInModal}
+                disabled={isAssigning}
+                className="mt-4 inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-amber-400 text-sm font-black text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isAssigning ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <UserCheck className="h-4 w-4" />
+                )}
+                Nhận xử lý ticket này
+              </button>
             )}
 
             <div className="mt-5 grid grid-cols-2 gap-2">
@@ -356,6 +482,11 @@ export function ModerationTicketsDashboard({ scope = "staff" }: Props) {
 
   async function handleAssign(ticket: ModerationTicket) {
     await assignMutation.mutateAsync(ticket.ticketId);
+    setSelectedTicket((current) =>
+      current?.ticketId === ticket.ticketId
+        ? { ...current, status: "IN_PROGRESS" }
+        : current,
+    );
   }
 
   return (
@@ -447,7 +578,7 @@ export function ModerationTicketsDashboard({ scope = "staff" }: Props) {
             <table className="w-full min-w-[980px] text-left text-sm">
               <thead className="border-b border-slate-200 bg-slate-50 text-xs font-black uppercase tracking-wide text-slate-500">
                 <tr>
-                  <th className="px-5 py-4">Ticket</th>
+                  <th className="px-5 py-4">Thời gian</th>
                   <th className="px-5 py-4">Đối tượng</th>
                   <th className="px-5 py-4">Ưu tiên</th>
                   <th className="px-5 py-4">Trạng thái</th>
@@ -456,18 +587,30 @@ export function ModerationTicketsDashboard({ scope = "staff" }: Props) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {tickets.map((ticket) => (
+                {tickets.map((ticket, index) => {
+                  const dominantReason = getDominantReason(ticket);
+
+                  return (
                   <tr key={ticket.ticketId} className="transition hover:bg-slate-50">
                     <td className="px-5 py-4">
-                      <p className="font-black text-slate-950">{ticket.ticketId}</p>
-                      <p className="mt-1 text-xs font-semibold text-slate-500">
-                        {formatDateTime(ticket.createdAt)}
-                      </p>
+                      <div className="space-y-1.5">
+                        <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
+                          Ngày tạo
+                        </p>
+                        <p className="font-black text-slate-950">
+                          {formatDateTime(ticket.createdAt)}
+                        </p>
+                        <p className="text-xs font-semibold text-slate-500">
+                          Cập nhật: {formatDateTime(ticket.updatedAt)}
+                        </p>
+                      </div>
                     </td>
                     <td className="px-5 py-4">
-                      <p className="font-black text-slate-800">{labelForTargetType(ticket.targetType)}</p>
-                      <p className="mt-1 max-w-[240px] truncate text-xs font-semibold text-slate-500">
-                        {ticket.targetId}
+                      <p className="font-black text-slate-800">
+                        {getTargetPreview(ticket, index)}
+                      </p>
+                      <p className="mt-1 text-xs font-semibold text-slate-500">
+                        {labelForTargetType(ticket.targetType)}
                       </p>
                     </td>
                     <td className="px-5 py-4">
@@ -480,7 +623,7 @@ export function ModerationTicketsDashboard({ scope = "staff" }: Props) {
                         </span>
                       </div>
                       <p className="mt-1 text-xs font-semibold text-slate-500">
-                        {labelForReason(ticket.dominantReason)}
+                        {labelForReason(dominantReason)}
                       </p>
                     </td>
                     <td className="px-5 py-4">{statusBadge(ticket.status)}</td>
@@ -517,7 +660,8 @@ export function ModerationTicketsDashboard({ scope = "staff" }: Props) {
                       </div>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -554,6 +698,8 @@ export function ModerationTicketsDashboard({ scope = "staff" }: Props) {
       )}
 
       <TicketDetailModal
+        isAssigning={assignMutation.isPending}
+        onAssign={handleAssign}
         ticket={selectedTicket}
         onClose={() => setSelectedTicket(null)}
         onProcessed={() => setSelectedTicket(null)}
