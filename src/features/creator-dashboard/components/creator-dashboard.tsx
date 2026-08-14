@@ -134,7 +134,6 @@ import {
   getRejectedCensorshipResults,
   isMediaPipelinePending,
   isMediaReadyForPublish,
-  translateViolationLabel,
 } from "@/features/creator-dashboard/utils/media-violations";
 import { DashboardView, DashboardRouteState, ContentType, ApiLifecycleStatus, SeriesStatus, SeasonStatus, EpisodeStatus, ContentApprovalStatus, Visibility, EditModalState, EditSubmitState, CreateSeriesInput, DeleteModalState, ScheduleModalState, ActiveScheduleModal, SeriesRow, SeasonRow, EpisodeRow, EpisodeUnlockSettingsUpdate, ComicPage } from "@/features/creator-dashboard/types/dashboard.types";
 import { cx, formatNumber, formatBytes, formatApprovalStatusLabel, getApprovalChipClass, formatMediaStatusLabel, formatDateTime, splitDateTimeLocalValue, isPastDateTimeLocalValue, combineDateAndTimeLocalValue, getStatusBadgeStyle, formatStatusLabel, reorderPages, isLocalPageId, isRenderableAssetUrl, normalizeAssetUrl, readFormString, readFormNumber, splitIdList, openNativePicker, isPlayableVideoStatus, isProcessingVideoStatus, isBackendMediaTarget, getMediaTargetId, FORCE_HIDDEN_REASON_TOOLTIP } from "@/features/creator-dashboard/components/shared/utils";

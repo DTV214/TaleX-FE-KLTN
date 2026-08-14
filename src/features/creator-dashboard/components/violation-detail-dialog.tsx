@@ -15,8 +15,8 @@ import {
   getBlockingCopyrightViolations,
   getPermittedCopyrightMatches,
   getRejectedCensorshipResults,
-  translateViolationLabel,
 } from "@/features/creator-dashboard/utils/media-violations";
+import { useViolationLabelMap } from "@/shared/hooks/use-violation-label-map";
 
 interface ViolationDetailDialogProps {
   mediaId: string;
@@ -35,6 +35,7 @@ export function ViolationDetailDialog({
   // chỉ log ra console, data vẫn null, dialog hiện TRỐNG TRƠN (kể cả dòng "Không có dữ
   // liệu vi phạm" cũng nằm trong {data && (...)} nên không hiện được khi lỗi).
   const [error, setError] = useState(false);
+  const { translate: translateViolationLabel } = useViolationLabelMap();
   const blockingCopyright = getBlockingCopyrightViolations(data ?? undefined);
   const permittedCopyright = getPermittedCopyrightMatches(data ?? undefined);
   const rejectedCensorship = getRejectedCensorshipResults(data ?? undefined);
