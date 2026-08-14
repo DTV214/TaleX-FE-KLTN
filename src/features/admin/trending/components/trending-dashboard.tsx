@@ -43,13 +43,11 @@ const POOL_PAGE_SIZE = 5;
 
 const EVALUATED_STATUS_OPTIONS: Array<{
   label: string;
-  value: TrendingEvaluationStatus | "ALL";
+  value: TrendingEvaluationStatus | "SUCCESS";
 }> = [
-  { label: "Tất cả đã đánh giá", value: "ALL" },
-  { label: "Thành công", value: "SUCCESS" },
-  { label: "Thất bại", value: "FAILED" },
-  { label: "Đang chạy", value: "ON_GOING" },
-];
+    { label: "Thành công", value: "SUCCESS" },
+    { label: "Thất bại", value: "FAILED" },
+  ];
 
 const CONFIG_FIELD_HELP: Record<keyof TrendingConfigRequest, string> = {
   minBatch:
@@ -214,7 +212,6 @@ function ConfigSummary({ config }: { config: TrendingConfig | null }) {
             )}`
             : "-"
         }
-        helper="Tối thiểu - tối đa"
       />
       <MetricCard
         label="Hệ số trọng lực"
@@ -451,11 +448,11 @@ function SeriesTable({
               <th className="px-5 py-4">Series</th>
               {variant === "cards" ? (
                 <>
-                  <th className="px-5 py-4">Creator</th>
-                  <th className="px-5 py-4">Follower</th>
+                  <th className="px-5 py-4">Lượt hiển thị</th>
                   <th className="px-5 py-4">Lượt xem</th>
-                  <th className="px-5 py-4">Đánh giá</th>
-                  <th className="px-5 py-4">Cập nhật</th>
+                  <th className="px-5 py-4">Lượt tương tác</th>
+                  <th className="px-5 py-4">Lượt đánh giá</th>
+                  <th className="px-5 py-4">Điểm xếp hạng</th>
                 </>
               ) : (
                 <>
@@ -470,10 +467,6 @@ function SeriesTable({
           <tbody className="divide-y divide-slate-100 backoffice-dark:divide-white/10">
             {items.map((series) => {
               const trending = series.trendingAnalyticData ?? {};
-              const statusLabel = getStatusLabel(trending.impressionStatus);
-              const statusClassName = getStatusClassName(
-                trending.impressionStatus,
-              );
 
               return (
                 <tr
@@ -487,61 +480,26 @@ function SeriesTable({
                         <p className="max-w-[150px] truncate text-sm font-bold text-slate-950 backoffice-dark:text-white">
                           {series.title || "Chưa có tiêu đề"}
                         </p>
-                        {variant === "metrics" && (
-                          <span
-                            className={`mt-2 inline-flex rounded-full border px-2.5 py-1 text-[11px] font-bold ${statusClassName}`}
-                          >
-                            {statusLabel}
-                          </span>
-                        )}
-                        {variant === "cards" && (
-                          <p className="mt-1 text-xs font-semibold text-slate-500 backoffice-dark:text-white/45">
-                            {series.contentType || "-"} · {series.ageRating || "-"}
-                          </p>
-                        )}
+
                       </div>
                     </div>
                   </td>
                   {variant === "cards" ? (
                     <>
-                      <td className="px-5 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="h-9 w-9 overflow-hidden rounded-full border border-slate-200 bg-slate-100 backoffice-dark:border-white/10 backoffice-dark:bg-white/5">
-                            {series.creatorAvatar ? (
-                              // eslint-disable-next-line @next/next/no-img-element -- Admin preview uses backend-provided remote avatar URLs.
-                              <img
-                                src={series.creatorAvatar}
-                                alt={series.creatorName || "Creator"}
-                                className="h-full w-full object-cover"
-                                loading="lazy"
-                              />
-                            ) : (
-                              <div className="flex h-full w-full items-center justify-center text-xs font-black text-slate-400">
-                                C
-                              </div>
-                            )}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="max-w-[150px] truncate text-sm font-bold text-slate-800 backoffice-dark:text-white/85">
-                              {series.creatorName || "-"}
-                            </p>
-                            <p className="mt-0.5 max-w-[150px] truncate text-xs font-semibold text-slate-400">
-                              {series.creatorId || "-"}
-                            </p>
-                          </div>
-                        </div>
+                      <td className="px-5 py-4 text-sm font-semibold text-slate-800 backoffice-dark:text-white/85">
+                        {formatNumber(series.trendingAnalyticData?.totalImpression)}
                       </td>
                       <td className="px-5 py-4 text-sm font-semibold text-slate-800 backoffice-dark:text-white/85">
-                        {formatNumber(series.totalCreatorFollowers)}
+                        {formatNumber(series.trendingAnalyticData?.engageClick)}
                       </td>
                       <td className="px-5 py-4 text-sm font-semibold text-slate-600 backoffice-dark:text-white/65">
-                        {formatNumber(series.totalViews)}
+                        {formatNumber(series.trendingAnalyticData?.interactionClick)}
                       </td>
-                      <td className="px-5 py-4 text-sm font-semibold text-amber-600 backoffice-dark:text-[var(--backoffice-primary)]">
-                        {formatScore(series.averageRating)}
+                      <td className="px-5 py-4 text-sm font-semibold text-slate-600  backoffice-dark:text-[var(--backoffice-primary)]">
+                        {formatNumber(series.ratingCount)}
                       </td>
-                      <td className="px-5 py-4 text-sm font-semibold text-slate-600 backoffice-dark:text-white/65">
-                        {formatDate(series.releasedUpdateTime || series.updatedAt)}
+                      <td className="px-5 py-4 text-sm font-semibold text-amber-600 backoffice-dark:text-white/65">
+                        {formatScore(series.rankingScore)}
                       </td>
                     </>
                   ) : (
@@ -555,8 +513,8 @@ function SeriesTable({
                       <td className="px-5 py-4 text-sm font-semibold text-slate-800 backoffice-dark:text-white/85">
                         {formatScore(trending.sampleRatio)}
                       </td>
-                      <td className="px-5 py-4 text-sm font-semibold text-slate-600 backoffice-dark:text-white/65">
-                        {formatScore(trending.wilsonScore)}
+                      <td className="px-5 py-4 text-sm font-semibold  text-amber-600 backoffice-dark:text-white/65">
+                        {formatScore(series.wilsonScore)}
                       </td>
                     </>
                   )}
@@ -579,12 +537,12 @@ export function AdminTrendingDashboard() {
   const [poolRound, setPoolRound] = useState<"round1" | "round2">("round1");
   const [poolPage, setPoolPage] = useState(1);
   const [candidatePage, setCandidatePage] = useState(0);
-  const [candidateSize, setCandidateSize] = useState(10);
+  const [candidateSize, setCandidateSize] = useState(5);
   const [evaluatedPage, setEvaluatedPage] = useState(0);
-  const [evaluatedSize, setEvaluatedSize] = useState(10);
+  const [evaluatedSize, setEvaluatedSize] = useState(5);
   const [evaluatedStatus, setEvaluatedStatus] = useState<
-    TrendingEvaluationStatus | "ALL"
-  >("ALL");
+    TrendingEvaluationStatus | "SUCCESS"
+  >("SUCCESS");
 
   const configQuery = useAdminTrendingConfig();
   const createConfigMutation = useCreateAdminTrendingConfig();
@@ -611,11 +569,8 @@ export function AdminTrendingDashboard() {
   const trendingCards = trendingCardsQuery.data ?? [];
   const isRoundOne = poolRound === "round1";
   const distributionTitle = isRoundOne
-    ? "Kênh phân phối vòng 1"
+    ? "Kênh phân phối thử"
     : "Kênh xu hướng";
-  const distributionDescription = isRoundOne
-    ? "Theo dõi ứng viên chờ vào vòng phân phối đầu tiên và series đang nằm trong kênh."
-    : "Theo dõi các series card đang được đẩy vào kênh xu hướng vòng 2.";
   const poolItems = poolRound === "round1" ? pool : trendingCards;
   const poolTotalPages = Math.max(1, Math.ceil(poolItems.length / POOL_PAGE_SIZE));
   const safePoolPage = Math.min(poolPage, poolTotalPages);
@@ -824,14 +779,7 @@ export function AdminTrendingDashboard() {
       </Panel>
 
       <div className="flex flex-col gap-3 rounded-3xl border border-slate-200 bg-white p-3 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400 backoffice-dark:text-white/40">
-            Vòng phân phối
-          </p>
-          <p className="mt-1 text-sm font-semibold text-slate-600 backoffice-dark:text-white/60">
-            Chọn vòng để xem đúng nhóm dữ liệu kênh xu hướng.
-          </p>
-        </div>
+
         <div className="inline-flex rounded-2xl border border-slate-200 bg-slate-100 p-1 backoffice-dark:border-white/10 backoffice-dark:bg-black/25">
           {[
             { label: "Vòng 1", value: "round1" as const },
@@ -841,16 +789,28 @@ export function AdminTrendingDashboard() {
               key={round.value}
               type="button"
               onClick={() => handleSelectRound(round.value)}
-              className={`rounded-xl px-5 py-2.5 text-sm font-bold transition ${
-                poolRound === round.value
-                  ? "bg-slate-950 text-white shadow-sm backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black"
-                  : "text-slate-500 hover:text-slate-900 backoffice-dark:text-white/55 backoffice-dark:hover:text-white"
-              }`}
+              className={`rounded-xl px-5 py-2.5 text-sm font-bold transition ${poolRound === round.value
+                ? "bg-slate-950 text-white shadow-sm backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black"
+                : "text-slate-500 hover:text-slate-900 backoffice-dark:text-white/55 backoffice-dark:hover:text-white"
+                }`}
             >
               {round.label}
             </button>
           ))}
         </div>
+        <button
+          type="button"
+          onClick={handleTriggerChannelsPool}
+          disabled={triggerChannelsPoolMutation.isPending}
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60 backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black backoffice-dark:hover:bg-[var(--backoffice-primary-bright)]"
+        >
+          {triggerChannelsPoolMutation.isPending ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <RotateCcw className="h-4 w-4" />
+          )}
+          Cập nhật lại kênh
+        </button>
       </div>
 
       <Panel className="p-6">
@@ -859,43 +819,41 @@ export function AdminTrendingDashboard() {
             <h2 className="mt-1 text-2xl font-bold text-amber-500 backoffice-dark:text-white">
               {distributionTitle}
             </h2>
-            <p className="mt-1 text-sm font-medium text-slate-500 backoffice-dark:text-white/55">
-              {distributionDescription}
-            </p>
+
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             {isRoundOne && (
               <div className="inline-flex rounded-2xl border border-slate-200 bg-slate-100 p-1 backoffice-dark:border-white/10 backoffice-dark:bg-black/25">
-              <button
-                type="button"
-                onClick={() => setActiveTab("candidates")}
-                className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${activeTab === "candidates"
-                  ? "bg-white text-slate-950 shadow-sm backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black"
-                  : "text-slate-500 hover:text-slate-900 backoffice-dark:text-white/55 backoffice-dark:hover:text-white"
-                  }`}
-              >
-                Ứng viên
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab("evaluated")}
-                className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${activeTab === "evaluated"
-                  ? "bg-white text-slate-950 shadow-sm backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black"
-                  : "text-slate-500 hover:text-slate-900 backoffice-dark:text-white/55 backoffice-dark:hover:text-white"
-                  }`}
-              >
-                Đã đánh giá
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab("pool")}
-                className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${activeTab === "pool"
-                  ? "bg-white text-slate-950 shadow-sm backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black"
-                  : "text-slate-500 hover:text-slate-900 backoffice-dark:text-white/55 backoffice-dark:hover:text-white"
-                  }`}
-              >
-                Kênh phân phối
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("candidates")}
+                  className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${activeTab === "candidates"
+                    ? "bg-white text-slate-950 shadow-sm backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black"
+                    : "text-slate-500 hover:text-slate-900 backoffice-dark:text-white/55 backoffice-dark:hover:text-white"
+                    }`}
+                >
+                  Ứng viên
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("pool")}
+                  className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${activeTab === "pool"
+                    ? "bg-white text-slate-950 shadow-sm backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black"
+                    : "text-slate-500 hover:text-slate-900 backoffice-dark:text-white/55 backoffice-dark:hover:text-white"
+                    }`}
+                >
+                  Đang phân phối
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("evaluated")}
+                  className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${activeTab === "evaluated"
+                    ? "bg-white text-slate-950 shadow-sm backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black"
+                    : "text-slate-500 hover:text-slate-900 backoffice-dark:text-white/55 backoffice-dark:hover:text-white"
+                    }`}
+                >
+                  Đã đánh giá
+                </button>
               </div>
             )}
             <button
@@ -915,28 +873,14 @@ export function AdminTrendingDashboard() {
               className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 backoffice-dark:border-white/10 backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/10"
             >
               <RefreshCw
-                className={`h-4 w-4 ${
-                  candidatesQuery.isFetching ||
+                className={`h-4 w-4 ${candidatesQuery.isFetching ||
                   evaluatedQuery.isFetching ||
                   poolQuery.isFetching ||
                   trendingCardsQuery.isFetching
-                    ? "animate-spin"
-                    : ""
-                }`}
+                  ? "animate-spin"
+                  : ""
+                  }`}
               />
-            </button>
-            <button
-              type="button"
-              onClick={handleTriggerChannelsPool}
-              disabled={triggerChannelsPoolMutation.isPending}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60 backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black backoffice-dark:hover:bg-[var(--backoffice-primary-bright)]"
-            >
-              {triggerChannelsPoolMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <RotateCcw className="h-4 w-4" />
-              )}
-              Cập nhật lại kênh
             </button>
           </div>
         </div>
@@ -955,7 +899,7 @@ export function AdminTrendingDashboard() {
               value={evaluatedStatus}
               onChange={(event) => {
                 setEvaluatedStatus(
-                  event.target.value as TrendingEvaluationStatus | "ALL",
+                  event.target.value as TrendingEvaluationStatus | "SUCCESS",
                 );
                 setEvaluatedPage(0);
               }}
@@ -977,9 +921,9 @@ export function AdminTrendingDashboard() {
                 ? "Không có ứng viên chờ phân phối trong trang hiện tại."
                 : activeTab === "evaluated" && isRoundOne
                   ? "Chưa có series nào hoàn tất đánh giá vòng 1 theo bộ lọc hiện tại."
-                : poolRound === "round1"
-                  ? "Pool New Releases hiện chưa có series đang phân phối."
-                  : "Kênh Trending vòng 2 hiện chưa có series cards."
+                  : poolRound === "round1"
+                    ? "Pool New Releases hiện chưa có series đang phân phối."
+                    : "Kênh Trending vòng 2 hiện chưa có series cards."
             }
             isLoading={isActiveLoading}
             items={activeItems}
@@ -1032,8 +976,8 @@ export function AdminTrendingDashboard() {
             <div className="text-sm font-bold text-slate-500 backoffice-dark:text-white/55">
               {evaluatedPageData
                 ? `Trang ${evaluatedPageNumber + 1} / ${evaluatedTotalPages} · ${formatNumber(
-                    evaluatedPageData.totalElements,
-                  )} series`
+                  evaluatedPageData.totalElements,
+                )} series`
                 : "Đang tải danh sách đã đánh giá"}
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -1080,11 +1024,9 @@ export function AdminTrendingDashboard() {
             <div className="text-sm font-bold text-slate-500 backoffice-dark:text-white/55">
               {poolItems.length === 0
                 ? "Chưa có series"
-                : `Hiển thị ${
-                    (safePoolPage - 1) * POOL_PAGE_SIZE + 1
-                  }-${Math.min(safePoolPage * POOL_PAGE_SIZE, poolItems.length)} / ${
-                    poolItems.length
-                  } series`}
+                : `Hiển thị ${(safePoolPage - 1) * POOL_PAGE_SIZE + 1
+                }-${Math.min(safePoolPage * POOL_PAGE_SIZE, poolItems.length)} / ${poolItems.length
+                } series`}
             </div>
             <div className="flex items-center gap-2">
               <span className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-500 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white/55">

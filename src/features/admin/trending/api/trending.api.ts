@@ -15,7 +15,7 @@ import type {
 
 const TRENDING_CONFIGS_ENDPOINT = "/api/v1/trending-configs";
 const TRENDING_DASHBOARD_ENDPOINT = "/api/v1/trending/dashboard";
-const TRENDING_CHANNEL_CARDS_ENDPOINT = "/api/v1/channels/trending/cards";
+const TRENDING_CHANNEL_CARDS_ENDPOINT = "/api/v1/trending/dashboard/trending-pool";
 const CHANNEL_POOL_ENDPOINT = "/api/v1/channels/pool";
 
 function unwrapSeriesListPayload(payload: unknown): TrendingSeries[] {
