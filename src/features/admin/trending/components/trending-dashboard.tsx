@@ -556,7 +556,7 @@ export function AdminTrendingDashboard() {
   const evaluatedQuery = useAdminTrendingEvaluatedSeries({
     page: evaluatedPage,
     size: evaluatedSize,
-    statuses: evaluatedStatus === "ALL" ? undefined : [evaluatedStatus],
+    statuses: evaluatedStatus === "SUCCESS" ? undefined : [evaluatedStatus],
   });
   const poolQuery = useAdminTrendingPool();
   const trendingCardsQuery = useAdminTrendingCards();
