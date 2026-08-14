@@ -14,16 +14,19 @@ import {
   PauseCircle,
   PlayCircle,
   Plus,
+  Power,
   RefreshCw,
   Route,
   Settings2,
   TimerReset,
+  Video,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { adsApi, AdSlot } from "@/features/ads/api/ads-api";
 import {
   adminAdsApi,
+  type AdCampaignAdmin,
 } from "@/features/admin/api/admin-ads-api";
 import {
   Dialog,
@@ -58,7 +61,7 @@ const tabs: Array<{ id: AdsTab; label: string; icon: typeof Megaphone }> = [
   { id: "SLOTS", label: "Vị trí quảng cáo", icon: MonitorPlay },
   { id: "PENDING", label: "Chờ duyệt", icon: Check },
   { id: "ALL", label: "Tất cả chiến dịch", icon: Megaphone },
-  { id: "CONFIG", label: "Cấu hình Popup", icon: Settings2 },
+  { id: "CONFIG", label: "Cấu hình hệ thống", icon: Settings2 },
 ];
 
 function getErrorMessage(error: unknown) {
@@ -349,6 +352,7 @@ export default function AdminAdsPage() {
       price: Number(formData.get("price")),
       totalViewOfPrice: Number(formData.get("totalViewOfPrice")),
       isActive: formData.get("isActive") === "true",
+      isServingEnabled: formData.get("isServingEnabled") === "true",
     };
 
     updateSlotMutation.mutate({ id: editingSlot.slotId, data });

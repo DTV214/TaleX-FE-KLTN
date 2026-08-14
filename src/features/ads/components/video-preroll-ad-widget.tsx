@@ -9,7 +9,6 @@ import { useActiveSubscription } from "@/features/payment/api/payment.api";
 import { cn } from "@/shared/utils/utils";
 
 const SLOT_CODE = "IN_VIDEO";
-const SKIP_AFTER_SEC = 5;
 
 interface VideoPrerollAdWidgetProps {
   onAdFinished: () => void;
@@ -20,9 +19,20 @@ export function VideoPrerollAdWidget({ onAdFinished }: VideoPrerollAdWidgetProps
   const activeSubscriptionQuery = useActiveSubscription(isAuthenticated);
   const isAdBlocked = Boolean(activeSubscriptionQuery.data?.isAdBlocked);
 
+  // Fetch In-Video config from Backend (Admin config)
+  const { data: inVideoConfig } = useQuery({
+    queryKey: ["ad-in-video-config"],
+    queryFn: () => adsApi.getInVideoConfig(),
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    retry: 1,
+  });
+
+  const effectiveSkipSec = inVideoConfig?.skipAfterSec ?? 5;
+
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [canSkip, setCanSkip] = useState(false);
-  const [skipCountdown, setSkipCountdown] = useState(SKIP_AFTER_SEC);
+  const [skipCountdown, setSkipCountdown] = useState(effectiveSkipSec);
   const [impressionTracked, setImpressionTracked] = useState(false);
   const [view6sTracked, setView6sTracked] = useState(false);
   
@@ -62,9 +72,12 @@ export function VideoPrerollAdWidget({ onAdFinished }: VideoPrerollAdWidgetProps
     }
   }, [isAdBlocked, isError, ad, isLoading, onAdFinished]);
 
-  // Đếm ngược 5 giây để hiện nút Skip
+  // Đếm ngược số giây để hiện nút Skip
   useEffect(() => {
     if (!ad) return;
+
+    setSkipCountdown(effectiveSkipSec);
+    setCanSkip(false);
 
     const interval = setInterval(() => {
       setSkipCountdown((prev) => {
@@ -78,21 +91,21 @@ export function VideoPrerollAdWidget({ onAdFinished }: VideoPrerollAdWidgetProps
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [ad]);
+  }, [ad, effectiveSkipSec]);
 
   // Image countdown if it's an image
   useEffect(() => {
     if (!ad || ad.mediaType === "VIDEO") return;
     
-    // Nếu là ảnh thì auto skip sau SKIP_AFTER_SEC giây luôn
+    // Nếu là ảnh thì auto skip sau effectiveSkipSec giây luôn
     const timer = setTimeout(() => {
       if (canSkip) {
         onAdFinished();
       }
-    }, SKIP_AFTER_SEC * 1000);
+    }, effectiveSkipSec * 1000);
 
     return () => clearTimeout(timer);
-  }, [ad, canSkip, onAdFinished]);
+  }, [ad, canSkip, effectiveSkipSec, onAdFinished]);
 
   // Track impression sau 1s
   useEffect(() => {

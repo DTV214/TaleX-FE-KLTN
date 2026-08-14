@@ -71,6 +71,12 @@ export interface AdSlot {
   price: number;
   totalViewOfPrice: number;
   isActive: boolean;
+  isServingEnabled: boolean;
+}
+
+export interface InVideoConfig {
+  skipAfterSec: number;
+  cooldownSeconds: number;
 }
 
 export interface AdServeResponse {
@@ -202,4 +208,12 @@ export const adsApi = {
   /** Admin cập nhật cấu hình Popup */
   updatePopupConfig: (config: PopupConfig): Promise<PopupConfig> =>
     api.put<{ data: PopupConfig }>("/api/v1/ads/config/popup", config).then((res) => res.data.data),
+
+  /** Lấy cấu hình In-Video (public) */
+  getInVideoConfig: (): Promise<InVideoConfig> =>
+    api.get<{ data: InVideoConfig }>("/api/v1/ads/config/in-video").then((res) => res.data.data),
+
+  /** Admin cập nhật cấu hình In-Video */
+  updateInVideoConfig: (config: InVideoConfig): Promise<InVideoConfig> =>
+    api.put<{ data: InVideoConfig }>("/api/v1/ads/config/in-video", config).then((res) => res.data.data),
 };

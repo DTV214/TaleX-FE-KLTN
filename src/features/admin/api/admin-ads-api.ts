@@ -36,4 +36,7 @@ export const adminAdsApi = {
 
   patchSlotStatus: (slotId: string, isActive: boolean) =>
     api.patch(`/api/v1/ads/admin/slots/${slotId}/status?isActive=${isActive}`).then((res) => res.data.data),
+
+  patchSlotServingStatus: (slotId: string, isServingEnabled: boolean) =>
+    api.patch(`/api/v1/ads/admin/slots/${slotId}/serving-status?isServingEnabled=${isServingEnabled}`).then((res) => res.data.data),
 };
