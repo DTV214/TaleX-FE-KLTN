@@ -5,7 +5,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { fetchEventSource } from "@microsoft/fetch-event-source";
 import { toast } from "sonner";
 import type { PipelineEvent } from "../api/pipeline-api";
-import { translateViolationLabel } from "../utils/media-violations";
+import { useViolationLabelMap, violationLabelMapQueryKey } from "@/shared/hooks/use-violation-label-map";
+import { makeTranslate } from "@/shared/utils/violation-label-translate";
 
 interface UsePipelineSSEOptions {
   enabled?: boolean;
@@ -44,6 +45,10 @@ export function usePipelineSSE({
   shouldSuppressToast,
 }: UsePipelineSSEOptions = {}) {
   const queryClient = useQueryClient();
+  // Chỉ để làm nóng cache violationLabelMapQueryKey lúc mount — onmessage bên dưới chạy
+  // trong callback imperative (SSE), không gọi hook render được nên phải đọc thẳng từ
+  // queryClient.getQueryData() thay vì destructure translate() ở đây.
+  useViolationLabelMap();
   const ctrlRef = useRef<AbortController | null>(null);
   const activeToastIdsRef = useRef<Set<string>>(new Set());
   // Ref để onmessage (đóng 1 lần khi effect mount, xem dep [enabled, queryClient] bên
@@ -104,7 +109,9 @@ export function usePipelineSSE({
               });
             }
           } else if (ev.event === "pipeline:moderation_complete") {
-            const label = translateViolationLabel(data.primaryLabel);
+            const violationLabelMap =
+              queryClient.getQueryData<Record<string, string>>(violationLabelMapQueryKey) ?? {};
+            const label = makeTranslate(violationLabelMap)(data.primaryLabel);
 
             if (data.isSafe) {
               // "Đã qua kiểm duyệt" — KHÔNG phải "đã xuất bản". Xuất bản là hành động

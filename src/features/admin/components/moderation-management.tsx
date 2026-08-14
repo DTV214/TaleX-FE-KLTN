@@ -31,7 +31,7 @@ import {
   useMediaViolations,
   useRejectMedia,
 } from "@/features/admin/hooks/use-moderation";
-import { translateViolationLabel } from "@/features/creator-dashboard/utils/media-violations";
+import { useViolationLabelMap } from "@/shared/hooks/use-violation-label-map";
 
 const PAGE_SIZE = 12;
 
@@ -264,6 +264,7 @@ function ModerationDetailModal({
 }) {
   const violationsQuery = useMediaViolations(open ? media?.id ?? null : null);
   const violations = violationsQuery.data;
+  const { translate: translateViolationLabel } = useViolationLabelMap();
   const [previewSourceId, setPreviewSourceId] = useState<string | null>(null);
 
   if (!open || !media) return null;

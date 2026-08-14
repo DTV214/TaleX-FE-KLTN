@@ -22,8 +22,8 @@ import {
   getPermittedCopyrightMatches,
   getRejectedCensorshipResults,
   isMediaPipelinePending,
-  translateViolationLabel,
 } from "@/features/creator-dashboard/utils/media-violations";
+import { useViolationLabelMap } from "@/shared/hooks/use-violation-label-map";
 import {
   ComicPipelineAggregateSummary,
   type ComicPageSummary,
@@ -253,6 +253,7 @@ function SingleMediaPipelinePanel({
     refetchInterval: pipelinePending ? 5000 : false,
   });
 
+  const { translate: translateViolationLabel } = useViolationLabelMap();
   const violations = violationsQuery.data;
   const blockingCopyright = getBlockingCopyrightViolations(violations);
   const permittedCopyright = getPermittedCopyrightMatches(violations);
