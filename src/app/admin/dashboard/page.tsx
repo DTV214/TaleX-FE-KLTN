@@ -28,6 +28,7 @@ import {
   getAdminStatistics,
   type StatisticsData,
 } from "@/features/admin/api/admin-statistics.api";
+import { AdminTaxSummaryWidget } from "@/features/admin/components/admin-tax-summary-widget";
 import { Button } from "@/shared/ui/button";
 
 function formatVND(value: number = 0): string {
@@ -125,6 +126,9 @@ export default function AdminDashboardPage() {
           </Button>
         </div>
       </div>
+
+      {/* 1.5. API Tax Summary Compact Widget */}
+      <AdminTaxSummaryWidget />
 
       {/* Loading state */}
       {statisticsQuery.isLoading && (

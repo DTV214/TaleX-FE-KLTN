@@ -15,6 +15,7 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { PayoutBalanceBadge } from "@/features/admin/components/payout-balance-badge";
 import {
   useAdminCreatorSettlements,
   useRunCreatorSettlementProcess,
@@ -313,7 +314,8 @@ export function AdminSettlementsDashboard() {
             </p>
           </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="flex items-center gap-3 shrink-0 flex-wrap sm:flex-nowrap">
+            <PayoutBalanceBadge />
             <button
               type="button"
               onClick={() => settlementsQuery.refetch()}

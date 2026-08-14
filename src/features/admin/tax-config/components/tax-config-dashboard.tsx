@@ -75,7 +75,7 @@ export function TaxConfigDashboard() {
   return (
     <SingletonConfigDashboard
       badge="Thuế"
-      title="Thuế"
+      title="Cấu Hình Thuế"
       description="Quản lý cấu hình VAT, PIT và ngưỡng tối thiểu áp dụng cho các nghiệp vụ thanh toán, đối soát."
       sectionLabel="Cấu hình thuế"
       activeTitle="Config thuế đang hoạt động"
