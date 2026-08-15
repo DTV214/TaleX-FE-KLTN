@@ -26,12 +26,13 @@ import { CampaignStatusModal } from "./campaign-status-modal";
 import {
   useGetPayoutRequests,
   useProcessPayoutRequest,
+  useExecutePayoutRequest,
   useGetPayoutRequestTransactions,
 } from "@/features/creator-dashboard/hooks/use-creator-campaigns";
 import type { PayoutRequest } from "@/features/creator-dashboard/types/creator-campaigns.types";
 import { getApiErrorMessage } from "@/shared/api/http-client";
 import { toast } from "sonner";
-import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
+import { CheckCircle2, XCircle, Loader2, Send } from "lucide-react";
 
 const DEFAULT_PAGE_SIZE = 10;
 const EMPTY_CAMPAIGNS: AdminCampaign[] = [];
@@ -282,49 +283,14 @@ function AdminPayoutRequestsTable() {
   const [payoutPage, setPayoutPage] = useState(1);
   const payoutQuery = useGetPayoutRequests({ page: payoutPage, pageSize: 5 });
   const processPayoutMutation = useProcessPayoutRequest();
+  const executePayoutMutation = useExecutePayoutRequest();
   const [processingItem, setProcessingItem] = useState<{
     id: string;
     action: "APPROVED" | "REJECTED";
   } | null>(null);
   const [adminNote, setAdminNote] = useState("");
 
-  const rawContent = payoutQuery.data?.content ?? [];
-  const demoFallback: PayoutRequest[] = [
-    {
-      payoutRequestId: "ce6e22a7-968c-4bcb-a539-69d50ba9e4a6",
-      accountId: "5d102ac3-6fa8-4169-ad80-caaedca39d4e",
-      amount: 5000,
-      status: "PAID",
-      paymentProfileId: "a6f75eb7-0429-4a6d-a7a8-c2b778dd9846",
-      bankName: "MOMO",
-      bankAccountNumber: "0786724913",
-      bankAccountName: "NGUYEN THANH NAM",
-      adminNote: "Đã duyệt chi trả tự động qua PayOS",
-      createdAt: "2026-08-15T11:28:22.941548",
-      updatedAt: "2026-08-15T11:28:50.772716",
-    },
-    {
-      payoutRequestId: "0b528455-317c-499a-a1a3-2b8d4fb8b2fe",
-      accountId: "5d102ac3-6fa8-4169-ad80-caaedca39d4e",
-      amount: 5000,
-      status: "PENDING",
-      paymentProfileId: "a6f75eb7-0429-4a6d-a7a8-c2b778dd9846",
-      bankName: "MOMO",
-      bankAccountNumber: "0786724913",
-      bankAccountName: "NGUYEN THANH NAM",
-      adminNote: null,
-      createdAt: "2026-08-15T11:24:41.898566",
-      updatedAt: "2026-08-15T11:24:41.898601",
-    },
-  ];
-
-  const requests =
-    rawContent.length > 0
-      ? rawContent
-      : payoutQuery.isError || (!payoutQuery.isLoading && rawContent.length === 0)
-        ? demoFallback
-        : [];
-
+  const requests = payoutQuery.data?.content ?? [];
   const totalPages = payoutQuery.data?.totalPages ?? 1;
 
   const handleProcessSubmit = () => {
@@ -335,14 +301,14 @@ function AdminPayoutRequestsTable() {
         payoutRequestId: processingItem.id,
         body: {
           status: processingItem.action,
-          adminNote: adminNote || (processingItem.action === "APPROVED" ? "Đã duyệt chi trả" : "Từ chối yêu cầu"),
+          adminNote: adminNote || (processingItem.action === "APPROVED" ? "Đã duyệt chi trả tự động qua PayOS" : "Từ chối yêu cầu"),
         },
       },
       {
         onSuccess: () => {
           toast.success(
             processingItem.action === "APPROVED"
-              ? "Đã duyệt yêu cầu rút tiền!"
+              ? "Đã duyệt yêu cầu rút tiền (Trạng thái: APPROVED). Vui lòng bấm nút 'Thực thi chi trả (PayOS)' để hoàn tất!"
               : "Đã từ chối yêu cầu (hoàn lại số dư về ví Creator).",
           );
           setProcessingItem(null);
@@ -363,7 +329,7 @@ function AdminPayoutRequestsTable() {
             Danh sách Yêu cầu Rút tiền (Admin Payout Requests)
           </h3>
           <p className="text-xs font-semibold text-gray-500">
-            API /api/v1/payout-requests & /process (Duyệt/Từ chối rút tiền)
+            Bước 1: Duyệt (PUT /process) $\rightarrow$ Bước 2: Thực thi chi trả PayOS (POST /execute)
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -410,24 +376,28 @@ function AdminPayoutRequestsTable() {
           <tbody className="divide-y divide-slate-100 backoffice-dark:divide-white/5">
             {requests.map((item) => {
               const isPending = item.status === "PENDING";
-              const isPaid = item.status === "PAID" || item.status === "APPROVED";
+              const isApproved = item.status === "APPROVED";
+              const isPaid = item.status === "PAID";
+              const isRejected = item.status === "REJECTED";
 
               return (
                 <tr key={item.payoutRequestId} className="text-gray-700 backoffice-dark:text-zinc-200">
                   <td className="py-3 font-mono font-bold">{item.payoutRequestId.slice(0, 8)}...</td>
                   <td className="py-3 font-mono text-gray-500">{item.accountId.slice(0, 8)}...</td>
                   <td className="py-3 font-black text-amber-500">{item.amount.toLocaleString("vi-VN")}đ</td>
-                  <td className="py-3 font-bold">{item.bankName ?? "MOMO"}</td>
-                  <td className="py-3 font-mono text-gray-500">{item.bankAccountNumber ?? "0786724913"}</td>
-                  <td className="py-3 font-bold">{item.bankAccountName ?? "NGUYEN THANH NAM"}</td>
+                  <td className="py-3 font-bold">{item.bankName || "—"}</td>
+                  <td className="py-3 font-mono text-gray-500">{item.bankAccountNumber || "—"}</td>
+                  <td className="py-3 font-bold">{item.bankAccountName || "—"}</td>
                   <td className="py-3">
                     <span
                       className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${
                         isPaid
                           ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-400"
-                          : item.status === "REJECTED"
-                            ? "border-red-400/30 bg-red-400/10 text-red-400"
-                            : "border-amber-400/30 bg-amber-400/10 text-amber-500"
+                          : isApproved
+                            ? "border-cyan-400/30 bg-cyan-400/10 text-cyan-400"
+                            : isRejected
+                              ? "border-red-400/30 bg-red-400/10 text-red-400"
+                              : "border-amber-400/30 bg-amber-400/10 text-amber-500"
                       }`}
                     >
                       {item.status}
@@ -437,37 +407,65 @@ function AdminPayoutRequestsTable() {
                     ) : null}
                   </td>
                   <td className="py-3 text-right">
-                    {isPending ? (
-                      <div className="flex items-center justify-end gap-1.5">
+                    <div className="flex items-center justify-end gap-1.5">
+                      {isPending ? (
+                        <>
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={() => {
+                              setProcessingItem({ id: item.payoutRequestId, action: "APPROVED" });
+                              setAdminNote("Đã duyệt chi trả tự động qua PayOS");
+                            }}
+                            className="h-7 bg-emerald-600 px-2.5 text-[11px] font-bold text-white hover:bg-emerald-500"
+                          >
+                            <CheckCircle2 className="mr-1 h-3 w-3" />
+                            Duyệt
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setProcessingItem({ id: item.payoutRequestId, action: "REJECTED" });
+                              setAdminNote("Từ chối yêu cầu và hoàn lại ví");
+                            }}
+                            className="h-7 border-red-500/30 bg-red-500/10 px-2.5 text-[11px] font-bold text-red-400 hover:bg-red-500/20"
+                          >
+                            <XCircle className="mr-1 h-3 w-3" />
+                            Từ chối
+                          </Button>
+                        </>
+                      ) : isApproved ? (
                         <Button
                           type="button"
                           size="sm"
+                          disabled={executePayoutMutation.isPending}
                           onClick={() => {
-                            setProcessingItem({ id: item.payoutRequestId, action: "APPROVED" });
-                            setAdminNote("Đã duyệt chi trả tự động qua PayOS");
+                            executePayoutMutation.mutate(item.payoutRequestId, {
+                              onSuccess: () => {
+                                toast.success(
+                                  `Thực thi chi trả tiền qua PayOS thành công (Trạng thái chuyển sang PAID) cho yêu cầu #${item.payoutRequestId.slice(0, 8)}`,
+                                );
+                              },
+                              onError: (err) => {
+                                toast.error(getApiErrorMessage(err));
+                              },
+                            });
                           }}
-                          className="h-7 bg-emerald-600 px-2.5 text-[11px] font-bold text-white hover:bg-emerald-500"
+                          className="h-7 bg-blue-600 px-3 text-[11px] font-bold text-white hover:bg-blue-500 shadow-md"
                         >
-                          <CheckCircle2 className="mr-1 h-3 w-3" />
-                          Duyệt
+                          {executePayoutMutation.isPending ? (
+                            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                          ) : (
+                            <Send className="mr-1 h-3 w-3" />
+                          )}
+                          Thực thi chi trả (PayOS)
                         </Button>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            setProcessingItem({ id: item.payoutRequestId, action: "REJECTED" });
-                            setAdminNote("Từ chối yêu cầu và hoàn lại ví");
-                          }}
-                          className="h-7 border-red-500/30 bg-red-500/10 px-2.5 text-[11px] font-bold text-red-400 hover:bg-red-500/20"
-                        >
-                          <XCircle className="mr-1 h-3 w-3" />
-                          Từ chối
-                        </Button>
-                      </div>
-                    ) : (
-                      <span className="text-[11px] font-semibold text-gray-400">Đã xử lý</span>
-                    )}
+                      ) : (
+                        <span className="text-[11px] font-semibold text-gray-400">Đã xử lý</span>
+                      )}
+                    </div>
                   </td>
                 </tr>
               );

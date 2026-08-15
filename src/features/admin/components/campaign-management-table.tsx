@@ -285,21 +285,7 @@ export function CampaignManagementTable({
                           className="border-gray-200 bg-white text-gray-700 hover:border-violet-200 hover:bg-violet-50 hover:text-violet-600 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/10 backoffice-dark:hover:text-white"
                         >
                           <Edit2 className="h-4 w-4" />
-                          Sửa
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="sm"
-                          disabled={deleteMutation.isPending}
-                          onClick={() => handleTriggerDelete(campaign)}
-                        >
-                          {isDeleting ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Trash2 className="h-4 w-4" />
-                          )}
-                          Hủy
+                          Cập nhật trạng thái
                         </Button>
                       </div>
                     </td>

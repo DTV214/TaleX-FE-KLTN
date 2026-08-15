@@ -17,6 +17,8 @@ import {
     processPayoutRequest,
     getOwnPayoutRequests,
     getPayoutRequestTransactions,
+    cancelCreatorCampaign,
+    executePayoutRequest,
 } from "@/features/creator-dashboard/api/creator-campaigns.api";
 import type {
     CreateEngagementOrderRequest,
@@ -173,12 +175,10 @@ export function useUpdateCampaignSeriesStatus() {
             status,
         }: {
             campaignSeriesId: string;
-            status: "RUNNING" | "PAUSED";
+            status: "RUNNING" | "PAUSED" | "PAUSE";
         }) => updateCampaignSeriesStatus(campaignSeriesId, status),
         onSuccess: () => {
-            queryClient.invalidateQueries({
-                queryKey: creatorCampaignQueryKeys.all,
-            });
+            queryClient.invalidateQueries();
         },
     });
 }
@@ -288,5 +288,27 @@ export function useGetPayoutRequestTransactions(
         queryFn: () => getPayoutRequestTransactions(payoutRequestId!, params),
         enabled: Boolean(payoutRequestId) && enabled,
         staleTime: 30 * 1000,
+    });
+}
+
+export function useCancelCreatorCampaign() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (campaignId: string) => cancelCreatorCampaign(campaignId),
+        onSuccess: () => {
+            queryClient.invalidateQueries();
+        },
+    });
+}
+
+export function useExecutePayoutRequest() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (payoutRequestId: string) => executePayoutRequest(payoutRequestId),
+        onSuccess: () => {
+            queryClient.invalidateQueries();
+        },
     });
 }

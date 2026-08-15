@@ -57,6 +57,10 @@ export function CreatorCampaignCheckoutModal({
     const createOrderMutation = useCreateEngagementOrder();
     const walletBalanceQuery = useGetCampaignWalletBalance();
 
+    const hasWalletBalance = Boolean(
+        walletBalanceQuery.data && (walletBalanceQuery.data.balance ?? 0) > 0,
+    );
+
     const seriesQuery = useGetCreatorCampaignPublishedSeries(
         {
             statuses: ["PUBLISHED"],
@@ -112,7 +116,7 @@ export function CreatorCampaignCheckoutModal({
             {
                 engagementServiceId: plan.engagementServiceId,
                 seriesIds: selectedSeriesIds,
-                useCampaignWallet,
+                useCampaignWallet: hasWalletBalance ? useCampaignWallet : false,
             },
             {
                 onSuccess: (order) => {
@@ -321,27 +325,25 @@ export function CreatorCampaignCheckoutModal({
                             </div>
                         </div>
 
-                        <label className="mt-4 flex cursor-pointer items-center justify-between rounded-2xl border border-yellow-400/25 bg-yellow-400/10 p-3.5 transition hover:bg-yellow-400/15">
-                            <div className="flex items-center gap-3 min-w-0">
-                                <Coins className="h-5 w-5 shrink-0 text-yellow-300" />
-                                <div className="min-w-0">
-                                    <p className="text-xs font-bold text-white">Trừ từ Ví Campaign</p>
-                                    <p className="mt-0.5 text-[11px] font-semibold text-zinc-400">
-                                        {walletBalanceQuery.isLoading
-                                            ? "Đang kiểm tra số dư..."
-                                            : walletBalanceQuery.data
-                                                ? `Khả dụng: ${formatPrice(walletBalanceQuery.data.balance)}`
-                                                : "Tự động sử dụng ví nếu có"}
-                                    </p>
+                        {hasWalletBalance ? (
+                            <label className="mt-4 flex cursor-pointer items-center justify-between rounded-2xl border border-yellow-400/25 bg-yellow-400/10 p-3.5 transition hover:bg-yellow-400/15">
+                                <div className="flex items-center gap-3 min-w-0">
+                                    <Coins className="h-5 w-5 shrink-0 text-yellow-300" />
+                                    <div className="min-w-0">
+                                        <p className="text-xs font-bold text-white">Trừ từ Ví Campaign</p>
+                                        <p className="mt-0.5 text-[11px] font-semibold text-zinc-400">
+                                            Khả dụng: {formatPrice(walletBalanceQuery.data?.balance ?? 0)}
+                                        </p>
+                                    </div>
                                 </div>
-                            </div>
-                            <input
-                                type="checkbox"
-                                checked={useCampaignWallet}
-                                onChange={(e) => setUseCampaignWallet(e.target.checked)}
-                                className="h-4 w-4 shrink-0 cursor-pointer accent-yellow-400"
-                            />
-                        </label>
+                                <input
+                                    type="checkbox"
+                                    checked={useCampaignWallet}
+                                    onChange={(e) => setUseCampaignWallet(e.target.checked)}
+                                    className="h-4 w-4 shrink-0 cursor-pointer accent-yellow-400"
+                                />
+                            </label>
+                        ) : null}
 
                         {selectedSeries.length > 0 && (
                             <div className="mt-5 space-y-2">

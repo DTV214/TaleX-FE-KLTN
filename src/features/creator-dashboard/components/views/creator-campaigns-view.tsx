@@ -35,6 +35,7 @@ import {
   WalletCards,
   Building2,
   Landmark,
+  Trash2,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -78,6 +79,7 @@ import {
   useGetPayoutRequests,
   useGetOwnPayoutRequests,
   useGetPayoutRequestTransactions,
+  useCancelCreatorCampaign,
 } from "@/features/creator-dashboard/hooks/use-creator-campaigns";
 import type {
   CampaignWalletTransaction,
@@ -153,6 +155,7 @@ function getRemaining(campaign?: CreatorCampaign | null) {
 
 function getStatusLabel(status?: string | null) {
   if (!status) return "Chưa rõ";
+  if (status === "PAUSE" || status === "PAUSED") return "Tạm dừng";
   return campaignStatuses.find((item) => item.value === status)?.label ?? status;
 }
 
@@ -166,6 +169,7 @@ function getStatusClass(status?: string | null) {
     case "PENDING":
       return "border-[#D4AF37]/40 bg-[#D4AF37]/12 text-[#F5D46E]";
     case "PAUSED":
+    case "PAUSE":
       return "border-orange-300/35 bg-orange-300/10 text-orange-100";
     case "CANCELLED":
     case "FAILED":
@@ -354,36 +358,32 @@ type CampaignSeriesDashboardRow = {
 };
 
 function CampaignSeriesStatusToggleButton({
-  campaignSeries,
+  campaignSeriesId,
+  currentStatus = "RUNNING",
   size = "default",
 }: {
-  campaignSeries: CreatorCampaignSeries;
+  campaignSeriesId: string;
+  currentStatus?: string | null;
   size?: "default" | "sm";
 }) {
   const updateStatusMutation = useUpdateCampaignSeriesStatus();
-  const currentStatus = campaignSeries.status;
   const isRunning = currentStatus === "RUNNING";
-  const isPaused = currentStatus === "PAUSED";
-  const canToggle = isRunning || isPaused;
+  const isPaused = currentStatus === "PAUSED" || currentStatus === "PAUSE";
   const targetStatus: "RUNNING" | "PAUSED" = isRunning ? "PAUSED" : "RUNNING";
 
   const handleToggleStatus = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!canToggle) {
-      toast.warning("Chỉ cho phép chuyển đổi trạng thái hai chiều giữa RUNNING và PAUSED");
-      return;
-    }
 
     const actionText = targetStatus === "PAUSED" ? "tạm dừng" : "tiếp tục";
     updateStatusMutation.mutate(
       {
-        campaignSeriesId: campaignSeries.campaignSeriesId,
+        campaignSeriesId,
         status: targetStatus,
       },
       {
         onSuccess: (data) => {
           toast.success(
-            `Đã ${actionText} series trong chiến dịch! (Trạng thái: ${data.status ?? targetStatus})`,
+            `Đã ${actionText} series trong chiến dịch! (Trạng thái mới: ${getStatusLabel(data.status ?? targetStatus)})`,
           );
         },
         onError: (err) => {
@@ -393,10 +393,6 @@ function CampaignSeriesStatusToggleButton({
     );
   };
 
-  if (!canToggle) {
-    return null;
-  }
-
   return (
     <Button
       type="button"
@@ -405,7 +401,7 @@ function CampaignSeriesStatusToggleButton({
       onClick={handleToggleStatus}
       className={cn(
         "cursor-pointer font-bold transition-all duration-200 backdrop-blur",
-        size === "sm" ? "h-8 rounded-xl px-3 text-xs" : "h-10 rounded-2xl px-4 text-sm",
+        size === "sm" ? "h-8 rounded-xl px-3 text-xs" : "h-11 rounded-2xl px-4 text-sm",
         isRunning
           ? "border-orange-500/40 bg-orange-500/15 text-orange-200 hover:border-orange-400 hover:bg-orange-500/25"
           : "border-emerald-500/40 bg-emerald-500/15 text-emerald-200 hover:border-emerald-400 hover:bg-emerald-500/25",
@@ -413,49 +409,97 @@ function CampaignSeriesStatusToggleButton({
     >
       {updateStatusMutation.isPending ? (
         <>
-          <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+          <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
           Đang xử lý...
         </>
       ) : isRunning ? (
         <>
-          <Pause className="mr-1.5 h-3.5 w-3.5 text-orange-300" />
-          Tạm dừng
+          <Pause className="mr-1.5 h-4 w-4 text-orange-300" />
+          Tạm dừng series #{campaignSeriesId.slice(0, 8)}
         </>
       ) : (
         <>
-          <Play className="mr-1.5 h-3.5 w-3.5 text-emerald-300" />
-          Tiếp tục
+          <Play className="mr-1.5 h-4 w-4 text-emerald-300" />
+          Tiếp tục series #{campaignSeriesId.slice(0, 8)}
         </>
       )}
     </Button>
   );
 }
 
+function CreatorCampaignCancelModal({
+  isOpen,
+  campaignId,
+  onClose,
+}: {
+  isOpen: boolean;
+  campaignId: string | null;
+  onClose: () => void;
+}) {
+  const cancelMutation = useCancelCreatorCampaign();
+
+  if (!isOpen || !campaignId) return null;
+
+  const handleConfirmCancel = () => {
+    cancelMutation.mutate(campaignId, {
+      onSuccess: () => {
+        toast.success("Đã hủy chiến dịch thành công. Tiền hoàn lại (nếu có) sẽ được cập nhật vào Ví Campaign!");
+        onClose();
+      },
+      onError: (err) => {
+        toast.error(getApiErrorMessage(err));
+      },
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-3xl border border-red-500/30 bg-[#121215] p-6 shadow-2xl">
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-red-500/30 bg-red-500/10 text-red-400">
+          <Trash2 className="h-6 w-6" />
+        </div>
+
+        <h3 className="mt-4 text-xl font-black text-white">Xác nhận hủy chiến dịch</h3>
+        <p className="mt-2 text-xs font-semibold leading-relaxed text-zinc-400">
+          Bạn có chắc chắn muốn hủy chiến dịch <span className="font-mono text-white">{campaignId}</span> không?
+          Chiến dịch sẽ ngừng phân phối và số tiền hoàn lại (nếu có) sẽ được hoàn tự động về Ví Campaign của bạn.
+        </p>
+
+        <div className="mt-6 flex gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            className="flex-1 h-11 rounded-2xl border-white/10 bg-white/[0.04] text-xs font-bold text-zinc-300 hover:bg-white/10"
+          >
+            Bỏ qua
+          </Button>
+          <Button
+            type="button"
+            disabled={cancelMutation.isPending}
+            onClick={handleConfirmCancel}
+            className="flex-1 h-11 rounded-2xl bg-red-600 font-black text-xs text-white hover:bg-red-500"
+          >
+            {cancelMutation.isPending ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Trash2 className="mr-2 h-4 w-4" />
+            )}
+            Xác nhận Hủy
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+
 function CampaignWalletHistorySection() {
   const [historyPage, setHistoryPage] = useState(1);
   const historyQuery = useGetCampaignWalletHistory({ page: historyPage, pageSize: 5 });
 
-  const rawContent = historyQuery.data?.content ?? [];
-  const demoFallback: CampaignWalletTransaction[] = [
-    {
-      transactionId: "fc364be7-c5e4-492a-a3b2-1e25455479ad",
-      amount: 2000,
-      balanceBefore: 0,
-      balanceAfter: 2000,
-      transactionType: "REFUND",
-      referenceType: "CAMPAIGN",
-      referenceId: "60c4f778-bcaf-4281-8c05-100bac62c86d",
-      description: "Hoàn tiền chiến dịch #60c4f778-bcaf-4281-8c05-100bac62c86d do bị hủy giữa chừng",
-      createdAt: "2026-08-15T10:26:11.186309",
-    },
-  ];
-
-  const transactions =
-    rawContent.length > 0
-      ? rawContent
-      : historyQuery.isError || (!historyQuery.isLoading && rawContent.length === 0)
-        ? demoFallback
-        : [];
+  const transactions = historyQuery.data?.content ?? [];
   const totalPages = historyQuery.data?.totalPages ?? 1;
 
   function getTransactionBadge(type?: string | null) {
@@ -615,45 +659,8 @@ function CampaignOrderPollingCard({ orderId }: { orderId: string }) {
   const walletTxQuery = useGetOrderWalletTransactions(orderId);
 
   const order = orderQuery.data;
-
-  const demoRefTx: ReferenceTransaction[] = [
-    {
-      transactionId: "77cf888f-6258-447b-a822-78eb7d78261d",
-      paidAmount: 3000,
-      paymentMethod: "SEPAY",
-      status: "SUCCESS",
-      referenceType: "ORDER",
-      referenceId: orderId,
-      createdAt: "2026-08-15T11:07:08.124751",
-      updatedAt: "2026-08-15T11:07:08.124769",
-    },
-  ];
-
-  const demoWalletTx: CampaignWalletTransaction[] = [
-    {
-      transactionId: "68dfbc7a-863f-4efb-9d76-15df4543dadc",
-      amount: 2000,
-      balanceBefore: 2000,
-      balanceAfter: 0,
-      transactionType: "PAYMENT_DEDUCTION",
-      referenceType: "ORDER",
-      referenceId: orderId,
-      description: "Thanh toán đơn hàng đẩy tương tác TLX100146",
-      createdAt: "2026-08-15T11:04:47.311991",
-    },
-  ];
-
-  const refTransactions = (refTxQuery.data && refTxQuery.data.length > 0)
-    ? refTxQuery.data
-    : refTxQuery.isError || (!refTxQuery.isLoading && (!refTxQuery.data || refTxQuery.data.length === 0))
-      ? demoRefTx
-      : [];
-
-  const walletTransactions = (walletTxQuery.data && walletTxQuery.data.length > 0)
-    ? walletTxQuery.data
-    : walletTxQuery.isError || (!walletTxQuery.isLoading && (!walletTxQuery.data || walletTxQuery.data.length === 0))
-      ? demoWalletTx
-      : [];
+  const refTransactions = refTxQuery.data ?? [];
+  const walletTransactions = walletTxQuery.data ?? [];
 
   function getOrderStatusBadge(status?: string | null) {
     switch (status) {
@@ -912,15 +919,15 @@ function CampaignPayoutModal({
               </div>
               <div className="flex justify-between">
                 <span className="text-zinc-500">Ngân hàng / Ví</span>
-                <span className="font-bold text-white">{createdPayout.bankName ?? "MOMO"}</span>
+                <span className="font-bold text-white">{createdPayout.bankName || "—"}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-zinc-500">Số tài khoản</span>
-                <span className="font-mono text-zinc-300">{createdPayout.bankAccountNumber ?? "0786724913"}</span>
+                <span className="font-mono text-zinc-300">{createdPayout.bankAccountNumber || "—"}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-zinc-500">Tên chủ tài khoản</span>
-                <span className="font-bold text-zinc-200">{createdPayout.bankAccountName ?? "NGUYEN THANH NAM"}</span>
+                <span className="font-bold text-zinc-200">{createdPayout.bankAccountName || "—"}</span>
               </div>
             </div>
 
@@ -982,43 +989,7 @@ function PayoutRequestsListSection() {
   const [payoutPage, setPayoutPage] = useState(1);
   const payoutQuery = useGetOwnPayoutRequests({ page: payoutPage, pageSize: 5 });
 
-  const rawContent = payoutQuery.data?.content ?? [];
-  const demoFallback: PayoutRequest[] = [
-    {
-      payoutRequestId: "ce6e22a7-968c-4bcb-a539-69d50ba9e4a6",
-      accountId: "5d102ac3-6fa8-4169-ad80-caaedca39d4e",
-      amount: 5000,
-      status: "PAID",
-      paymentProfileId: "a6f75eb7-0429-4a6d-a7a8-c2b778dd9846",
-      bankName: "MOMO",
-      bankAccountNumber: "0786724913",
-      bankAccountName: "NGUYEN THANH NAM",
-      adminNote: "Đã duyệt chi trả thành công qua PayOS",
-      createdAt: "2026-08-15T11:28:22.941548",
-      updatedAt: "2026-08-15T11:29:32.263336",
-    },
-    {
-      payoutRequestId: "0b528455-317c-499a-a1a3-2b8d4fb8b2fe",
-      accountId: "5d102ac3-6fa8-4169-ad80-caaedca39d4e",
-      amount: 5000,
-      status: "REJECTED",
-      paymentProfileId: "a6f75eb7-0429-4a6d-a7a8-c2b778dd9846",
-      bankName: "MOMO",
-      bankAccountNumber: "0786724913",
-      bankAccountName: "NGUYEN THANH NAM",
-      adminNote: "Tài khoản nhận tiền không khớp thông tin đăng ký",
-      createdAt: "2026-08-15T11:24:41.898566",
-      updatedAt: "2026-08-15T11:27:46.057146",
-    },
-  ];
-
-  const requests =
-    rawContent.length > 0
-      ? rawContent
-      : payoutQuery.isError || (!payoutQuery.isLoading && rawContent.length === 0)
-        ? demoFallback
-        : [];
-
+  const requests = payoutQuery.data?.content ?? [];
   const totalPages = payoutQuery.data?.totalPages ?? 1;
 
   return (
@@ -1109,7 +1080,7 @@ function PayoutRequestsListSection() {
                       ) : null}
                     </div>
                     <p className="mt-1 text-sm font-bold text-white">
-                      {item.bankName} - {item.bankAccountNumber} ({item.bankAccountName})
+                      {item.bankName || "—"} - {item.bankAccountNumber || "—"} ({item.bankAccountName || "—"})
                     </p>
                     {item.adminNote ? (
                       <p className="mt-1 text-xs font-semibold text-zinc-400">
@@ -1597,7 +1568,10 @@ function CampaignSeriesOverviewPanelV2({
                 </Badge>
               ) : null}
             </div>
-            <CampaignSeriesStatusToggleButton campaignSeries={campaignSeries} />
+            <CampaignSeriesStatusToggleButton
+              campaignSeriesId={campaignSeries.campaignSeriesId}
+              currentStatus={campaignSeries.status}
+            />
           </div>
           <h4 className="mt-4 line-clamp-2 text-4xl font-black tracking-tight text-white md:text-6xl">
             {isSeriesLoading
@@ -2090,9 +2064,15 @@ function CampaignSeriesDetailDashboard({
             Dữ liệu log theo giờ từ {range.startTime} đến {range.endTime}
           </p>
         </div>
-        <Badge className={getStatusClass(campaignSeries.status)} variant="outline">
-          {getStatusLabel(campaignSeries.status)}
-        </Badge>
+        <div className="flex items-center gap-3">
+          <Badge className={getStatusClass(campaignSeries.status)} variant="outline">
+            {getStatusLabel(campaignSeries.status)}
+          </Badge>
+          <CampaignSeriesStatusToggleButton
+            campaignSeriesId={campaignSeries.campaignSeriesId}
+            currentStatus={campaignSeries.status}
+          />
+        </div>
       </div>
 
       <div className="mt-6 rounded-[26px] border border-white/10 bg-white/[0.035] p-4">
@@ -2318,7 +2298,11 @@ function CampaignSeriesCard({ row }: { row: CampaignSeriesDashboardRow }) {
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <CampaignSeriesStatusToggleButton campaignSeries={campaignSeries} size="sm" />
+              <CampaignSeriesStatusToggleButton
+                campaignSeriesId={campaignSeries.campaignSeriesId}
+                currentStatus={campaignSeries.status}
+                size="sm"
+              />
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37]">
                 <Megaphone className="h-5 w-5" />
               </div>
@@ -2406,12 +2390,14 @@ export function CampaignDetailDashboard({
   getServiceName,
   onBack,
   onSelectCampaign,
+  onCancelCampaign,
 }: {
   campaign: CreatorCampaign;
   campaigns: CreatorCampaign[];
   getServiceName: (engagementServiceId?: string | null) => string;
   onBack: () => void;
   onSelectCampaign: (campaignId: string) => void;
+  onCancelCampaign?: (campaignId: string) => void;
 }) {
   const progress = getProgress(campaign);
   const remaining = getRemaining(campaign);
@@ -2477,6 +2463,24 @@ export function CampaignDetailDashboard({
             >
               <ArrowLeft className="h-4 w-4" />
               Danh sách
+            </Button>
+
+            {campaignSeriesItems.map((item) => (
+              <CampaignSeriesStatusToggleButton
+                key={item.campaignSeriesId}
+                campaignSeriesId={item.campaignSeriesId}
+                currentStatus={item.status}
+              />
+            ))}
+
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onCancelCampaign?.(campaign.campaignId)}
+              className="h-11 cursor-pointer rounded-2xl border-red-500/30 bg-red-500/10 px-4 text-xs font-bold text-red-300 hover:bg-red-500/20"
+            >
+              <Trash2 className="mr-1.5 h-4 w-4" />
+              Hủy chiến dịch
             </Button>
           </div>
 
@@ -2842,6 +2846,7 @@ export function CreatorCampaignsView() {
   };
 
   const [isPayoutModalOpen, setIsPayoutModalOpen] = useState(false);
+  const [cancellingCampaignId, setCancellingCampaignId] = useState<string | null>(null);
 
   if (selectedCampaign) {
     return (
@@ -2852,6 +2857,15 @@ export function CreatorCampaignsView() {
           getServiceName={getServiceName}
           onBack={() => setSelectedCampaignId(null)}
           onSelectCampaign={setSelectedCampaignId}
+          onCancelCampaign={(id) => setCancellingCampaignId(id)}
+        />
+        <CreatorCampaignCancelModal
+          isOpen={Boolean(cancellingCampaignId)}
+          campaignId={cancellingCampaignId}
+          onClose={() => {
+            setCancellingCampaignId(null);
+            setSelectedCampaignId(null);
+          }}
         />
       </section>
     );
@@ -3197,6 +3211,11 @@ export function CreatorCampaignsView() {
             </Button>
           </div>
         </div>
+        <CreatorCampaignCancelModal
+          isOpen={Boolean(cancellingCampaignId)}
+          campaignId={cancellingCampaignId}
+          onClose={() => setCancellingCampaignId(null)}
+        />
       </section>
     </section>
   );

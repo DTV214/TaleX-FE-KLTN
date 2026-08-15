@@ -151,13 +151,17 @@ export async function getCreatorCampaignSeriesLogs(
 
 export async function updateCampaignSeriesStatus(
     campaignSeriesId: string,
-    status: "RUNNING" | "PAUSED",
+    status: "RUNNING" | "PAUSED" | "PAUSE",
 ): Promise<CreatorCampaignSeries> {
+    const bodyStatus = status === "PAUSE" ? "PAUSED" : status;
+
     const response = await httpClient.patch<CreatorCampaignSeriesSingleResponse>(
         `/api/v1/campaign-series/${campaignSeriesId}/status`,
-        { status },
+        JSON.stringify(bodyStatus),
         {
-            params: { status },
+            headers: {
+                "Content-Type": "application/json",
+            },
         },
     );
 
@@ -215,6 +219,7 @@ export async function getOrderWalletTransactions(
 export async function createPayoutRequest(): Promise<PayoutRequest> {
     const response = await httpClient.post<PayoutRequestSingleResponse>(
         "/api/v1/payout-requests",
+        {},
     );
 
     return response.data.data;
@@ -267,6 +272,21 @@ export async function getPayoutRequestTransactions(
     const response = await httpClient.get<PayoutRequestListResponse>(
         `/api/v1/payout-requests/${payoutRequestId}/transactions`,
         { params },
+    );
+
+    return response.data.data;
+}
+
+export async function cancelCreatorCampaign(campaignId: string): Promise<void> {
+    await httpClient.delete(`/api/v1/campaigns/${campaignId}`);
+}
+
+export async function executePayoutRequest(
+    payoutRequestId: string,
+): Promise<PayoutRequest> {
+    const response = await httpClient.post<PayoutRequestSingleResponse>(
+        `/api/v1/payout-requests/${payoutRequestId}/execute`,
+        {},
     );
 
     return response.data.data;
