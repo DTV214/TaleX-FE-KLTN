@@ -17,6 +17,22 @@ import type {
     CreatorCampaignSeriesLogParams,
     CreatorCampaignSeriesListResponse,
     CreatorCampaignSeriesPageResponse,
+    CreatorCampaignSeriesSingleResponse,
+    CampaignWallet,
+    CampaignWalletBalanceResponse,
+    CampaignWalletHistoryFilterParams,
+    CampaignWalletHistoryListResponse,
+    CampaignWalletHistoryPageResponse,
+    ReferenceTransaction,
+    GetTransactionsByReferenceResponse,
+    OrderWalletTransactionsResponse,
+    CampaignWalletTransaction,
+    PayoutRequest,
+    PayoutRequestFilterParams,
+    PayoutRequestSingleResponse,
+    PayoutRequestPageResponse,
+    PayoutRequestListResponse,
+    ProcessPayoutRequestRequest,
 } from "@/features/creator-dashboard/types/creator-campaigns.types";
 import type { OrderResponse } from "@/features/payment/types/payment.types";
 
@@ -127,6 +143,129 @@ export async function getCreatorCampaignSeriesLogs(
 ): Promise<CreatorCampaignSeriesLog[]> {
     const response = await httpClient.get<CreatorCampaignSeriesLogListResponse>(
         `/api/v1/campaign-series/${campaignSeriesId}/logs`,
+        { params },
+    );
+
+    return response.data.data;
+}
+
+export async function updateCampaignSeriesStatus(
+    campaignSeriesId: string,
+    status: "RUNNING" | "PAUSED",
+): Promise<CreatorCampaignSeries> {
+    const response = await httpClient.patch<CreatorCampaignSeriesSingleResponse>(
+        `/api/v1/campaign-series/${campaignSeriesId}/status`,
+        { status },
+        {
+            params: { status },
+        },
+    );
+
+    return response.data.data;
+}
+
+export async function getCampaignWalletBalance(): Promise<CampaignWallet | null> {
+    const response = await httpClient.get<CampaignWalletBalanceResponse>(
+        "/api/v1/campaign-wallets/balance",
+    );
+
+    return response.data.data;
+}
+
+export async function getCampaignWalletHistory(
+    params: CampaignWalletHistoryFilterParams = { page: 1, pageSize: 10 },
+): Promise<CampaignWalletHistoryPageResponse> {
+    const response = await httpClient.get<CampaignWalletHistoryListResponse>(
+        "/api/v1/campaign-wallets/history",
+        { params },
+    );
+
+    return response.data.data;
+}
+
+export async function getTransactionsByReference(
+    refType: string,
+    refId: string,
+): Promise<ReferenceTransaction[]> {
+    const response = await httpClient.get<GetTransactionsByReferenceResponse>(
+        "/api/v1/transactions/by-reference",
+        {
+            params: {
+                refType,
+                refId,
+                referenceType: refType,
+                referenceId: refId,
+            },
+        },
+    );
+
+    return response.data.data;
+}
+
+export async function getOrderWalletTransactions(
+    orderId: string,
+): Promise<CampaignWalletTransaction[]> {
+    const response = await httpClient.get<OrderWalletTransactionsResponse>(
+        `/api/v1/campaign-wallets/${orderId}/wallet-transactions`,
+    );
+
+    return response.data.data;
+}
+
+export async function createPayoutRequest(): Promise<PayoutRequest> {
+    const response = await httpClient.post<PayoutRequestSingleResponse>(
+        "/api/v1/payout-requests",
+    );
+
+    return response.data.data;
+}
+
+export async function getPayoutRequests(
+    params: PayoutRequestFilterParams = { page: 1, pageSize: 20 },
+): Promise<PayoutRequestPageResponse> {
+    const response = await httpClient.get<PayoutRequestListResponse>(
+        "/api/v1/payout-requests",
+        { params },
+    );
+
+    return response.data.data;
+}
+
+export async function processPayoutRequest(
+    payoutRequestId: string,
+    body: ProcessPayoutRequestRequest,
+): Promise<PayoutRequest> {
+    const response = await httpClient.put<PayoutRequestSingleResponse>(
+        `/api/v1/payout-requests/${payoutRequestId}/process`,
+        body,
+        {
+            params: {
+                status: body.status,
+                adminNote: body.adminNote,
+            },
+        },
+    );
+
+    return response.data.data;
+}
+
+export async function getOwnPayoutRequests(
+    params: PayoutRequestFilterParams = { page: 1, pageSize: 20 },
+): Promise<PayoutRequestPageResponse> {
+    const response = await httpClient.get<PayoutRequestListResponse>(
+        "/api/v1/payout-requests/own",
+        { params },
+    );
+
+    return response.data.data;
+}
+
+export async function getPayoutRequestTransactions(
+    payoutRequestId: string,
+    params: PayoutRequestFilterParams = { page: 1, pageSize: 20 },
+): Promise<PayoutRequestPageResponse> {
+    const response = await httpClient.get<PayoutRequestListResponse>(
+        `/api/v1/payout-requests/${payoutRequestId}/transactions`,
         { params },
     );
 

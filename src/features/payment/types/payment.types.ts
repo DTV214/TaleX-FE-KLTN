@@ -24,6 +24,7 @@ export type OrderResponse = {
   totalAmount: number;
   coinAmountUsed: number;
   fiatAmount: number;
+  walletAmount?: number;
   paymentMethod?: OrderPaymentMethod | null;
   status: OrderStatus;
   createdAt?: string;

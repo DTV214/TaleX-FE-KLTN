@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   BarChart3,
   CalendarClock,
@@ -17,6 +18,7 @@ import {
   getAdminCampaignStatusClass,
   getAdminCampaignStatusLabel,
 } from "../campaigns/components/campaign-status";
+import { CampaignDeleteModal } from "../campaigns/components/campaign-delete-modal";
 import { useDeleteAdminCampaign } from "../campaigns/hooks/use-admin-campaigns";
 import type { AdminCampaign } from "../campaigns/types/campaigns.types";
 
@@ -30,6 +32,7 @@ type CampaignManagementTableProps = {
   isError?: boolean;
   onPageChange: (page: number) => void;
   onEdit: (campaign: AdminCampaign) => void;
+  onDelete?: (campaign: AdminCampaign) => void;
 };
 
 function formatNumber(value?: number | null) {
@@ -114,25 +117,18 @@ export function CampaignManagementTable({
   isError = false,
   onPageChange,
   onEdit,
+  onDelete,
 }: CampaignManagementTableProps) {
   const deleteMutation = useDeleteAdminCampaign();
+  const [internalDeletingCampaign, setInternalDeletingCampaign] = useState<AdminCampaign | null>(null);
   const firstItem = totalElements === 0 ? 0 : (page - 1) * pageSize + 1;
   const lastItem = Math.min(page * pageSize, totalElements);
 
-  async function handleDelete(campaign: AdminCampaign) {
-    const confirmed = window.confirm(
-      `Bạn có chắc muốn hủy chiến dịch ${shortenId(campaign.campaignId)} không?`,
-    );
-
-    if (!confirmed) {
-      return;
-    }
-
-    try {
-      await deleteMutation.mutateAsync(campaign.campaignId);
-      toast.success("Hủy chiến dịch thành công.");
-    } catch (error) {
-      toast.error(getApiErrorMessage(error));
+  function handleTriggerDelete(campaign: AdminCampaign) {
+    if (onDelete) {
+      onDelete(campaign);
+    } else {
+      setInternalDeletingCampaign(campaign);
     }
   }
 
@@ -296,7 +292,7 @@ export function CampaignManagementTable({
                           variant="destructive"
                           size="sm"
                           disabled={deleteMutation.isPending}
-                          onClick={() => void handleDelete(campaign)}
+                          onClick={() => handleTriggerDelete(campaign)}
                         >
                           {isDeleting ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -342,6 +338,12 @@ export function CampaignManagementTable({
           </Button>
         </div>
       </div>
+
+      <CampaignDeleteModal
+        isOpen={Boolean(internalDeletingCampaign)}
+        campaign={internalDeletingCampaign}
+        onClose={() => setInternalDeletingCampaign(null)}
+      />
     </section>
   );
 }
