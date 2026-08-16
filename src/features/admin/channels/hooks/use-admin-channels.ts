@@ -129,19 +129,19 @@ export function useMongoUserDynamicFeatures(accountId: string) {
 export function useTrainInit() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (token?: string) => adminChannelsApi.trainInit(token),
+    mutationFn: () => adminChannelsApi.trainInit(),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: adminChannelKeys.all });
     },
   });
 }
 
-// 9. Hook to trigger Train Init Real (Supabase DB + MongoDB Atlas)
+// 9. Hook to trigger Train Init Real (PostgreSQL + MongoDB Atlas)
 export function useTrainInitReal() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ token, maxSamples }: { token?: string; maxSamples?: number }) =>
-      adminChannelsApi.trainInitReal(token, maxSamples),
+    mutationFn: (maxSamples?: number) =>
+      adminChannelsApi.trainInitReal(maxSamples),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: adminChannelKeys.all });
     },
@@ -158,17 +158,17 @@ export function useRankCandidates() {
 // 11. Hook to download train dataset Excel
 export function useDownloadTrainData() {
   return useMutation({
-    mutationFn: async () => {
-      const blob = await adminChannelsApi.downloadTrainData();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", "train_data.xlsx");
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-    },
+    mutationFn: () => adminChannelsApi.downloadTrainData(),
+  });
+}
+
+// 12. Hook to fetch full Series Feature by seriesId (GET /api/v1/series-features/{seriesId})
+export function useSeriesFeature(seriesId: string) {
+  return useQuery({
+    queryKey: [...adminChannelKeys.all, "series-feature", seriesId],
+    queryFn: () => adminChannelsApi.getSeriesFeatureById(seriesId),
+    enabled: Boolean(seriesId),
+    staleTime: 60 * 1000,
   });
 }
 

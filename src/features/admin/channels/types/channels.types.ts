@@ -97,6 +97,60 @@ export interface MongoUserDynamicFeatures {
   tags: string[];
 }
 
+export interface SeriesFeatureInteractionStats {
+  totalClicks?: number;
+  totalLikes?: number;
+  totalBookmarks?: number;
+  totalShares?: number;
+  totalComments?: number;
+  likeToClickRatio?: number;
+  bookmarkToClickRatio?: number;
+  shareToClickRatio?: number;
+  commentToClickRatio?: number;
+  clicksLast7d?: number;
+  likesLast7d?: number;
+  bookmarksLast7d?: number;
+  sharesLast7d?: number;
+  commentsLast7d?: number;
+  likeToClickRatioLast7d?: number;
+  bookmarkToClickRatioLast7d?: number;
+  shareToClickRatioLast7d?: number;
+  commentToClickRatioLast7d?: number;
+  clicksLast24h?: number;
+  likesLast24h?: number;
+  bookmarksLast24h?: number;
+  sharesLast24h?: number;
+  commentsLast24h?: number;
+  likeToClickRatioLast24h?: number;
+  bookmarkToClickRatioLast24h?: number;
+  shareToClickRatioLast24h?: number;
+  commentToClickRatioLast24h?: number;
+}
+
+export interface SeriesFeatureEngagementStats {
+  totalWatchTime?: number;
+  watchTimeLast7d?: number;
+  watchTimeLast24h?: number;
+}
+
+export interface SeriesFeatureData {
+  id: string;
+  contentType: string;
+  title: string;
+  description: string;
+  category: string[];
+  tags: string[];
+  ageRating: string;
+  language: string;
+  creatorTier?: string | null;
+  rating: number;
+  releasedUpdatedAt: string;
+  coverUrl?: string | null;
+  bannerUrl?: string | null;
+  interactionStats?: SeriesFeatureInteractionStats;
+  engagementStats?: SeriesFeatureEngagementStats;
+}
+
 export type MainTabKey = "general" | "personal" | "ai-brain";
 
 export interface TrainInitResponse {

@@ -1,5 +1,5 @@
 import axios from "axios";
-import { httpClient, unwrapBaseResponse } from "@/shared/api/http-client";
+import { httpClient, unwrapBaseResponse, type BaseResponse } from "@/shared/api/http-client";
 import { AI_RECOMMENDATION_API_URL } from "@/core/config/api";
 import type {
   ChannelKey,
@@ -10,6 +10,7 @@ import type {
   TrainInitResponse,
   RankCandidatesRequest,
   RankCandidatesResponse,
+  SeriesFeatureData,
 } from "../types/channels.types";
 import { getAdminAccounts, type AdminAccountItem } from "@/features/admin/api/account.api";
 
@@ -221,25 +222,32 @@ export const adminChannelsApi = {
     return null;
   },
 
-  // 15. Trigger Train Init (POST /api/v1/recommendations/train-init?token=...)
-  async trainInit(token: string = "talex_secret_demo_2026"): Promise<TrainInitResponse> {
-    const response = await recommendationBrainClient.post(
-      getBrainUrl(`/recommendations/train-init?token=${encodeURIComponent(token)}`),
-      {}
+  // 15. Trigger Train Init (POST /api/v1/recommendations/model/train-init)
+  async trainInit(): Promise<TrainInitResponse> {
+    const response = await httpClient.post<BaseResponse<TrainInitResponse>>(
+      "/api/v1/recommendations/model/train-init"
     );
-    return response.data?.data || response.data;
+    const body = response.data;
+    if (body && typeof body === "object" && "data" in body && body.data) {
+      return body.data;
+    }
+    return body as unknown as TrainInitResponse;
   },
 
-  // 16. Trigger Train Init Real (POST /api/v1/recommendations/train-init-real?token=...&max_samples=...)
-  async trainInitReal(
-    token: string = "talex_secret_demo_2026",
-    maxSamples: number = 10000
-  ): Promise<TrainInitResponse> {
-    const response = await recommendationBrainClient.post(
-      getBrainUrl(`/recommendations/train-init-real?token=${encodeURIComponent(token)}&max_samples=${maxSamples}`),
-      {}
+  // 16. Trigger Train Init Real (POST /api/v1/recommendations/model/train-init-real?maxSamples=...)
+  async trainInitReal(maxSamples: number = 10000): Promise<TrainInitResponse> {
+    const response = await httpClient.post<BaseResponse<TrainInitResponse>>(
+      "/api/v1/recommendations/model/train-init-real",
+      null,
+      {
+        params: { maxSamples },
+      }
     );
-    return response.data?.data || response.data;
+    const body = response.data;
+    if (body && typeof body === "object" && "data" in body && body.data) {
+      return body.data;
+    }
+    return body as unknown as TrainInitResponse;
   },
 
   // 17. Rank Candidates (POST /api/v1/recommendations/rank)
@@ -251,15 +259,27 @@ export const adminChannelsApi = {
     return response.data?.data || response.data;
   },
 
-  // 18. Download train data Excel file (GET /api/v1/recommendations/train-data/download)
+  // 18. Download train data Excel file (GET /api/v1/recommendations/model/train-data/download)
   async downloadTrainData(): Promise<Blob> {
-    const response = await recommendationBrainClient.get(
-      getBrainUrl("/recommendations/train-data/download"),
+    const response = await httpClient.get(
+      "/api/v1/recommendations/model/train-data/download",
       {
         responseType: "blob",
       }
     );
     return response.data;
+  },
+
+  // 19. Get Series Feature by Series ID (GET /api/v1/series-features/{seriesId})
+  async getSeriesFeatureById(seriesId: string): Promise<SeriesFeatureData> {
+    const response = await httpClient.get<BaseResponse<SeriesFeatureData>>(
+      `/api/v1/series-features/${seriesId}`
+    );
+    const body = response.data;
+    if (body && typeof body === "object" && "data" in body && body.data) {
+      return body.data;
+    }
+    return body as unknown as SeriesFeatureData;
   },
 };
 
