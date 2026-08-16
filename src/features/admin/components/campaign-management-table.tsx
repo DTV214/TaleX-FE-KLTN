@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   BarChart3,
   CalendarClock,
@@ -17,6 +18,7 @@ import {
   getAdminCampaignStatusClass,
   getAdminCampaignStatusLabel,
 } from "../campaigns/components/campaign-status";
+import { CampaignDeleteModal } from "../campaigns/components/campaign-delete-modal";
 import { useDeleteAdminCampaign } from "../campaigns/hooks/use-admin-campaigns";
 import type { AdminCampaign } from "../campaigns/types/campaigns.types";
 
@@ -30,6 +32,7 @@ type CampaignManagementTableProps = {
   isError?: boolean;
   onPageChange: (page: number) => void;
   onEdit: (campaign: AdminCampaign) => void;
+  onDelete?: (campaign: AdminCampaign) => void;
 };
 
 function formatNumber(value?: number | null) {
@@ -61,7 +64,9 @@ function shortenId(value?: string | null) {
     return "Chưa có";
   }
 
-  return value.length > 18 ? `${value.slice(0, 10)}...${value.slice(-6)}` : value;
+  return value.length > 18
+    ? `${value.slice(0, 10)}...${value.slice(-6)}`
+    : value;
 }
 
 function getProgress(campaign: AdminCampaign) {
@@ -89,13 +94,7 @@ function TableSkeleton() {
   );
 }
 
-function AnalyticsValue({
-  label,
-  value,
-}: {
-  label: string;
-  value?: unknown;
-}) {
+function AnalyticsValue({ label, value }: { label: string; value?: unknown }) {
   return (
     <span className="inline-flex items-center gap-1 rounded-md bg-slate-50 px-2 py-1 text-xs font-bold text-slate-600">
       <span className="text-slate-400">{label}</span>
@@ -114,25 +113,19 @@ export function CampaignManagementTable({
   isError = false,
   onPageChange,
   onEdit,
+  onDelete,
 }: CampaignManagementTableProps) {
   const deleteMutation = useDeleteAdminCampaign();
+  const [internalDeletingCampaign, setInternalDeletingCampaign] =
+    useState<AdminCampaign | null>(null);
   const firstItem = totalElements === 0 ? 0 : (page - 1) * pageSize + 1;
   const lastItem = Math.min(page * pageSize, totalElements);
 
-  async function handleDelete(campaign: AdminCampaign) {
-    const confirmed = window.confirm(
-      `Bạn có chắc muốn hủy chiến dịch ${shortenId(campaign.campaignId)} không?`,
-    );
-
-    if (!confirmed) {
-      return;
-    }
-
-    try {
-      await deleteMutation.mutateAsync(campaign.campaignId);
-      toast.success("Hủy chiến dịch thành công.");
-    } catch (error) {
-      toast.error(getApiErrorMessage(error));
+  function handleTriggerDelete(campaign: AdminCampaign) {
+    if (onDelete) {
+      onDelete(campaign);
+    } else {
+      setInternalDeletingCampaign(campaign);
     }
   }
 
@@ -236,8 +229,14 @@ export function CampaignManagementTable({
 
                     <td className="px-5 py-5">
                       <div className="flex max-w-xs flex-wrap gap-2">
-                        <AnalyticsValue label="Views" value={analyticData.views} />
-                        <AnalyticsValue label="Likes" value={analyticData.likes} />
+                        <AnalyticsValue
+                          label="Views"
+                          value={analyticData.views}
+                        />
+                        <AnalyticsValue
+                          label="Likes"
+                          value={analyticData.likes}
+                        />
                         <AnalyticsValue
                           label="Comments"
                           value={analyticData.comments}
@@ -289,21 +288,7 @@ export function CampaignManagementTable({
                           className="border-gray-200 bg-white text-gray-700 hover:border-violet-200 hover:bg-violet-50 hover:text-violet-600 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/10 backoffice-dark:hover:text-white"
                         >
                           <Edit2 className="h-4 w-4" />
-                          Sửa
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="sm"
-                          disabled={deleteMutation.isPending}
-                          onClick={() => void handleDelete(campaign)}
-                        >
-                          {isDeleting ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Trash2 className="h-4 w-4" />
-                          )}
-                          Hủy
+                          Cập nhật trạng thái
                         </Button>
                       </div>
                     </td>
@@ -314,7 +299,7 @@ export function CampaignManagementTable({
         </table>
       </div>
 
-      <div className="flex flex-col gap-3 border-t border-gray-100 bg-gray-50/30 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 border-t border-gray-100 bg-black-50/30 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm font-semibold text-gray-500">
           Hiển thị {firstItem}-{lastItem} / {totalElements} chiến dịch
         </p>
@@ -342,6 +327,12 @@ export function CampaignManagementTable({
           </Button>
         </div>
       </div>
+
+      <CampaignDeleteModal
+        isOpen={Boolean(internalDeletingCampaign)}
+        campaign={internalDeletingCampaign}
+        onClose={() => setInternalDeletingCampaign(null)}
+      />
     </section>
   );
 }

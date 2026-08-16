@@ -1,44 +1,37 @@
 "use client";
 
-import { type FormEvent, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   AlertTriangle,
   ChevronLeft,
   ChevronRight,
   Eye,
-  Film,
+  EyeOff,
   Flag,
-  Image as ImageIcon,
   Loader2,
   RefreshCcw,
   UserCheck,
-  X,
 } from "lucide-react";
-import { toast } from "sonner";
 import {
   type ModerationTicket,
-  type PenaltyLevel,
   type ReportTargetType,
   type TicketStatus,
 } from "../api/moderation-reports.api";
 import {
   useAssignTicket,
-  useModerationTargetDetail,
-  useProcessTicket,
   useTickets,
 } from "../hooks/use-moderation-reports";
 import {
   formatDateTime,
-  labelForPenaltyLevel,
   labelForReason,
   labelForTargetType,
   labelForTicketStatus,
-  penaltyLevelOptions,
   reportTargetOptions,
   statusTone,
   ticketStatusOptions,
 } from "../utils/moderation-labels";
-import { WatermarkScanner } from "./watermark-scanner";
+
+import { TicketDetailModal } from "./ticket-detail-modal";
 
 const PAGE_SIZE = 20;
 
@@ -48,8 +41,56 @@ type Props = {
 
 function statusBadge(status?: string) {
   return (
-    <span className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-black ${statusTone(status)}`}>
+    <span
+      className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-black ${statusTone(status)}`}
+    >
       {labelForTicketStatus(status)}
+    </span>
+  );
+}
+
+function shortId(value?: string | null) {
+  if (!value) return "-";
+  if (value.length <= 14) return value;
+  return `${value.slice(0, 8)}...${value.slice(-6)}`;
+}
+
+function MaskedId({
+  label,
+  value,
+  className = "",
+}: {
+  label: string;
+  value?: string | null;
+  className?: string;
+}) {
+  const [isVisible, setIsVisible] = useState(false);
+
+  if (!value) return <span className={className}>-</span>;
+
+  return (
+    <span className={`inline-flex max-w-full items-center gap-2 ${className}`}>
+      <span
+        className={`min-w-0 font-bold text-slate-600 backoffice-dark:text-white/65 ${
+          isVisible ? "break-all" : "truncate"
+        }`}
+        title={isVisible ? value : `${label}: ${shortId(value)}`}
+      >
+        {isVisible ? value : shortId(value)}
+      </span>
+      <button
+        type="button"
+        onClick={() => setIsVisible((current) => !current)}
+        className="inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.05] backoffice-dark:text-white/55 backoffice-dark:hover:border-amber-300/60 backoffice-dark:hover:bg-amber-300/10 backoffice-dark:hover:text-amber-200"
+        aria-label={isVisible ? `Ẩn ${label}` : `Hiện ${label}`}
+        title={isVisible ? `Ẩn ${label}` : `Hiện ${label}`}
+      >
+        {isVisible ? (
+          <EyeOff className="h-3.5 w-3.5" />
+        ) : (
+          <Eye className="h-3.5 w-3.5" />
+        )}
+      </button>
     </span>
   );
 }
@@ -57,7 +98,8 @@ function statusBadge(status?: string) {
 function getDominantReason(ticket: ModerationTicket) {
   if (ticket.dominantReason) return ticket.dominantReason;
 
-  const reasons = ticket.reports?.map((report) => report.reason).filter(Boolean) ?? [];
+  const reasons =
+    ticket.reports?.map((report) => report.reason).filter(Boolean) ?? [];
   if (!reasons.length) return undefined;
 
   const counts = new Map<string, number>();
@@ -83,385 +125,6 @@ function getTargetPreview(ticket: ModerationTicket, index: number) {
     default:
       return "Vấn đề hệ thống";
   }
-}
-
-function isFinalTicket(status?: TicketStatus) {
-  return status === "RESOLVED" || status === "DISMISSED";
-}
-
-function ProofLinks({ images, videos, targetType }: { images?: string[], videos?: string[], targetType?: string }) {
-  const hasImages = images && images.length > 0;
-  const hasVideos = videos && videos.length > 0;
-
-  if (!hasImages && !hasVideos) {
-    return <span className="text-xs font-semibold text-slate-400">Không có bằng chứng (ảnh/video)</span>;
-  }
-
-  return (
-    <div className="max-h-80 space-y-3 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-3 [scrollbar-width:thin] [scrollbar-color:rgba(148,163,184,0.55)_transparent] backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.03]">
-      {images?.map((url, index) => (
-        <div key={`img-${index}`} className="flex flex-col gap-2">
-          <a
-            href={url}
-            target="_blank"
-            rel="noreferrer"
-            className="group block overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:border-amber-300 hover:shadow-md backoffice-dark:border-white/10 backoffice-dark:bg-black/25"
-          >
-            <div className="flex items-center gap-2 border-b border-slate-100 px-3 py-2 text-xs font-black text-slate-600 group-hover:text-amber-700 backoffice-dark:border-white/10 backoffice-dark:text-white/70">
-              <ImageIcon className="h-3.5 w-3.5" />
-              Ảnh minh chứng {index + 1}
-            </div>
-            <div className="bg-slate-950/5 p-2 backoffice-dark:bg-black/30">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={url}
-                alt={`Ảnh minh chứng ${index + 1}`}
-                loading="lazy"
-                className="max-h-56 w-full rounded-lg object-contain"
-              />
-            </div>
-          </a>
-          {targetType === "OTHER" && (
-            <WatermarkScanner url={url} mediaType="IMAGE" />
-          )}
-        </div>
-      ))}
-      {videos?.map((url, index) => (
-        <div key={`vid-${index}`} className="flex flex-col gap-2">
-          <a
-            href={url}
-            target="_blank"
-            rel="noreferrer"
-            className="group block overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:border-amber-300 hover:shadow-md backoffice-dark:border-white/10 backoffice-dark:bg-black/25"
-          >
-            <div className="flex items-center gap-2 border-b border-slate-100 px-3 py-2 text-xs font-black text-slate-600 group-hover:text-amber-700 backoffice-dark:border-white/10 backoffice-dark:text-white/70">
-              <Film className="h-3.5 w-3.5" />
-              Video minh chứng {index + 1}
-            </div>
-            <div className="bg-slate-950/5 p-2 backoffice-dark:bg-black/30">
-              <video
-                src={url}
-                controls
-                className="max-h-56 w-full rounded-lg object-contain"
-              />
-            </div>
-          </a>
-          {targetType === "OTHER" && (
-            <WatermarkScanner url={url} mediaType="VIDEO" />
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function TicketDetailModal({
-  isAssigning,
-  onAssign,
-  ticket,
-  onClose,
-  onProcessed,
-}: {
-  isAssigning: boolean;
-  onAssign: (ticket: ModerationTicket) => Promise<void>;
-  ticket: ModerationTicket | null;
-  onClose: () => void;
-  onProcessed: () => void;
-}) {
-  const [decision, setDecision] = useState<"approve" | "dismiss">("approve");
-  const [penaltyLevel, setPenaltyLevel] = useState<PenaltyLevel>("WARNING_EPISODE");
-  const [reason, setReason] = useState("");
-  const processMutation = useProcessTicket(ticket?.ticketId);
-  const targetDetailQuery = useModerationTargetDetail(ticket);
-
-  if (!ticket) return null;
-
-  const canProcess = ticket.status === "IN_PROGRESS";
-  const canAssign = !canProcess && !isFinalTicket(ticket.status);
-  const dominantReason = getDominantReason(ticket);
-  const targetDetail = targetDetailQuery.data;
-
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const trimmedReason = reason.trim();
-    if (!trimmedReason) {
-      toast.error("Vui lòng nhập lý do xử lý.");
-      return;
-    }
-
-    if (decision === "approve" && !penaltyLevel) {
-      toast.error("Vui lòng chọn mức hình phạt.");
-      return;
-    }
-
-    await processMutation.mutateAsync(
-      decision === "approve"
-        ? { isApproved: true, penaltyLevel, reason: trimmedReason }
-        : { isApproved: false, reason: trimmedReason },
-    );
-    onProcessed();
-  }
-
-  async function handleAssignInModal() {
-    if (!ticket) return;
-    await onAssign(ticket);
-  }
-
-  return (
-    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/60 px-4 py-8 backdrop-blur-sm">
-      <div className="flex max-h-full w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl backoffice-dark:border-white/10 backoffice-dark:bg-[#111113]">
-        <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-4 backoffice-dark:border-white/10">
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-lg font-black text-slate-950 backoffice-dark:text-white">
-                Chi tiết ticket báo cáo
-              </h2>
-              {statusBadge(ticket.status)}
-            </div>
-            <p className="mt-1 text-xs font-semibold text-slate-500 backoffice-dark:text-white/50">
-              {labelForTargetType(ticket.targetType)} · tạo {formatDateTime(ticket.createdAt)} · cập nhật{" "}
-              {formatDateTime(ticket.updatedAt)}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 backoffice-dark:hover:bg-white/10 backoffice-dark:hover:text-white"
-            aria-label="Đóng"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[1fr_360px]">
-          <div className="min-h-0 overflow-y-auto p-5 [scrollbar-width:thin] [scrollbar-color:rgba(148,163,184,0.55)_transparent]">
-            <section className="mb-4 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
-              <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
-                <div className="flex h-24 w-full shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white sm:w-32 backoffice-dark:border-white/10 backoffice-dark:bg-black/25">
-                  {targetDetail?.imageUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element -- Moderation detail previews backend/public media URLs.
-                    <img
-                      src={targetDetail.imageUrl}
-                      alt={targetDetail.title}
-                      className="h-full w-full object-cover"
-                      loading="lazy"
-                    />
-                  ) : targetDetailQuery.isLoading ? (
-                    <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
-                  ) : (
-                    <Flag className="h-8 w-8 text-slate-300 backoffice-dark:text-white/25" />
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-black uppercase tracking-[0.16em] text-amber-600 backoffice-dark:text-[var(--backoffice-primary)]">
-                    Đối tượng bị báo cáo
-                  </p>
-                  <h3 className="mt-1 truncate text-xl font-black text-slate-950 backoffice-dark:text-white">
-                    {targetDetailQuery.isLoading
-                      ? "Đang tải chi tiết..."
-                      : targetDetail?.title || labelForTargetType(ticket.targetType)}
-                  </h3>
-                  <p className="mt-1 text-sm font-semibold text-slate-500 backoffice-dark:text-white/55">
-                    {targetDetail?.subtitle ||
-                      (targetDetailQuery.isError
-                        ? "Chưa lấy được chi tiết đối tượng từ API."
-                        : "Chi tiết sẽ hiển thị khi API trả dữ liệu.")}
-                  </p>
-                  <p className="mt-2 break-all text-xs font-semibold text-slate-400 backoffice-dark:text-white/35">
-                    ID: {ticket.targetId}
-                  </p>
-                </div>
-              </div>
-              {targetDetail?.metadata.length ? (
-                <div className="grid gap-2 border-t border-slate-200 p-4 backoffice-dark:border-white/10 sm:grid-cols-2 lg:grid-cols-3">
-                  {targetDetail.metadata.map((item) => (
-                    <div
-                      key={`${item.label}-${String(item.value)}`}
-                      className="rounded-xl bg-white px-3 py-2 backoffice-dark:bg-black/25"
-                    >
-                      <p className="text-[11px] font-bold uppercase text-slate-400">
-                        {item.label}
-                      </p>
-                      <p className="mt-1 truncate text-sm font-black text-slate-800 backoffice-dark:text-white/80">
-                        {typeof item.value === "string" &&
-                        item.value.includes("T") &&
-                        !Number.isNaN(new Date(item.value).getTime())
-                          ? formatDateTime(item.value)
-                          : item.value}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              ) : null}
-            </section>
-
-            <div className="mb-4 grid gap-3 sm:grid-cols-4">
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                <p className="text-xs font-bold text-slate-400">Số report</p>
-                <p className="mt-1 text-xl font-black text-slate-950">{ticket.reportCount}</p>
-              </div>
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                <p className="text-xs font-bold text-slate-400">Ưu tiên</p>
-                <p className="mt-1 text-xl font-black text-amber-600">{ticket.priorityScore}</p>
-              </div>
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                <p className="text-xs font-bold text-slate-400">Lý do chính</p>
-                <p className="mt-1 text-sm font-black text-slate-950">
-                  {labelForReason(dominantReason)}
-                </p>
-              </div>
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                <p className="text-xs font-bold text-slate-400">Staff</p>
-                <p className="mt-1 truncate text-sm font-black text-slate-950">
-                  {ticket.assignedStaffUsername || ticket.assignedStaffId || "Chưa nhận"}
-                </p>
-              </div>
-            </div>
-
-            <h3 className="mb-3 text-sm font-black uppercase tracking-wide text-slate-500">
-              Báo cáo liên quan
-            </h3>
-            <div className="space-y-3">
-              {(ticket.reports ?? []).map((report, index) => (
-                <article
-                  key={report.reportId || report.id || index}
-                  className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
-                >
-                  <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                    <div>
-                      <p className="text-sm font-black text-slate-950">
-                        {labelForReason(report.reason)}
-                      </p>
-                      <p className="mt-0.5 text-xs font-semibold text-slate-500">
-                        Người báo cáo: {report.reporterUsername || report.reporterId || "-"} ·{" "}
-                        {formatDateTime(report.createdAt)}
-                      </p>
-                    </div>
-                    <span className={`rounded-full border px-2.5 py-1 text-[11px] font-black ${statusTone(report.status)}`}>
-                      {report.status || "-"}
-                    </span>
-                  </div>
-                  <p className="mb-3 whitespace-pre-line text-sm font-medium leading-relaxed text-slate-700">
-                    {report.description || "Không có mô tả."}
-                  </p>
-                  <ProofLinks images={report.proofImages} videos={report.proofVideos} targetType={ticket.targetType} />
-                </article>
-              ))}
-
-              {!ticket.reports?.length && (
-                <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm font-semibold text-slate-500">
-                  Ticket này chưa trả về danh sách report chi tiết.
-                </div>
-              )}
-            </div>
-          </div>
-
-          <form
-            onSubmit={handleSubmit}
-            className="border-t border-slate-200 bg-slate-50 p-5 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.05] lg:border-l lg:border-t-0"
-          >
-            <h3 className="text-base font-black text-slate-950">Xử lý ticket</h3>
-            <p className="mt-1 text-xs font-semibold leading-relaxed text-slate-500">
-              BE chỉ cho process khi ticket đang `IN_PROGRESS` và thuộc staff hiện tại.
-            </p>
-
-            {!canProcess && (
-              <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs font-bold text-amber-700">
-                Hãy bấm “Nhận xử lý” trước, hoặc ticket này đã được xử lý xong.
-              </div>
-            )}
-
-            {canAssign && (
-              <button
-                type="button"
-                onClick={handleAssignInModal}
-                disabled={isAssigning}
-                className="mt-4 inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-amber-400 text-sm font-black text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {isAssigning ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <UserCheck className="h-4 w-4" />
-                )}
-                Nhận xử lý ticket này
-              </button>
-            )}
-
-            <div className="mt-5 grid grid-cols-2 gap-2">
-              {[
-                { key: "approve", label: "Xác nhận vi phạm" },
-                { key: "dismiss", label: "Bác bỏ report" },
-              ].map((option) => (
-                <button
-                  key={option.key}
-                  type="button"
-                  onClick={() => setDecision(option.key as "approve" | "dismiss")}
-                  disabled={!canProcess || processMutation.isPending}
-                  className={`h-10 rounded-lg border text-xs font-black transition disabled:opacity-50 ${
-                    decision === option.key
-                      ? "border-slate-950 bg-slate-950 text-white"
-                      : "border-slate-200 bg-white text-slate-600 hover:bg-slate-100"
-                  }`}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-
-            {decision === "approve" && (
-              <label className="mt-4 block">
-                <span className="mb-2 block text-sm font-bold text-slate-700">
-                  Mức hình phạt
-                </span>
-                <select
-                  value={penaltyLevel}
-                  onChange={(event) => setPenaltyLevel(event.target.value as PenaltyLevel)}
-                  disabled={!canProcess || processMutation.isPending}
-                  className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-bold text-slate-900 outline-none focus:border-amber-500"
-                >
-                  {penaltyLevelOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-                <p className="mt-2 text-xs font-semibold text-slate-500">
-                  {labelForPenaltyLevel(penaltyLevel)} sẽ tạo Penalty ACTIVE ở BE.
-                </p>
-              </label>
-            )}
-
-            <label className="mt-4 block">
-              <span className="mb-2 block text-sm font-bold text-slate-700">
-                Lý do xử lý
-              </span>
-              <textarea
-                value={reason}
-                onChange={(event) => setReason(event.target.value)}
-                disabled={!canProcess || processMutation.isPending}
-                rows={5}
-                className="w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm font-medium text-slate-900 outline-none focus:border-amber-500 disabled:bg-slate-100"
-                placeholder={
-                  decision === "approve"
-                    ? "Ví dụ: Đủ bằng chứng vi phạm bản quyền..."
-                    : "Ví dụ: Không đủ bằng chứng hoặc report sai đối tượng..."
-                }
-              />
-            </label>
-
-            <button
-              type="submit"
-              disabled={!canProcess || processMutation.isPending}
-              className="mt-5 inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-slate-950 text-sm font-black text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {processMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-              Lưu kết quả
-            </button>
-          </form>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 export function ModerationTicketsDashboard({ scope = "staff" }: Props) {
@@ -491,6 +154,18 @@ export function ModerationTicketsDashboard({ scope = "staff" }: Props) {
 
   return (
     <div className="w-full space-y-6">
+      {selectedTicket && (
+        <TicketDetailModal
+          isAssigning={assignMutation.isPending}
+          onAssign={handleAssign}
+          ticket={selectedTicket}
+          onClose={() => setSelectedTicket(null)}
+          onProcessed={() => {
+            setSelectedTicket(null);
+            ticketsQuery.refetch();
+          }}
+        />
+      )}
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
@@ -540,7 +215,7 @@ export function ModerationTicketsDashboard({ scope = "staff" }: Props) {
             <button
               type="button"
               onClick={() => ticketsQuery.refetch()}
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-black text-slate-600 transition hover:bg-slate-50"
+              className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-black text-slate-600 transition hover:bg-slate-50 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.05] backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/10"
             >
               <RefreshCcw className="h-4 w-4" />
               Tải lại
@@ -575,8 +250,8 @@ export function ModerationTicketsDashboard({ scope = "staff" }: Props) {
       {tickets.length > 0 && (
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[980px] text-left text-sm">
-              <thead className="border-b border-slate-200 bg-slate-50 text-xs font-black uppercase tracking-wide text-slate-500">
+            <table className="w-full min-w-[1040px] text-left text-sm">
+              <thead className="border-b border-slate-200 bg-slate-50 text-xs font-black uppercase tracking-wide text-slate-500 backoffice-dark:border-white/10 backoffice-dark:bg-white/5 backoffice-dark:text-white/45">
                 <tr>
                   <th className="px-5 py-4">Thời gian</th>
                   <th className="px-5 py-4">Đối tượng</th>
@@ -586,30 +261,35 @@ export function ModerationTicketsDashboard({ scope = "staff" }: Props) {
                   <th className="px-5 py-4 text-right">Thao tác</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 backoffice-dark:divide-white/10">
                 {tickets.map((ticket, index) => {
                   const dominantReason = getDominantReason(ticket);
 
                   return (
-                  <tr key={ticket.ticketId} className="transition hover:bg-slate-50">
+                  <tr key={ticket.ticketId} className="transition hover:bg-slate-50 backoffice-dark:hover:bg-white/[0.05]">
                     <td className="px-5 py-4">
-                      <div className="space-y-1.5">
+                      <div className="max-w-[250px] space-y-1.5">
+                        <MaskedId
+                          label="Ticket ID"
+                          value={ticket.ticketId}
+                          className="text-xs"
+                        />
                         <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
                           Ngày tạo
                         </p>
-                        <p className="font-black text-slate-950">
+                        <p className="font-black text-slate-950 backoffice-dark:text-white">
                           {formatDateTime(ticket.createdAt)}
                         </p>
-                        <p className="text-xs font-semibold text-slate-500">
+                        <p className="text-xs font-semibold text-slate-500 backoffice-dark:text-white/55">
                           Cập nhật: {formatDateTime(ticket.updatedAt)}
                         </p>
                       </div>
                     </td>
                     <td className="px-5 py-4">
-                      <p className="font-black text-slate-800">
+                      <p className="font-black text-slate-800 backoffice-dark:text-white">
                         {getTargetPreview(ticket, index)}
                       </p>
-                      <p className="mt-1 text-xs font-semibold text-slate-500">
+                      <p className="mt-1 text-xs font-semibold text-slate-500 backoffice-dark:text-white/55">
                         {labelForTargetType(ticket.targetType)}
                       </p>
                     </td>
@@ -622,20 +302,30 @@ export function ModerationTicketsDashboard({ scope = "staff" }: Props) {
                           {ticket.priorityScore} điểm
                         </span>
                       </div>
-                      <p className="mt-1 text-xs font-semibold text-slate-500">
+                      <p className="mt-1 text-xs font-semibold text-slate-500 backoffice-dark:text-white/55">
                         {labelForReason(dominantReason)}
                       </p>
                     </td>
                     <td className="px-5 py-4">{statusBadge(ticket.status)}</td>
                     <td className="px-5 py-4 text-xs font-bold text-slate-500">
-                      {ticket.assignedStaffUsername || ticket.assignedStaffId || "Chưa nhận"}
+                      {ticket.assignedStaffUsername ? (
+                        <span className="text-slate-700 backoffice-dark:text-white/75">
+                          {ticket.assignedStaffUsername}
+                        </span>
+                      ) : (
+                        <MaskedId
+                          label="Staff ID"
+                          value={ticket.assignedStaffId}
+                          className="max-w-[180px]"
+                        />
+                      )}
                     </td>
                     <td className="px-5 py-4">
                       <div className="flex justify-end gap-2">
                         <button
                           type="button"
                           onClick={() => setSelectedTicket(ticket)}
-                          className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-black text-slate-600 transition hover:bg-slate-50"
+                          className="inline-flex h-9 cursor-pointer items-center gap-2 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-3 text-xs font-black text-slate-600 transition hover:bg-slate-50 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.05] backoffice-dark:text-white/75 backoffice-dark:hover:bg-white/10"
                         >
                           <Eye className="h-4 w-4" />
                           Chi tiết
@@ -648,7 +338,7 @@ export function ModerationTicketsDashboard({ scope = "staff" }: Props) {
                             ticket.status === "RESOLVED" ||
                             ticket.status === "DISMISSED"
                           }
-                          className="inline-flex h-9 items-center gap-2 rounded-lg bg-slate-950 px-3 text-xs font-black text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
+                          className="inline-flex h-9 cursor-pointer items-center gap-2 whitespace-nowrap rounded-lg bg-slate-950 px-3 text-xs font-black text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40 backoffice-dark:bg-white backoffice-dark:text-slate-950 backoffice-dark:hover:bg-white/85"
                         >
                           {assignMutation.isPending ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -667,8 +357,8 @@ export function ModerationTicketsDashboard({ scope = "staff" }: Props) {
           </div>
 
           {ticketsQuery.data && ticketsQuery.data.totalPages > 1 && (
-            <div className="flex items-center justify-between border-t border-slate-200 px-5 py-3">
-              <p className="text-sm font-semibold text-slate-500">
+            <div className="flex items-center justify-between border-t border-slate-200 px-5 py-3 backoffice-dark:border-white/10">
+              <p className="text-sm font-semibold text-slate-500 backoffice-dark:text-white/55">
                 Trang {ticketsQuery.data.pageNumber} / {ticketsQuery.data.totalPages} ·{" "}
                 {ticketsQuery.data.totalElements} ticket
               </p>
@@ -677,7 +367,7 @@ export function ModerationTicketsDashboard({ scope = "staff" }: Props) {
                   type="button"
                   onClick={() => setPage((current) => Math.max(1, current - 1))}
                   disabled={ticketsQuery.data.isFirst || ticketsQuery.isFetching}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:bg-slate-50 disabled:opacity-40"
+                  className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 backoffice-dark:border-white/10 backoffice-dark:text-white/60 backoffice-dark:hover:bg-white/10"
                   aria-label="Trang trước"
                 >
                   <ChevronLeft className="h-4 w-4" />
@@ -686,7 +376,7 @@ export function ModerationTicketsDashboard({ scope = "staff" }: Props) {
                   type="button"
                   onClick={() => setPage((current) => current + 1)}
                   disabled={ticketsQuery.data.isLast || ticketsQuery.isFetching}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:bg-slate-50 disabled:opacity-40"
+                  className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 backoffice-dark:border-white/10 backoffice-dark:text-white/60 backoffice-dark:hover:bg-white/10"
                   aria-label="Trang sau"
                 >
                   <ChevronRight className="h-4 w-4" />
@@ -696,14 +386,6 @@ export function ModerationTicketsDashboard({ scope = "staff" }: Props) {
           )}
         </div>
       )}
-
-      <TicketDetailModal
-        isAssigning={assignMutation.isPending}
-        onAssign={handleAssign}
-        ticket={selectedTicket}
-        onClose={() => setSelectedTicket(null)}
-        onProcessed={() => setSelectedTicket(null)}
-      />
     </div>
   );
 }

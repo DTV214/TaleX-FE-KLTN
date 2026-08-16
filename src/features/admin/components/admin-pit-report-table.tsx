@@ -64,31 +64,31 @@ function getStatusBadge(status: string) {
   switch (status?.toUpperCase()) {
     case "APPROVED":
       return (
-        <span className="inline-flex items-center rounded-md bg-blue-50 dark:bg-blue-950/50 px-2 py-0.5 text-xs font-bold text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/40">
+        <span className="inline-flex items-center rounded-md bg-blue-50 backoffice-dark:bg-blue-950/50 px-2 py-0.5 text-xs font-bold text-blue-700 backoffice-dark:text-blue-300 border border-blue-200 backoffice-dark:border-blue-800/40">
           ĐÃ DUYỆT
         </span>
       );
     case "PAID":
       return (
-        <span className="inline-flex items-center rounded-md bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 text-xs font-bold text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/40">
+        <span className="inline-flex items-center rounded-md bg-emerald-50 backoffice-dark:bg-emerald-950/50 px-2 py-0.5 text-xs font-bold text-emerald-700 backoffice-dark:text-emerald-300 border border-emerald-200 backoffice-dark:border-emerald-800/40">
           ĐÃ THANH TOÁN
         </span>
       );
     case "PENDING":
       return (
-        <span className="inline-flex items-center rounded-md bg-amber-50 dark:bg-amber-950/50 px-2 py-0.5 text-xs font-bold text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/40">
+        <span className="inline-flex items-center rounded-md bg-amber-50 backoffice-dark:bg-amber-950/50 px-2 py-0.5 text-xs font-bold text-amber-700 backoffice-dark:text-amber-300 border border-amber-200 backoffice-dark:border-amber-800/40">
           CHỜ XỬ LÝ
         </span>
       );
     case "REJECTED":
       return (
-        <span className="inline-flex items-center rounded-md bg-red-50 dark:bg-red-950/50 px-2 py-0.5 text-xs font-bold text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800/40">
+        <span className="inline-flex items-center rounded-md bg-red-50 backoffice-dark:bg-red-950/50 px-2 py-0.5 text-xs font-bold text-red-700 backoffice-dark:text-red-300 border border-red-200 backoffice-dark:border-red-800/40">
           TỪ CHỐI
         </span>
       );
     default:
       return (
-        <span className="inline-flex items-center rounded-md bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-xs font-bold text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700">
+        <span className="inline-flex items-center rounded-md bg-gray-100 backoffice-dark:bg-gray-800 px-2 py-0.5 text-xs font-bold text-gray-700 backoffice-dark:text-gray-300 border border-gray-200 backoffice-dark:border-gray-700">
           {status || "UNKNOWN"}
         </span>
       );
@@ -156,7 +156,7 @@ export function AdminPitReportTable() {
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="rounded-xl bg-violet-50 dark:bg-violet-950/40 border border-violet-200 dark:border-violet-800/40 px-3 py-1.5 text-xs font-bold text-violet-700 dark:text-violet-300">
+            <span className="rounded-xl bg-violet-50 backoffice-dark:bg-violet-950/40 border border-violet-200 backoffice-dark:border-violet-800/40 px-3 py-1.5 text-xs font-bold text-violet-700 backoffice-dark:text-violet-300">
               Tổng cộng {totalElements} bản ghi PIT
             </span>
 
@@ -178,11 +178,11 @@ export function AdminPitReportTable() {
         </div>
 
         {/* Filter Controls */}
-        <div className="flex flex-wrap items-center justify-between gap-4 bg-gray-50/80 dark:bg-slate-900/60 p-4 rounded-xl border border-gray-200/80 dark:border-white/10 mb-6">
+        <div className="flex flex-wrap items-center justify-between gap-4 bg-gray-50/80 backoffice-dark:bg-slate-900/60 p-4 rounded-xl border border-gray-200/80 backoffice-dark:border-white/10 mb-6">
           <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
             {/* YearMonth Filter */}
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-gray-500 dark:text-gray-400">Kỳ (Tháng/Năm):</span>
+              <span className="text-xs font-bold text-gray-500 backoffice-dark:text-gray-400">Kỳ (Tháng/Năm):</span>
               <input
                 type="month"
                 value={yearMonth}
@@ -190,20 +190,20 @@ export function AdminPitReportTable() {
                   setYearMonth(e.target.value);
                   setPage(1);
                 }}
-                className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-xl px-3 py-1.5 text-xs font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500 shadow-sm"
+                className="bg-white backoffice-dark:bg-slate-900 border border-gray-200 backoffice-dark:border-white/10 rounded-xl px-3 py-1.5 text-xs font-bold text-gray-900 backoffice-dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500 shadow-sm"
               />
             </div>
 
             {/* Status Filter */}
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-gray-500 dark:text-gray-400">Trạng thái:</span>
+              <span className="text-xs font-bold text-gray-500 backoffice-dark:text-gray-400">Trạng thái:</span>
               <select
                 value={selectedStatus}
                 onChange={(e) => {
                   setSelectedStatus(e.target.value);
                   setPage(1);
                 }}
-                className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-xl px-3 py-1.5 text-xs font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500 shadow-sm"
+                className="bg-white backoffice-dark:bg-slate-900 border border-gray-200 backoffice-dark:border-white/10 rounded-xl px-3 py-1.5 text-xs font-bold text-gray-900 backoffice-dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500 shadow-sm"
               >
                 {STATUS_OPTIONS.map((status) => (
                   <option key={status.value} value={status.value}>
@@ -216,14 +216,13 @@ export function AdminPitReportTable() {
 
           <div className="flex items-center gap-2">
             {(yearMonth || selectedStatus) && (
-              <Button
+              <button
                 type="button"
-                variant="outline"
                 onClick={handleResetFilter}
-                className="h-8 px-3 text-xs font-bold rounded-xl"
+                className="h-8 px-3 text-xs font-bold rounded-xl border border-gray-200 bg-white text-gray-700 hover:bg-gray-100 hover:text-gray-900 shadow-sm transition backoffice-dark:bg-white/5 backoffice-dark:border-white/10 backoffice-dark:text-white"
               >
                 Xóa lọc
-              </Button>
+              </button>
             )}
 
             <select
@@ -232,7 +231,7 @@ export function AdminPitReportTable() {
                 setPageSize(Number(e.target.value));
                 setPage(1);
               }}
-              className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-xl px-3 py-1.5 text-xs font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500 shadow-sm"
+              className="bg-white backoffice-dark:bg-slate-900 border border-gray-200 backoffice-dark:border-white/10 rounded-xl px-3 py-1.5 text-xs font-bold text-gray-900 backoffice-dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
             >
               <option value={10}>10 bản ghi/trang</option>
               <option value={20}>20 bản ghi/trang</option>
@@ -257,7 +256,7 @@ export function AdminPitReportTable() {
             <Button
               type="button"
               onClick={() => void query.refetch()}
-              className="mt-3 h-8 bg-violet-600 text-white text-xs font-bold px-4 rounded-xl"
+              className="mt-3 h-8 bg-blue-600 text-white text-xs font-bold px-4 rounded-xl"
             >
               Thử lại
             </Button>
@@ -267,9 +266,9 @@ export function AdminPitReportTable() {
         {/* Table Content */}
         {!query.isLoading && !query.isError && (
           <>
-            <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-white/10">
+            <div className="overflow-x-auto rounded-xl border border-gray-200 backoffice-dark:border-white/10">
               <table className="w-full text-left text-xs border-collapse">
-                <thead className="bg-gray-50 dark:bg-slate-900 text-gray-500 dark:text-gray-400 uppercase font-bold tracking-wider border-b border-gray-200 dark:border-white/10">
+                <thead className="bg-gray-50 backoffice-dark:bg-slate-900 text-gray-500 backoffice-dark:text-gray-400 uppercase font-bold tracking-wider border-b border-gray-200 backoffice-dark:border-white/10">
                   <tr>
                     <th className="px-4 py-3.5">Kỳ quyết toán</th>
                     <th className="px-4 py-3.5">Tên Creator</th>
@@ -283,53 +282,53 @@ export function AdminPitReportTable() {
                     <th className="px-4 py-3.5">Ngày khởi tạo</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-white/10">
+                <tbody className="divide-y divide-gray-100 backoffice-dark:divide-white/10">
                   {items.length > 0 ? (
                     items.map((item) => (
                       <tr
                         key={item.settlementId}
-                        className="hover:bg-gray-50/80 dark:hover:bg-white/[0.02] transition"
+                        className="hover:bg-gray-50/80 backoffice-dark:hover:bg-white/[0.02] transition"
                       >
-                        <td className="px-4 py-3.5 font-bold text-gray-900 dark:text-white">
+                        <td className="px-4 py-3.5 font-bold text-gray-900 backoffice-dark:text-white">
                           {formatMonthLabel(item.settlementMonth)}
                         </td>
-                        <td className="px-4 py-3.5 font-bold text-gray-900 dark:text-white">
+                        <td className="px-4 py-3.5 font-bold text-gray-900 backoffice-dark:text-white">
                           {item.creatorFullName || (
                             <span className="text-gray-400 font-normal">
                               Creator #{item.creatorId ? item.creatorId.slice(0, 8) : "N/A"}
                             </span>
                           )}
                         </td>
-                        <td className="px-4 py-3.5 font-semibold text-gray-700 dark:text-gray-300">
+                        <td className="px-4 py-3.5 font-semibold text-gray-700 backoffice-dark:text-gray-300">
                           {item.taxId ? (
-                            <strong className="text-gray-900 dark:text-white font-bold">
+                            <strong className="text-gray-900 backoffice-dark:text-white font-bold">
                               {item.taxId}
                             </strong>
                           ) : (
                             <span className="text-gray-400 font-normal italic">Chưa đăng ký</span>
                           )}
                         </td>
-                        <td className="px-4 py-3.5 font-semibold text-gray-700 dark:text-gray-300">
+                        <td className="px-4 py-3.5 font-semibold text-gray-700 backoffice-dark:text-gray-300">
                           {item.idNumber ? (
                             <span>{item.idNumber}</span>
                           ) : (
                             <span className="text-gray-400 font-normal italic">Chưa cập nhật</span>
                           )}
                         </td>
-                        <td className="px-4 py-3.5 text-right font-extrabold text-gray-900 dark:text-white">
+                        <td className="px-4 py-3.5 text-right font-extrabold text-gray-900 backoffice-dark:text-white">
                           {formatVND(item.grossAmount)}
                         </td>
-                        <td className="px-4 py-3.5 text-right font-bold text-violet-600 dark:text-violet-400">
+                        <td className="px-4 py-3.5 text-right font-bold text-violet-600 backoffice-dark:text-violet-400">
                           {Math.round((item.taxRate ?? 0) * 100)}%
                         </td>
-                        <td className="px-4 py-3.5 text-right font-black text-rose-600 dark:text-rose-400">
+                        <td className="px-4 py-3.5 text-right font-black text-rose-600 backoffice-dark:text-rose-400">
                           {formatVND(item.taxWithheldAmount)}
                         </td>
-                        <td className="px-4 py-3.5 text-right font-black text-emerald-600 dark:text-emerald-400">
+                        <td className="px-4 py-3.5 text-right font-black text-emerald-600 backoffice-dark:text-emerald-400">
                           {formatVND(item.netPayoutAmount)}
                         </td>
                         <td className="px-4 py-3.5">{getStatusBadge(item.status)}</td>
-                        <td className="px-4 py-3.5 font-semibold text-gray-500 dark:text-gray-400">
+                        <td className="px-4 py-3.5 font-semibold text-gray-500 backoffice-dark:text-gray-400">
                           {formatDateTime(item.createdAt)}
                         </td>
                       </tr>
@@ -349,35 +348,31 @@ export function AdminPitReportTable() {
             </div>
 
             {/* Pagination Controls */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-gray-100 dark:border-white/10 pt-4 mt-4 text-xs font-bold text-gray-500">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-gray-100 backoffice-dark:border-white/10 pt-4 mt-4 text-xs font-bold text-gray-500">
               <span>
                 Hiển thị trang <strong>{page}</strong> / <strong>{totalPages}</strong> (Tổng <strong>{totalElements}</strong> kết quả)
               </span>
 
               <div className="flex items-center gap-2">
-                <Button
+                <button
                   type="button"
-                  variant="outline"
-                  size="sm"
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page <= 1 || query.isFetching}
-                  className="h-8 px-3 text-xs font-bold rounded-xl flex items-center gap-1"
+                  className="h-8 px-3 text-xs font-bold rounded-xl border border-gray-200 bg-white text-gray-700 hover:bg-gray-100 hover:text-gray-900 shadow-sm transition flex items-center gap-1 disabled:opacity-40 disabled:pointer-events-none backoffice-dark:bg-white/5 backoffice-dark:border-white/10 backoffice-dark:text-white"
                 >
                   <ChevronLeft className="w-4 h-4" />
                   Trước
-                </Button>
+                </button>
 
-                <Button
+                <button
                   type="button"
-                  variant="outline"
-                  size="sm"
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   disabled={page >= totalPages || query.isFetching}
-                  className="h-8 px-3 text-xs font-bold rounded-xl flex items-center gap-1"
+                  className="h-8 px-3 text-xs font-bold rounded-xl border border-gray-200 bg-white text-gray-700 hover:bg-gray-100 hover:text-gray-900 shadow-sm transition flex items-center gap-1 disabled:opacity-40 disabled:pointer-events-none backoffice-dark:bg-white/5 backoffice-dark:border-white/10 backoffice-dark:text-white"
                 >
                   Sau
                   <ChevronRight className="w-4 h-4" />
-                </Button>
+                </button>
               </div>
             </div>
           </>

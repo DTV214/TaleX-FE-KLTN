@@ -7,7 +7,6 @@ import { create } from "zustand";
 import { logoutAction } from "@/features/auth/api/auth.actions";
 import { useAuthStore } from "@/features/auth/store/auth.store";
 import {
-  BarChart as Analytics,
   Ban,
   ChevronRight,
   CircleDollarSign,
@@ -25,7 +24,6 @@ import {
   LogOut,
   Megaphone,
   Percent,
-  Plus,
   Receipt,
   Scan,
   Settings,
@@ -118,7 +116,6 @@ const navItems: NavItem[] = [
     href: "/admin/subscriptions",
     icon: CreditCard,
   },
-  { name: "Thống Kê", href: "/admin/analytics", icon: Analytics },
   {
     name: "Kinh Tế Coin",
     href: "/admin/coin-management",
@@ -417,7 +414,7 @@ export function AdminSidebar() {
               pathname={pathname}
             />
 
-            {item.href === "/admin/analytics" && (
+            {item.href === "/admin/subscriptions" && (
               <AdminNavGroup
                 currentHref={currentHref}
                 icon={CircleDollarSign}
@@ -449,24 +446,6 @@ export function AdminSidebar() {
       </nav>
 
       <div className="mt-auto flex flex-col gap-4">
-        <button
-          className={`flex w-full items-center justify-center gap-2 rounded-lg bg-[#00D1FF] py-3 text-sm font-bold text-white shadow-md transition-all hover:-translate-y-0.5 active:translate-y-0 ${
-            isSidebarOpen ? "px-4" : "px-0"
-          }`}
-          title="Thêm Mới"
-        >
-          <Plus className="h-5 w-5 shrink-0" />
-          <span
-            className={`truncate whitespace-nowrap transition-all duration-200 ${
-              isSidebarOpen
-                ? "max-w-[120px] opacity-100"
-                : "max-w-0 overflow-hidden opacity-0"
-            }`}
-          >
-            Thêm Mới
-          </span>
-        </button>
-
         <div className="space-y-1 border-t border-slate-100 pt-4">
           <Link
             href="/"
@@ -487,7 +466,8 @@ export function AdminSidebar() {
             </span>
           </Link>
 
-          <button
+          <Link
+            href="/admin/support"
             className={`flex w-full items-center rounded-lg py-2.5 text-sm font-medium text-slate-600 transition-all hover:bg-slate-100 hover:text-slate-900 ${
               isSidebarOpen ? "justify-start gap-3 px-4" : "justify-center px-0"
             }`}
@@ -503,7 +483,7 @@ export function AdminSidebar() {
             >
               Hỗ Trợ
             </span>
-          </button>
+          </Link>
           <button
             type="button"
             onClick={handleLogout}

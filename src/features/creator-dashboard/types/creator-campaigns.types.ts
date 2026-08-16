@@ -61,6 +61,7 @@ export type CreatorCampaignSeries = {
 };
 
 export type CreatorCampaignSeriesListResponse = BaseResponse<CreatorCampaignSeries[]>;
+export type CreatorCampaignSeriesSingleResponse = BaseResponse<CreatorCampaignSeries>;
 
 export type CreatorCampaignSeriesLog = {
     campaignSeriesLogId: string;
@@ -81,6 +82,7 @@ export type CreatorCampaignSeriesLogListResponse =
 export type CreateEngagementOrderRequest = {
     engagementServiceId: string;
     seriesIds: string[];
+    useCampaignWallet?: boolean;
 };
 
 export type CreateEngagementOrderResponse = BaseResponse<OrderResponse>;
@@ -146,3 +148,109 @@ export type CreatorCampaignPageResponse = BasePageResponse<CreatorCampaign>;
 export type CreatorCampaignListResponse = BaseResponse<CreatorCampaignPageResponse>;
 
 export type CreatorCampaignDetailResponse = BaseResponse<CreatorCampaign>;
+
+export type CampaignWallet = {
+  walletId: string;
+  balance: number;
+  updatedAt?: string | null;
+};
+
+export type CampaignWalletBalanceResponse = BaseResponse<CampaignWallet | null>;
+
+export type CampaignWalletTransactionType =
+  | "REFUND"
+  | "DEPOSIT"
+  | "WITHDRAW"
+  | "PAYMENT"
+  | string;
+
+export type CampaignWalletTransaction = {
+  transactionId: string;
+  amount: number;
+  balanceBefore: number;
+  balanceAfter: number;
+  transactionType?: CampaignWalletTransactionType | null;
+  referenceType?: string | null;
+  referenceId?: string | null;
+  description?: string | null;
+  createdAt: string;
+};
+
+export type CampaignWalletHistoryFilterParams = {
+  page?: number;
+  pageSize?: number;
+};
+
+export type CampaignWalletHistoryPageResponse =
+  BasePageResponse<CampaignWalletTransaction>;
+
+export type CampaignWalletHistoryListResponse =
+  BaseResponse<CampaignWalletHistoryPageResponse>;
+
+export type ReferenceTransactionType =
+  | "ORDER"
+  | "SETTLEMENT"
+  | "PREMIUM_RESULT"
+  | "PENALTY"
+  | string;
+
+export type PaymentTransactionStatus = "SUCCESS" | "PENDING" | "FAILED" | string;
+
+export type ReferenceTransaction = {
+  transactionId: string;
+  paidAmount: number;
+  paymentMethod: string;
+  status: PaymentTransactionStatus;
+  referenceType: ReferenceTransactionType;
+  referenceId: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type GetTransactionsByReferenceResponse = BaseResponse<ReferenceTransaction[]>;
+
+export type OrderWalletTransactionsResponse = BaseResponse<CampaignWalletTransaction[]>;
+
+export type PayoutRequestStatus =
+  | "PENDING"
+  | "APPROVED"
+  | "REJECTED"
+  | "COMPLETED"
+  | "PAID"
+  | string;
+
+export type ProcessPayoutRequestRequest = {
+  status: "APPROVED" | "REJECTED";
+  adminNote?: string;
+};
+
+export type PayoutRequest = {
+  payoutRequestId: string;
+  accountId: string;
+  amount: number;
+  status: PayoutRequestStatus;
+  paymentProfileId?: string | null;
+  bankName?: string | null;
+  bankAccountNumber?: string | null;
+  bankAccountName?: string | null;
+  adminNote?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+};
+
+export type PayoutRequestFilterParams = {
+  page?: number;
+  pageSize?: number;
+  status?: PayoutRequestStatus | "";
+  accountId?: string;
+  fromDate?: string;
+  toDate?: string;
+};
+
+export type PayoutRequestSingleResponse = BaseResponse<PayoutRequest>;
+
+export type PayoutRequestPageResponse = BasePageResponse<PayoutRequest>;
+
+export type PayoutRequestListResponse = BaseResponse<PayoutRequestPageResponse>;
+
+

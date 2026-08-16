@@ -4,6 +4,8 @@ import { type FormEvent, useMemo, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
+  Eye,
+  EyeOff,
   FileQuestion,
   Image as ImageIcon,
   Loader2,
@@ -28,6 +30,54 @@ import {
 } from "../utils/moderation-labels";
 
 const PAGE_SIZE = 20;
+
+function shortId(value?: string | null) {
+  if (!value) return "-";
+  if (value.length <= 12) return value;
+  return `${value.slice(0, 8)}...${value.slice(-6)}`;
+}
+
+function MaskedId({
+  label,
+  value,
+}: {
+  label?: string;
+  value?: string | null;
+}) {
+  const [isVisible, setIsVisible] = useState(false);
+
+  if (!value) return <span>-</span>;
+
+  return (
+    <span className="inline-flex max-w-full items-center gap-2">
+      {label && (
+        <span className="shrink-0 text-xs font-black uppercase tracking-wide text-slate-400 backoffice-dark:text-white/40">
+          {label}
+        </span>
+      )}
+      <span
+        className={`min-w-0 font-black text-slate-950 backoffice-dark:text-white ${
+          isVisible ? "break-all" : "truncate"
+        }`}
+        title={isVisible ? value : shortId(value)}
+      >
+        {isVisible ? value : shortId(value)}
+      </span>
+      <button
+        type="button"
+        onClick={() => setIsVisible((current) => !current)}
+        className="inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-slate-200 text-slate-400 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600 backoffice-dark:border-white/10 backoffice-dark:text-white/45 backoffice-dark:hover:bg-white/10 backoffice-dark:hover:text-white"
+        aria-label={isVisible ? "Ẩn ID" : "Hiện ID"}
+      >
+        {isVisible ? (
+          <EyeOff className="h-3.5 w-3.5" />
+        ) : (
+          <Eye className="h-3.5 w-3.5" />
+        )}
+      </button>
+    </span>
+  );
+}
 
 function AppealProofLinks({ value }: { value?: string }) {
   const urls = parseProofUrls(value);
@@ -81,9 +131,10 @@ function AppealProcessModal({
         className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl"
       >
         <h2 className="text-lg font-black text-slate-950">Xét duyệt khiếu nại</h2>
-        <p className="mt-1 break-all text-xs font-semibold text-slate-500">
-          Appeal {appeal.appealId} · Penalty {appeal.penaltyId}
-        </p>
+        <div className="mt-2 flex flex-col gap-2 text-xs font-semibold text-slate-500 sm:flex-row sm:flex-wrap">
+          <MaskedId label="Appeal" value={appeal.appealId} />
+          <MaskedId label="Penalty" value={appeal.penaltyId} />
+        </div>
 
         <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
           <p className="text-sm font-black text-slate-950">Lý do của creator</p>
@@ -171,15 +222,15 @@ export function AppealsDashboard() {
 
   return (
     <div className="w-full space-y-6">
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-black text-blue-700">
+            <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-black text-blue-700 backoffice-dark:border-[var(--backoffice-primary)]/35 backoffice-dark:bg-[var(--backoffice-primary)]/10 backoffice-dark:text-[var(--backoffice-primary)]">
               <FileQuestion className="h-3.5 w-3.5" />
               Appeals
             </div>
-            <h1 className="text-2xl font-black text-slate-950">Khiếu nại hình phạt</h1>
-            <p className="mt-1 max-w-2xl text-sm font-semibold leading-relaxed text-slate-500">
+            <h1 className="text-2xl font-black text-slate-950 backoffice-dark:text-white">Khiếu nại hình phạt</h1>
+            <p className="mt-1 max-w-2xl text-sm font-semibold leading-relaxed text-slate-500 backoffice-dark:text-white/55">
               Admin xem khiếu nại từ creator, ảnh minh chứng và quyết định gỡ hoặc giữ penalty.
             </p>
           </div>
@@ -190,7 +241,7 @@ export function AppealsDashboard() {
                 setStatus(event.target.value as AppealStatus | "ALL");
                 setPage(1);
               }}
-              className="h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700 outline-none focus:border-blue-500"
+              className="h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700 outline-none focus:border-blue-500 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white"
             >
               {appealStatusOptions.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -201,7 +252,7 @@ export function AppealsDashboard() {
             <button
               type="button"
               onClick={() => appealsQuery.refetch()}
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-black text-slate-600 hover:bg-slate-50"
+              className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-black text-slate-600 hover:bg-slate-50 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/10"
             >
               <RefreshCcw className="h-4 w-4" />
               Tải lại
@@ -210,7 +261,7 @@ export function AppealsDashboard() {
         </div>
       </section>
 
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
         {appealsQuery.isLoading ? (
           <div className="px-6 py-16 text-center">
             <Loader2 className="mx-auto h-7 w-7 animate-spin text-slate-400" />
@@ -226,31 +277,40 @@ export function AppealsDashboard() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[980px] text-left text-sm">
-              <thead className="border-b border-slate-200 bg-slate-50 text-xs font-black uppercase tracking-wide text-slate-500">
+            <table className="w-full min-w-[1120px] text-left text-sm">
+              <thead className="border-b border-slate-200 bg-slate-50 text-xs font-black uppercase tracking-wide text-slate-500 backoffice-dark:border-white/10 backoffice-dark:bg-white/5 backoffice-dark:text-white/45">
                 <tr>
                   <th className="px-5 py-4">Appeal</th>
                   <th className="px-5 py-4">Creator</th>
                   <th className="px-5 py-4">Penalty</th>
                   <th className="px-5 py-4">Lý do</th>
-                  <th className="px-5 py-4">Trạng thái</th>
-                  <th className="px-5 py-4 text-right">Thao tác</th>
+                  <th className="whitespace-nowrap px-5 py-4">Trạng thái</th>
+                  <th className="whitespace-nowrap px-5 py-4 text-right">Thao tác</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 backoffice-dark:divide-white/10">
                 {appeals.map((appeal) => (
-                  <tr key={appeal.appealId} className="hover:bg-slate-50">
+                  <tr key={appeal.appealId} className="hover:bg-slate-50 backoffice-dark:hover:bg-white/[0.05]">
                     <td className="px-5 py-4">
-                      <p className="font-black text-slate-950">{appeal.appealId}</p>
+                      <MaskedId value={appeal.appealId} />
                       <p className="mt-1 text-xs font-semibold text-slate-500">
                         {formatDateTime(appeal.createdAt)}
                       </p>
                     </td>
                     <td className="px-5 py-4 font-bold text-slate-800">
-                      {appeal.appellantUsername || appeal.appellantId || "-"}
+                      {appeal.appellantUsername ? (
+                        <div className="space-y-1">
+                          <p className="font-black text-slate-900 backoffice-dark:text-white">
+                            {appeal.appellantUsername}
+                          </p>
+                          <MaskedId value={appeal.appellantId} />
+                        </div>
+                      ) : (
+                        <MaskedId value={appeal.appellantId} />
+                      )}
                     </td>
                     <td className="px-5 py-4">
-                      <p className="font-bold text-slate-800">{appeal.penaltyId}</p>
+                      <MaskedId value={appeal.penaltyId} />
                       <p className="mt-1 text-xs font-semibold text-slate-500">
                         {labelForPenaltyLevel(appeal.penalty?.level)}
                       </p>
@@ -261,7 +321,7 @@ export function AppealsDashboard() {
                       </p>
                     </td>
                     <td className="px-5 py-4">
-                      <span className={`rounded-full border px-2.5 py-1 text-[11px] font-black ${statusTone(appeal.status)}`}>
+                      <span className={`inline-flex whitespace-nowrap rounded-full border px-3 py-1 text-[11px] font-black ${statusTone(appeal.status)}`}>
                         {labelForAppealStatus(appeal.status)}
                       </span>
                     </td>
@@ -269,7 +329,7 @@ export function AppealsDashboard() {
                       <button
                         type="button"
                         onClick={() => setSelectedAppeal(appeal)}
-                        className="inline-flex h-9 items-center gap-2 rounded-lg bg-slate-950 px-3 text-xs font-black text-white hover:bg-slate-800"
+                        className="inline-flex h-9 cursor-pointer items-center gap-2 whitespace-nowrap rounded-lg bg-slate-950 px-4 text-xs font-black text-white hover:bg-slate-800 backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black backoffice-dark:hover:bg-[var(--backoffice-primary-bright)]"
                       >
                         Xem & xử lý
                       </button>

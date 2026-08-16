@@ -37,6 +37,7 @@ const DEFAULT_CONFIG_FORM: TrendingConfigRequest = {
   minImpression: 50,
   maxImpression: 100,
   gravity: 0.1,
+  confidenceScore: 1.96,
 };
 
 const POOL_PAGE_SIZE = 5;
@@ -60,6 +61,8 @@ const CONFIG_FIELD_HELP: Record<keyof TrendingConfigRequest, string> = {
     "Số lượt hiển thị tối đa của series trong vòng phân phối.",
   gravity:
     "Hệ số điều chỉnh tốc độ suy giảm điểm số của series theo thời gian. Giá trị càng lớn thì điểm số series giảm cực kì nhanh theo thời gian, ngược lại điểm số càng nhỏ thì các series có hạng cao sẽ được giữ lâu hơn.",
+  confidenceScore:
+    "Hệ số tin cậy (Z-Score) dùng để tính khoảng tin cậy Wilson Score. Mặc định là 1.96 (tương ứng độ tin cậy 95%). Giá trị hợp lệ từ 0.01 đến 20.0.",
 };
 
 const CONFIG_EXTRA_HELP = {
@@ -123,11 +126,31 @@ function getStatusClassName(status?: string | null) {
   }
 }
 
-function FieldHelp({ children }: { children: ReactNode }) {
+function FieldHelp({
+  children,
+  align = "center",
+  position = "top",
+}: {
+  children: ReactNode;
+  align?: "left" | "center" | "right";
+  position?: "top" | "bottom";
+}) {
+  const positionClasses =
+    position === "bottom" ? "top-full mt-2" : "bottom-full mb-2";
+
+  const alignClasses =
+    align === "right"
+      ? "right-0 translate-x-0"
+      : align === "left"
+        ? "left-0 translate-x-0"
+        : "left-1/2 -translate-x-1/2";
+
   return (
-    <span className="group relative inline-flex">
+    <span className="group relative inline-flex items-center">
       <HelpCircle className="h-4 w-4 cursor-help text-slate-400 transition-colors group-hover:text-amber-500 backoffice-dark:text-white/50 backoffice-dark:group-hover:text-[var(--backoffice-primary)]" />
-      <span className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 w-72 -translate-x-1/2 rounded-xl border border-slate-200 bg-white p-3 text-xs font-medium leading-relaxed text-slate-600 opacity-0 shadow-xl transition-opacity group-hover:opacity-100 backoffice-dark:border-white/10 backoffice-dark:bg-[#111113] backoffice-dark:text-white/75">
+      <span
+        className={`pointer-events-none absolute z-40 w-80 rounded-xl border border-slate-200 bg-white p-3 text-xs font-medium leading-relaxed text-slate-600 opacity-0 shadow-xl transition-opacity group-hover:opacity-100 backoffice-dark:border-white/10 backoffice-dark:bg-[#111113] backoffice-dark:text-white/75 ${positionClasses} ${alignClasses}`}
+      >
         {children}
       </span>
     </span>
@@ -241,6 +264,7 @@ function ConfigFormModal({
         minImpression: config.minImpression,
         maxImpression: config.maxImpression,
         gravity: config.gravity,
+        confidenceScore: config.confidenceScore ?? 1.96,
       }
       : DEFAULT_CONFIG_FORM,
   );
@@ -264,6 +288,10 @@ function ConfigFormModal({
     }
     if (form.gravity <= 0) {
       toast.error("Gravity phải lớn hơn 0.");
+      return;
+    }
+    if (form.confidenceScore < 0.01 || form.confidenceScore > 20.0) {
+      toast.error("Độ tin cậy (Z-Score) phải nằm trong khoảng 0.01 - 20.0.");
       return;
     }
     onSubmit(form);
@@ -296,6 +324,7 @@ function ConfigFormModal({
               ["minImpression", "Hiển thị tối thiểu", "100"],
               ["maxImpression", "Hiển thị tối đa", "200"],
               ["gravity", "Hệ số trọng lực", "1.8"],
+              ["confidenceScore", "Độ tin cậy (Z-Score)", "1.96"],
             ] as const
           ).map(([field, label, placeholder]) => (
             <label key={field} className="space-y-2">
@@ -305,7 +334,11 @@ function ConfigFormModal({
               </span>
               <input
                 type="number"
-                step={field === "gravity" ? "0.1" : "1"}
+                step={
+                  field === "gravity" || field === "confidenceScore"
+                    ? "0.01"
+                    : "1"
+                }
                 value={form[field]}
                 placeholder={placeholder}
                 onChange={(event) => handleChange(field, event.target.value)}
@@ -459,7 +492,40 @@ function SeriesTable({
                   <th className="px-5 py-4">Lượt hiển thị</th>
                   <th className="px-5 py-4">Lượt xem</th>
                   <th className="px-5 py-4">Tỷ lệ xem</th>
-                  <th className="px-5 py-4">Điểm Wilson</th>
+                  <th className="px-5 py-4">
+                    <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                      <span>Điểm Wilson</span>
+                      <FieldHelp position="bottom" align="right">
+                        <div className="space-y-2.5 text-left normal-case tracking-normal">
+                          <p className="font-bold text-slate-900 backoffice-dark:text-amber-400">
+                            Công thức Wilson Score Interval
+                          </p>
+                          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white p-2 backoffice-dark:border-white/10 backoffice-dark:bg-black/40">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQqrmIxfrnj3L_Dzd34RyQGHXRMRuzoUO8e4IyxBo0Tcq1nH5ok5x0mdQQJ&s=10"
+                              alt="Công thức Wilson Score Interval"
+                              className="h-auto w-full rounded-lg object-contain"
+                            />
+                          </div>
+                          <ul className="space-y-1 text-[11px] text-slate-600 backoffice-dark:text-white/70">
+                            <li>
+                              <b>p̂</b>: Tỷ lệ xem thực tế (Số lượt click / Số lượt hiển thị)
+                            </li>
+                            <li>
+                              <b>z<sub>α/2</sub></b>: Điểm tin cậy Z-Score (1.96 ≈ 95%)
+                            </li>
+                            <li>
+                              <b>n</b>: Số lượt hiển thị
+                            </li>
+                            <li>
+                              <b>q̂</b>: 1 trừ p̂
+                            </li>
+                          </ul>
+                        </div>
+                      </FieldHelp>
+                    </span>
+                  </th>
                 </>
               )}
             </tr>

@@ -1,4 +1,4 @@
-import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     createEngagementOrder,
     getCreatorCampaignById,
@@ -7,6 +7,18 @@ import {
     getCreatorCampaignSeriesLogs,
     getCreatorOwnCampaigns,
     getCreatorCampaignPublishedSeries,
+    updateCampaignSeriesStatus,
+    getCampaignWalletBalance,
+    getCampaignWalletHistory,
+    getTransactionsByReference,
+    getOrderWalletTransactions,
+    createPayoutRequest,
+    getPayoutRequests,
+    processPayoutRequest,
+    getOwnPayoutRequests,
+    getPayoutRequestTransactions,
+    cancelCreatorCampaign,
+    executePayoutRequest,
 } from "@/features/creator-dashboard/api/creator-campaigns.api";
 import type {
     CreateEngagementOrderRequest,
@@ -20,6 +32,14 @@ import type {
     CreatorCampaignSeriesLog,
     CreatorCampaignSeriesLogParams,
     CreatorCampaignSeriesPageResponse,
+    CampaignWallet,
+    CampaignWalletHistoryFilterParams,
+    CampaignWalletHistoryPageResponse,
+    ReferenceTransaction,
+    CampaignWalletTransaction,
+    PayoutRequestFilterParams,
+    PayoutRequestPageResponse,
+    ProcessPayoutRequestRequest,
 } from "@/features/creator-dashboard/types/creator-campaigns.types";
 
 export const creatorCampaignQueryKeys = {
@@ -143,5 +163,152 @@ export function useGetCreatorCampaignSeriesLogs(
             Boolean(queryParams.endTime) &&
             enabled,
         staleTime: 30 * 1000,
+    });
+}
+
+export function useUpdateCampaignSeriesStatus() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({
+            campaignSeriesId,
+            status,
+        }: {
+            campaignSeriesId: string;
+            status: "RUNNING" | "PAUSED" | "PAUSE";
+        }) => updateCampaignSeriesStatus(campaignSeriesId, status),
+        onSuccess: () => {
+            queryClient.invalidateQueries();
+        },
+    });
+}
+
+export function useGetCampaignWalletBalance() {
+    return useQuery<CampaignWallet | null>({
+        queryKey: [...creatorCampaignQueryKeys.all, "campaign-wallet-balance"] as const,
+        queryFn: () => getCampaignWalletBalance(),
+        staleTime: 30 * 1000,
+    });
+}
+
+export function useGetCampaignWalletHistory(
+    params: CampaignWalletHistoryFilterParams = { page: 1, pageSize: 10 },
+) {
+    return useQuery<CampaignWalletHistoryPageResponse>({
+        queryKey: [...creatorCampaignQueryKeys.all, "campaign-wallet-history", params] as const,
+        queryFn: () => getCampaignWalletHistory(params),
+        staleTime: 30 * 1000,
+        placeholderData: keepPreviousData,
+    });
+}
+
+export function useGetTransactionsByReference(
+    refType?: string,
+    refId?: string,
+    enabled = true,
+) {
+    return useQuery<ReferenceTransaction[]>({
+        queryKey: [...creatorCampaignQueryKeys.all, "transactions-by-reference", refType, refId] as const,
+        queryFn: () => getTransactionsByReference(refType!, refId!),
+        enabled: Boolean(refType) && Boolean(refId) && enabled,
+        staleTime: 30 * 1000,
+    });
+}
+
+export function useGetOrderWalletTransactions(orderId?: string, enabled = true) {
+    return useQuery<CampaignWalletTransaction[]>({
+        queryKey: [...creatorCampaignQueryKeys.all, "order-wallet-transactions", orderId] as const,
+        queryFn: () => getOrderWalletTransactions(orderId!),
+        enabled: Boolean(orderId) && enabled,
+        staleTime: 30 * 1000,
+    });
+}
+
+export function useCreatePayoutRequest() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: () => createPayoutRequest(),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: creatorCampaignQueryKeys.all,
+            });
+        },
+    });
+}
+
+export function useGetPayoutRequests(
+    params: PayoutRequestFilterParams = { page: 1, pageSize: 20 },
+) {
+    return useQuery<PayoutRequestPageResponse>({
+        queryKey: [...creatorCampaignQueryKeys.all, "payout-requests", params] as const,
+        queryFn: () => getPayoutRequests(params),
+        staleTime: 30 * 1000,
+        placeholderData: keepPreviousData,
+    });
+}
+
+export function useProcessPayoutRequest() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({
+            payoutRequestId,
+            body,
+        }: {
+            payoutRequestId: string;
+            body: ProcessPayoutRequestRequest;
+        }) => processPayoutRequest(payoutRequestId, body),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: creatorCampaignQueryKeys.all,
+            });
+        },
+    });
+}
+
+export function useGetOwnPayoutRequests(
+    params: PayoutRequestFilterParams = { page: 1, pageSize: 20 },
+) {
+    return useQuery<PayoutRequestPageResponse>({
+        queryKey: [...creatorCampaignQueryKeys.all, "payout-requests-own", params] as const,
+        queryFn: () => getOwnPayoutRequests(params),
+        staleTime: 30 * 1000,
+        placeholderData: keepPreviousData,
+    });
+}
+
+export function useGetPayoutRequestTransactions(
+    payoutRequestId?: string,
+    params: PayoutRequestFilterParams = { page: 1, pageSize: 20 },
+    enabled = true,
+) {
+    return useQuery<PayoutRequestPageResponse>({
+        queryKey: [...creatorCampaignQueryKeys.all, "payout-request-transactions", payoutRequestId, params] as const,
+        queryFn: () => getPayoutRequestTransactions(payoutRequestId!, params),
+        enabled: Boolean(payoutRequestId) && enabled,
+        staleTime: 30 * 1000,
+    });
+}
+
+export function useCancelCreatorCampaign() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (campaignId: string) => cancelCreatorCampaign(campaignId),
+        onSuccess: () => {
+            queryClient.invalidateQueries();
+        },
+    });
+}
+
+export function useExecutePayoutRequest() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (payoutRequestId: string) => executePayoutRequest(payoutRequestId),
+        onSuccess: () => {
+            queryClient.invalidateQueries();
+        },
     });
 }

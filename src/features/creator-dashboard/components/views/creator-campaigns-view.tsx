@@ -3,8 +3,10 @@
 import { useMemo, useState } from "react";
 import {
   Activity,
+  ArrowDownLeft,
   ArrowLeft,
   ArrowRight,
+  ArrowUpRight,
   BarChart3,
   BookOpen,
   Bookmark,
@@ -14,18 +16,27 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock3,
+  Coins,
   Eye,
   Film,
   Filter,
   Hash,
   ImageIcon,
+  Loader2,
   Megaphone,
+  Pause,
+  Play,
+  Receipt,
   RefreshCw,
   Sparkles,
   Target,
   ThumbsUp,
   TrendingUp,
   WalletCards,
+  Building2,
+  Landmark,
+  Trash2,
+  X,
   type LucideIcon,
 } from "lucide-react";
 import {
@@ -52,12 +63,29 @@ import { Progress } from "@/shared/ui/progress";
 import { cn } from "@/shared/utils/utils";
 import { parseBackendDate } from "@/shared/utils/backend-date";
 import { getApiErrorMessage } from "@/shared/api/http-client";
+import { toast } from "sonner";
+import { useOrderStatus } from "@/features/payment/api/payment.api";
 import {
   useGetCreatorCampaignPlans,
   useGetCreatorCampaignSeriesByCampaignId,
   useGetCreatorCampaignSeriesLogs,
   useGetCreatorOwnCampaigns,
+  useUpdateCampaignSeriesStatus,
+  useGetCampaignWalletBalance,
+  useGetCampaignWalletHistory,
+  useGetTransactionsByReference,
+  useGetOrderWalletTransactions,
+  useCreatePayoutRequest,
+  useGetPayoutRequests,
+  useGetOwnPayoutRequests,
+  useGetPayoutRequestTransactions,
+  useCancelCreatorCampaign,
 } from "@/features/creator-dashboard/hooks/use-creator-campaigns";
+import type {
+  CampaignWalletTransaction,
+  ReferenceTransaction,
+  PayoutRequest,
+} from "@/features/creator-dashboard/types/creator-campaigns.types";
 import type {
   CreatorCampaign,
   CreatorCampaignFilterFields,
@@ -127,6 +155,7 @@ function getRemaining(campaign?: CreatorCampaign | null) {
 
 function getStatusLabel(status?: string | null) {
   if (!status) return "Chưa rõ";
+  if (status === "PAUSE" || status === "PAUSED") return "Tạm dừng";
   return campaignStatuses.find((item) => item.value === status)?.label ?? status;
 }
 
@@ -140,6 +169,7 @@ function getStatusClass(status?: string | null) {
     case "PENDING":
       return "border-[#D4AF37]/40 bg-[#D4AF37]/12 text-[#F5D46E]";
     case "PAUSED":
+    case "PAUSE":
       return "border-orange-300/35 bg-orange-300/10 text-orange-100";
     case "CANCELLED":
     case "FAILED":
@@ -326,6 +356,752 @@ type CampaignSeriesDashboardRow = {
   isSeriesLoading: boolean;
   isSeriesError: boolean;
 };
+
+function CampaignSeriesStatusToggleButton({
+  campaignSeriesId,
+  currentStatus = "RUNNING",
+  size = "default",
+}: {
+  campaignSeriesId: string;
+  currentStatus?: string | null;
+  size?: "default" | "sm";
+}) {
+  const updateStatusMutation = useUpdateCampaignSeriesStatus();
+  const isRunning = currentStatus === "RUNNING";
+  const isPaused = currentStatus === "PAUSED" || currentStatus === "PAUSE";
+  const targetStatus: "RUNNING" | "PAUSED" = isRunning ? "PAUSED" : "RUNNING";
+
+  const handleToggleStatus = (e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    const actionText = targetStatus === "PAUSED" ? "tạm dừng" : "tiếp tục";
+    updateStatusMutation.mutate(
+      {
+        campaignSeriesId,
+        status: targetStatus,
+      },
+      {
+        onSuccess: (data) => {
+          toast.success(
+            `Đã ${actionText} series trong chiến dịch! (Trạng thái mới: ${getStatusLabel(data.status ?? targetStatus)})`,
+          );
+        },
+        onError: (err) => {
+          toast.error(getApiErrorMessage(err));
+        },
+      },
+    );
+  };
+
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      disabled={updateStatusMutation.isPending}
+      onClick={handleToggleStatus}
+      className={cn(
+        "cursor-pointer font-bold transition-all duration-200 backdrop-blur",
+        size === "sm" ? "h-8 rounded-xl px-3 text-xs" : "h-11 rounded-2xl px-4 text-sm",
+        isRunning
+          ? "border-orange-500/40 bg-orange-500/15 text-orange-200 hover:border-orange-400 hover:bg-orange-500/25"
+          : "border-emerald-500/40 bg-emerald-500/15 text-emerald-200 hover:border-emerald-400 hover:bg-emerald-500/25",
+      )}
+    >
+      {updateStatusMutation.isPending ? (
+        <>
+          <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+          Đang xử lý...
+        </>
+      ) : isRunning ? (
+        <>
+          <Pause className="mr-1.5 h-4 w-4 text-orange-300" />
+          Tạm dừng series #{campaignSeriesId.slice(0, 8)}
+        </>
+      ) : (
+        <>
+          <Play className="mr-1.5 h-4 w-4 text-emerald-300" />
+          Tiếp tục series #{campaignSeriesId.slice(0, 8)}
+        </>
+      )}
+    </Button>
+  );
+}
+
+function CreatorCampaignCancelModal({
+  isOpen,
+  campaignId,
+  onClose,
+}: {
+  isOpen: boolean;
+  campaignId: string | null;
+  onClose: () => void;
+}) {
+  const cancelMutation = useCancelCreatorCampaign();
+
+  if (!isOpen || !campaignId) return null;
+
+  const handleConfirmCancel = () => {
+    cancelMutation.mutate(campaignId, {
+      onSuccess: () => {
+        toast.success("Đã hủy chiến dịch thành công. Tiền hoàn lại (nếu có) sẽ được cập nhật vào Ví Campaign!");
+        onClose();
+      },
+      onError: (err) => {
+        toast.error(getApiErrorMessage(err));
+      },
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-3xl border border-red-500/30 bg-[#121215] p-6 shadow-2xl">
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-red-500/30 bg-red-500/10 text-red-400">
+          <Trash2 className="h-6 w-6" />
+        </div>
+
+        <h3 className="mt-4 text-xl font-black text-white">Xác nhận hủy chiến dịch</h3>
+        <p className="mt-2 text-xs font-semibold leading-relaxed text-zinc-400">
+          Bạn có chắc chắn muốn hủy chiến dịch <span className="font-mono text-white">{campaignId}</span> không?
+          Chiến dịch sẽ ngừng phân phối và số tiền hoàn lại (nếu có) sẽ được hoàn tự động về Ví Campaign của bạn.
+        </p>
+
+        <div className="mt-6 flex gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            className="flex-1 h-11 rounded-2xl border-white/10 bg-white/[0.04] text-xs font-bold text-zinc-300 hover:bg-white/10"
+          >
+            Bỏ qua
+          </Button>
+          <Button
+            type="button"
+            disabled={cancelMutation.isPending}
+            onClick={handleConfirmCancel}
+            className="flex-1 h-11 rounded-2xl bg-red-600 font-black text-xs text-white hover:bg-red-500"
+          >
+            {cancelMutation.isPending ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Trash2 className="mr-2 h-4 w-4" />
+            )}
+            Xác nhận Hủy
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+
+function CampaignWalletHistorySection() {
+  const [historyPage, setHistoryPage] = useState(1);
+  const historyQuery = useGetCampaignWalletHistory({ page: historyPage, pageSize: 5 });
+
+  const transactions = historyQuery.data?.content ?? [];
+  const totalPages = historyQuery.data?.totalPages ?? 1;
+
+  function getTransactionBadge(type?: string | null) {
+    switch (type) {
+      case "REFUND":
+        return "border-emerald-400/35 bg-emerald-400/10 text-emerald-300";
+      case "DEPOSIT":
+        return "border-cyan-400/35 bg-cyan-400/10 text-cyan-300";
+      case "PAYMENT":
+      case "WITHDRAW":
+        return "border-orange-400/35 bg-orange-400/10 text-orange-300";
+      default:
+        return "border-white/15 bg-white/[0.06] text-zinc-300";
+    }
+  }
+
+  function getTransactionLabel(type?: string | null) {
+    switch (type) {
+      case "REFUND":
+        return "HOÀN TIỀN";
+      case "DEPOSIT":
+        return "NẠP TIỀN";
+      case "PAYMENT":
+        return "THANH TOÁN";
+      case "WITHDRAW":
+        return "RÚT TIỀN";
+      default:
+        return type ?? "GIAO DỊCH";
+    }
+  }
+
+  return (
+    <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5 md:p-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#D4AF37]/25 bg-[#D4AF37]/10 text-[#D4AF37]">
+            <Receipt className="h-5 w-5" />
+          </div>
+          <div>
+            <h2 className="text-xl font-black text-white">Lịch sử biến động ví Campaign</h2>
+            <p className="text-xs font-semibold text-zinc-500">
+              Nhật ký thay đổi số dư ví Campaign Wallet của Creator
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={historyPage <= 1 || historyQuery.isLoading}
+            onClick={() => setHistoryPage((p) => Math.max(1, p - 1))}
+            className="h-9 border-white/10 bg-white/[0.04] px-3 text-xs font-bold text-zinc-200 hover:bg-white/10"
+          >
+            Trước
+          </Button>
+          <span className="text-xs font-bold text-zinc-400">
+            Trang {historyPage} / {Math.max(totalPages, 1)}
+          </span>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={historyPage >= totalPages || historyQuery.isLoading}
+            onClick={() => setHistoryPage((p) => p + 1)}
+            className="h-9 border-white/10 bg-white/[0.04] px-3 text-xs font-bold text-zinc-200 hover:bg-white/10"
+          >
+            Sau
+          </Button>
+        </div>
+      </div>
+
+      <div className="mt-5">
+        {historyQuery.isLoading ? (
+          <div className="space-y-3">
+            {Array.from({ length: 2 }).map((_, i) => (
+              <div key={i} className="h-16 animate-pulse rounded-2xl border border-white/10 bg-white/[0.03]" />
+            ))}
+          </div>
+        ) : transactions.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-white/10 bg-black/20 p-6 text-center text-xs font-semibold text-zinc-500">
+            Chưa có lịch sử biến động số dư ví Campaign.
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {transactions.map((tx) => {
+              const isPositive = (tx.amount ?? 0) >= 0;
+
+              return (
+                <div
+                  key={tx.transactionId}
+                  className="flex flex-col gap-3 rounded-2xl border border-white/[0.08] bg-black/20 p-4 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="flex items-start gap-3 min-w-0">
+                    <div
+                      className={cn(
+                        "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border",
+                        getTransactionBadge(tx.transactionType),
+                      )}
+                    >
+                      {isPositive ? (
+                        <ArrowDownLeft className="h-5 w-5" />
+                      ) : (
+                        <ArrowUpRight className="h-5 w-5" />
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge
+                          variant="outline"
+                          className={cn("px-2 py-0.5 text-[10px] font-bold", getTransactionBadge(tx.transactionType))}
+                        >
+                          {getTransactionLabel(tx.transactionType)}
+                        </Badge>
+                        <span className="text-[11px] font-bold text-zinc-500">
+                          {formatDateTime(tx.createdAt)}
+                        </span>
+                      </div>
+                      <p className="mt-1 line-clamp-2 text-sm font-bold text-white">
+                        {tx.description || "Giao dịch ví Campaign"}
+                      </p>
+                      {tx.referenceId ? (
+                        <p className="mt-1 font-mono text-xs font-semibold text-zinc-500">
+                          Ref ID: {shortenId(tx.referenceId)}
+                        </p>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between shrink-0 sm:flex-col sm:items-end sm:justify-center">
+                    <p
+                      className={cn(
+                        "text-lg font-black",
+                        isPositive ? "text-emerald-400" : "text-orange-400",
+                      )}
+                    >
+                      {isPositive ? "+" : ""}{formatNumber(tx.amount)}đ
+                    </p>
+                    <p className="text-xs font-semibold text-zinc-400">
+                      Số dư: {formatNumber(tx.balanceBefore)}đ ➔ <span className="font-bold text-white">{formatNumber(tx.balanceAfter)}đ</span>
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function CampaignOrderPollingCard({ orderId }: { orderId: string }) {
+  const orderQuery = useOrderStatus(orderId);
+  const refTxQuery = useGetTransactionsByReference("ORDER", orderId);
+  const walletTxQuery = useGetOrderWalletTransactions(orderId);
+
+  const order = orderQuery.data;
+  const refTransactions = refTxQuery.data ?? [];
+  const walletTransactions = walletTxQuery.data ?? [];
+
+  function getOrderStatusBadge(status?: string | null) {
+    switch (status) {
+      case "COMPLETED":
+        return "border-emerald-400/35 bg-emerald-400/10 text-emerald-300";
+      case "AWAITING_PAYMENT":
+        return "border-yellow-400/35 bg-yellow-400/10 text-yellow-300 animate-pulse";
+      case "CANCELLED":
+      case "OUT_OF_TIME":
+        return "border-red-400/35 bg-red-400/10 text-red-300";
+      default:
+        return "border-white/15 bg-white/[0.06] text-zinc-300";
+    }
+  }
+
+  function getOrderStatusLabel(status?: string | null) {
+    switch (status) {
+      case "COMPLETED":
+        return "ĐÃ HOÀN TẤT";
+      case "AWAITING_PAYMENT":
+        return "ĐANG CHỜ THANH TOÁN (LIVE POLLING)";
+      case "CANCELLED":
+        return "ĐÃ HỦY";
+      case "OUT_OF_TIME":
+        return "HẾT GIỜ THANH TOÁN";
+      default:
+        return status ?? "CHƯA RÕ";
+    }
+  }
+
+  return (
+    <div className="col-span-full rounded-2xl border border-white/10 bg-white/[0.035] p-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#D4AF37]/25 bg-[#D4AF37]/10 text-[#D4AF37]">
+            <Hash className="h-5 w-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h4 className="text-base font-black text-white">Tra cứu trạng thái đơn hàng</h4>
+              {orderQuery.isFetching ? (
+                <span className="flex items-center text-[10px] font-bold text-yellow-400">
+                  <Loader2 className="mr-1 h-3 w-3 animate-spin" /> Live Polling...
+                </span>
+              ) : null}
+            </div>
+            <p className="text-xs font-mono font-semibold text-zinc-400">
+              Mã Order ID: {orderId}
+            </p>
+          </div>
+        </div>
+
+        {order ? (
+          <Badge
+            variant="outline"
+            className={cn("px-3 py-1 text-xs font-bold", getOrderStatusBadge(order.status))}
+          >
+            {getOrderStatusLabel(order.status)}
+          </Badge>
+        ) : null}
+      </div>
+
+      {orderQuery.isLoading ? (
+        <div className="mt-4 flex items-center gap-2 text-xs font-bold text-zinc-400">
+          <Loader2 className="h-4 w-4 animate-spin text-[#D4AF37]" />
+          Đang tra cứu đơn hàng từ API /api/v1/orders/{orderId}...
+        </div>
+      ) : order ? (
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4 rounded-xl border border-white/[0.08] bg-black/30 p-4 text-xs font-semibold">
+          <div>
+            <p className="text-zinc-500 font-bold uppercase tracking-wider">Mã thanh toán</p>
+            <p className="mt-1 font-mono text-sm font-black text-white">{order.paymentCode}</p>
+          </div>
+          <div>
+            <p className="text-zinc-500 font-bold uppercase tracking-wider">Tổng tiền</p>
+            <p className="mt-1 text-sm font-black text-[#F5D46E]">{formatNumber(order.totalAmount)}đ</p>
+          </div>
+          <div>
+            <p className="text-zinc-500 font-bold uppercase tracking-wider">Khấu trừ Ví Campaign</p>
+            <p className="mt-1 text-sm font-black text-emerald-400">
+              {order.walletAmount ? `${formatNumber(order.walletAmount)}đ` : "0đ"}
+            </p>
+          </div>
+          <div>
+            <p className="text-zinc-500 font-bold uppercase tracking-wider">Hạn thanh toán</p>
+            <p className="mt-1 text-xs font-bold text-zinc-300">{formatDateTime(order.expiresAt)}</p>
+          </div>
+        </div>
+      ) : null}
+
+      {/* Breakdowns of API 7 & API 8 */}
+      <div className="mt-5 grid gap-4 lg:grid-cols-2">
+        {/* API 7: Giao dịch thanh toán SePay / Ngân hàng */}
+        <div className="rounded-xl border border-white/10 bg-black/20 p-4">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-bold text-zinc-300">
+              Giao dịch SePay / Cổng thanh toán (by-reference)
+            </p>
+
+            <Badge variant="outline" className="border-cyan-400/30 bg-cyan-400/10 text-[10px] text-cyan-300">
+              API /transactions/by-reference
+            </Badge>
+          </div>
+
+          <div className="mt-3 space-y-2">
+            {refTxQuery.isLoading ? (
+              <div className="h-12 animate-pulse rounded-lg bg-white/5" />
+            ) : refTransactions.length === 0 ? (
+              <p className="text-xs text-zinc-500 font-semibold">Chưa có giao dịch thanh toán trực tiếp nào.</p>
+            ) : (
+              refTransactions.map((tx) => (
+                <div
+                  key={tx.transactionId}
+                  className="flex items-center justify-between rounded-lg border border-white/[0.06] bg-white/[0.03] p-2.5 text-xs font-semibold"
+                >
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <Badge className="border-emerald-400/30 bg-emerald-400/10 text-[10px] text-emerald-300">
+                        {tx.status}
+                      </Badge>
+                      <span className="font-mono text-zinc-300">{tx.paymentMethod}</span>
+                    </div>
+                    <p className="mt-1 text-[11px] text-zinc-500">{formatDateTime(tx.createdAt)}</p>
+                  </div>
+                  <p className="text-sm font-black text-emerald-400">+{formatNumber(tx.paidAmount)}đ</p>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* API 8: Giao dịch dùng ví Campaign của order */}
+        <div className="rounded-xl border border-white/10 bg-black/20 p-4">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-bold text-zinc-300">
+              Giao dịch Ví Campaign (wallet-transactions)
+            </p>
+            <Badge variant="outline" className="border-yellow-400/30 bg-yellow-400/10 text-[10px] text-yellow-300">
+              API /campaign-wallets/wallet-transactions
+            </Badge>
+          </div>
+
+          <div className="mt-3 space-y-2">
+            {walletTxQuery.isLoading ? (
+              <div className="h-12 animate-pulse rounded-lg bg-white/5" />
+            ) : walletTransactions.length === 0 ? (
+              <p className="text-xs text-zinc-500 font-semibold">Không có khấu trừ/hoàn tiền từ ví cho đơn hàng này.</p>
+            ) : (
+              walletTransactions.map((tx) => (
+                <div
+                  key={tx.transactionId}
+                  className="flex items-center justify-between rounded-lg border border-white/[0.06] bg-white/[0.03] p-2.5 text-xs font-semibold"
+                >
+                  <div className="min-w-0 pr-2">
+                    <div className="flex items-center gap-2">
+                      <Badge className="border-yellow-400/30 bg-yellow-400/10 text-[10px] text-yellow-300">
+                        {tx.transactionType}
+                      </Badge>
+                      <span className="text-[11px] text-zinc-500">{formatDateTime(tx.createdAt)}</span>
+                    </div>
+                    <p className="mt-1 line-clamp-1 text-[11px] text-zinc-300">{tx.description}</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-sm font-black text-yellow-300">-{formatNumber(tx.amount)}đ</p>
+                    <p className="text-[10px] text-zinc-500">Ví: {formatNumber(tx.balanceBefore)}đ ➔ {formatNumber(tx.balanceAfter)}đ</p>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CampaignPayoutModal({
+  open,
+  balance,
+  onOpenChange,
+}: {
+  open: boolean;
+  balance: number;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const createPayoutMutation = useCreatePayoutRequest();
+  const [createdPayout, setCreatedPayout] = useState<PayoutRequest | null>(null);
+
+  if (!open) return null;
+
+  const canRequest = balance >= 2000;
+
+  const handleSubmit = () => {
+    if (!canRequest) return;
+
+    createPayoutMutation.mutate(undefined, {
+      onSuccess: (data) => {
+        setCreatedPayout(data);
+        toast.success("Gửi yêu cầu rút tiền thành công!");
+      },
+      onError: (err) => {
+        toast.error(getApiErrorMessage(err));
+      },
+    });
+  };
+
+  const handleClose = () => {
+    setCreatedPayout(null);
+    onOpenChange(false);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-md">
+      <div className="relative w-full max-w-md overflow-hidden rounded-[28px] border border-white/10 bg-[#0d0d0f] p-6 shadow-2xl">
+        <div className="flex items-center justify-between border-b border-white/10 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#D4AF37]/30 bg-[#D4AF37]/10 text-[#D4AF37]">
+              <Landmark className="h-5 w-5" />
+            </div>
+            <div>
+              <h3 className="text-lg font-black text-white">Yêu cầu rút tiền Ví Campaign</h3>
+              <p className="text-xs font-semibold text-zinc-500">API /api/v1/payout-requests</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleClose}
+            className="rounded-full p-1 text-zinc-400 hover:bg-white/10 hover:text-white"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {createdPayout ? (
+          <div className="mt-5 space-y-4">
+            <div className="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-4 text-center">
+              <CheckCircle2 className="mx-auto h-8 w-8 text-emerald-400" />
+              <p className="mt-2 text-base font-black text-white">Đã gửi yêu cầu thành công!</p>
+              <p className="mt-1 text-xs text-zinc-400">Yêu cầu rút toàn bộ số dư đang được Admin xử lý.</p>
+            </div>
+
+            <div className="space-y-2 rounded-2xl border border-white/10 bg-black/30 p-4 text-xs font-semibold">
+              <div className="flex justify-between">
+                <span className="text-zinc-500">Mã yêu cầu</span>
+                <span className="font-mono font-bold text-white">{shortenId(createdPayout.payoutRequestId)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-zinc-500">Số tiền rút</span>
+                <span className="font-black text-[#F5D46E]">{formatNumber(createdPayout.amount)}đ</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-zinc-500">Trạng thái</span>
+                <Badge variant="outline" className="border-yellow-400/30 bg-yellow-400/10 text-[10px] text-yellow-300">
+                  {createdPayout.status}
+                </Badge>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-zinc-500">Ngân hàng / Ví</span>
+                <span className="font-bold text-white">{createdPayout.bankName || "—"}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-zinc-500">Số tài khoản</span>
+                <span className="font-mono text-zinc-300">{createdPayout.bankAccountNumber || "—"}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-zinc-500">Tên chủ tài khoản</span>
+                <span className="font-bold text-zinc-200">{createdPayout.bankAccountName || "—"}</span>
+              </div>
+            </div>
+
+            <Button
+              type="button"
+              className="w-full h-11 rounded-2xl bg-[#D4AF37] font-black text-black hover:bg-[#e6c75b]"
+              onClick={handleClose}
+            >
+              Hoàn tất
+            </Button>
+          </div>
+        ) : (
+          <div className="mt-5 space-y-4">
+            <div className="rounded-2xl border border-white/10 bg-black/30 p-4 text-center">
+              <p className="text-xs font-bold text-zinc-400">Số dư khả dụng trong Ví Campaign</p>
+              <p className="mt-2 text-3xl font-black text-[#F5D46E]">{formatNumber(balance)}đ</p>
+              <p className="mt-2 text-[11px] font-semibold text-zinc-500">
+                Yêu cầu rút tiền áp dụng cho toàn bộ số dư (tối thiểu 2.000đ) về Payment Profile chính đã đăng ký.
+              </p>
+            </div>
+
+            {!canRequest ? (
+              <div className="rounded-2xl border border-orange-400/30 bg-orange-500/10 p-3 text-center text-xs font-bold text-orange-300">
+                Số dư chưa đạt điều kiện rút tối thiểu (Cần ít nhất 2.000đ).
+              </div>
+            ) : null}
+
+            <div className="flex gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1 h-11 rounded-2xl border-white/10 bg-white/[0.04] font-bold text-zinc-300 hover:bg-white/10"
+                onClick={handleClose}
+              >
+                Hủy
+              </Button>
+              <Button
+                type="button"
+                disabled={!canRequest || createPayoutMutation.isPending}
+                className="flex-1 h-11 rounded-2xl bg-[#D4AF37] font-black text-black hover:bg-[#e6c75b] disabled:opacity-50"
+                onClick={handleSubmit}
+              >
+                {createPayoutMutation.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Landmark className="mr-2 h-4 w-4" />
+                )}
+                Gửi yêu cầu
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function PayoutRequestsListSection() {
+  const [payoutPage, setPayoutPage] = useState(1);
+  const payoutQuery = useGetOwnPayoutRequests({ page: payoutPage, pageSize: 5 });
+
+  const requests = payoutQuery.data?.content ?? [];
+  const totalPages = payoutQuery.data?.totalPages ?? 1;
+
+  return (
+    <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5 md:p-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-yellow-400/25 bg-yellow-400/10 text-yellow-300">
+            <Landmark className="h-5 w-5" />
+          </div>
+          <div>
+            <h2 className="text-xl font-black text-white">Lịch sử Yêu cầu Rút tiền của tôi</h2>
+            <p className="text-xs font-semibold text-zinc-500">
+              API /api/v1/payout-requests/own (Danh sách yêu cầu rút tiền cá nhân)
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={payoutPage <= 1 || payoutQuery.isLoading}
+            onClick={() => setPayoutPage((p) => Math.max(1, p - 1))}
+            className="h-9 border-white/10 bg-white/[0.04] px-3 text-xs font-bold text-zinc-200 hover:bg-white/10"
+          >
+            Trước
+          </Button>
+          <span className="text-xs font-bold text-zinc-400">
+            Trang {payoutPage} / {Math.max(totalPages, 1)}
+          </span>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={payoutPage >= totalPages || payoutQuery.isLoading}
+            onClick={() => setPayoutPage((p) => p + 1)}
+            className="h-9 border-white/10 bg-white/[0.04] px-3 text-xs font-bold text-zinc-200 hover:bg-white/10"
+          >
+            Sau
+          </Button>
+        </div>
+      </div>
+
+      <div className="mt-5">
+        {payoutQuery.isLoading ? (
+          <div className="space-y-3">
+            {Array.from({ length: 2 }).map((_, i) => (
+              <div key={i} className="h-16 animate-pulse rounded-2xl border border-white/10 bg-white/[0.03]" />
+            ))}
+          </div>
+        ) : requests.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-white/10 bg-black/20 p-6 text-center text-xs font-semibold text-zinc-500">
+            Bạn chưa gửi yêu cầu rút tiền nào.
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {requests.map((item: PayoutRequest) => {
+              const isPaid = item.status === "PAID" || item.status === "APPROVED";
+              const isRejected = item.status === "REJECTED";
+
+              return (
+                <div
+                  key={item.payoutRequestId}
+                  className="flex flex-col gap-3 rounded-2xl border border-white/[0.08] bg-black/20 p-4 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge
+                        variant="outline"
+                        className={`px-2 py-0.5 text-[10px] font-bold ${
+                          isPaid
+                            ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300"
+                            : isRejected
+                              ? "border-red-400/30 bg-red-400/10 text-red-300"
+                              : "border-yellow-400/30 bg-yellow-400/10 text-yellow-300"
+                        }`}
+                      >
+                        {item.status}
+                      </Badge>
+                      <span className="font-mono text-[11px] font-bold text-zinc-400">
+                        ID: {shortenId(item.payoutRequestId)}
+                      </span>
+                      {item.createdAt ? (
+                        <span className="text-[11px] font-bold text-zinc-500">
+                          {formatDateTime(item.createdAt)}
+                        </span>
+                      ) : null}
+                    </div>
+                    <p className="mt-1 text-sm font-bold text-white">
+                      {item.bankName || "—"} - {item.bankAccountNumber || "—"} ({item.bankAccountName || "—"})
+                    </p>
+                    {item.adminNote ? (
+                      <p className="mt-1 text-xs font-semibold text-zinc-400">
+                        Ghi chú Admin: <span className="text-zinc-200">{item.adminNote}</span>
+                      </p>
+                    ) : null}
+                  </div>
+
+                  <div className="text-right shrink-0">
+                    <p className="text-lg font-black text-[#F5D46E]">{formatNumber(item.amount)}đ</p>
+                    <p className="text-xs font-bold text-zinc-400">Toàn bộ số dư ví</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function CampaignStatCard({
   icon: Icon,
@@ -777,19 +1553,25 @@ function CampaignSeriesOverviewPanelV2({
         <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/62 to-black/20" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/88 via-transparent to-black/20" />
         <div className="relative z-10 flex min-h-[360px] max-w-4xl flex-col justify-end p-6 md:p-8">
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge className="border-white/10 bg-black/45 text-white backdrop-blur" variant="outline">
-              {isVideo ? <Film className="h-3.5 w-3.5" /> : <BookOpen className="h-3.5 w-3.5" />}
-              {getContentTypeLabel(series?.contentType)}
-            </Badge>
-            <Badge className={getStatusClass(campaignSeries.status)} variant="outline">
-              {getStatusLabel(campaignSeries.status)}
-            </Badge>
-            {series?.ageRating ? (
-              <Badge className="border-[#D4AF37]/25 bg-[#D4AF37]/15 text-[#F5D46E]" variant="outline">
-                {series.ageRating}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge className="border-white/10 bg-black/45 text-white backdrop-blur" variant="outline">
+                {isVideo ? <Film className="h-3.5 w-3.5" /> : <BookOpen className="h-3.5 w-3.5" />}
+                {getContentTypeLabel(series?.contentType)}
               </Badge>
-            ) : null}
+              <Badge className={getStatusClass(campaignSeries.status)} variant="outline">
+                {getStatusLabel(campaignSeries.status)}
+              </Badge>
+              {series?.ageRating ? (
+                <Badge className="border-[#D4AF37]/25 bg-[#D4AF37]/15 text-[#F5D46E]" variant="outline">
+                  {series.ageRating}
+                </Badge>
+              ) : null}
+            </div>
+            <CampaignSeriesStatusToggleButton
+              campaignSeriesId={campaignSeries.campaignSeriesId}
+              currentStatus={campaignSeries.status}
+            />
           </div>
           <h4 className="mt-4 line-clamp-2 text-4xl font-black tracking-tight text-white md:text-6xl">
             {isSeriesLoading
@@ -1282,9 +2064,15 @@ function CampaignSeriesDetailDashboard({
             Dữ liệu log theo giờ từ {range.startTime} đến {range.endTime}
           </p>
         </div>
-        <Badge className={getStatusClass(campaignSeries.status)} variant="outline">
-          {getStatusLabel(campaignSeries.status)}
-        </Badge>
+        <div className="flex items-center gap-3">
+          <Badge className={getStatusClass(campaignSeries.status)} variant="outline">
+            {getStatusLabel(campaignSeries.status)}
+          </Badge>
+          <CampaignSeriesStatusToggleButton
+            campaignSeriesId={campaignSeries.campaignSeriesId}
+            currentStatus={campaignSeries.status}
+          />
+        </div>
       </div>
 
       <div className="mt-6 rounded-[26px] border border-white/10 bg-white/[0.035] p-4">
@@ -1509,8 +2297,15 @@ function CampaignSeriesCard({ row }: { row: CampaignSeriesDashboardRow }) {
                     : `Series ID: ${shortenId(campaignSeries.seriesId)}`}
               </p>
             </div>
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37]">
-              <Megaphone className="h-5 w-5" />
+            <div className="flex items-center gap-2">
+              <CampaignSeriesStatusToggleButton
+                campaignSeriesId={campaignSeries.campaignSeriesId}
+                currentStatus={campaignSeries.status}
+                size="sm"
+              />
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37]">
+                <Megaphone className="h-5 w-5" />
+              </div>
             </div>
           </div>
 
@@ -1595,12 +2390,14 @@ export function CampaignDetailDashboard({
   getServiceName,
   onBack,
   onSelectCampaign,
+  onCancelCampaign,
 }: {
   campaign: CreatorCampaign;
   campaigns: CreatorCampaign[];
   getServiceName: (engagementServiceId?: string | null) => string;
   onBack: () => void;
   onSelectCampaign: (campaignId: string) => void;
+  onCancelCampaign?: (campaignId: string) => void;
 }) {
   const progress = getProgress(campaign);
   const remaining = getRemaining(campaign);
@@ -1666,6 +2463,24 @@ export function CampaignDetailDashboard({
             >
               <ArrowLeft className="h-4 w-4" />
               Danh sách
+            </Button>
+
+            {campaignSeriesItems.map((item) => (
+              <CampaignSeriesStatusToggleButton
+                key={item.campaignSeriesId}
+                campaignSeriesId={item.campaignSeriesId}
+                currentStatus={item.status}
+              />
+            ))}
+
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onCancelCampaign?.(campaign.campaignId)}
+              className="h-11 cursor-pointer rounded-2xl border-red-500/30 bg-red-500/10 px-4 text-xs font-bold text-red-300 hover:bg-red-500/20"
+            >
+              <Trash2 className="mr-1.5 h-4 w-4" />
+              Hủy chiến dịch
             </Button>
           </div>
 
@@ -1880,6 +2695,9 @@ export function CampaignDetailDashboard({
           label="Gói tăng tương tác"
           value={getServiceName(campaign.engagementServiceId)}
         />
+        {campaign.orderId ? (
+          <CampaignOrderPollingCard orderId={campaign.orderId} />
+        ) : null}
       </section>
 
       <CampaignSeriesInsights
@@ -1955,6 +2773,7 @@ export function CreatorCampaignsView() {
 
   const campaignsQuery = useGetCreatorOwnCampaigns(queryParams);
   const servicesQuery = useGetCreatorCampaignPlans({ page: 1, pageSize: 100 });
+  const campaignWalletQuery = useGetCampaignWalletBalance();
 
   const rawCampaigns = useMemo(
     () => campaignsQuery.data?.content ?? [],
@@ -2026,6 +2845,9 @@ export function CreatorCampaignsView() {
     setPage(1);
   };
 
+  const [isPayoutModalOpen, setIsPayoutModalOpen] = useState(false);
+  const [cancellingCampaignId, setCancellingCampaignId] = useState<string | null>(null);
+
   if (selectedCampaign) {
     return (
       <section className="mx-auto w-full max-w-[1500px] space-y-6 px-0 pb-8">
@@ -2035,6 +2857,15 @@ export function CreatorCampaignsView() {
           getServiceName={getServiceName}
           onBack={() => setSelectedCampaignId(null)}
           onSelectCampaign={setSelectedCampaignId}
+          onCancelCampaign={(id) => setCancellingCampaignId(id)}
+        />
+        <CreatorCampaignCancelModal
+          isOpen={Boolean(cancellingCampaignId)}
+          campaignId={cancellingCampaignId}
+          onClose={() => {
+            setCancellingCampaignId(null);
+            setSelectedCampaignId(null);
+          }}
         />
       </section>
     );
@@ -2060,12 +2891,36 @@ export function CreatorCampaignsView() {
             </p>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="relative group">
+              <CampaignStatCard
+                icon={Coins}
+                label="Ví Campaign"
+                value={
+                  campaignWalletQuery.isLoading
+                    ? "Đang tải..."
+                    : campaignWalletQuery.data === null
+                      ? "Chưa tạo ví"
+                      : `${formatNumber(campaignWalletQuery.data?.balance)}đ`
+                }
+                tone="gold"
+              />
+              {campaignWalletQuery.data && campaignWalletQuery.data.balance > 0 ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => setIsPayoutModalOpen(true)}
+                  className="mt-2 w-full h-8 rounded-xl bg-[#D4AF37] text-xs font-black text-black hover:bg-[#e6c75b]"
+                >
+                  <Landmark className="mr-1.5 h-3.5 w-3.5" />
+                  Rút tiền về ví
+                </Button>
+              ) : null}
+            </div>
             <CampaignStatCard
               icon={Megaphone}
               label="Tổng chiến dịch"
               value={formatNumber(totalElements)}
-              tone="gold"
             />
             <CampaignStatCard
               icon={TrendingUp}
@@ -2081,6 +2936,16 @@ export function CreatorCampaignsView() {
           </div>
         </div>
       </div>
+
+      <CampaignPayoutModal
+        open={isPayoutModalOpen}
+        balance={campaignWalletQuery.data?.balance ?? 0}
+        onOpenChange={setIsPayoutModalOpen}
+      />
+
+      <CampaignWalletHistorySection />
+
+      <PayoutRequestsListSection />
 
       <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -2346,6 +3211,11 @@ export function CreatorCampaignsView() {
             </Button>
           </div>
         </div>
+        <CreatorCampaignCancelModal
+          isOpen={Boolean(cancellingCampaignId)}
+          campaignId={cancellingCampaignId}
+          onClose={() => setCancellingCampaignId(null)}
+        />
       </section>
     </section>
   );

@@ -8,6 +8,7 @@ import {
     CheckCircle2,
     ChevronLeft,
     ChevronRight,
+    Coins,
     Film,
     Loader2,
     ReceiptText,
@@ -19,6 +20,7 @@ import { getApiErrorMessage } from "@/shared/api/http-client";
 import {
     useCreateEngagementOrder,
     useGetCreatorCampaignPublishedSeries,
+    useGetCampaignWalletBalance,
 } from "@/features/creator-dashboard/hooks/use-creator-campaigns";
 import type { SeriesResponse } from "@/features/creator-dashboard/api/creator-content-api";
 import type { CreatorCampaignService } from "@/features/creator-dashboard/types/creator-campaigns.types";
@@ -50,8 +52,14 @@ export function CreatorCampaignCheckoutModal({
     const router = useRouter();
     const [page, setPage] = useState(1);
     const [selectedSeriesIds, setSelectedSeriesIds] = useState<string[]>([]);
+    const [useCampaignWallet, setUseCampaignWallet] = useState(true);
     const [formError, setFormError] = useState<string | null>(null);
     const createOrderMutation = useCreateEngagementOrder();
+    const walletBalanceQuery = useGetCampaignWalletBalance();
+
+    const hasWalletBalance = Boolean(
+        walletBalanceQuery.data && (walletBalanceQuery.data.balance ?? 0) > 0,
+    );
 
     const seriesQuery = useGetCreatorCampaignPublishedSeries(
         {
@@ -108,6 +116,7 @@ export function CreatorCampaignCheckoutModal({
             {
                 engagementServiceId: plan.engagementServiceId,
                 seriesIds: selectedSeriesIds,
+                useCampaignWallet: hasWalletBalance ? useCampaignWallet : false,
             },
             {
                 onSuccess: (order) => {
@@ -315,6 +324,26 @@ export function CreatorCampaignCheckoutModal({
                                 <span className="text-yellow-200">{formatPrice(plan.price)}</span>
                             </div>
                         </div>
+
+                        {hasWalletBalance ? (
+                            <label className="mt-4 flex cursor-pointer items-center justify-between rounded-2xl border border-yellow-400/25 bg-yellow-400/10 p-3.5 transition hover:bg-yellow-400/15">
+                                <div className="flex items-center gap-3 min-w-0">
+                                    <Coins className="h-5 w-5 shrink-0 text-yellow-300" />
+                                    <div className="min-w-0">
+                                        <p className="text-xs font-bold text-white">Trừ từ Ví Campaign</p>
+                                        <p className="mt-0.5 text-[11px] font-semibold text-zinc-400">
+                                            Khả dụng: {formatPrice(walletBalanceQuery.data?.balance ?? 0)}
+                                        </p>
+                                    </div>
+                                </div>
+                                <input
+                                    type="checkbox"
+                                    checked={useCampaignWallet}
+                                    onChange={(e) => setUseCampaignWallet(e.target.checked)}
+                                    className="h-4 w-4 shrink-0 cursor-pointer accent-yellow-400"
+                                />
+                            </label>
+                        ) : null}
 
                         {selectedSeries.length > 0 && (
                             <div className="mt-5 space-y-2">

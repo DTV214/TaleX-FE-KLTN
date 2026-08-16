@@ -198,16 +198,9 @@ export function RecommendationBrainTab() {
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <h2 className="text-xl font-black tracking-tight text-white">
-                  Bộ Não Đề Xuất LightGBM AI Engine
+                  LightGBM AI Engine
                 </h2>
-                <span className="rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-xs font-semibold text-emerald-300 border border-emerald-400/30 flex items-center gap-1">
-                  <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                  Active Brain
-                </span>
               </div>
-              <p className="text-xs text-slate-300 max-w-2xl leading-relaxed">
-                Mô hình xếp hạng học máy LambdaMART LightGBM phục vụ gợi ý cá nhân hóa. Kết nối thời gian thực tới Supabase PostgreSQL (Kho Impression) và MongoDB Atlas (Features &amp; Series Metadata).
-              </p>
             </div>
           </div>
 
@@ -218,7 +211,7 @@ export function RecommendationBrainTab() {
                 <Cpu className="h-3.5 w-3.5 text-violet-400" />
                 Thuật toán
               </div>
-              <p className="text-sm font-bold text-violet-200 mt-1">LightGBM Rank</p>
+              <p className="text-sm font-bold text-violet-200 mt-1">LightGBM Ranking</p>
             </div>
 
             <div className="rounded-xl border border-white/10 bg-white/5 p-3 backdrop-blur-md">
@@ -240,27 +233,6 @@ export function RecommendationBrainTab() {
             </div>
           </div>
         </div>
-
-        {/* Global Security Token Settings */}
-        <div className="mt-6 pt-4 border-t border-white/10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-2 text-xs text-slate-300">
-            <Key className="h-4 w-4 text-amber-400" />
-            <span className="font-semibold">Security Authorization Token:</span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
-              value={token}
-              onChange={(e) => setToken(e.target.value)}
-              placeholder="Nhập secret token..."
-              className="w-full sm:w-80 rounded-xl border border-white/20 bg-white/10 px-3.5 py-1.5 text-xs text-white placeholder-slate-400 outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-400 transition-all"
-            />
-            <span className="text-[10px] text-emerald-400 font-semibold flex items-center gap-1 bg-emerald-950/50 px-2 py-1 rounded-lg border border-emerald-800/40 whitespace-nowrap">
-              <ShieldCheck className="h-3 w-3" /> Token hợp lệ
-            </span>
-          </div>
-        </div>
       </div>
 
       {/* 2. Control Cards Grid: Train Init, Train Init Real, Download Dataset */}
@@ -279,10 +251,10 @@ export function RecommendationBrainTab() {
 
             <div>
               <h3 className="text-base font-bold text-slate-900">
-                Train Init (Dữ Liệu Mẫu)
+                Khởi Tạo Dữ Liệu Mẫu
               </h3>
               <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                Khởi tạo 12,000 mẫu dữ liệu sinh tự động và đồng bộ bộ não LightGBM. Dùng để reset hệ thống trước buổi demo.
+                Khởi tạo 12,000 mẫu dữ liệu sinh tự động bởi AI bao gồm các giả định về thói quen và lựa chọn của người dùng. Được sử dụng khi hệ thống chưa có đủ dữ liệu.
               </p>
             </div>
 
@@ -310,7 +282,7 @@ export function RecommendationBrainTab() {
               ) : (
                 <Play className="h-4 w-4" />
               )}
-              <span>Trigger Train Init (Mock)</span>
+              <span>Khởi Tạo Ngay</span>
             </button>
           </div>
         </div>
@@ -329,10 +301,10 @@ export function RecommendationBrainTab() {
 
             <div>
               <h3 className="text-base font-bold text-slate-900">
-                Train Init Real (Dữ Liệu Thực)
+                Đồng Bộ Dữ Liệu Thực
               </h3>
               <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                Lấy dữ liệu thực từ PostgreSQL (Supabase) + MongoDB Atlas. Trích xuất 26 features, huấn luyện và xuất tập dữ liệu Excel/CSV.
+                Lấy dữ liệu thực từ Database. Trích xuất thói quen người dùng, đặc điểm mô tả của các series, huấn luyện và xuất tập dữ liệu Excel/CSV.
               </p>
             </div>
 
@@ -372,7 +344,7 @@ export function RecommendationBrainTab() {
               ) : (
                 <Sparkles className="h-4 w-4" />
               )}
-              <span>Trigger Train Init Real</span>
+              <span>Kích Hoạt Đồng Bộ</span>
             </button>
           </div>
         </div>
@@ -598,13 +570,12 @@ export function RecommendationBrainTab() {
 
           {activeLog && (
             <span
-              className={`rounded-md px-2 py-0.5 text-[10px] font-bold ${
-                activeLog.status === "success"
-                  ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
-                  : activeLog.status === "error"
+              className={`rounded-md px-2 py-0.5 text-[10px] font-bold ${activeLog.status === "success"
+                ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                : activeLog.status === "error"
                   ? "bg-red-500/20 text-red-300 border border-red-500/30"
                   : "bg-amber-500/20 text-amber-300 border border-amber-500/30"
-              }`}
+                }`}
             >
               {activeLog.status.toUpperCase()} [{activeLog.timestamp}]
             </span>

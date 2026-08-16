@@ -136,9 +136,7 @@ export function PersonalRecommendationsTab({
               <h3 className="text-base font-bold text-slate-900">
                 Chọn Tài Khoản Người Dùng
               </h3>
-              <p className="text-xs text-slate-500">
-                Chọn tài khoản để xem chi tiết
-              </p>
+
             </div>
           </div>
 
@@ -159,7 +157,7 @@ export function PersonalRecommendationsTab({
                 >
                   {accounts?.map((acc) => (
                     <option key={acc.accountId} value={acc.accountId}>
-                      {acc.email} — {acc.fullName || acc.username} ({acc.roleName})
+                      {acc.email} — {acc.fullName || acc.username}
                     </option>
                   ))}
                 </select>
@@ -205,9 +203,6 @@ export function PersonalRecommendationsTab({
                     <Mail className="h-3 w-3 text-slate-400" />
                     {currentAccount.email}
                   </span>
-                  <span className="text-[11px] text-slate-400">
-                    ID: {currentAccount.accountId}
-                  </span>
                 </div>
               </div>
             </div>
@@ -230,15 +225,13 @@ export function PersonalRecommendationsTab({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-base font-bold text-slate-900">
-                  5 Series Đã Xem Gần Đây
+                  Series Đã Xem Gần Đây
                 </h3>
                 <span className="rounded-full bg-sky-100 px-2.5 py-0.5 text-xs font-bold text-sky-700">
                   {recentSeries?.length ?? 0} series
                 </span>
               </div>
-              <p className="text-xs text-slate-500">
-                Danh sách series người dùng xem gần nhất
-              </p>
+
             </div>
           </div>
 
@@ -300,11 +293,10 @@ export function PersonalRecommendationsTab({
                     <button
                       type="button"
                       onClick={() => setTargetSimilarSeries(card)}
-                      className={`flex w-full items-center justify-center gap-1.5 rounded-xl py-2 px-3 text-xs font-bold transition-all ${
-                        isSelectedForSimilar
-                          ? "bg-amber-500 text-white shadow-md shadow-amber-200 ring-2 ring-amber-400"
-                          : "bg-violet-50 text-violet-700 border border-violet-200 hover:bg-violet-600 hover:text-white"
-                      }`}
+                      className={`flex w-full items-center justify-center gap-1.5 rounded-xl py-2 px-3 text-xs font-bold transition-all ${isSelectedForSimilar
+                        ? "bg-amber-500 text-white shadow-md shadow-amber-200 ring-2 ring-amber-400"
+                        : "bg-violet-50 text-violet-700 border border-violet-200 hover:bg-violet-600 hover:text-white"
+                        }`}
                     >
                       <Sparkles className="h-3.5 w-3.5" />
                       <span>{isSelectedForSimilar ? "Đang xem tương tự" : "Xem series tương tự"}</span>
@@ -414,15 +406,12 @@ export function PersonalRecommendationsTab({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-base font-bold text-slate-900">
-                  Already Watched Pool (Danh Sách Series Đã Xem Trong Pool)
+                  Danh Sách Series Đã Xem Hôm Nay
                 </h3>
                 <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-800 border border-emerald-200">
                   {watchedPoolSeries?.length ?? 0} series
                 </span>
               </div>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Danh sách toàn bộ các Series thuộc Already Watched Pool của người dùng
-              </p>
             </div>
           </div>
 
@@ -495,18 +484,12 @@ export function PersonalRecommendationsTab({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-base font-bold text-slate-900">
-                  Recommendation Pool Demo (AI Score Ranking)
+                  Kênh Đề Xuất
                 </h3>
                 <span className="rounded-full bg-indigo-100 px-2.5 py-0.5 text-xs font-bold text-indigo-700 border border-indigo-200">
                   {poolItems?.length ?? 0} series
                 </span>
-                <span className="rounded-full bg-violet-100 px-2.5 py-0.5 text-xs font-bold text-violet-700">
-                  Demo AI Engine
-                </span>
               </div>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Danh sách Series kèm Điểm số AI Score trong Recommendation Pool
-              </p>
             </div>
           </div>
 
@@ -516,11 +499,10 @@ export function PersonalRecommendationsTab({
               <button
                 type="button"
                 onClick={() => setPoolViewMode("grid")}
-                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 transition-all ${
-                  poolViewMode === "grid"
-                    ? "bg-white font-bold text-indigo-600 shadow-sm"
-                    : "text-slate-600 hover:text-slate-900"
-                }`}
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 transition-all ${poolViewMode === "grid"
+                  ? "bg-white font-bold text-indigo-600 shadow-sm"
+                  : "text-slate-600 hover:text-slate-900"
+                  }`}
               >
                 <LayoutGrid className="h-3.5 w-3.5" />
                 <span>Thẻ Cards</span>
@@ -528,11 +510,10 @@ export function PersonalRecommendationsTab({
               <button
                 type="button"
                 onClick={() => setPoolViewMode("table")}
-                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 transition-all ${
-                  poolViewMode === "table"
-                    ? "bg-white font-bold text-indigo-600 shadow-sm"
-                    : "text-slate-600 hover:text-slate-900"
-                }`}
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 transition-all ${poolViewMode === "table"
+                  ? "bg-white font-bold text-indigo-600 shadow-sm"
+                  : "text-slate-600 hover:text-slate-900"
+                  }`}
               >
                 <ListFilter className="h-3.5 w-3.5" />
                 <span>Bảng Leaderboard</span>
@@ -564,7 +545,7 @@ export function PersonalRecommendationsTab({
             <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-red-700 text-xs">
               <AlertCircle className="h-5 w-5 shrink-0" />
               <span>
-                Không thể tải Recommendation Pool:{" "}
+                Không thể tải Kênh Đề Xuất:{" "}
                 {poolError instanceof Error ? poolError.message : "Đã có lỗi xảy ra."}
               </span>
             </div>
@@ -575,10 +556,10 @@ export function PersonalRecommendationsTab({
             <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-indigo-200 bg-indigo-50/50 py-10 px-4 text-center">
               <Cpu className="h-9 w-9 text-indigo-300 stroke-[1.5]" />
               <p className="mt-2 text-sm font-semibold text-slate-700">
-                Chưa có dữ liệu Recommendation Pool cho tài khoản này
+                Chưa có dữ liệu Kênh Đề Xuất cho tài khoản này
               </p>
               <p className="mt-1 text-xs text-slate-500">
-                Vui lòng kiểm tra lại tiến trình tạo Pool hoặc chọn tài khoản người dùng khác.
+                Vui lòng kiểm tra lại tiến trình tạo Kênh Đề Xuất hoặc chọn tài khoản người dùng khác.
               </p>
             </div>
           )}
@@ -634,15 +615,14 @@ export function PersonalRecommendationsTab({
                         {/* Rank */}
                         <td className="py-3.5 px-4 text-center">
                           <span
-                            className={`inline-flex h-6 w-6 items-center justify-center rounded-full font-black text-xs ${
-                              idx === 0
-                                ? "bg-amber-400 text-amber-950"
-                                : idx === 1
+                            className={`inline-flex h-6 w-6 items-center justify-center rounded-full font-black text-xs ${idx === 0
+                              ? "bg-amber-400 text-amber-950"
+                              : idx === 1
                                 ? "bg-slate-300 text-slate-800"
                                 : idx === 2
-                                ? "bg-amber-700 text-amber-50"
-                                : "bg-slate-100 text-slate-600"
-                            }`}
+                                  ? "bg-amber-700 text-amber-50"
+                                  : "bg-slate-100 text-slate-600"
+                              }`}
                           >
                             {idx + 1}
                           </span>

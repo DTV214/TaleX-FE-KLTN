@@ -7,9 +7,7 @@ import { logoutAction } from "@/features/auth/api/auth.actions";
 import { useAuthStore } from "@/features/auth/store/auth.store";
 import {
   LayoutDashboard,
-  FileCheck2, // Cho Creator Applications
-  ShieldAlert, // Cho Content Moderation
-  Flag, // Cho Report Management
+  Flag,
   ShieldCheck,
   Users,
   Clapperboard,
@@ -42,14 +40,12 @@ export function StaffSidebar() {
 
   const navItems = [
     { name: "Dashboard", href: "/staff/dashboard", icon: LayoutDashboard },
-    { name: "Applications", href: "/staff/applications", icon: FileCheck2 },
-    { name: "Moderation", href: "/staff/moderation", icon: ShieldAlert },
-    { name: "Reports & Tickets", href: "/staff/reports", icon: Flag },
     {
       name: "Kiểm duyệt Hồ sơ",
       href: "/staff/creator-verification",
       icon: ShieldCheck,
     },
+    { name: "Reports & Tickets", href: "/staff/reports", icon: Flag },
     {
       name: "Người sáng tạo",
       href: "/staff/creators",
@@ -90,7 +86,7 @@ export function StaffSidebar() {
                   : "justify-center px-0"
               } ${
                 isActive
-                  ? "bg-[#ECFDF5] text-[#10B981]" // Nền xanh ngọc nhạt, chữ đậm
+                  ? "bg-[#ECFDF5] text-[#10B981]"
                   : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
               }`}
             >
@@ -98,18 +94,6 @@ export function StaffSidebar() {
                 className={`w-5 h-5 shrink-0 ${isActive ? "text-[#10B981]" : "text-gray-400"}`}
               />
               {isSidebarOpen && <span className="truncate">{item.name}</span>}
-              {/* Badge thông báo số lượng công việc chờ */}
-              {item.name === "Moderation" && (
-                <span
-                  className={`flex items-center justify-center rounded-full bg-red-100 text-[10px] text-red-600 ${
-                    isSidebarOpen
-                      ? "ml-auto h-5 w-5"
-                      : "absolute top-1 right-2 h-4 w-4 text-[9px]"
-                  }`}
-                >
-                  12
-                </span>
-              )}
             </Link>
           );
         })}

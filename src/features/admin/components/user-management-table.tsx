@@ -220,9 +220,7 @@ function StaffFormModal({
                 type="button"
                 onClick={() => setIsPasswordVisible((visible) => !visible)}
                 className="absolute right-3 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
-                aria-label={
-                  isPasswordVisible ? "Ẩn mật khẩu" : "Hiện mật khẩu"
-                }
+                aria-label={isPasswordVisible ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
               >
                 {isPasswordVisible ? (
                   <EyeOff className="h-4 w-4" />
@@ -577,10 +575,12 @@ export function UserManagementTable() {
             </table>
           </div>
 
-          <div className="flex flex-col gap-3 border-t border-slate-200 bg-slate-50/70 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-xs font-medium text-slate-500">
+          <div className="flex flex-col gap-3 border-t border-slate-200 bg-black-50/70 px-6 py-4 backoffice-dark:border-white/10 backoffice-dark:bg-black/25 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-xs font-medium text-slate-500 backoffice-dark:text-white/65">
               Tổng cộng{" "}
-              <span className="font-bold text-slate-900">{totalElements}</span>{" "}
+              <span className="font-bold text-slate-900 backoffice-dark:text-white">
+                {totalElements}
+              </span>{" "}
               tài khoản
             </p>
             <div className="flex items-center gap-2">
@@ -588,12 +588,12 @@ export function UserManagementTable() {
                 type="button"
                 onClick={() => setPage((current) => Math.max(current - 1, 0))}
                 disabled={page <= 0 || accountsQuery.isFetching}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/60 backoffice-dark:hover:bg-white/10 backoffice-dark:hover:text-white"
                 aria-label="Trang trước"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
-              <span className="min-w-24 text-center text-xs font-bold text-slate-600">
+              <span className="min-w-24 text-center text-xs font-bold text-slate-600 backoffice-dark:text-white/75">
                 Trang {totalPages === 0 ? 0 : page + 1}/{totalPages}
               </span>
               <button
@@ -610,7 +610,7 @@ export function UserManagementTable() {
                   page >= totalPages - 1 ||
                   accountsQuery.isFetching
                 }
-                className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/60 backoffice-dark:hover:bg-white/10 backoffice-dark:hover:text-white"
                 aria-label="Trang sau"
               >
                 <ChevronRight className="h-4 w-4" />

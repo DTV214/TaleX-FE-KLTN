@@ -22,7 +22,8 @@ jobs:
             # xuống pm2 restart (container/process CŨ đứng dậy lại bình thường), health
             # check pass nhờ bản CŨ, CI báo "success" giả dù code mới chưa hề lên server.
             cd ~/TaleX-FE-KLTN
-            git pull origin main
+            git fetch origin main
+            git reset --hard origin/main
 
             # Create .env.local from GitHub Secrets
             cat > .env.local << ENVEOF
