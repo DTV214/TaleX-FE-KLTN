@@ -79,11 +79,10 @@ export function ChannelCardItem({ card, score, rank, onSelect }: ChannelCardItem
         {/* Top-Left Corner: AI Score Badge (if score is present) or Rank Badge */}
         {score != null ? (
           <div
-            className={`absolute top-2.5 left-2.5 z-10 flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold text-white shadow-md backdrop-blur-md border border-white/20 ${
-              isAnotherChannel
+            className={`absolute top-2.5 left-2.5 z-10 flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold text-white shadow-md backdrop-blur-md border border-white/20 ${isAnotherChannel
                 ? "bg-gradient-to-r from-emerald-600 to-teal-600"
                 : "bg-gradient-to-r from-violet-600 to-indigo-600"
-            }`}
+              }`}
           >
             {rank != null && (
               <span className="rounded-full bg-amber-400 px-1.5 py-0.2 text-[10px] font-black text-slate-950">
@@ -187,12 +186,12 @@ export function ChannelCardItem({ card, score, rank, onSelect }: ChannelCardItem
             <span>{(card.totalViews ?? 0).toLocaleString()} lượt xem</span>
           </div>
 
-          <div className="flex items-center gap-1 text-slate-400 backoffice-dark:text-white/50" title={`Mới cập nhật: ${formatDate(card.releasedUpdateTime || card.updatedAt)}`}>
+          {/* <div className="flex items-center gap-1 text-slate-400 backoffice-dark:text-white/50" title={`Mới cập nhật: ${formatDate(card.releasedUpdateTime || card.updatedAt)}`}>
             <Clock className="h-3.5 w-3.5" />
             <span className="truncate max-w-[100px]">
               {formatDate(card.releasedUpdateTime || card.updatedAt).split(",")[0]}
             </span>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>

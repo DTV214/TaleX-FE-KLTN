@@ -33,8 +33,8 @@ import { useAuthStore } from "@/features/auth/store/auth.store";
 import { cn } from "@/shared/utils/utils";
 import { LikeButton } from "@/features/series/components/like-button";
 import { EpisodeShareButton } from "@/features/series/components/episode-share-button";
+import { EpisodeBookmarkButton } from "@/features/series/components/episode-bookmark-button";
 import { useEpisodeLikes } from "@/features/series/hooks/use-episode-likes";
-import { EpisodeCommentsSection } from "@/features/comments";
 import { FollowButton } from "@/features/series/components/follow-button";
 import { useCreatorFollow } from "@/features/series/hooks/use-creator-follow";
 import {
@@ -500,6 +500,12 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
         Chap trước
       </button>
 
+      <EpisodeBookmarkButton
+        episodeId={episodeId}
+        contentType="COMIC"
+        className="h-12 w-12 rounded-xl bg-[#1e1e24] hover:bg-[#D4AF37]/20 border border-white/10"
+      />
+
       <button
         type="button"
         onClick={() =>
@@ -652,6 +658,13 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
             >
               <List className="w-4 h-4" />
             </button>
+
+            {/* Nút Bookmark tập truyện trên top bar */}
+            <EpisodeBookmarkButton
+              episodeId={episodeId}
+              contentType="COMIC"
+              className="h-8 w-8 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10"
+            />
           </div>
         </div>
       </div>
@@ -931,11 +944,6 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
           slotId="mock-read-bottom"
           format="horizontal"
           className="my-8"
-        />
-
-        <EpisodeCommentsSection
-          episodeId={episodeId}
-          className="max-w-4xl mx-auto my-12"
         />
       </div>
 

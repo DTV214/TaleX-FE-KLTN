@@ -517,7 +517,7 @@ function ComicRecommendationSection() {
     <section id="comics-all-recommendations" className="pt-4 space-y-6">
       <SectionTitle
         eyebrow="Cá nhân hóa & Tất cả truyện tranh"
-        title="Tất Cả Truyện Tranh Đề Xuất (Cuộn Vô Cùng)"
+        title="Tất Cả Truyện Tranh Đề Xuất"
         icon={BookOpen}
       />
 

@@ -391,8 +391,8 @@ function ConfirmForceModal({
           Cập nhập điểm mốc?
         </h2>
         <p className="mt-2 text-sm font-medium leading-relaxed text-slate-500 backoffice-dark:text-white/55">
-          Hành động này gọi API force-threshold để hệ thống áp dụng lại cấu hình
-          trending đang có cho dữ liệu phân phối.
+          Hành động này sẽ kích hoạt hệ thống áp dụng cấu hình
+          xu hướng đang có cho dữ liệu phân phối.
         </p>
         <div className="mt-6 flex justify-end gap-3">
           <button
@@ -485,7 +485,39 @@ function SeriesTable({
                   <th className="px-5 py-4">Lượt xem</th>
                   <th className="px-5 py-4">Lượt tương tác</th>
                   <th className="px-5 py-4">Lượt đánh giá</th>
-                  <th className="px-5 py-4">Điểm xếp hạng</th>
+                  <th className="px-5 py-4">
+                    <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                      <span>Điểm xếp hạng</span>
+                      <FieldHelp position="bottom" align="right">
+                        <div className="space-y-2.5 text-left normal-case tracking-normal">
+                          <p className="font-bold text-slate-900 backoffice-dark:text-amber-400">
+                            Công thức Hacker News Ranking
+                          </p>
+                          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white p-2 backoffice-dark:border-white/10 backoffice-dark:bg-black/40">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              width={1200}
+                              height={600}
+                              src="https://res.cloudinary.com/dizv4hp3b/image/upload/v1786886520/Screenshot_2026-08-16_202056_vvy61j.png"
+                              alt="Công thức Hacker News Ranking"
+                              className="h-auto w-full rounded-lg object-contain"
+                            />
+                          </div>
+                          <ul className="space-y-1 text-[11px] text-slate-600 backoffice-dark:text-white/70">
+                            <li>
+                              <b>P</b>: Point - Số điểm mỗi người dùng đóng góp
+                            </li>
+                            <li>
+                              <b>T</b>: Thời gian kể từ lúc ra mắt
+                            </li>
+                            <li>
+                              <b>G</b>: Hệ số tốc độ giảm dần
+                            </li>
+                          </ul>
+                        </div>
+                      </FieldHelp>
+                    </span>
+                  </th>
                 </>
               ) : (
                 <>
@@ -732,10 +764,6 @@ export function AdminTrendingDashboard() {
         <h1 className="text-3xl font-bold tracking-tight text-slate-950 backoffice-dark:text-white">
           Quản lý Xu hướng
         </h1>
-        <p className="mt-2 max-w-3xl text-sm font-medium leading-6 text-slate-500 backoffice-dark:text-white/55">
-          Theo dõi cấu hình phân phối, ứng viên chờ vào kênh và danh sách
-          series đang được hệ thống đẩy xu hướng.
-        </p>
       </div>
       {/* <section className="flex flex-col gap-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] lg:flex-row lg:items-end lg:justify-between">
 

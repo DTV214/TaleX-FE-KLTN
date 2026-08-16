@@ -7,11 +7,55 @@ import { getPublicEpisodeDetail } from "@/features/series/api/series-api";
 import { useAuthStore } from "@/features/auth/store/auth.store";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Heart, Loader2, Play, BookOpen, Calendar, MoreVertical, Trash2, ExternalLink } from "lucide-react";
+import {
+  Heart,
+  Loader2,
+  Play,
+  BookOpen,
+  Calendar,
+  MoreVertical,
+  Trash2,
+  ExternalLink,
+  Film,
+  Sparkles,
+  Star,
+  Clapperboard,
+  Flame,
+  Tag,
+} from "lucide-react";
 import { cn } from "@/shared/utils/utils";
 import Link from "next/link";
 
 type TabType = "ALL" | "VIDEO" | "COMIC";
+
+function PageAtmosphere() {
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden">
+      <div
+        className="absolute inset-0 bg-cover bg-center opacity-[0.14]"
+        style={{
+          backgroundImage:
+            "url(https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=2200&auto=format&fit=crop)",
+        }}
+      />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_12%,rgba(212,175,55,0.18),transparent_32%),radial-gradient(circle_at_88%_18%,rgba(151,176,255,0.12),transparent_28%),linear-gradient(180deg,rgba(18,16,13,0.7)_0%,rgba(8,8,8,0.93)_48%,#080808_100%)]" />
+      <div className="absolute -left-28 top-28 h-72 w-[720px] rotate-[-10deg] rounded-[100%] border-t border-[#D4AF37]/14" />
+      <div className="absolute right-[-180px] top-20 h-[380px] w-[760px] rotate-[16deg] rounded-[100%] border-t border-cyan-100/10" />
+
+      {/* Floating Translucent Lucide Icons */}
+      <Sparkles className="absolute left-[8%] top-[8%] h-7 w-7 text-[#D4AF37]/20" />
+      <Star className="absolute right-[12%] top-[12%] h-8 w-8 text-[#D4AF37]/18" />
+      <Clapperboard className="absolute left-[44%] top-[10%] h-8 w-8 rotate-[-12deg] text-white/10" />
+      <BookOpen className="absolute left-[6%] top-[35%] h-8 w-8 text-cyan-100/14" />
+      <Heart className="absolute right-[8%] top-[30%] h-7 w-7 text-rose-300/14" />
+      <Film className="absolute left-[38%] top-[45%] h-9 w-9 rotate-[14deg] text-amber-200/12" />
+      <Flame className="absolute right-[22%] top-[55%] h-8 w-8 text-orange-400/14" />
+      <Tag className="absolute left-[14%] top-[70%] h-8 w-8 rotate-[-18deg] text-emerald-200/12" />
+      <Sparkles className="absolute right-[10%] top-[8%] h-9 w-9 text-[#D4AF37]/20" />
+      <Star className="absolute left-[48%] top-[85%] h-8 w-8 text-[#D4AF37]/16" />
+    </div>
+  );
+}
 
 export default function LikedPage() {
   const authUser = useAuthStore((state) => state.user);
@@ -159,19 +203,21 @@ export default function LikedPage() {
   // Trạng thái chưa đăng nhập
   if (!authUser) {
     return (
-      <div className="relative min-h-screen bg-[#080808] text-white flex flex-col items-center justify-center px-6">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(212,175,55,0.1),transparent_50%)]" />
-        <div className="relative z-10 text-center max-w-sm">
-          <div className="w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-6 text-slate-400">
-            <Heart className="w-8 h-8" />
+      <div className="relative min-h-screen overflow-hidden bg-[#12100d] pb-24 text-gray-100 antialiased flex flex-col items-center justify-center">
+        <PageAtmosphere />
+        <div className="relative z-10 mx-auto max-w-md px-4 py-16 text-center">
+          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl border border-rose-500/30 bg-rose-500/10 text-rose-500 shadow-[0_0_30px_rgba(244,63,94,0.15)]">
+            <Heart className="h-10 w-10 fill-rose-500" />
           </div>
-          <h1 className="text-2xl font-bold mb-3">Nội dung đã thích</h1>
-          <p className="text-sm text-gray-400 mb-8">
+          <h1 className="mb-3 text-2xl font-extrabold tracking-tight text-white md:text-3xl">
+            Nội dung đã thích
+          </h1>
+          <p className="mx-auto mb-8 max-w-sm text-sm text-gray-400 leading-relaxed">
             Vui lòng đăng nhập tài khoản TaleX để quản lý và xem lại danh sách các tập phim, truyện bạn đã yêu thích.
           </p>
           <Link
             href="/login"
-            className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-[#D4AF37] text-black font-extrabold hover:bg-[#E5C158] transition-all active:scale-[0.98]"
+            className="inline-flex items-center justify-center px-8 py-3 rounded-2xl bg-[#D4AF37] hover:bg-[#E5C158] text-black font-extrabold transition-all duration-300 shadow-[0_6px_25px_rgba(212,175,55,0.3)] hover:scale-105"
           >
             Đăng nhập ngay
           </Link>
@@ -181,80 +227,85 @@ export default function LikedPage() {
   }
 
   return (
-    <div className="relative min-h-screen bg-[#080808] text-white pb-24">
-      {/* Lớp nền mờ */}
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_10%,rgba(212,175,55,0.08),transparent_35%),radial-gradient(circle_at_85%_15%,rgba(125,211,252,0.04),transparent_30%),linear-gradient(180deg,#080808_0%,#0e0e11_60%,#080808_100%)]" />
+    <div className="relative min-h-screen overflow-hidden bg-[#12100d] pb-24 text-gray-100 antialiased">
+      <PageAtmosphere />
 
-      <div className="relative z-10 mx-auto w-full max-w-[1600px] px-4 py-8 md:px-8">
+      <main className="relative z-10 mx-auto w-full max-w-[1680px] px-4 pt-8 md:px-8">
         
-        {/* Banner tiêu đề */}
-        <div className="mb-6 pb-6 border-b border-white/5 flex items-center justify-between">
-          <div className="space-y-1">
-            <h1 className="text-2xl font-extrabold tracking-wide text-white flex items-center gap-2">
-              <Heart className="w-6 h-6 fill-red-500 text-red-500 stroke-[1.5]" />
-              Video & Truyện đã thích
-            </h1>
-            <p className="text-xs text-gray-500 font-semibold">
-              Tổng số lượng: {likedEpisodes.length} tập phim/truyện
-            </p>
+        {/* Banner tiêu đề & Tab Filters */}
+        <div className="mb-10 flex flex-col justify-between gap-6 border-b border-white/10 pb-6 md:flex-row md:items-center">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-rose-500/30 bg-rose-500/10 text-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.15)]">
+              <Heart className="h-6 w-6 fill-rose-500" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-extrabold tracking-tight text-white md:text-3xl flex items-center gap-2">
+                Video & Truyện đã thích
+              </h1>
+              <p className="mt-0.5 text-xs text-gray-400 md:text-sm">
+                Tổng số lượng: <strong className="text-[#D4AF37]">{likedEpisodes.length}</strong> tập phim/truyện đã yêu thích
+              </p>
+            </div>
           </div>
-        </div>
 
-        {/* Cụm Tabs dạng Pill (Tất cả, Video, Truyện tranh) */}
-        <div className="flex items-center gap-2 mb-6">
-          <button
-            onClick={() => setActiveTab("ALL")}
-            className={cn(
-              "px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer",
-              activeTab === "ALL"
-                ? "bg-white text-black font-black"
-                : "bg-white/5 text-gray-300 hover:bg-white/10"
-            )}
-          >
-            Tất cả
-          </button>
-          <button
-            onClick={() => setActiveTab("VIDEO")}
-            className={cn(
-              "px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer",
-              activeTab === "VIDEO"
-                ? "bg-white text-black font-black"
-                : "bg-white/5 text-gray-300 hover:bg-white/10"
-            )}
-          >
-            Video
-          </button>
-          <button
-            onClick={() => setActiveTab("COMIC")}
-            className={cn(
-              "px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer",
-              activeTab === "COMIC"
-                ? "bg-white text-black font-black"
-                : "bg-white/5 text-gray-300 hover:bg-white/10"
-            )}
-          >
-            Truyện tranh
-          </button>
+          {/* Cụm Tabs dạng Pill (Tất cả, Video, Truyện tranh) */}
+          <div className="flex items-center gap-1.5 self-start rounded-2xl border border-white/10 bg-[#18181c]/90 p-1.5 backdrop-blur-md shadow-inner md:self-auto">
+            <button
+              onClick={() => setActiveTab("ALL")}
+              className={cn(
+                "rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer",
+                activeTab === "ALL"
+                  ? "bg-[#D4AF37] text-black shadow-md"
+                  : "text-gray-400 hover:bg-white/5 hover:text-white"
+              )}
+            >
+              Tất cả
+            </button>
+            <button
+              onClick={() => setActiveTab("VIDEO")}
+              className={cn(
+                "flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer",
+                activeTab === "VIDEO"
+                  ? "bg-[#D4AF37] text-black shadow-md"
+                  : "text-gray-400 hover:bg-white/5 hover:text-white"
+              )}
+            >
+              <Film className="h-3.5 w-3.5" />
+              Video
+            </button>
+            <button
+              onClick={() => setActiveTab("COMIC")}
+              className={cn(
+                "flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer",
+                activeTab === "COMIC"
+                  ? "bg-[#D4AF37] text-black shadow-md"
+                  : "text-gray-400 hover:bg-white/5 hover:text-white"
+              )}
+            >
+              <BookOpen className="h-3.5 w-3.5" />
+              Truyện tranh
+            </button>
+          </div>
         </div>
 
         {/* LOADING BAN ĐẦU */}
         {isLoading && (
-          <div className="min-h-[300px] flex flex-col items-center justify-center">
-            <Loader2 className="w-8 h-8 animate-spin text-[#D4AF37] mb-3" />
-            <p className="text-xs text-gray-500 animate-pulse font-bold">
-              Đang tải danh sách...
+          <div className="flex flex-col items-center justify-center py-24 text-center">
+            <Loader2 className="mb-4 h-10 w-10 animate-spin text-[#D4AF37]" />
+            <p className="text-sm font-semibold text-gray-400 animate-pulse">
+              Đang tải danh sách yêu thích...
             </p>
           </div>
         )}
 
         {/* LỖI TẢI TRANG */}
         {isError && (
-          <div className="min-h-[300px] flex flex-col items-center justify-center text-center">
-            <h2 className="text-sm font-bold text-red-400 mb-1">Tải dữ liệu thất bại</h2>
-            <p className="text-xs text-gray-500 mb-4">Vui lòng tải lại trang web.</p>
+          <div className="mx-auto max-w-lg rounded-3xl border border-red-500/20 bg-[#18181c]/80 p-8 text-center backdrop-blur-md">
+            <p className="mb-3 text-sm font-bold text-red-400">Tải dữ liệu thất bại</p>
+            <p className="mb-4 text-xs text-gray-500">Vui lòng tải lại trang web.</p>
             <button
               onClick={() => window.location.reload()}
-              className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs font-bold"
+              className="rounded-xl bg-white/10 px-5 py-2 text-xs font-bold text-white transition hover:bg-white/20"
             >
               Tải lại
             </button>
@@ -263,19 +314,27 @@ export default function LikedPage() {
 
         {/* DANH SÁCH RỖNG */}
         {!isLoading && !isError && filteredEpisodes.length === 0 && (
-          <div className="min-h-[300px] rounded-2xl border border-dashed border-white/5 bg-white/[0.01] flex flex-col items-center justify-center text-center p-8">
-            <Heart className="w-8 h-8 text-gray-600 mb-3 stroke-[1.5]" />
-            <h2 className="text-sm font-bold text-gray-400">Không tìm thấy nội dung nào</h2>
-            <p className="text-xs text-gray-600 mt-1 max-w-xs">
+          <div className="mx-auto max-w-lg rounded-3xl border border-white/10 bg-[#18181c]/60 p-12 text-center backdrop-blur-md shadow-2xl">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-white/5 text-gray-500 border border-white/5">
+              <Heart className="h-8 w-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-bold text-white">Chưa có nội dung yêu thích</h3>
+            <p className="mx-auto mt-1.5 max-w-xs text-xs text-gray-400 leading-relaxed">
               Bạn chưa thích tập {activeTab === "VIDEO" ? "video" : activeTab === "COMIC" ? "truyện tranh" : "phim/truyện"} nào.
             </p>
+            <Link
+              href="/series"
+              className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-[#D4AF37] hover:bg-[#E5C158] px-6 py-2.5 text-xs font-extrabold text-black transition-all shadow-[0_4px_20px_rgba(212,175,55,0.25)] hover:scale-105"
+            >
+              Khám phá nội dung
+            </Link>
           </div>
         )}
 
-        {/* DANH SÁCH ROW LAYOUT (GIỐNG YOUTUBE) */}
+        {/* DANH SÁCH ROW LAYOUT */}
         {!isLoading && !isError && filteredEpisodes.length > 0 && (
           <div className="space-y-4">
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-3">
               {filteredEpisodes.map((item, idx) => {
                 const isRedirecting = redirectingId === item.episodeId;
                 const isMenuOpen = activeMenuId === item.episodeId;
@@ -284,29 +343,29 @@ export default function LikedPage() {
                 return (
                   <div
                     key={`${item.episodeId}-${idx}`}
-                    className="group relative flex gap-4 p-3.5 rounded-xl hover:bg-white/[0.02] border border-transparent hover:border-white/5 transition-all duration-300 items-start select-none"
+                    className="group relative flex gap-4 sm:gap-6 p-4 rounded-2xl bg-[#18181c]/70 hover:bg-[#18181c] border border-white/10 hover:border-[#D4AF37]/40 shadow-md backdrop-blur-sm transition-all duration-300 items-start select-none"
                   >
                     {/* 1. Thumbnail phía bên trái */}
                     <div
                       onClick={() => handleEpisodeClick(item.episodeId)}
-                      className="relative aspect-video w-36 sm:w-44 flex-none rounded-lg overflow-hidden bg-white/[0.02] border border-white/5 group-hover:border-[#D4AF37]/30 cursor-pointer shadow-md"
+                      className="relative aspect-video w-36 sm:w-48 flex-none rounded-xl overflow-hidden bg-black/60 border border-white/5 group-hover:border-[#D4AF37]/40 cursor-pointer shadow-md"
                     >
                       {/* Play/Read Overlay */}
                       <div className="absolute inset-0 bg-black/40 group-hover:bg-black/55 transition-colors z-10 flex items-center justify-center">
-                        <div className="w-8 h-8 rounded-full bg-[#D4AF37]/80 group-hover:bg-[#D4AF37] group-hover:scale-110 flex items-center justify-center text-black shadow-md transition duration-300">
+                        <div className="w-10 h-10 rounded-full bg-[#D4AF37] text-black shadow-lg transition duration-300 group-hover:scale-110 flex items-center justify-center">
                           {isRedirecting ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <Loader2 className="w-5 h-5 animate-spin" />
                           ) : itemType === "COMIC" ? (
-                            <BookOpen className="w-4 h-4" />
+                            <BookOpen className="w-5 h-5" />
                           ) : (
-                            <Play className="w-4 h-4 fill-current ml-0.5" />
+                            <Play className="w-5 h-5 fill-current ml-0.5" />
                           )}
                         </div>
                       </div>
 
                       {/* Image */}
                       <div
-                        className="w-full h-full bg-cover bg-center transition-transform duration-500 group-hover:scale-103"
+                        className="w-full h-full bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
                         style={{
                           backgroundImage: `url(${
                             item.seriesCoverUrl ||
@@ -319,19 +378,19 @@ export default function LikedPage() {
                     {/* 2. Phần thông tin giữa */}
                     <div
                       onClick={() => handleEpisodeClick(item.episodeId)}
-                      className="flex-1 min-w-0 py-0.5 space-y-1.5 cursor-pointer"
+                      className="flex-1 min-w-0 py-1 space-y-1.5 cursor-pointer"
                     >
-                      <h3 className="text-gray-100 font-bold text-sm sm:text-base leading-snug line-clamp-2 group-hover:text-[#D4AF37] transition-colors duration-200">
+                      <h3 className="text-white font-bold text-sm sm:text-base leading-snug line-clamp-1 group-hover:text-[#D4AF37] transition-colors duration-200">
                         {item.episodeTitle}
                       </h3>
                       
-                      <div className="space-y-0.5 text-xs text-gray-500 font-semibold">
-                        <p className="text-[#D4AF37]/80 font-bold truncate">
+                      <div className="space-y-1 text-xs text-gray-400 font-medium">
+                        <p className="text-[#D4AF37] font-bold truncate">
                           {item.seriesTitle} {item.episodeNumber != null && `• Tập ${item.episodeNumber}`}
                         </p>
                         
-                        <p className="flex items-center gap-1 mt-1 text-[10px]">
-                          <Calendar className="w-3.5 h-3.5 text-gray-600" />
+                        <p className="flex items-center gap-1.5 text-gray-500 text-[11px]">
+                          <Calendar className="w-3.5 h-3.5 text-gray-500" />
                           Đã thích: {new Date(item.likedAt).toLocaleString("vi-VN", {
                             hour: "2-digit",
                             minute: "2-digit",
@@ -350,7 +409,7 @@ export default function LikedPage() {
                           e.stopPropagation();
                           setActiveMenuId(isMenuOpen ? null : item.episodeId);
                         }}
-                        className="p-1.5 hover:bg-white/5 rounded-full text-slate-400 hover:text-white transition-colors cursor-pointer"
+                        className="p-2 hover:bg-white/10 rounded-full text-gray-400 hover:text-white transition-colors cursor-pointer"
                         title="Tùy chọn"
                       >
                         <MoreVertical className="w-4 h-4" />
@@ -360,7 +419,7 @@ export default function LikedPage() {
                       {isMenuOpen && (
                         <div
                           ref={menuRef}
-                          className="absolute right-0 top-8 z-30 w-44 bg-[#1b1b1f] border border-white/5 rounded-xl shadow-2xl p-1.5 flex flex-col space-y-0.5"
+                          className="absolute right-0 top-10 z-30 w-44 bg-[#1e1e24] border border-white/15 rounded-2xl shadow-2xl p-1.5 flex flex-col space-y-1 backdrop-blur-xl"
                         >
                           <button
                             onClick={(e) => {
@@ -368,9 +427,9 @@ export default function LikedPage() {
                               setActiveMenuId(null);
                               void handleEpisodeClick(item.episodeId);
                             }}
-                            className="flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-slate-200 hover:bg-white/5 rounded-lg text-left transition-colors cursor-pointer"
+                            className="flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-gray-200 hover:bg-white/10 rounded-xl text-left transition-colors cursor-pointer"
                           >
-                            <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+                            <ExternalLink className="w-3.5 h-3.5 text-gray-400" />
                             Xem nội dung
                           </button>
                           
@@ -380,9 +439,9 @@ export default function LikedPage() {
                               setActiveMenuId(null);
                               unlikeMutation.mutate(item.episodeId);
                             }}
-                            className="flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-red-400 hover:bg-red-500/10 rounded-lg text-left transition-colors cursor-pointer"
+                            className="flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-red-400 hover:bg-red-500/10 rounded-xl text-left transition-colors cursor-pointer"
                           >
-                            <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                            <Trash2 className="w-3.5 h-3.5 text-red-400" />
                             Bỏ yêu thích
                           </button>
                         </div>
@@ -396,21 +455,21 @@ export default function LikedPage() {
             {/* Vùng Trigger tải tiếp trang sau */}
             <div ref={observerRef} className="py-8 flex justify-center">
               {isFetchingNextPage ? (
-                <div className="flex items-center gap-2 text-xs text-gray-500 font-bold">
+                <div className="flex items-center gap-2 text-xs text-gray-400 font-bold">
                   <Loader2 className="w-4 h-4 animate-spin text-[#D4AF37]" />
                   Đang tải thêm...
                 </div>
               ) : hasNextPage ? (
                 <div className="h-4" />
               ) : (
-                <p className="text-[10px] text-gray-600 font-bold uppercase tracking-wider">
+                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">
                   Đã tải hết nội dung yêu thích của bạn
                 </p>
               )}
             </div>
           </div>
         )}
-      </div>
+      </main>
     </div>
   );
 }

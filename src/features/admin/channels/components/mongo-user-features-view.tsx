@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   useMongoUserFeatures,
   useMongoUserDynamicFeatures,
@@ -23,6 +23,8 @@ import {
   Flame,
   Sparkles,
   Zap,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 interface MongoUserFeaturesViewProps {
@@ -50,6 +52,39 @@ export function MongoUserFeaturesView({ accountId }: MongoUserFeaturesViewProps)
 
   const [copiedJson, setCopiedJson] = useState(false);
   const [activeTab, setActiveTab] = useState<"overview" | "genres" | "tags">("overview");
+
+  // FE Pagination state for Genres & Tags (5 items per page)
+  const [genresPage, setGenresPage] = useState<number>(1);
+  const [tagsPage, setTagsPage] = useState<number>(1);
+
+  useEffect(() => {
+    setGenresPage(1);
+    setTagsPage(1);
+  }, [accountId]);
+
+  const GENRES_PAGE_SIZE = 5;
+  const sortedGenresKeys = Object.keys(userFeatures?.preferences?.genresClicksRaw || {}).sort(
+    (a, b) =>
+      (userFeatures?.preferences?.genresClicksRaw?.[b] || 0) -
+      (userFeatures?.preferences?.genresClicksRaw?.[a] || 0)
+  );
+  const totalGenresPages = Math.ceil(sortedGenresKeys.length / GENRES_PAGE_SIZE) || 1;
+  const paginatedGenresKeys = sortedGenresKeys.slice(
+    (genresPage - 1) * GENRES_PAGE_SIZE,
+    genresPage * GENRES_PAGE_SIZE
+  );
+
+  const TAGS_PAGE_SIZE = 5;
+  const sortedTagsKeys = Object.keys(userFeatures?.preferences?.tagsClicksRaw || {}).sort(
+    (a, b) =>
+      (userFeatures?.preferences?.tagsClicksRaw?.[b] || 0) -
+      (userFeatures?.preferences?.tagsClicksRaw?.[a] || 0)
+  );
+  const totalTagsPages = Math.ceil(sortedTagsKeys.length / TAGS_PAGE_SIZE) || 1;
+  const paginatedTagsKeys = sortedTagsKeys.slice(
+    (tagsPage - 1) * TAGS_PAGE_SIZE,
+    tagsPage * TAGS_PAGE_SIZE
+  );
 
   const handleCopyJson = () => {
     if (userFeatures) {
@@ -505,10 +540,13 @@ export function MongoUserFeaturesView({ accountId }: MongoUserFeaturesViewProps)
           {/* TAB 2: GENRES PREFERENCES */}
           {activeTab === "genres" && (
             <div className="space-y-4">
-              <h4 className="font-bold text-xs text-slate-800 uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2 backoffice-dark:text-white/90 backoffice-dark:border-white/10">
-                <FolderTree className="h-4 w-4 text-emerald-600" />
-                Phân Tích Chi Tiết Trọng Số Thể Loại
-              </h4>
+              <div className="flex items-center justify-between border-b border-slate-100 pb-2 backoffice-dark:border-white/10">
+                <h4 className="font-bold text-xs text-slate-800 uppercase tracking-wider flex items-center gap-2 backoffice-dark:text-white/90">
+                  <FolderTree className="h-4 w-4 text-emerald-600" />
+                  Phân Tích Chi Tiết Trọng Số Thể Loại
+                </h4>
+
+              </div>
 
               <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white backoffice-dark:border-white/10 backoffice-dark:bg-white/5">
                 <table className="w-full text-left text-xs border-collapse">
@@ -522,13 +560,14 @@ export function MongoUserFeaturesView({ accountId }: MongoUserFeaturesViewProps)
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 backoffice-dark:divide-white/10">
-                    {Object.keys(userFeatures.preferences?.genresClicksRaw || {})
-                      .sort(
-                        (a, b) =>
-                          (userFeatures.preferences?.genresClicksRaw?.[b] || 0) -
-                          (userFeatures.preferences?.genresClicksRaw?.[a] || 0)
-                      )
-                      .map((genreKey) => {
+                    {paginatedGenresKeys.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="py-6 text-center text-slate-400 italic">
+                          Chưa có dữ liệu phân tích thể loại
+                        </td>
+                      </tr>
+                    ) : (
+                      paginatedGenresKeys.map((genreKey) => {
                         const rawClick = userFeatures.preferences?.genresClicksRaw?.[genreKey] ?? 0;
                         const rawTime = userFeatures.preferences?.genresWatchTimeRaw?.[genreKey] ?? 0;
                         const prefClick = userFeatures.preferences?.preferredGenresByClicks?.[genreKey] ?? 0;
@@ -573,20 +612,57 @@ export function MongoUserFeaturesView({ accountId }: MongoUserFeaturesViewProps)
                             </td>
                           </tr>
                         );
-                      })}
+                      })
+                    )}
                   </tbody>
                 </table>
               </div>
+
+              {/* Pagination Controls for Genres */}
+              {totalGenresPages > 1 && (
+                <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-xs backoffice-dark:border-white/10">
+                  <span className="text-slate-500 font-medium backoffice-dark:text-white/60">
+                    Hiển thị {((genresPage - 1) * GENRES_PAGE_SIZE) + 1} - {Math.min(genresPage * GENRES_PAGE_SIZE, sortedGenresKeys.length)} trên {sortedGenresKeys.length} thể loại
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      disabled={genresPage <= 1}
+                      onClick={() => setGenresPage((prev) => Math.max(1, prev - 1))}
+                      className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer backoffice-dark:border-white/10 backoffice-dark:bg-slate-800 backoffice-dark:text-white backoffice-dark:hover:bg-slate-700"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      <span>Trước</span>
+                    </button>
+
+                    <span className="px-2 font-bold text-slate-800 backoffice-dark:text-white">
+                      {genresPage} / {totalGenresPages}
+                    </span>
+
+                    <button
+                      type="button"
+                      disabled={genresPage >= totalGenresPages}
+                      onClick={() => setGenresPage((prev) => Math.min(totalGenresPages, prev + 1))}
+                      className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer backoffice-dark:border-white/10 backoffice-dark:bg-slate-800 backoffice-dark:text-white backoffice-dark:hover:bg-slate-700"
+                    >
+                      <span>Sau</span>
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
           {/* TAB 3: TAGS PREFERENCES */}
           {activeTab === "tags" && (
             <div className="space-y-4">
-              <h4 className="font-bold text-xs text-slate-800 uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2 backoffice-dark:text-white/90 backoffice-dark:border-white/10">
-                <Tag className="h-4 w-4 text-emerald-600" />
-                Phân Tích Chi Tiết Trọng Số Thẻ Tag (Tags Preferences Breakdown)
-              </h4>
+              <div className="flex items-center justify-between border-b border-slate-100 pb-2 backoffice-dark:border-white/10">
+                <h4 className="font-bold text-xs text-slate-800 uppercase tracking-wider flex items-center gap-2 backoffice-dark:text-white/90">
+                  <Tag className="h-4 w-4 text-emerald-600" />
+                  Phân Tích Chi Tiết Trọng Số Thẻ Tag
+                </h4>
+              </div>
 
               <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white backoffice-dark:border-white/10 backoffice-dark:bg-white/5">
                 <table className="w-full text-left text-xs border-collapse">
@@ -600,13 +676,14 @@ export function MongoUserFeaturesView({ accountId }: MongoUserFeaturesViewProps)
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 backoffice-dark:divide-white/10">
-                    {Object.keys(userFeatures.preferences?.tagsClicksRaw || {})
-                      .sort(
-                        (a, b) =>
-                          (userFeatures.preferences?.tagsClicksRaw?.[b] || 0) -
-                          (userFeatures.preferences?.tagsClicksRaw?.[a] || 0)
-                      )
-                      .map((tagKey) => {
+                    {paginatedTagsKeys.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="py-6 text-center text-slate-400 italic">
+                          Chưa có dữ liệu phân tích thẻ tag
+                        </td>
+                      </tr>
+                    ) : (
+                      paginatedTagsKeys.map((tagKey) => {
                         const rawClick = userFeatures.preferences?.tagsClicksRaw?.[tagKey] ?? 0;
                         const rawTime = userFeatures.preferences?.tagsWatchTimeRaw?.[tagKey] ?? 0;
                         const prefClick = userFeatures.preferences?.preferredTagsByClicks?.[tagKey] ?? 0;
@@ -651,10 +728,45 @@ export function MongoUserFeaturesView({ accountId }: MongoUserFeaturesViewProps)
                             </td>
                           </tr>
                         );
-                      })}
+                      })
+                    )}
                   </tbody>
                 </table>
               </div>
+
+              {/* Pagination Controls for Tags */}
+              {totalTagsPages > 1 && (
+                <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-xs backoffice-dark:border-white/10">
+                  <span className="text-slate-500 font-medium backoffice-dark:text-white/60">
+                    Hiển thị {((tagsPage - 1) * TAGS_PAGE_SIZE) + 1} - {Math.min(tagsPage * TAGS_PAGE_SIZE, sortedTagsKeys.length)} trên {sortedTagsKeys.length} thẻ tag
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      disabled={tagsPage <= 1}
+                      onClick={() => setTagsPage((prev) => Math.max(1, prev - 1))}
+                      className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer backoffice-dark:border-white/10 backoffice-dark:bg-slate-800 backoffice-dark:text-white backoffice-dark:hover:bg-slate-700"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      <span>Trước</span>
+                    </button>
+
+                    <span className="px-2 font-bold text-slate-800 backoffice-dark:text-white">
+                      {tagsPage} / {totalTagsPages}
+                    </span>
+
+                    <button
+                      type="button"
+                      disabled={tagsPage >= totalTagsPages}
+                      onClick={() => setTagsPage((prev) => Math.min(totalTagsPages, prev + 1))}
+                      className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer backoffice-dark:border-white/10 backoffice-dark:bg-slate-800 backoffice-dark:text-white backoffice-dark:hover:bg-slate-700"
+                    >
+                      <span>Sau</span>
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

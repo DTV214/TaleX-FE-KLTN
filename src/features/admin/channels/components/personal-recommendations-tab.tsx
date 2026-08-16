@@ -14,6 +14,8 @@ import {
   User,
   Sparkles,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Clock,
   AlertCircle,
   X,
@@ -62,12 +64,23 @@ export function PersonalRecommendationsTab({
   // View Mode for Recommendation Pool Demo: "grid" vs "table"
   const [poolViewMode, setPoolViewMode] = useState<"grid" | "table">("grid");
 
-  // Auto select first account once accounts load
+  // Pagination State for Already Watched Pool (4 series per page)
+  const [watchedPoolPage, setWatchedPoolPage] = useState<number>(1);
+
+  // Pagination State for Recommendation Pool Grid Cards (8 series per page)
+  const [poolGridPage, setPoolGridPage] = useState<number>(1);
+
+  // Auto select first account once accounts load & reset pagination
   useEffect(() => {
     if (accounts && accounts.length > 0 && !selectedAccountId) {
       setSelectedAccountId(accounts[0].accountId);
     }
   }, [accounts, selectedAccountId]);
+
+  useEffect(() => {
+    setWatchedPoolPage(1);
+    setPoolGridPage(1);
+  }, [selectedAccountId]);
 
   // Selected Account details
   const currentAccount = accounts?.find(
@@ -290,18 +303,17 @@ export function PersonalRecommendationsTab({
 
                 return (
                   <div key={card.seriesId || idx} className="flex flex-col space-y-2">
-                    <ChannelCardItem card={card} onSelect={onSelectCard} />
+                    <ChannelCardItem card={card} onSelect={(c) => setSelectedFeatureSeriesId(c.seriesId)} />
 
                     {/* Action Buttons: Gợi ý tương tự & Xem Đặc Trưng AI */}
                     <div className="grid grid-cols-2 gap-1.5 pt-1">
                       <button
                         type="button"
                         onClick={() => setTargetSimilarSeries(card)}
-                        className={`flex items-center justify-center gap-1 rounded-xl py-2 px-2 text-[11px] font-bold transition-all cursor-pointer ${
-                          isSelectedForSimilar
-                            ? "bg-amber-500 text-white shadow-sm"
-                            : "bg-violet-50 text-violet-700 border border-violet-200 hover:bg-violet-600 hover:text-white backoffice-dark:border-violet-800/40 backoffice-dark:bg-violet-950/40 backoffice-dark:text-violet-300 backoffice-dark:hover:bg-violet-600 backoffice-dark:hover:text-white"
-                        }`}
+                        className={`flex items-center justify-center gap-1 rounded-xl py-2 px-2 text-[11px] font-bold transition-all cursor-pointer ${isSelectedForSimilar
+                          ? "bg-amber-500 text-white shadow-sm"
+                          : "bg-violet-50 text-violet-700 border border-violet-200 hover:bg-violet-600 hover:text-white backoffice-dark:border-violet-800/40 backoffice-dark:bg-violet-950/40 backoffice-dark:text-violet-300 backoffice-dark:hover:bg-violet-600 backoffice-dark:hover:text-white"
+                          }`}
                         title="Xem các series tương tự nội dung này"
                       >
                         <Sparkles className="h-3 w-3 shrink-0" />
@@ -340,7 +352,7 @@ export function PersonalRecommendationsTab({
                     Danh Sách Series Tương Tự
                   </h3>
                   <span className="rounded-full bg-amber-100 px-3 py-0.5 text-xs font-bold text-amber-800 border border-amber-300 backoffice-dark:bg-amber-950/50 backoffice-dark:text-amber-300 backoffice-dark:border-amber-800">
-                    Tương tự với: &quot;{targetSimilarSeries.title}&quot;
+                    &quot;{targetSimilarSeries.title}&quot;
                   </span>
                 </div>
               </div>
@@ -404,7 +416,7 @@ export function PersonalRecommendationsTab({
                   <ChannelCardItem
                     key={card.seriesId || idx}
                     card={card}
-                    onSelect={onSelectCard}
+                    onSelect={(c) => setSelectedFeatureSeriesId(c.seriesId)}
                   />
                 ))}
               </div>
@@ -475,18 +487,63 @@ export function PersonalRecommendationsTab({
             </div>
           )}
 
-          {/* Cards List */}
-          {!isLoadingWatchedPool && !isErrorWatchedPool && watchedPoolSeries && watchedPoolSeries.length > 0 && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {watchedPoolSeries.map((card, idx) => (
-                <ChannelCardItem
-                  key={card.seriesId || idx}
-                  card={card}
-                  onSelect={onSelectCard}
-                />
-              ))}
-            </div>
-          )}
+          {/* Cards List with Pagination */}
+          {!isLoadingWatchedPool && !isErrorWatchedPool && watchedPoolSeries && watchedPoolSeries.length > 0 && (() => {
+            const WATCHED_POOL_PAGE_SIZE = 4;
+            const totalWatchedPoolPages = Math.ceil(watchedPoolSeries.length / WATCHED_POOL_PAGE_SIZE) || 1;
+            const paginatedWatchedPoolSeries = watchedPoolSeries.slice(
+              (watchedPoolPage - 1) * WATCHED_POOL_PAGE_SIZE,
+              watchedPoolPage * WATCHED_POOL_PAGE_SIZE
+            );
+
+            return (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {paginatedWatchedPoolSeries.map((card, idx) => (
+                    <ChannelCardItem
+                      key={card.seriesId || idx}
+                      card={card}
+                      onSelect={(c) => setSelectedFeatureSeriesId(c.seriesId)}
+                    />
+                  ))}
+                </div>
+
+                {/* Pagination Controls */}
+                {totalWatchedPoolPages > 1 && (
+                  <div className="flex items-center justify-between border-t border-emerald-100 pt-3 text-xs backoffice-dark:border-white/10">
+                    <span className="text-slate-500 font-medium backoffice-dark:text-white/60">
+                      Hiển thị {((watchedPoolPage - 1) * WATCHED_POOL_PAGE_SIZE) + 1} - {Math.min(watchedPoolPage * WATCHED_POOL_PAGE_SIZE, watchedPoolSeries.length)} trên {watchedPoolSeries.length} series
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        disabled={watchedPoolPage <= 1}
+                        onClick={() => setWatchedPoolPage((prev) => Math.max(1, prev - 1))}
+                        className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer backoffice-dark:border-white/10 backoffice-dark:bg-slate-800 backoffice-dark:text-white backoffice-dark:hover:bg-slate-700"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                        <span>Trước</span>
+                      </button>
+
+                      <span className="px-2 font-bold text-slate-800 backoffice-dark:text-white">
+                        {watchedPoolPage} / {totalWatchedPoolPages}
+                      </span>
+
+                      <button
+                        type="button"
+                        disabled={watchedPoolPage >= totalWatchedPoolPages}
+                        onClick={() => setWatchedPoolPage((prev) => Math.min(totalWatchedPoolPages, prev + 1))}
+                        className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer backoffice-dark:border-white/10 backoffice-dark:bg-slate-800 backoffice-dark:text-white backoffice-dark:hover:bg-slate-700"
+                      >
+                        <span>Sau</span>
+                        <ChevronRight className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
       </div>
 
@@ -509,8 +566,7 @@ export function PersonalRecommendationsTab({
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            {/* View Mode Toggle: Grid vs Table */}
+          {/* <div className="flex items-center gap-3">
             <div className="flex items-center rounded-xl bg-slate-100 p-1 border border-slate-200 text-xs font-medium backoffice-dark:border-white/10 backoffice-dark:bg-white/5">
               <button
                 type="button"
@@ -535,7 +591,7 @@ export function PersonalRecommendationsTab({
                 <span>Bảng Leaderboard</span>
               </button>
             </div>
-          </div>
+          </div> */}
         </div>
 
         {/* Content Area for Recommendation Pool */}
@@ -581,25 +637,70 @@ export function PersonalRecommendationsTab({
           )}
 
           {/* 5A. GRID VIEW MODE WITH AI SCORE BADGES */}
-          {!isLoadingPool && !isErrorPool && poolItems && poolItems.length > 0 && poolViewMode === "grid" && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {poolItems.map((item, idx) => {
-                const card = item.seriesCard || (item as unknown as ChannelSeriesCard);
-                const scoreVal = item.score ?? "0";
-                const rankNum = idx + 1;
+          {!isLoadingPool && !isErrorPool && poolItems && poolItems.length > 0 && poolViewMode === "grid" && (() => {
+            const POOL_GRID_PAGE_SIZE = 8;
+            const totalPoolGridPages = Math.ceil(poolItems.length / POOL_GRID_PAGE_SIZE) || 1;
+            const paginatedPoolGridItems = poolItems.slice(
+              (poolGridPage - 1) * POOL_GRID_PAGE_SIZE,
+              poolGridPage * POOL_GRID_PAGE_SIZE
+            );
 
-                return (
-                  <ChannelCardItem
-                    key={card.seriesId || idx}
-                    card={card}
-                    score={scoreVal}
-                    rank={rankNum}
-                    onSelect={onSelectCard}
-                  />
-                );
-              })}
-            </div>
-          )}
+            return (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {paginatedPoolGridItems.map((item, idx) => {
+                    const card = item.seriesCard || (item as unknown as ChannelSeriesCard);
+                    const scoreVal = item.score ?? "0";
+                    const rankNum = (poolGridPage - 1) * POOL_GRID_PAGE_SIZE + idx + 1;
+
+                    return (
+                      <ChannelCardItem
+                        key={card.seriesId || idx}
+                        card={card}
+                        score={scoreVal}
+                        rank={rankNum}
+                        onSelect={(c) => setSelectedFeatureSeriesId(c.seriesId)}
+                      />
+                    );
+                  })}
+                </div>
+
+                {/* Pagination Controls for Pool Grid Cards */}
+                {totalPoolGridPages > 1 && (
+                  <div className="flex items-center justify-between border-t border-indigo-100 pt-3 text-xs backoffice-dark:border-white/10">
+                    <span className="text-slate-500 font-medium backoffice-dark:text-white/60">
+                      Hiển thị {((poolGridPage - 1) * POOL_GRID_PAGE_SIZE) + 1} - {Math.min(poolGridPage * POOL_GRID_PAGE_SIZE, poolItems.length)} trên {poolItems.length} series
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        disabled={poolGridPage <= 1}
+                        onClick={() => setPoolGridPage((prev) => Math.max(1, prev - 1))}
+                        className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer backoffice-dark:border-white/10 backoffice-dark:bg-slate-800 backoffice-dark:text-white backoffice-dark:hover:bg-slate-700"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                        <span>Trước</span>
+                      </button>
+
+                      <span className="px-2 font-bold text-slate-800 backoffice-dark:text-white">
+                        {poolGridPage} / {totalPoolGridPages}
+                      </span>
+
+                      <button
+                        type="button"
+                        disabled={poolGridPage >= totalPoolGridPages}
+                        onClick={() => setPoolGridPage((prev) => Math.min(totalPoolGridPages, prev + 1))}
+                        className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer backoffice-dark:border-white/10 backoffice-dark:bg-slate-800 backoffice-dark:text-white backoffice-dark:hover:bg-slate-700"
+                      >
+                        <span>Sau</span>
+                        <ChevronRight className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* 5B. LEADERBOARD TABLE VIEW MODE */}
           {!isLoadingPool && !isErrorPool && poolItems && poolItems.length > 0 && poolViewMode === "table" && (
@@ -625,7 +726,7 @@ export function PersonalRecommendationsTab({
                     return (
                       <tr
                         key={card.seriesId || idx}
-                        onClick={() => onSelectCard?.(card)}
+                        onClick={() => setSelectedFeatureSeriesId(card.seriesId)}
                         className="hover:bg-violet-50/50 transition-colors cursor-pointer"
                       >
                         {/* Rank */}

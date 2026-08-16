@@ -19,6 +19,9 @@ import {
   Heart,
   Star,
   Flag,
+  Menu,
+  ChevronDown,
+  ArrowUpDown,
 } from "lucide-react";
 import {
   getPublicSeriesDetail,
@@ -40,6 +43,7 @@ import { useGetSeriesRatings } from "../hooks/use-series-ratings";
 import { useAuthStore } from "@/features/auth/store/auth.store";
 import { AdSlot } from "@/shared/ui/ad-slot";
 import { ReportDialog } from "@/features/moderation-reports/components/report-dialog";
+import { EpisodeCommentsSection } from "@/features/comments";
 
 interface SeriesDetailProps {
   seriesId: string;
@@ -53,6 +57,8 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
   const [expandedCombos, setExpandedCombos] = useState<Record<string, boolean>>(
     {},
   );
+  const [isAscending, setIsAscending] = useState(true);
+  const [isSeasonDropdownOpen, setIsSeasonDropdownOpen] = useState(false);
 
   // 1. Fetch thông tin chi tiết Series
   const {
@@ -171,10 +177,14 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
     return all.length > 0 ? all : episodes;
   }, [seasonQueries, episodes]);
 
-  // Sắp xếp các episode theo episodeNumber
-  const sortedEpisodes = [...episodes].sort(
-    (a, b) => a.episodeNumber - b.episodeNumber,
-  );
+  // Sắp xếp các episode theo thứ tự tăng/giảm dần
+  const sortedEpisodes = useMemo(() => {
+    return [...episodes].sort((a, b) =>
+      isAscending
+        ? a.episodeNumber - b.episodeNumber
+        : b.episodeNumber - a.episodeNumber,
+    );
+  }, [episodes, isAscending]);
 
   // Lấy tập đầu tiên để làm nút "Xem từ đầu"
   const firstEpisodeId = sortedEpisodes[0]?.episodeId;
@@ -469,15 +479,12 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
                 {totalSeriesViews.toLocaleString("vi-VN")} lượt xem
               </div>
 
-              <div className="flex items-center gap-2 font-medium text-slate-400">
-                <Users className="h-4 w-4" /> Theo dõi
-              </div>
-              <div className="text-white">
-                {displayFollowersCount.toLocaleString("vi-VN")} người theo dõi
-              </div>
 
               <div className="flex items-center gap-2 font-medium text-slate-400">
-                <Heart className="h-4 w-4" /> Lượt thích
+                <Heart className="h-4 w-4 text-rose-500 fill-rose-500/20" /> Lượt thích
+              </div>
+              <div className="text-white">
+                {totalSeriesLikes.toLocaleString("vi-VN")} lượt thích
               </div>
             </div>
 
@@ -778,54 +785,108 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
         {/* 3. Section: Season Selector & Episodes list */}
         <section
           id="episodes"
-          className="w-full scroll-mt-24 bg-[#121214]/40 border border-white/5 rounded-3xl p-6 md:p-8 backdrop-blur-md shadow-2xl relative"
+          className="w-full scroll-mt-24 bg-[#121214]/60 border border-white/10 rounded-3xl p-5 md:p-7 backdrop-blur-md shadow-2xl relative"
         >
           {/* Lớp nền mờ */}
-          <div className="absolute inset-0 bg-gradient-to-br from-white/[0.01] to-transparent pointer-events-none rounded-3xl" />
+          <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none rounded-3xl" />
 
-          {/* Tiêu đề khu vực tập */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 relative z-10 border-b border-white/5 pb-6">
-            <div>
-              <h2 className="text-xl md:text-2xl font-bold tracking-wide flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-[#D4AF37]" />
-                {isComic ? "Danh sách các chương" : "Danh sách các tập phim"}
-              </h2>
-              <p className="text-xs text-gray-500 mt-1">
-                {isComic
-                  ? "Chọn phần truyện để xem danh sách các chương tương ứng."
-                  : "Chọn phần phim để xem danh sách các tập tương ứng."}
-              </p>
+          {/* Thanh Header: Chọn Phần (Season), Đếm tập & Nút Sắp xếp */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/10 relative z-20">
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Menu Dropdown Chọn Phần (Season) */}
+              {isSeasonsLoading ? (
+                <div className="h-9 w-32 bg-white/10 animate-pulse rounded-xl" />
+              ) : seasons.length > 0 ? (
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setIsSeasonDropdownOpen((prev) => !prev)}
+                    className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/[0.08] hover:bg-white/[0.14] border border-white/15 text-white font-bold text-xs sm:text-sm transition-all cursor-pointer shadow-sm active:scale-95"
+                  >
+                    <Menu className="w-4 h-4 text-[#D4AF37]" />
+                    <span>
+                      {seasons.find((s) => s.seasonId === activeSeasonId)?.title || "Phần 1"}
+                    </span>
+                    <ChevronDown
+                      className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-200 ${
+                        isSeasonDropdownOpen ? "rotate-180 text-white" : ""
+                      }`}
+                    />
+                  </button>
+
+                  {/* Dropdown Box */}
+                  {isSeasonDropdownOpen && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-30"
+                        onClick={() => setIsSeasonDropdownOpen(false)}
+                      />
+                      <div className="absolute left-0 top-full mt-2 w-52 p-1.5 rounded-2xl bg-[#1e1e24] border border-white/20 shadow-2xl z-40 space-y-1 backdrop-blur-xl">
+                        {seasons
+                          .sort((a, b) => a.seasonNumber - b.seasonNumber)
+                          .map((season) => (
+                            <button
+                              key={season.seasonId}
+                              type="button"
+                              onClick={() => {
+                                setSelectedSeasonId(season.seasonId);
+                                setIsSeasonDropdownOpen(false);
+                              }}
+                              className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between cursor-pointer ${
+                                activeSeasonId === season.seasonId
+                                  ? "bg-[#D4AF37] text-black shadow-md"
+                                  : "text-gray-300 hover:bg-white/10 hover:text-white"
+                              }`}
+                            >
+                              <span>{season.title}</span>
+                              {activeSeasonId === season.seasonId && (
+                                <span className="text-[10px] font-black uppercase tracking-wider bg-black/20 px-1.5 py-0.5 rounded">
+                                  Đang chọn
+                                </span>
+                              )}
+                            </button>
+                          ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              ) : null}
+
+              <div className="text-sm md:text-base font-bold text-white flex items-center gap-2">
+                <span>{isComic ? "Danh sách chương" : "Danh sách tập"}</span>
+                <span className="text-xs text-gray-400 font-semibold">
+                  ({" "}
+                  <strong className="text-[#D4AF37] font-bold">
+                    {sortedEpisodes.length}
+                  </strong>{" "}
+                  {isComic ? "chương" : "tập"} )
+                </span>
+              </div>
             </div>
 
-            {/* Tabs chọn phần phim (Seasons) */}
-            {isSeasonsLoading ? (
-              <div className="h-10 w-48 bg-white/[0.03] animate-pulse rounded-xl" />
-            ) : (
-              seasons.length > 0 && (
-                <div className="flex p-1 rounded-xl bg-white/[0.03] border border-white/5 overflow-x-auto self-start sm:self-auto scrollbar-hide">
-                  {seasons
-                    .sort((a, b) => a.seasonNumber - b.seasonNumber)
-                    .map((season) => (
-                      <button
-                        key={season.seasonId}
-                        onClick={() => setSelectedSeasonId(season.seasonId)}
-                        className={`px-4 py-2 rounded-lg text-xs md:text-sm font-semibold whitespace-nowrap transition-all duration-200 ${
-                          activeSeasonId === season.seasonId
-                            ? "bg-[#D4AF37] text-black shadow-md font-bold"
-                            : "text-gray-400 hover:text-white hover:bg-white/[0.02]"
-                        }`}
-                      >
-                        {season.title}
-                      </button>
-                    ))}
-                </div>
-              )
-            )}
+            {/* Nút Đổi Thứ Tự Sắp Xếp */}
+            <button
+              type="button"
+              onClick={() => setIsAscending((prev) => !prev)}
+              title={
+                isAscending
+                  ? "Đang sắp xếp: Tăng dần (Tập 1 -> N)"
+                  : "Đang sắp xếp: Giảm dần (Tập N -> 1)"
+              }
+              className={`self-end sm:self-auto px-3 py-1.5 rounded-xl border transition-all cursor-pointer flex items-center gap-1.5 text-xs font-bold ${
+                !isAscending
+                  ? "bg-[#D4AF37] text-black border-[#D4AF37]"
+                  : "bg-white/[0.05] hover:bg-white/10 border-white/10 text-gray-300 hover:text-white"
+              }`}
+            >
+              <ArrowUpDown className="w-3.5 h-3.5" />
+              <span>Sắp xếp</span>
+            </button>
           </div>
 
           {/* Hiển thị lỗi/rỗng về Season */}
           {!isSeasonsLoading && seasons.length === 0 && (
-            <div className="py-12 text-center max-w-sm mx-auto text-gray-500">
+            <div className="py-12 text-center max-w-sm mx-auto text-gray-500 relative z-10">
               <AlertCircle className="w-10 h-10 text-gray-600 mx-auto mb-4" />
               <p className="text-sm font-medium">
                 Hiện tại chưa có phần phim (Season) nào được công bố.
@@ -835,19 +896,18 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
 
           {/* TRẠNG THÁI LOADING EPISODES */}
           {isEpisodesLoading && (
-            <div className="space-y-4 relative z-10">
-              {Array.from({ length: 3 }).map((_, idx) => (
+            <div
+              className={`grid gap-2.5 relative z-10 mt-5 ${
+                isComic
+                  ? "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7"
+                  : "grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10"
+              }`}
+            >
+              {Array.from({ length: 10 }).map((_, idx) => (
                 <div
                   key={idx}
-                  className="flex gap-4 p-4 bg-white/[0.01] border border-white/5 rounded-2xl animate-pulse"
-                >
-                  <div className="w-32 sm:w-44 aspect-video rounded-xl bg-white/[0.04]" />
-                  <div className="flex-1 space-y-2.5 py-1">
-                    <div className="h-5 bg-white/[0.04] rounded-md w-1/3" />
-                    <div className="h-4 bg-white/[0.04] rounded-md w-2/3" />
-                    <div className="h-3 bg-white/[0.04] rounded-md w-1/4" />
-                  </div>
-                </div>
+                  className="h-11 rounded-xl bg-white/[0.04] animate-pulse"
+                />
               ))}
             </div>
           )}
@@ -857,11 +917,12 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
             <div className="py-12 text-center max-w-sm mx-auto relative z-10">
               <AlertCircle className="w-10 h-10 text-red-500 mx-auto mb-4" />
               <p className="text-sm font-bold text-white mb-4">
-                Lỗi tải danh sách tập phim
+                Lỗi tải danh sách {isComic ? "chương" : "tập phim"}
               </p>
               <button
+                type="button"
                 onClick={() => refetchEpisodes()}
-                className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-semibold"
+                className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-semibold cursor-pointer"
               >
                 Tải lại
               </button>
@@ -876,181 +937,71 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
               <div className="py-12 text-center max-w-sm mx-auto text-gray-500 relative z-10">
                 <AlertCircle className="w-10 h-10 text-gray-600 mx-auto mb-4" />
                 <p className="text-sm font-medium">
-                  Không tìm thấy tập phim nào trong phần này.
+                  Không tìm thấy {isComic ? "chương" : "tập phim"} nào trong phần này.
                 </p>
               </div>
             )}
 
-          {/* DANH SÁCH TẬP PHIM */}
-          {!isEpisodesLoading && !isEpisodesError && episodes.length > 0 && (
+          {/* ================= DANH SÁCH TẬP PHIM / CHƯƠNG (COMPACT PILL BUTTONS) ================= */}
+          {!isEpisodesLoading && !isEpisodesError && sortedEpisodes.length > 0 && (
             <motion.div
-              initial="hidden"
-              animate="visible"
-              variants={{
-                hidden: { opacity: 0 },
-                visible: {
-                  opacity: 1,
-                  transition: { staggerChildren: 0.05 },
-                },
-              }}
-              className="space-y-4 md:space-y-5 relative z-10"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}
+              className={`grid gap-2.5 relative z-10 mt-5 ${
+                isComic
+                  ? "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7"
+                  : "grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10"
+              }`}
             >
               {sortedEpisodes.map((episode) => {
                 const isPaid = episode.unlockType === "PAID";
                 return (
-                  <motion.div
+                  <Link
                     key={episode.episodeId}
-                    variants={{
-                      hidden: { opacity: 0, y: 15 },
-                      visible: { opacity: 1, y: 0 },
-                    }}
-                    className="group relative flex flex-col gap-4 rounded-2xl border border-white/[0.02] bg-gradient-to-r from-white/[0.03] to-transparent p-4 shadow-lg transition-all duration-300 hover:from-white/[0.06] hover:border-[#D4AF37]/30 sm:flex-row md:p-5"
+                    href={`/${isComic ? "read" : "watch"}/${episode.episodeId}`}
+                    className="group relative flex items-center justify-center gap-1.5 px-3 py-3 rounded-xl bg-[#1e1e24] hover:bg-[#D4AF37] border border-white/5 hover:border-[#D4AF37] text-white hover:text-black font-extrabold text-xs md:text-sm transition-all duration-200 shadow-md active:scale-95 text-center min-w-0"
                   >
-                    {/* Ảnh thu nhỏ (Thumbnail/Play button) */}
-                    <div className="w-full sm:w-44 md:w-52 flex-none aspect-video rounded-xl overflow-hidden bg-white/[0.02] border border-white/5 relative group-hover:border-[#D4AF37]/50 shadow-md">
-                      {/* Play overlay */}
-                      <div className="absolute inset-0 bg-black/30 group-hover:bg-black/40 transition-colors z-10 flex items-center justify-center">
-                        <div className="w-10 h-10 rounded-full bg-[#D4AF37]/80 group-hover:bg-[#D4AF37] group-hover:scale-110 flex items-center justify-center text-black shadow-lg transition duration-300">
-                          <Play className="w-5 h-5 fill-current ml-0.5" />
-                        </div>
-                      </div>
-
-                      {/* Trạng thái khóa / mở */}
-                      <div className="absolute top-2.5 right-2.5 z-20">
-                        <span
-                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-bold tracking-wide uppercase ${
-                            isPaid
-                              ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
-                              : "bg-green-500/10 text-green-400 border border-green-500/20"
-                          }`}
-                        >
-                          {isPaid ? (
-                            <>
-                              <Lock className="w-2.5 h-2.5" /> Trả phí
-                            </>
-                          ) : (
-                            <>
-                              <Unlock className="w-2.5 h-2.5" /> Miễn phí
-                            </>
-                          )}
-                        </span>
-                      </div>
-
-                      {/* Video/Image Placeholder or series cover as thumb */}
-                      <div
-                        className="w-full h-full bg-cover bg-center"
-                        style={{
-                          backgroundImage: `url(${
-                            episode.thumbnail ||
-                            series.coverUrl ||
-                            "https://images.unsplash.com/photo-1478760329108-5c3ed9d495a0?q=80&w=500&auto=format&fit=crop"
-                          })`,
-                        }}
-                      />
-                    </div>
-
-                    {/* Văn bản nội dung tập phim */}
-                    <div className="flex-1 flex flex-col justify-center min-w-0">
-                      {/* Tập và Tiêu đề */}
-                      <h3 className="text-white font-bold text-base md:text-lg line-clamp-1 group-hover:text-[#D4AF37] transition-colors duration-200 mb-1.5 flex items-center gap-2">
-                        {isComic ? (
-                          <BookOpen className="h-4 w-4 flex-none text-[#D4AF37]/80" />
-                        ) : (
-                          <Film className="h-4 w-4 flex-none text-[#D4AF37]/80" />
-                        )}
-                        <span className="text-gray-500 font-medium">
-                          Tập {episode.episodeNumber}:
-                        </span>
-                        <span>{episode.title}</span>
-                      </h3>
-
-                      {/* Thông tin phụ: ngày phát hành / lượt xem */}
-                      {(() => {
-                        const epViews =
-                          episode.analyticData?.views ??
-                          episode.views ??
-                          (episode as any).totalViews ??
-                          (episode as any).viewsCount ??
-                          0;
-
-                        return (
-                          <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500 font-medium mb-3">
-                            <span className="flex items-center gap-1">
-                              <Calendar className="w-3.5 h-3.5 text-gray-600" />{" "}
-                              {new Date(episode.publishedAt).toLocaleDateString(
-                                "vi-VN",
-                              )}
-                            </span>
-                            {epViews > 0 && (
-                              <span className="flex items-center gap-1">
-                                <Eye className="w-3.5 h-3.5 text-gray-600" />{" "}
-                                {epViews.toLocaleString("vi-VN")} lượt xem
-                              </span>
-                            )}
-                            {isPaid && episode.priceVnd > 0 && (
-                              <span className="text-[#D4AF37] font-bold">
-                                {(episode.priceVnd || 0).toLocaleString("vi-VN")} đ
-                              </span>
-                            )}
-                          </div>
-                        );
-                      })()}
-
-                      {/* Mô tả tập phim */}
-                      {episode.description ? (
-                        <p className="text-gray-400 text-xs md:text-sm line-clamp-2 leading-relaxed">
-                          {episode.description}
-                        </p>
-                      ) : (
-                        <p className="text-gray-500 text-xs italic">
-                          Không có mô tả tập phim.
-                        </p>
-                      )}
-
-                      {/* Mobile action row */}
-                      <div className="flex md:hidden items-center justify-between mt-4 pt-3 border-t border-white/5 gap-3">
-                        <div className="flex items-center gap-2">
-                          <EpisodeBookmarkButton
-                            episodeId={episode.episodeId}
-                            contentType={series.contentType}
-                          />
-                          <EpisodeShareButton
-                            episodeId={episode.episodeId}
-                            contentType={series.contentType}
-                          />
-                        </div>
-                        <Link
-                          href={`/${isComic ? "read" : "watch"}/${episode.episodeId}`}
-                          className="px-4 py-2 bg-white/[0.04] active:bg-[#D4AF37] active:text-black hover:bg-[#D4AF37] hover:text-black text-white font-bold rounded-xl text-xs transition-all duration-200 shadow-md"
-                        >
-                          {isComic ? "Đọc Ngay" : "Xem Ngay"}
-                        </Link>
-                      </div>
-                    </div>
-
-                    {/* Nút hành động bên góc phải (Chỉ hiển thị trên md screen) */}
-                    <div className="hidden md:flex items-center gap-3 justify-end pl-4 shrink-0">
-                      <EpisodeBookmarkButton
-                        episodeId={episode.episodeId}
-                        contentType={series.contentType}
-                      />
-                      <EpisodeShareButton
-                        episodeId={episode.episodeId}
-                        contentType={series.contentType}
-                      />
-                      <Link
-                        href={`/${isComic ? "read" : "watch"}/${episode.episodeId}`}
-                        className="px-5 py-2.5 bg-white/[0.04] group-hover:bg-[#D4AF37] text-white group-hover:text-black font-bold rounded-xl text-sm transition-all duration-300 whitespace-nowrap shadow-md group-hover:shadow-[0_4px_12px_rgba(212,175,55,0.25)]"
-                      >
-                        {isComic ? "Đọc Ngay" : "Xem Ngay"}
-                      </Link>
-                    </div>
-                  </motion.div>
+                    {isComic ? (
+                      <BookOpen className="w-3.5 h-3.5 text-gray-400 group-hover:text-black shrink-0" />
+                    ) : (
+                      <Play className="w-3.5 h-3.5 fill-current text-gray-400 group-hover:text-black shrink-0" />
+                    )}
+                    <span className="whitespace-nowrap">
+                      {isComic
+                        ? `Chương ${episode.episodeNumber}`
+                        : `Tập ${episode.episodeNumber}`}
+                    </span>
+                    {isPaid && (
+                      <Lock className="w-3 h-3 text-amber-400 group-hover:text-black shrink-0 ml-0.5" />
+                    )}
+                  </Link>
                 );
               })}
             </motion.div>
           )}
         </section>
+
+        {/* 4. Section: Bình luận dành riêng cho Series Truyện tranh */}
+        {isComic && firstEpisodeId && (
+          <section className="mt-10 w-full rounded-3xl border border-white/10 bg-[#121214]/60 p-6 md:p-8 shadow-2xl backdrop-blur-md relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none rounded-3xl" />
+            <div className="relative z-10">
+              <div className="mb-6 flex items-center justify-between gap-4 border-b border-white/10 pb-4">
+                <div>
+                  <h2 className="text-xl md:text-2xl font-bold text-white tracking-wide flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-[#D4AF37]" />
+                    Bình luận truyện
+                  </h2>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Cùng thảo luận và để lại cảm nghĩ về bộ truyện tranh này nhé!
+                  </p>
+                </div>
+              </div>
+              <EpisodeCommentsSection episodeId={firstEpisodeId} />
+            </div>
+          </section>
+        )}
       </div>
     </div>
   );
