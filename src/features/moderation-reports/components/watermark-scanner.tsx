@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { AlertTriangle, ScanLine, Loader2 } from "lucide-react";
 import { httpClient } from "@/shared/api/http-client";
+import { toast } from "sonner";
+import { useBanAccount } from "@/features/admin/hooks/use-account";
 import Tesseract from "tesseract.js";
 
 type WatermarkScannerProps = {
@@ -35,11 +37,38 @@ function getScannerErrorMessage(error: unknown, fallback: string) {
 
 export function WatermarkScanner({ url, mediaType }: WatermarkScannerProps) {
   const [isScanning, setIsScanning] = useState(false);
-  const [result, setResult] = useState<{ creatorId?: string; viewerId?: string; message?: string } | null>(null);
+  const [result, setResult] = useState<{ creatorId?: string; viewerId?: string; message?: string; creatorAccount?: any; viewerAccount?: any; } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [scanningStatus, setScanningStatus] = useState<string>("");
   const [ocrProgress, setOcrProgress] = useState(0);
   const [ocrDebug, setOcrDebug] = useState<string>("");
+
+  const banMutation = useBanAccount();
+  const handleBanUser = () => {
+    if (result?.viewerId) {
+      banMutation.mutate(result.viewerId, {
+        onSuccess: () => {
+          toast.success("Đã khóa tài khoản thủ phạm!");
+          setResult(prev => prev ? {
+            ...prev,
+            viewerAccount: prev.viewerAccount ? { ...prev.viewerAccount, status: "BANNED" } : prev.viewerAccount
+          } : null);
+        },
+        onError: (err) => {
+          toast.error(err instanceof Error ? err.message : "Khóa tài khoản thất bại");
+        }
+      });
+    }
+  };
+
+  const fetchUserAccount = async (id: string) => {
+    try {
+      const res = await httpClient.get(`/api/v1/admin/accounts/${id}`);
+      return res.data?.data || res.data;
+    } catch {
+      return undefined;
+    }
+  };
 
   const handleScan = async () => {
     setIsScanning(true);
@@ -61,6 +90,8 @@ export function WatermarkScanner({ url, mediaType }: WatermarkScannerProps) {
       let finalCreatorId: string | undefined = undefined;
       let finalViewerId: string | undefined = undefined;
       let finalMessage: string | undefined = undefined;
+      let finalCreatorAccount: any = undefined;
+      let finalViewerAccount: any = undefined;
 
       // 1. Gửi cho BE extract
       try {
@@ -75,8 +106,10 @@ export function WatermarkScanner({ url, mediaType }: WatermarkScannerProps) {
         if (data) {
           finalCreatorId = data.creatorId;
           finalMessage = data.message;
+          finalCreatorAccount = data.creatorAccount;
           if (mediaType === "VIDEO" && data.viewerId && data.viewerId !== "null") {
             finalViewerId = data.viewerId;
+            finalViewerAccount = data.viewerAccount;
           }
         }
       } catch (err: unknown) {
@@ -125,6 +158,7 @@ export function WatermarkScanner({ url, mediaType }: WatermarkScannerProps) {
             if (lsbMatch && lsbMatch[1]) {
               console.log("LSB Extracted Successfully!", lsbMatch[1]);
               finalViewerId = lsbMatch[1];
+              finalViewerAccount = await fetchUserAccount(lsbMatch[1]);
               isLsbSuccess = true;
             }
 
@@ -154,6 +188,7 @@ export function WatermarkScanner({ url, mediaType }: WatermarkScannerProps) {
               const ocrMatch = rawText.match(uuidRegex);
               if (ocrMatch && ocrMatch[1]) {
                 finalViewerId = ocrMatch[1];
+                finalViewerAccount = await fetchUserAccount(ocrMatch[1]);
               }
             }
           }
@@ -166,7 +201,9 @@ export function WatermarkScanner({ url, mediaType }: WatermarkScannerProps) {
       setResult({
         creatorId: finalCreatorId,
         viewerId: finalViewerId,
-        message: finalMessage
+        message: finalMessage,
+        creatorAccount: finalCreatorAccount,
+        viewerAccount: finalViewerAccount,
       });
     } catch (err: unknown) {
       setError(getScannerErrorMessage(err, "Lỗi không xác định khi tải hoặc quét file"));
@@ -220,7 +257,13 @@ export function WatermarkScanner({ url, mediaType }: WatermarkScannerProps) {
           {result.creatorId ? (
             <div>
               <p className="text-[10px] font-bold tracking-wider text-slate-400 uppercase mb-0.5">Tác giả gốc (Creator ID)</p>
-              <p className="font-mono text-xs font-bold text-emerald-600">{result.creatorId}</p>
+              <p className="font-mono text-xs font-bold text-emerald-600 mb-1">{result.creatorId}</p>
+              {result.creatorAccount && (
+                <div className="rounded-md bg-slate-50 p-2 border border-slate-100 mt-1">
+                  <p className="text-xs text-slate-700"><span className="font-semibold">Email:</span> {result.creatorAccount.email}</p>
+                  <p className="text-xs text-slate-700"><span className="font-semibold">Tên:</span> {result.creatorAccount.fullName} ({result.creatorAccount.username})</p>
+                </div>
+              )}
             </div>
           ) : (
             <p className="text-xs italic text-slate-400">Không tìm thấy Tác giả gốc.</p>
@@ -230,6 +273,12 @@ export function WatermarkScanner({ url, mediaType }: WatermarkScannerProps) {
             <div className="rounded-lg border border-rose-200 bg-rose-50 p-2.5">
               <p className="text-[10px] font-bold tracking-wider text-rose-500 uppercase mb-1">Thủ phạm rò rỉ (Viewer ID)</p>
               <p className="font-mono text-xs font-bold text-rose-700 select-all mb-2">{result.viewerId}</p>
+              {result.viewerAccount && (
+                <div className="rounded-md bg-white p-2 border border-rose-100 mb-2">
+                  <p className="text-xs text-rose-900"><span className="font-semibold">Email:</span> {result.viewerAccount.email}</p>
+                  <p className="text-xs text-rose-900"><span className="font-semibold">Tên:</span> {result.viewerAccount.fullName} ({result.viewerAccount.username})</p>
+                </div>
+              )}
               <div className="flex gap-2">
                 <button
                   onClick={() => navigator.clipboard.writeText(result.viewerId!)}

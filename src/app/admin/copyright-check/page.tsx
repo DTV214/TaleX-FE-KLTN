@@ -3,18 +3,38 @@
 import { useState, useRef } from "react";
 import { UploadCloud, CheckCircle, AlertTriangle, ScanLine, Info, Search, Loader2 } from "lucide-react";
 import { httpClient } from "@/shared/api/http-client";
+import { toast } from "sonner";
+import { useBanAccount } from "@/features/admin/hooks/use-account";
 import Tesseract from "tesseract.js";
 
 export default function CopyrightCheckPage() {
   const [file, setFile] = useState<File | null>(null);
   const [mediaType, setMediaType] = useState<"IMAGE" | "VIDEO">("IMAGE");
   const [isScanning, setIsScanning] = useState(false);
-  const [result, setResult] = useState<{ creatorId?: string; viewerId?: string; message?: string } | null>(null);
+  const [result, setResult] = useState<{ creatorId?: string; viewerId?: string; message?: string; creatorAccount?: any; viewerAccount?: any; } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [scanningStatus, setScanningStatus] = useState<string>("");
   const [ocrProgress, setOcrProgress] = useState(0);
   const [ocrDebug, setOcrDebug] = useState<string>("");
+
+  const banMutation = useBanAccount();
+  const handleBanUser = () => {
+    if (result?.viewerId) {
+      banMutation.mutate(result.viewerId, {
+        onSuccess: () => {
+          toast.success("Đã khóa tài khoản thủ phạm!");
+          setResult(prev => prev ? {
+            ...prev,
+            viewerAccount: prev.viewerAccount ? { ...prev.viewerAccount, status: "BANNED" } : prev.viewerAccount
+          } : null);
+        },
+        onError: (err) => {
+          toast.error(err instanceof Error ? err.message : "Khóa tài khoản thất bại");
+        }
+      });
+    }
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -32,6 +52,15 @@ export default function CopyrightCheckPage() {
     }
   };
 
+  const fetchUserAccount = async (id: string) => {
+    try {
+      const res = await httpClient.get(`/api/v1/admin/accounts/${id}`);
+      return res.data?.data || res.data;
+    } catch {
+      return undefined;
+    }
+  };
+
   const handleScan = async () => {
     if (!file) return;
 
@@ -44,6 +73,8 @@ export default function CopyrightCheckPage() {
     let finalCreatorId: string | undefined = undefined;
     let finalViewerId: string | undefined = undefined;
     let finalMessage: string | undefined = undefined;
+    let finalCreatorAccount: any = undefined;
+    let finalViewerAccount: any = undefined;
 
     // 1. Lấy Creator ID và Viewer ID từ Java BE
     try {
@@ -58,9 +89,11 @@ export default function CopyrightCheckPage() {
       if (data) {
         finalCreatorId = data.creatorId;
         finalMessage = data.message;
+        finalCreatorAccount = data.creatorAccount;
         // Với VIDEO: viewer_id đã được Java dịch ngược từ binary → UUID thật
         if (mediaType === "VIDEO" && data.viewerId && data.viewerId !== "null") {
           finalViewerId = data.viewerId;
+          finalViewerAccount = data.viewerAccount;
         }
       }
     } catch (err: any) {
@@ -106,6 +139,7 @@ export default function CopyrightCheckPage() {
           if (lsbMatch && lsbMatch[1]) {
             console.log("LSB Extracted Successfully!", lsbMatch[1]);
             finalViewerId = lsbMatch[1];
+            finalViewerAccount = await fetchUserAccount(lsbMatch[1]);
             isLsbSuccess = true;
           }
 
@@ -136,6 +170,7 @@ export default function CopyrightCheckPage() {
             const ocrMatch = rawText.match(uuidRegex);
             if (ocrMatch && ocrMatch[1]) {
               finalViewerId = ocrMatch[1];
+              finalViewerAccount = await fetchUserAccount(ocrMatch[1]);
             }
           }
         }
@@ -148,7 +183,9 @@ export default function CopyrightCheckPage() {
     setResult({
       creatorId: finalCreatorId,
       viewerId: finalViewerId,
-      message: finalMessage
+      message: finalMessage,
+      creatorAccount: finalCreatorAccount,
+      viewerAccount: finalViewerAccount,
     });
     
     setIsScanning(false);
@@ -215,6 +252,7 @@ export default function CopyrightCheckPage() {
               )}
             </button>
           </div>
+        </div>
 
         {/* Right Column: Result */}
         <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -251,7 +289,13 @@ export default function CopyrightCheckPage() {
             <div className="mb-4 rounded-xl border border-green-200 bg-green-50 p-6 text-center">
               <CheckCircle className="mx-auto mb-3 h-12 w-12 text-green-500" />
               <h3 className="mb-1 text-sm font-semibold text-green-800">Tác giả gốc (Creator ID)</h3>
-              <p className="text-2xl font-black text-green-600">{result.creatorId}</p>
+              <p className="text-2xl font-black text-green-600 mb-2">{result.creatorId}</p>
+              {result.creatorAccount && (
+                <div className="mx-auto max-w-sm rounded-lg bg-white p-3 border border-green-100 text-left shadow-sm">
+                  <p className="text-sm text-green-900"><span className="font-semibold">Tên:</span> {result.creatorAccount.fullName} ({result.creatorAccount.username})</p>
+                  <p className="text-sm text-green-900"><span className="font-semibold">Email:</span> {result.creatorAccount.email}</p>
+                </div>
+              )}
               <div className="mt-4 text-xs text-green-700">
                 Đã trích xuất thành công từ lớp mã hóa DWT-DCT-SVD của bức ảnh hoặc sóng OOK của video.
               </div>
@@ -276,12 +320,18 @@ export default function CopyrightCheckPage() {
               <div className="rounded-lg bg-white border border-rose-200 px-4 py-3 font-mono text-sm break-all text-rose-700 select-all">
                 {result.viewerId}
               </div>
+              {result.viewerAccount && (
+                <div className="mt-3 rounded-lg bg-white border border-rose-200 p-3 shadow-sm">
+                  <p className="text-sm text-rose-900"><span className="font-semibold">Tên:</span> {result.viewerAccount.fullName} ({result.viewerAccount.username})</p>
+                  <p className="text-sm text-rose-900"><span className="font-semibold">Email:</span> {result.viewerAccount.email}</p>
+                </div>
+              )}
               <div className="mt-3 flex gap-2">
                 <button
                   onClick={() => navigator.clipboard.writeText(result.viewerId!)}
                   className="flex-1 rounded-lg border border-rose-300 bg-white py-2 text-xs font-semibold text-rose-600 hover:bg-rose-100 transition-colors"
                 >
-                  ✂️ Sao chép UUID
+                  Sao chép UUID
                 </button>
                 <a
                   href={`/admin/users?search=${result.viewerId}`}
@@ -289,8 +339,15 @@ export default function CopyrightCheckPage() {
                   rel="noreferrer"
                   className="flex-1 rounded-lg bg-rose-500 py-2 text-center text-xs font-semibold text-white hover:bg-rose-600 transition-colors"
                 >
-                  🔍 Tra cứu tài khoản
+                  Tra cứu tài khoản
                 </a>
+                <button
+                  onClick={handleBanUser}
+                  disabled={banMutation.isPending || result.viewerAccount?.status === "BANNED"}
+                  className="flex-1 rounded-lg bg-orange-600 py-2 text-center text-xs font-semibold text-white hover:bg-orange-700 transition-colors disabled:opacity-50"
+                >
+                  {banMutation.isPending ? "Đang xử lý..." : result.viewerAccount?.status === "BANNED" ? "Đã khóa" : "Khóa tài khoản"}
+                </button>
               </div>
             </div>
           )}
@@ -316,7 +373,6 @@ export default function CopyrightCheckPage() {
               <pre className="mt-2 max-h-32 overflow-auto whitespace-pre-wrap break-all">{ocrDebug}</pre>
             </details>
           )}
-          </div>
         </div>
       </div>
     </div>
