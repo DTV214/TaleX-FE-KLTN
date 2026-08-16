@@ -150,6 +150,7 @@ export type ModerationTargetDetail = {
   targetId: string;
   title: string;
   subtitle?: string;
+  ownerName?: string;
   imageUrl?: string | null;
   metadata: Array<{ label: string; value: string | number | null | undefined }>;
 };
@@ -210,6 +211,7 @@ function normalizeAccountTarget(
     targetId,
     title: fullName ?? username ?? "Tài khoản bị báo cáo",
     subtitle: username ? `@${username}` : email,
+    ownerName: fullName ?? username,
     imageUrl: toText(record.avatarUrl) ?? toText(record.avatar),
     metadata: compactMetadata([
       { label: "Email", value: email },
@@ -225,15 +227,18 @@ function normalizeSeriesTarget(
   targetId: string,
 ): ModerationTargetDetail {
   const record = isRecord(payload) ? payload : {};
+  const ownerName =
+    toText(record.creatorName) ??
+    toText(record.ownerName) ??
+    toText(record.username) ??
+    toText(record.creatorId);
 
   return {
     targetType: "SERIES",
     targetId,
     title: toText(record.title) ?? "Series bị báo cáo",
-    subtitle:
-      toText(record.creatorName) ??
-      toText(record.username) ??
-      toText(record.creatorId),
+    subtitle: ownerName,
+    ownerName,
     imageUrl: toText(record.coverUrl) ?? toText(record.bannerUrl),
     metadata: compactMetadata([
       { label: "Loại nội dung", value: toText(record.contentType) },
@@ -252,12 +257,18 @@ function normalizeEpisodeTarget(
 ): ModerationTargetDetail {
   const record = isRecord(payload) ? payload : {};
   const episodeNumber = toNumber(record.episodeNumber);
+  const ownerName =
+    toText(record.creatorName) ??
+    toText(record.ownerName) ??
+    toText(record.username) ??
+    toText(record.creatorId);
 
   return {
     targetType: "EPISODE",
     targetId,
     title: toText(record.title) ?? "Tập nội dung bị báo cáo",
     subtitle: episodeNumber ? `Tập ${episodeNumber}` : toText(record.seasonId),
+    ownerName,
     imageUrl: toText(record.thumbnail),
     metadata: compactMetadata([
       { label: "Loại nội dung", value: toText(record.contentType) },
