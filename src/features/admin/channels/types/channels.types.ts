@@ -159,7 +159,7 @@ export interface ChannelMeta {
 export const GENERAL_CHANNELS: ChannelMeta[] = [
   {
     key: "promoted",
-    label: "Kênh Promoted",
+    label: "Kênh Quảng Bá",
     description: "Danh sách series được quảng bá nổi bật trên nền tảng",
     apiEndpoint: "/api/v1/channels/promoted/cards",
     badgeColor: "text-amber-600",
@@ -191,7 +191,7 @@ export const GENERAL_CHANNELS: ChannelMeta[] = [
   },
   {
     key: "community-choice",
-    label: "Cộng đồng bình chọn All-time",
+    label: "Cộng đồng bình chọn",
     description: "Series xuất sắc nhất do khán giả bình chọn mọi thời đại",
     apiEndpoint: "/api/v1/channels/community-choice/cards",
     badgeColor: "text-rose-600",
@@ -207,7 +207,7 @@ export const GENERAL_CHANNELS: ChannelMeta[] = [
   },
   {
     key: "trending",
-    label: "Kênh Trending",
+    label: "Kênh Xu Hướng",
     description: "Top series đang có xu hướng tăng trưởng lượt xem & tương tác cao",
     apiEndpoint: "/api/v1/channels/trending/cards",
     badgeColor: "text-cyan-600",

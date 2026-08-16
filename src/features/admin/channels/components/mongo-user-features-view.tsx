@@ -96,12 +96,9 @@ export function MongoUserFeaturesView({ accountId }: MongoUserFeaturesViewProps)
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="text-base font-bold text-slate-900">
-                Đặc Điểm Người Dùng (Mongo Features Profile)
+                Đặc Điểm Người Dùng
               </h3>
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Hồ sơ phân tích đặc điểm cố định & đặc điểm động (Top 5 danh mục/thẻ xem nhiều nhất)
-            </p>
           </div>
         </div>
       </div>
@@ -112,7 +109,7 @@ export function MongoUserFeaturesView({ accountId }: MongoUserFeaturesViewProps)
           <div className="flex items-center gap-2">
             <Flame className="h-4 w-4 text-amber-600 fill-amber-500" />
             <h4 className="font-bold text-xs text-amber-950 uppercase tracking-wider">
-              Top 5 Sở Thích Động AI (Dynamic User Features)
+              Top 5 Sở Thích
             </h4>
           </div>
         </div>
@@ -123,7 +120,7 @@ export function MongoUserFeaturesView({ accountId }: MongoUserFeaturesViewProps)
           <div className="space-y-1.5">
             <span className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
               <FolderTree className="h-3.5 w-3.5 text-amber-600" />
-              Top 5 Danh Mục Xem Nhiều Nhất:
+              Danh Mục Xem Nhiều Nhất:
             </span>
 
             {isLoadingDynamic ? (
@@ -143,7 +140,7 @@ export function MongoUserFeaturesView({ accountId }: MongoUserFeaturesViewProps)
                 ))}
               </div>
             ) : (
-              <span className="text-xs text-amber-700 italic">Chưa ghi nhận top danh mục động</span>
+              <span className="text-xs text-amber-700 italic">Chưa ghi nhận top danh mục</span>
             )}
           </div>
 
@@ -151,7 +148,7 @@ export function MongoUserFeaturesView({ accountId }: MongoUserFeaturesViewProps)
           <div className="space-y-1.5">
             <span className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
               <Tag className="h-3.5 w-3.5 text-orange-600" />
-              Top 5 Thẻ Tag Xem Nhiều Nhất:
+              Thẻ Tag Xem Nhiều Nhất:
             </span>
 
             {isLoadingDynamic ? (
@@ -171,7 +168,7 @@ export function MongoUserFeaturesView({ accountId }: MongoUserFeaturesViewProps)
                 ))}
               </div>
             ) : (
-              <span className="text-xs text-amber-700 italic">Chưa ghi nhận top thẻ tag động</span>
+              <span className="text-xs text-amber-700 italic">Chưa ghi nhận top thẻ tag</span>
             )}
           </div>
         </div>
@@ -218,11 +215,10 @@ export function MongoUserFeaturesView({ accountId }: MongoUserFeaturesViewProps)
             <button
               type="button"
               onClick={() => setActiveTab("overview")}
-              className={`flex items-center gap-1.5 border-b-2 px-4 py-2.5 transition-all ${
-                activeTab === "overview"
-                  ? "border-emerald-600 font-bold text-emerald-700"
-                  : "border-transparent text-slate-500 hover:text-slate-900"
-              }`}
+              className={`flex items-center gap-1.5 border-b-2 px-4 py-2.5 transition-all ${activeTab === "overview"
+                ? "border-emerald-600 font-bold text-emerald-700"
+                : "border-transparent text-slate-500 hover:text-slate-900"
+                }`}
             >
               <Activity className="h-4 w-4" />
               <span>Tổng Quan & Tương Tác</span>
@@ -231,11 +227,10 @@ export function MongoUserFeaturesView({ accountId }: MongoUserFeaturesViewProps)
             <button
               type="button"
               onClick={() => setActiveTab("genres")}
-              className={`flex items-center gap-1.5 border-b-2 px-4 py-2.5 transition-all ${
-                activeTab === "genres"
-                  ? "border-emerald-600 font-bold text-emerald-700"
-                  : "border-transparent text-slate-500 hover:text-slate-900"
-              }`}
+              className={`flex items-center gap-1.5 border-b-2 px-4 py-2.5 transition-all ${activeTab === "genres"
+                ? "border-emerald-600 font-bold text-emerald-700"
+                : "border-transparent text-slate-500 hover:text-slate-900"
+                }`}
             >
               <FolderTree className="h-4 w-4" />
               <span>Phân Tích Thể Loại ({Object.keys(userFeatures.preferences?.genresClicksRaw || {}).length})</span>
@@ -244,11 +239,10 @@ export function MongoUserFeaturesView({ accountId }: MongoUserFeaturesViewProps)
             <button
               type="button"
               onClick={() => setActiveTab("tags")}
-              className={`flex items-center gap-1.5 border-b-2 px-4 py-2.5 transition-all ${
-                activeTab === "tags"
-                  ? "border-emerald-600 font-bold text-emerald-700"
-                  : "border-transparent text-slate-500 hover:text-slate-900"
-              }`}
+              className={`flex items-center gap-1.5 border-b-2 px-4 py-2.5 transition-all ${activeTab === "tags"
+                ? "border-emerald-600 font-bold text-emerald-700"
+                : "border-transparent text-slate-500 hover:text-slate-900"
+                }`}
             >
               <Tag className="h-4 w-4" />
               <span>Phân Tích Thẻ Tag ({Object.keys(userFeatures.preferences?.tagsClicksRaw || {}).length})</span>
@@ -263,7 +257,7 @@ export function MongoUserFeaturesView({ accountId }: MongoUserFeaturesViewProps)
                 <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
                   <h4 className="font-bold text-xs text-slate-800 uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2">
                     <User className="h-4 w-4 text-emerald-600" />
-                    Thông Tin Nhân Khẩu Học
+                    Thông Tin Tài Khoản
                   </h4>
                   <div className="grid grid-cols-2 gap-3 text-xs">
                     <div>
@@ -303,12 +297,12 @@ export function MongoUserFeaturesView({ accountId }: MongoUserFeaturesViewProps)
                 <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
                   <h4 className="font-bold text-xs text-slate-800 uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2">
                     <FolderTree className="h-4 w-4 text-emerald-600" />
-                    Sở Thích Khởi Tạo (Onboarding Preferences)
+                    Sở Thích Khởi Tạo
                   </h4>
                   <div className="space-y-2.5 text-xs">
                     <div>
                       <span className="text-slate-400 block text-[11px] mb-1">
-                        Thể loại đã chọn khi Onboarding (Genres):
+                        Thể loại đã chọn:
                       </span>
                       <div className="flex flex-wrap gap-1.5">
                         {userFeatures.onboardingGenres?.map((g, i) => (
@@ -324,7 +318,7 @@ export function MongoUserFeaturesView({ accountId }: MongoUserFeaturesViewProps)
 
                     <div>
                       <span className="text-slate-400 block text-[11px] mb-1">
-                        Thẻ Tag đã chọn khi Onboarding (Tags):
+                        Thẻ Tag đã chọn:
                       </span>
                       <div className="flex flex-wrap gap-1.5">
                         {userFeatures.onboardingTags?.map((t, i) => (
@@ -345,11 +339,11 @@ export function MongoUserFeaturesView({ accountId }: MongoUserFeaturesViewProps)
               <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
                 <h4 className="font-bold text-xs text-slate-800 uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2">
                   <Clock className="h-4 w-4 text-emerald-600" />
-                  Chỉ Số Xem Sâu (Deep Engagement & Watch Time)
+                  Thời Gian Xem
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="rounded-xl bg-emerald-50/70 p-3.5 border border-emerald-100">
-                    <span className="text-xs font-medium text-emerald-700 block">Total Watch Time</span>
+                    <span className="text-xs font-medium text-emerald-700 block">Tổng Thời Gian Xem</span>
                     <span className="text-xl font-black text-emerald-900 block mt-1">
                       {formatSeconds(userFeatures.deepEngagement?.totalWatchTime)}
                     </span>
@@ -359,7 +353,7 @@ export function MongoUserFeaturesView({ accountId }: MongoUserFeaturesViewProps)
                   </div>
 
                   <div className="rounded-xl bg-sky-50/70 p-3.5 border border-sky-100">
-                    <span className="text-xs font-medium text-sky-700 block">Watch Time (7 Days)</span>
+                    <span className="text-xs font-medium text-sky-700 block"> Thời Gian Xem 7 Ngày Gần Nhất</span>
                     <span className="text-xl font-black text-sky-900 block mt-1">
                       {formatSeconds(userFeatures.deepEngagement?.watchTimeLast7d)}
                     </span>
@@ -369,7 +363,7 @@ export function MongoUserFeaturesView({ accountId }: MongoUserFeaturesViewProps)
                   </div>
 
                   <div className="rounded-xl bg-violet-50/70 p-3.5 border border-violet-100">
-                    <span className="text-xs font-medium text-violet-700 block">Watch Time (24 Hours)</span>
+                    <span className="text-xs font-medium text-violet-700 block">Thời Gian Xem 24 Giờ Gần Nhất</span>
                     <span className="text-xl font-black text-violet-900 block mt-1">
                       {formatSeconds(userFeatures.deepEngagement?.watchTimeLast24h)}
                     </span>
@@ -384,7 +378,7 @@ export function MongoUserFeaturesView({ accountId }: MongoUserFeaturesViewProps)
               <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-4">
                 <h4 className="font-bold text-xs text-slate-800 uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2">
                   <BarChart3 className="h-4 w-4 text-emerald-600" />
-                  Thống Kê Tương Tác & Tỷ Lệ Chuyển Đổi (Interactions & Ratios)
+                  Thống Kê Tương Tác
                 </h4>
 
                 {/* Grid of Total, 7d, 24h Interaction Counts */}
@@ -470,10 +464,10 @@ export function MongoUserFeaturesView({ accountId }: MongoUserFeaturesViewProps)
                   <table className="w-full text-left text-xs border-collapse">
                     <thead>
                       <tr className="border-b border-slate-200 bg-slate-50 font-bold text-slate-700">
-                        <th className="py-2.5 px-4">Tỷ lệ Chuyển Đổi (Interaction Ratio)</th>
-                        <th className="py-2.5 px-4 text-center">Toàn thời gian (Total)</th>
-                        <th className="py-2.5 px-4 text-center">7 Ngày Gần Đây (7d)</th>
-                        <th className="py-2.5 px-4 text-center">24 Giờ Gần Đây (24h)</th>
+                        <th className="py-2.5 px-4">Tỷ lệ Tương Tác</th>
+                        <th className="py-2.5 px-4 text-center">Toàn thời gian</th>
+                        <th className="py-2.5 px-4 text-center">7 Ngày Gần Đây</th>
+                        <th className="py-2.5 px-4 text-center">24 Giờ Gần Đây</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
@@ -513,18 +507,18 @@ export function MongoUserFeaturesView({ accountId }: MongoUserFeaturesViewProps)
             <div className="space-y-4">
               <h4 className="font-bold text-xs text-slate-800 uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2">
                 <FolderTree className="h-4 w-4 text-emerald-600" />
-                Phân Tích Chi Tiết Trọng Số Thể Loại (Genres Preferences Breakdown)
+                Phân Tích Chi Tiết Trọng Số Thể Loại
               </h4>
 
               <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
                     <tr className="border-b border-slate-200 bg-slate-50 font-bold text-slate-700">
-                      <th className="py-2.5 px-4">Thể Loại (Genre)</th>
-                      <th className="py-2.5 px-4 text-center">Raw Clicks</th>
-                      <th className="py-2.5 px-4 text-center">Raw Watch Time</th>
-                      <th className="py-2.5 px-4">Trọng Số Click (% Clicks)</th>
-                      <th className="py-2.5 px-4">Trọng Số Watch Time (% Time)</th>
+                      <th className="py-2.5 px-4">Thể Loại</th>
+                      <th className="py-2.5 px-4 text-center">Lượt Click</th>
+                      <th className="py-2.5 px-4 text-center">Thời Gian Xem</th>
+                      <th className="py-2.5 px-4">Trọng Số Lượt Click (%)</th>
+                      <th className="py-2.5 px-4">Trọng Số Thời Gian Xem (%)</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -598,11 +592,11 @@ export function MongoUserFeaturesView({ accountId }: MongoUserFeaturesViewProps)
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
                     <tr className="border-b border-slate-200 bg-slate-50 font-bold text-slate-700">
-                      <th className="py-2.5 px-4">Thẻ Tag (Tag)</th>
-                      <th className="py-2.5 px-4 text-center">Raw Clicks</th>
-                      <th className="py-2.5 px-4 text-center">Raw Watch Time</th>
-                      <th className="py-2.5 px-4">Trọng Số Click (% Clicks)</th>
-                      <th className="py-2.5 px-4">Trọng Số Watch Time (% Time)</th>
+                      <th className="py-2.5 px-4">Thẻ Tag</th>
+                      <th className="py-2.5 px-4 text-center">Lượt Click</th>
+                      <th className="py-2.5 px-4 text-center">Thời Gian Xem</th>
+                      <th className="py-2.5 px-4">Trọng Số Lượt Click (%)</th>
+                      <th className="py-2.5 px-4">Trọng Số Thời Gian Xem (%)</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
