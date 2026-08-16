@@ -1,4 +1,9 @@
+import axios from "axios";
 import { NextRequest, NextResponse } from "next/server";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
 
 export async function GET(request: NextRequest) {
   const requestUrl = request.url;
@@ -21,21 +26,17 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const res = await fetch(targetUrl, {
+    const response = await axios.get(targetUrl, {
+      responseType: "arraybuffer",
+      timeout: 15000,
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
       },
     });
 
-    if (!res.ok) {
-      console.error(`[image-proxy] Origin returned status ${res.status}: ${res.statusText}`);
-      return new NextResponse(`Failed to fetch image from origin: ${res.statusText}`, { status: res.status });
-    }
+    const contentType = String(response.headers["content-type"] || "image/png");
 
-    const arrayBuffer = await res.arrayBuffer();
-    const contentType = res.headers.get("content-type") || "image/jpeg";
-
-    return new NextResponse(arrayBuffer, {
+    return new NextResponse(response.data, {
       status: 200,
       headers: {
         "Content-Type": contentType,
@@ -45,8 +46,9 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error: any) {
-    console.error("[image-proxy] Error proxying image:", error);
+    console.error("[image-proxy] Error proxying image with axios:", error.message);
     return new NextResponse(`Internal proxy error: ${error.message}`, { status: 500 });
   }
 }
+
 

@@ -61,33 +61,47 @@ export function WatermarkedImage({
           throw new Error("No fallbackUrl provided");
         }
 
-        // Tạo Image object để load ảnh
+        // Tải dữ liệu ảnh dưới dạng Blob qua Proxy (đảm bảo không bị CORS/Tainted Canvas trên Deploy)
+        let blob: Blob | null = null;
+        if (fallbackUrl.startsWith("http")) {
+          try {
+            const proxyRes = await fetch(`/api/image-proxy?url=${encodeURIComponent(fallbackUrl)}`);
+            if (proxyRes.ok) {
+              blob = await proxyRes.blob();
+            }
+          } catch (e) {
+            console.warn("[watermark] Proxy fetch failed, trying direct fetch:", e);
+          }
+        }
+
+        if (!blob) {
+          try {
+            const directRes = await fetch(fallbackUrl, { mode: "cors" });
+            if (directRes.ok) {
+              blob = await directRes.blob();
+            }
+          } catch (e) {
+            console.warn("[watermark] Direct fetch failed:", e);
+          }
+        }
+
+        if (!blob) {
+          throw new Error("Could not fetch image blob for canvas watermarking");
+        }
+
+        const tempBlobUrl = URL.createObjectURL(blob);
         const img = new Image();
-        img.crossOrigin = "anonymous"; // Bắt buộc để tránh lỗi Tainted Canvas
 
         await new Promise((resolve, reject) => {
           img.onload = resolve;
-          img.onerror = () => {
-            // Thử load trực tiếp nếu proxy gặp sự cố
-            const directImg = new Image();
-            directImg.crossOrigin = "anonymous";
-            directImg.onload = () => {
-              img.src = directImg.src;
-              resolve(null);
-            };
-            directImg.onerror = () => reject(new Error("Failed to load image for canvas"));
-            directImg.src = fallbackUrl;
-          };
-
-          // Dùng Next.js API Route proxy để vượt qua lỗi CORS của Cloudfront/S3 (chỉ áp dụng cho link ngoài)
-          if (fallbackUrl.startsWith("http")) {
-            img.src = `/api/image-proxy?url=${encodeURIComponent(fallbackUrl)}`;
-          } else {
-            img.src = fallbackUrl;
-          }
+          img.onerror = () => reject(new Error("Failed to decode blob image into HTMLImageElement"));
+          img.src = tempBlobUrl;
         });
 
-        if (!isMounted) return;
+        if (!isMounted) {
+          URL.revokeObjectURL(tempBlobUrl);
+          return;
+        }
 
         // Vẽ lên Canvas
         const canvas = document.createElement("canvas");
@@ -160,6 +174,7 @@ export function WatermarkedImage({
 
         // Chuyển Canvas thành Blob để làm src cho <img>
         canvas.toBlob((blob) => {
+          URL.revokeObjectURL(tempBlobUrl);
           if (blob && isMounted) {
             url = URL.createObjectURL(blob);
             setObjectUrl(url);
