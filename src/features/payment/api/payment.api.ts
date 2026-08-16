@@ -139,7 +139,15 @@ export function useActiveSubscription(enabled = true) {
       if (!latest || latest.isCancelled) {
         return null;
       }
-      return parseBackendDate(latest.endTime) > new Date() ? latest : null;
+      const isActive = parseBackendDate(latest.endTime) > new Date();
+      return isActive
+        ? {
+            ...latest,
+            isAdBlocked: latest.isAdBlocked !== false,
+            isMovieUnlocked: latest.isMovieUnlocked !== false,
+            isStoryUnlocked: latest.isStoryUnlocked !== false,
+          }
+        : null;
     },
     enabled,
     staleTime: 30 * 1000,

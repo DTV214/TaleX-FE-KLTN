@@ -45,7 +45,8 @@ export function PopupAdWidget() {
 
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const activeSubscriptionQuery = useActiveSubscription(isAuthenticated);
-  const isAdBlocked = Boolean(activeSubscriptionQuery.data?.isAdBlocked);
+  const isPremiumMember = Boolean(activeSubscriptionQuery.data);
+  const isAdBlocked = isPremiumMember || Boolean(activeSubscriptionQuery.data?.isAdBlocked);
 
   // Fetch danh sách cấu hình Popup từ Backend (Admin config)
   const { data: popupConfig, isError: configError } = useQuery({
@@ -93,12 +94,18 @@ export function PopupAdWidget() {
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
     retry: false,
-    enabled: isOnAllowedRoute && !isAdBlocked && !isDismissed,
+    enabled: isOnAllowedRoute && !isAdBlocked && !isDismissed && !activeSubscriptionQuery.isLoading,
   });
 
   const [ad, setAd] = useState<any>(null);
 
   useEffect(() => {
+    if (isAdBlocked) {
+      setAd(null);
+      setIsVisible(false);
+      return;
+    }
+
     if (ads && ads.length > 0) {
       const lastIndexStr = localStorage.getItem(`last_ad_index_${SLOT_CODE}`);
       let nextIndex = lastIndexStr ? parseInt(lastIndexStr, 10) + 1 : 0;
@@ -109,18 +116,18 @@ export function PopupAdWidget() {
     } else if (ads && ads.length === 0) {
       setAd(null);
     }
-  }, [ads, pathname]);
+  }, [ads, pathname, isAdBlocked]);
 
   // Tự động hiển thị popup sau effectiveDelayMs
   useEffect(() => {
-    if (!ad || !isOnAllowedRoute || isDismissed) return;
+    if (!ad || !isOnAllowedRoute || isDismissed || isAdBlocked || activeSubscriptionQuery.isLoading) return;
 
     const timer = setTimeout(() => {
       setIsVisible(true);
     }, effectiveDelayMs);
 
     return () => clearTimeout(timer);
-  }, [ad, isOnAllowedRoute, effectiveDelayMs]);
+  }, [ad, isOnAllowedRoute, isDismissed, isAdBlocked, activeSubscriptionQuery.isLoading, effectiveDelayMs]);
 
   // Đếm ngược countdown để hiện nút X
   useEffect(() => {

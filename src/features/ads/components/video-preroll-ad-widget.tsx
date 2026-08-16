@@ -44,10 +44,10 @@ export function VideoPrerollAdWidget({ onAdFinished }: VideoPrerollAdWidgetProps
   const { data: ads, isLoading, isError } = useQuery({
     queryKey: ["serve-ads-preroll", SLOT_CODE],
     queryFn: () => adsApi.serveAllAds(SLOT_CODE),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 60 * 1000, // Refresh pool cache faster
     refetchOnWindowFocus: false,
     retry: false,
-    enabled: !isAdBlocked,
+    enabled: !isAdBlocked && !activeSubscriptionQuery.isLoading,
   });
 
   const [ad, setAd] = useState<any>(null);
@@ -67,10 +67,17 @@ export function VideoPrerollAdWidget({ onAdFinished }: VideoPrerollAdWidgetProps
 
   // Nếu user có Premium, hoặc API lỗi, hoặc không có ad -> Bỏ qua ad ngay lập tức
   useEffect(() => {
-    if (isAdBlocked || isError || (ad === null && !isLoading)) {
+    if (activeSubscriptionQuery.isLoading) return;
+
+    if (isAdBlocked) {
+      onAdFinished();
+      return;
+    }
+
+    if (!isLoading && (isError || (ads && ads.length === 0))) {
       onAdFinished();
     }
-  }, [isAdBlocked, isError, ad, isLoading, onAdFinished]);
+  }, [isAdBlocked, isError, ads, isLoading, activeSubscriptionQuery.isLoading, onAdFinished]);
 
   // Đếm ngược số giây để hiện nút Skip
   useEffect(() => {
