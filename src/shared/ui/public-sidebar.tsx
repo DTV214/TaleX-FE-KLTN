@@ -42,7 +42,6 @@ const primaryMenu: MenuItem[] = [
   { title: "Trang chủ", href: "/", icon: Home },
   { title: "Phim bộ", href: "/series", icon: Tv },
   { title: "Truyện tranh", href: "/comics", icon: BookOpen },
-  { title: "Xu hướng", href: "/#shorts", icon: Flame },
 ];
 
 const libraryMenu: MenuItem[] = [

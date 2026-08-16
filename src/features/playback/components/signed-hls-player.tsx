@@ -33,6 +33,7 @@ import {
   getPublicSeriesList,
 } from "@/features/series/api/series-api";
 import { LikeButton } from "@/features/series/components/like-button";
+import { EpisodeBookmarkButton } from "@/features/series/components/episode-bookmark-button";
 import { LikedUsersModal } from "@/features/series/components/liked-users-modal";
 import { EpisodeShareButton } from "@/features/series/components/episode-share-button";
 import { useEpisodeLikes } from "@/features/series/hooks/use-episode-likes";
@@ -554,6 +555,12 @@ export function SignedHlsPlayer({
                       isLoading={isMutating}
                     />
                   </div>
+
+                  <EpisodeBookmarkButton
+                    episodeId={episodeId}
+                    contentType="VIDEO"
+                    className="rounded-full bg-[#27272a] hover:bg-zinc-700 h-9 w-9"
+                  />
 
                   <EpisodeShareButton
                     episodeId={episodeId}

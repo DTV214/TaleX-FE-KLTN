@@ -515,7 +515,7 @@ function MovieRecommendationSection() {
     <section id="movies-all-recommendations" className="pt-4 space-y-6">
       <SectionTitle
         eyebrow="Cá nhân hóa & Tất cả phim"
-        title="Tất Cả Phim Đề Xuất (Cuộn Vô Cùng)"
+        title="Tất Cả Phim Đề Xuất"
         icon={Clapperboard}
       />
 

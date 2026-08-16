@@ -236,16 +236,9 @@ export function CreatorAnalyticsLogsView({
         if (!item.hourBucket) continue;
         const d = new Date(item.hourBucket);
         const localKey = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-        const utcKey = `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;
-        const rawKey = item.hourBucket.slice(0, 10);
-
-        const keys = Array.from(new Set([localKey, utcKey, rawKey]));
-        for (const k of keys) {
-          if (!k || k.length < 10) continue;
-          const list = logsByDate.get(k) || [];
-          list.push(item);
-          logsByDate.set(k, list);
-        }
+        const list = logsByDate.get(localKey) || [];
+        list.push(item);
+        logsByDate.set(localKey, list);
       }
 
       const result = [];

@@ -2,12 +2,31 @@
 
 import { useEffect, useRef, useState, useMemo } from "react";
 import { useInfiniteQuery, useQueries } from "@tanstack/react-query";
-import { getRecentWatchSessions, WatchSessionItem } from "@/features/playback/api/watch-sessions-api";
-import { getPublicSeriesDetail, PublicSeriesItem } from "@/features/series/api/series-api";
+import {
+  getRecentWatchSessions,
+  WatchSessionItem,
+} from "@/features/playback/api/watch-sessions-api";
+import {
+  getPublicSeriesDetail,
+  PublicSeriesItem,
+} from "@/features/series/api/series-api";
 import { useAuthStore } from "@/features/auth/store/auth.store";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { History, Loader2, Play, BookOpen, Clock, Film, ExternalLink } from "lucide-react";
+import {
+  History,
+  Loader2,
+  Play,
+  BookOpen,
+  Clock,
+  Film,
+  Sparkles,
+  Star,
+  Heart,
+  Clapperboard,
+  Flame,
+  Tag,
+} from "lucide-react";
 import { cn } from "@/shared/utils/utils";
 
 type TabType = "ALL" | "VIDEO" | "COMIC";
@@ -34,6 +53,35 @@ function formatDate(dateStr: string): string {
   } catch {
     return dateStr;
   }
+}
+
+function PageAtmosphere() {
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden">
+      <div
+        className="absolute inset-0 bg-cover bg-center opacity-[0.14]"
+        style={{
+          backgroundImage:
+            "url(https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=2200&auto=format&fit=crop)",
+        }}
+      />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_12%,rgba(212,175,55,0.18),transparent_32%),radial-gradient(circle_at_88%_18%,rgba(151,176,255,0.12),transparent_28%),linear-gradient(180deg,rgba(18,16,13,0.7)_0%,rgba(8,8,8,0.93)_48%,#080808_100%)]" />
+      <div className="absolute -left-28 top-28 h-72 w-[720px] rotate-[-10deg] rounded-[100%] border-t border-[#D4AF37]/14" />
+      <div className="absolute right-[-180px] top-20 h-[380px] w-[760px] rotate-[16deg] rounded-[100%] border-t border-cyan-100/10" />
+
+      {/* Floating Translucent Lucide Icons */}
+      <Sparkles className="absolute left-[8%] top-[8%] h-7 w-7 text-[#D4AF37]/20" />
+      <Star className="absolute right-[12%] top-[12%] h-8 w-8 text-[#D4AF37]/18" />
+      <Clapperboard className="absolute left-[44%] top-[10%] h-8 w-8 rotate-[-12deg] text-white/10" />
+      <BookOpen className="absolute left-[6%] top-[35%] h-8 w-8 text-cyan-100/14" />
+      <Heart className="absolute right-[8%] top-[30%] h-7 w-7 text-rose-300/14" />
+      <Film className="absolute left-[38%] top-[45%] h-9 w-9 rotate-[14deg] text-amber-200/12" />
+      <Flame className="absolute right-[22%] top-[55%] h-8 w-8 text-orange-400/14" />
+      <Tag className="absolute left-[14%] top-[70%] h-8 w-8 rotate-[-18deg] text-emerald-200/12" />
+      <Sparkles className="absolute right-[10%] top-[8%] h-9 w-9 text-[#D4AF37]/20" />
+      <Star className="absolute left-[48%] top-[85%] h-8 w-8 text-[#D4AF37]/16" />
+    </div>
+  );
 }
 
 export default function HistoryPage() {
@@ -124,255 +172,270 @@ export default function HistoryPage() {
     });
   }, [watchSessions, activeTab]);
 
-  const handleWatchAgain = (session: WatchSessionItem) => {
-    const ep = session.episode;
-    if (!ep) return;
-    setRedirectingId(session.id);
-    if (ep.contentType === "COMIC") {
-      router.push(`/read/${ep.episodeId}`);
-    } else {
-      router.push(`/watch/${ep.episodeId}`);
-    }
-  };
-
   if (!authUser) {
     return (
-      <div className="container max-w-5xl mx-auto px-4 py-16 text-center">
-        <div className="w-16 h-16 rounded-full bg-neutral-900 flex items-center justify-center mx-auto mb-4 border border-neutral-800 text-neutral-400">
-          <History className="w-8 h-8" />
+      <div className="relative min-h-screen overflow-hidden bg-[#12100d] pb-24 text-gray-100 antialiased flex flex-col items-center justify-center">
+        <PageAtmosphere />
+        <div className="relative z-10 mx-auto max-w-md px-4 py-16 text-center">
+          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl border border-[#D4AF37]/30 bg-[#D4AF37]/10 text-[#D4AF37] shadow-[0_0_30px_rgba(212,175,55,0.15)]">
+            <History className="h-10 w-10" />
+          </div>
+          <h1 className="mb-3 text-2xl font-extrabold tracking-tight text-white md:text-3xl">
+            Lịch sử xem
+          </h1>
+          <p className="mx-auto mb-8 max-w-sm text-sm text-gray-400 leading-relaxed">
+            Vui lòng đăng nhập để xem lại lịch sử các video và truyện tranh bạn đã xem gần đây.
+          </p>
+          <Link
+            href="/login"
+            className="inline-flex items-center justify-center px-8 py-3 rounded-2xl bg-[#D4AF37] hover:bg-[#E5C158] text-black font-extrabold transition-all duration-300 shadow-[0_6px_25px_rgba(212,175,55,0.3)] hover:scale-105"
+          >
+            Đăng nhập ngay
+          </Link>
         </div>
-        <h1 className="text-2xl font-bold text-white mb-2">Lịch sử xem</h1>
-        <p className="text-neutral-400 max-w-md mx-auto mb-6">
-          Vui lòng đăng nhập để xem lại lịch sử các video và truyện tranh bạn đã xem gần đây.
-        </p>
-        <Link
-          href="/login"
-          className="inline-flex items-center justify-center px-6 py-2.5 rounded-full bg-rose-600 hover:bg-rose-700 text-white font-medium transition"
-        >
-          Đăng nhập ngay
-        </Link>
       </div>
     );
   }
 
   return (
-    <div className="container max-w-6xl mx-auto px-4 py-8">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 border-b border-neutral-800 pb-6">
-        <div>
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-rose-500/10 text-rose-500">
-              <History className="w-6 h-6" />
+    <div className="relative min-h-screen overflow-hidden bg-[#12100d] pb-24 text-gray-100 antialiased">
+      <PageAtmosphere />
+
+      <main className="relative z-10 mx-auto w-full max-w-[1680px] px-4 pt-8 md:px-8">
+        {/* Header */}
+        <div className="mb-10 flex flex-col justify-between gap-6 border-b border-white/10 pb-6 md:flex-row md:items-center">
+          <div>
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[#D4AF37]/30 bg-[#D4AF37]/10 text-[#D4AF37] shadow-[0_0_20px_rgba(212,175,55,0.12)]">
+                <History className="h-6 w-6" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-extrabold tracking-tight text-white md:text-3xl">
+                  Lịch sử xem gần đây
+                </h1>
+                <p className="mt-0.5 text-xs text-gray-400 md:text-sm">
+                  Quản lý và tiếp tục thưởng thức các tập phim và truyện tranh bạn đã theo dõi
+                </p>
+              </div>
             </div>
-            <h1 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight">
-              Lịch sử xem gần đây
-            </h1>
           </div>
-          <p className="text-sm text-neutral-400 mt-1">
-            Quản lý và tiếp tục xem các nội dung bạn đã theo dõi
-          </p>
+
+          {/* Tab Filters */}
+          <div className="flex items-center gap-1.5 self-start rounded-2xl border border-white/10 bg-[#18181c]/90 p-1.5 backdrop-blur-md shadow-inner md:self-auto">
+            <button
+              onClick={() => setActiveTab("ALL")}
+              className={cn(
+                "rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer",
+                activeTab === "ALL"
+                  ? "bg-[#D4AF37] text-black shadow-md"
+                  : "text-gray-400 hover:bg-white/5 hover:text-white"
+              )}
+            >
+              Tất cả
+            </button>
+            <button
+              onClick={() => setActiveTab("VIDEO")}
+              className={cn(
+                "flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer",
+                activeTab === "VIDEO"
+                  ? "bg-[#D4AF37] text-black shadow-md"
+                  : "text-gray-400 hover:bg-white/5 hover:text-white"
+              )}
+            >
+              <Film className="h-3.5 w-3.5" />
+              Video
+            </button>
+            <button
+              onClick={() => setActiveTab("COMIC")}
+              className={cn(
+                "flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer",
+                activeTab === "COMIC"
+                  ? "bg-[#D4AF37] text-black shadow-md"
+                  : "text-gray-400 hover:bg-white/5 hover:text-white"
+              )}
+            >
+              <BookOpen className="h-3.5 w-3.5" />
+              Truyện tranh
+            </button>
+          </div>
         </div>
 
-        {/* Tab Filters */}
-        <div className="flex items-center gap-1.5 p-1 bg-neutral-900 rounded-xl border border-neutral-800 self-start md:self-auto">
-          <button
-            onClick={() => setActiveTab("ALL")}
-            className={cn(
-              "px-4 py-1.5 rounded-lg text-sm font-medium transition",
-              activeTab === "ALL"
-                ? "bg-neutral-800 text-white shadow-sm"
-                : "text-neutral-400 hover:text-white"
-            )}
-          >
-            Tất cả
-          </button>
-          <button
-            onClick={() => setActiveTab("VIDEO")}
-            className={cn(
-              "flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-medium transition",
-              activeTab === "VIDEO"
-                ? "bg-neutral-800 text-white shadow-sm"
-                : "text-neutral-400 hover:text-white"
-            )}
-          >
-            <Film className="w-4 h-4" />
-            Video
-          </button>
-          <button
-            onClick={() => setActiveTab("COMIC")}
-            className={cn(
-              "flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-medium transition",
-              activeTab === "COMIC"
-                ? "bg-neutral-800 text-white shadow-sm"
-                : "text-neutral-400 hover:text-white"
-            )}
-          >
-            <BookOpen className="w-4 h-4" />
-            Truyện tranh
-          </button>
-        </div>
-      </div>
+        {/* Content State */}
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-24 text-center">
+            <Loader2 className="mb-4 h-10 w-10 animate-spin text-[#D4AF37]" />
+            <p className="text-sm font-semibold text-gray-400 animate-pulse">
+              Đang tải lịch sử xem...
+            </p>
+          </div>
+        ) : isError ? (
+          <div className="mx-auto max-w-lg rounded-3xl border border-red-500/20 bg-[#18181c]/80 p-8 text-center backdrop-blur-md">
+            <p className="mb-3 text-sm font-bold text-red-400">
+              Không thể tải danh sách phiên xem.
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="rounded-xl bg-white/10 px-5 py-2 text-xs font-bold text-white transition hover:bg-white/20"
+            >
+              Tải lại trang
+            </button>
+          </div>
+        ) : filteredSessions.length === 0 ? (
+          <div className="mx-auto max-w-lg rounded-3xl border border-white/10 bg-[#18181c]/60 p-12 text-center backdrop-blur-md shadow-2xl">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-white/5 text-gray-500 border border-white/5">
+              <History className="h-8 w-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-bold text-white">Chưa có lịch sử xem</h3>
+            <p className="mx-auto mt-1.5 max-w-xs text-xs text-gray-400 leading-relaxed">
+              {activeTab === "ALL"
+                ? "Bạn chưa xem tập phim hoặc bộ truyện nào gần đây."
+                : activeTab === "VIDEO"
+                ? "Bạn chưa xem video nào gần đây."
+                : "Bạn chưa đọc truyện tranh nào gần đây."}
+            </p>
+            <Link
+              href="/series"
+              className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-[#D4AF37] hover:bg-[#E5C158] px-6 py-2.5 text-xs font-extrabold text-black transition-all shadow-[0_4px_20px_rgba(212,175,55,0.25)] hover:scale-105"
+            >
+              Khám phá nội dung
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+            {filteredSessions.map((session, index) => {
+              const ep = session.episode;
+              if (!ep) return null;
 
-      {/* Content State */}
-      {isLoading ? (
-        <div className="flex flex-col items-center justify-center py-20 text-neutral-500">
-          <Loader2 className="w-8 h-8 animate-spin mb-3 text-rose-500" />
-          <p className="text-sm">Đang tải lịch sử xem...</p>
-        </div>
-      ) : isError ? (
-        <div className="text-center py-16 bg-neutral-900/50 rounded-2xl border border-neutral-800">
-          <p className="text-rose-400 mb-2">Không thể tải danh sách phiên xem.</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="text-xs text-neutral-400 underline hover:text-white"
-          >
-            Tải lại trang
-          </button>
-        </div>
-      ) : filteredSessions.length === 0 ? (
-        <div className="text-center py-20 bg-neutral-900/40 rounded-2xl border border-neutral-800/80">
-          <History className="w-12 h-12 text-neutral-600 mx-auto mb-3" />
-          <h3 className="text-lg font-semibold text-neutral-300">Chưa có lịch sử xem</h3>
-          <p className="text-sm text-neutral-500 mt-1 max-w-sm mx-auto">
-            {activeTab === "ALL"
-              ? "Bạn chưa xem tập phim hoặc bộ truyện nào gần đây."
-              : activeTab === "VIDEO"
-              ? "Bạn chưa xem video nào gần đây."
-              : "Bạn chưa đọc truyện tranh nào gần đây."}
-          </p>
-          <Link
-            href="/series"
-            className="inline-flex items-center gap-2 mt-5 px-5 py-2 rounded-full bg-neutral-800 hover:bg-neutral-700 text-sm font-medium text-white transition"
-          >
-            Khám phá nội dung
-          </Link>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filteredSessions.map((session, index) => {
-            const ep = session.episode;
-            if (!ep) return null;
+              const seriesInfo = seriesMap[ep.seriesId];
+              const displayImage =
+                ep.thumbnail ||
+                seriesInfo?.coverUrl ||
+                seriesInfo?.bannerUrl ||
+                "https://placehold.co/600x340/18181b/fff?text=TaleX";
 
-            const seriesInfo = seriesMap[ep.seriesId];
-            // Lấy thumbnail tập phim, nếu null thì mặc định dùng cover/poster của series
-            const displayImage =
-              ep.thumbnail ||
-              seriesInfo?.coverUrl ||
-              seriesInfo?.bannerUrl ||
-              "https://placehold.co/600x340/18181b/fff?text=TaleX";
+              const isComic = ep.contentType === "COMIC";
+              const watchLink = isComic
+                ? `/read/${ep.episodeId}`
+                : `/watch/${ep.episodeId}`;
+              const seriesTitle = seriesInfo?.title || "Phim bộ";
 
-            const isComic = ep.contentType === "COMIC";
-            const watchLink = isComic ? `/read/${ep.episodeId}` : `/watch/${ep.episodeId}`;
-            const seriesTitle = seriesInfo?.title || "Phim bộ";
+              return (
+                <div
+                  key={`${session.id}-${index}`}
+                  className="group relative flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#18181c]/80 shadow-lg backdrop-blur-sm transition-all duration-300 hover:border-[#D4AF37]/50 hover:shadow-[0_8px_30px_rgba(212,175,55,0.12)] hover:-translate-y-1"
+                >
+                  {/* Thumbnail Header */}
+                  <div className="relative aspect-video w-full overflow-hidden bg-black/60">
+                    <img
+                      src={displayImage}
+                      alt={ep.title}
+                      className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+                      onError={(e) => {
+                        const target = e.currentTarget;
+                        if (
+                          seriesInfo?.coverUrl &&
+                          target.src !== seriesInfo.coverUrl
+                        ) {
+                          target.src = seriesInfo.coverUrl;
+                        } else if (
+                          seriesInfo?.bannerUrl &&
+                          target.src !== seriesInfo.bannerUrl
+                        ) {
+                          target.src = seriesInfo.bannerUrl;
+                        }
+                      }}
+                    />
 
-            return (
-              <div
-                key={`${session.id}-${index}`}
-                className="group relative bg-neutral-900/70 rounded-xl border border-neutral-800/80 hover:border-neutral-700 overflow-hidden transition-all duration-200 flex flex-col"
-              >
-                {/* Thumbnail Header */}
-                <div className="relative aspect-video w-full bg-neutral-950 overflow-hidden">
-                  <img
-                    src={displayImage}
-                    alt={ep.title}
-                    className="w-full h-full object-cover transition duration-300 group-hover:scale-105"
-                    onError={(e) => {
-                      // Fallback nếu ảnh hỏng
-                      const target = e.currentTarget;
-                      if (seriesInfo?.coverUrl && target.src !== seriesInfo.coverUrl) {
-                        target.src = seriesInfo.coverUrl;
-                      } else if (seriesInfo?.bannerUrl && target.src !== seriesInfo.bannerUrl) {
-                        target.src = seriesInfo.bannerUrl;
-                      }
-                    }}
-                  />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent opacity-80 transition group-hover:opacity-60" />
 
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80 group-hover:opacity-60 transition" />
-
-                  {/* Content Type Badge */}
-                  <div className="absolute top-2.5 left-2.5 z-10">
-                    <span
-                      className={cn(
-                        "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-semibold text-white backdrop-blur-md shadow-sm",
-                        isComic ? "bg-amber-600/90" : "bg-rose-600/90"
-                      )}
-                    >
-                      {isComic ? (
-                        <>
-                          <BookOpen className="w-3 h-3" /> Truyện
-                        </>
-                      ) : (
-                        <>
-                          <Film className="w-3 h-3" /> Video
-                        </>
-                      )}
-                    </span>
-                  </div>
-
-                  {/* Play / Read Overlay Button */}
-                  <Link
-                    href={watchLink}
-                    className="absolute inset-0 z-20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-200 bg-black/40 backdrop-blur-[2px]"
-                  >
-                    <div className="w-12 h-12 rounded-full bg-rose-600 text-white flex items-center justify-center shadow-lg transform scale-90 group-hover:scale-100 transition">
-                      {redirectingId === session.id ? (
-                        <Loader2 className="w-6 h-6 animate-spin" />
-                      ) : isComic ? (
-                        <BookOpen className="w-5 h-5" />
-                      ) : (
-                        <Play className="w-5 h-5 fill-current ml-0.5" />
-                      )}
-                    </div>
-                  </Link>
-                </div>
-
-                {/* Info Content */}
-                <div className="p-3.5 flex-1 flex flex-col justify-between">
-                  <div>
-                    {/* Series Title */}
-                    <div className="text-xs font-medium text-rose-400 truncate mb-0.5">
-                      {seriesTitle}
-                    </div>
-
-                    {/* Episode Title */}
-                    <h3 className="font-semibold text-white text-sm line-clamp-1 group-hover:text-rose-300 transition">
-                      Tập {ep.episodeNumber}: {ep.title}
-                    </h3>
-                  </div>
-
-                  {/* Meta Stats */}
-                  <div className="mt-3 pt-2.5 border-t border-neutral-800/60 flex items-center justify-between text-xs text-neutral-400">
-                    <div className="flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5 text-neutral-500" />
-                      <span>
-                        {isComic
-                          ? session.currentPosition
-                            ? `Trang ${Math.round(session.currentPosition)}`
-                            : `Đã đọc ${formatWatchTime(session.watchDuration)}`
-                          : formatWatchTime(session.watchDuration)}
+                    {/* Content Type Badge */}
+                    <div className="absolute left-3 top-3 z-10">
+                      <span
+                        className={cn(
+                          "inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide backdrop-blur-md border shadow-sm",
+                          isComic
+                            ? "bg-blue-500/20 text-blue-300 border-blue-500/30"
+                            : "bg-red-500/20 text-red-300 border-red-500/30"
+                        )}
+                      >
+                        {isComic ? (
+                          <>
+                            <BookOpen className="h-3 w-3" /> Truyện
+                          </>
+                        ) : (
+                          <>
+                            <Film className="h-3 w-3" /> Video
+                          </>
+                        )}
                       </span>
                     </div>
 
-                    <span className="text-[11px] text-neutral-500">
-                      {formatDate(session.updatedAt)}
-                    </span>
+                    {/* Play / Read Overlay Button */}
+                    <Link
+                      href={watchLink}
+                      className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 opacity-0 backdrop-blur-[2px] transition duration-300 group-hover:opacity-100"
+                    >
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#D4AF37] text-black shadow-[0_0_20px_rgba(212,175,55,0.4)] transition duration-300 transform scale-90 group-hover:scale-100">
+                        {redirectingId === session.id ? (
+                          <Loader2 className="h-6 w-6 animate-spin" />
+                        ) : isComic ? (
+                          <BookOpen className="h-5 w-5" />
+                        ) : (
+                          <Play className="ml-0.5 h-5 w-5 fill-current" />
+                        )}
+                      </div>
+                    </Link>
+                  </div>
+
+                  {/* Info Content */}
+                  <div className="flex flex-1 flex-col justify-between p-4">
+                    <div>
+                      {/* Series Title */}
+                      <div className="mb-1 truncate text-xs font-bold text-[#D4AF37]">
+                        {seriesTitle}
+                      </div>
+
+                      {/* Episode Title */}
+                      <h3 className="line-clamp-1 text-sm font-bold text-white transition group-hover:text-[#D4AF37]">
+                        {isComic ? `Chương ${ep.episodeNumber}: ` : `Tập ${ep.episodeNumber}: `}
+                        {ep.title}
+                      </h3>
+                    </div>
+
+                    {/* Meta Stats */}
+                    <div className="mt-4 flex items-center justify-between border-t border-white/5 pt-3 text-xs text-gray-400">
+                      <div className="flex items-center gap-1.5 text-gray-300 font-medium">
+                        <Clock className="h-3.5 w-3.5 text-[#D4AF37]" />
+                        <span>
+                          {isComic
+                            ? session.currentPosition
+                              ? `Trang ${Math.round(session.currentPosition)}`
+                              : `Đã đọc ${formatWatchTime(session.watchDuration)}`
+                            : formatWatchTime(session.watchDuration)}
+                        </span>
+                      </div>
+
+                      <span className="text-[11px] text-gray-500">
+                        {formatDate(session.updatedAt)}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Infinite Scroll Trigger */}
-      <div ref={observerRef} className="h-10 flex items-center justify-center mt-6">
-        {isFetchingNextPage && (
-          <div className="flex items-center gap-2 text-xs text-neutral-400">
-            <Loader2 className="w-4 h-4 animate-spin text-rose-500" />
-            <span>Đang tải thêm...</span>
+              );
+            })}
           </div>
         )}
-      </div>
+
+        {/* Infinite Scroll Trigger */}
+        <div ref={observerRef} className="mt-8 flex h-10 items-center justify-center">
+          {isFetchingNextPage && (
+            <div className="flex items-center gap-2 text-xs font-semibold text-gray-400">
+              <Loader2 className="h-4 w-4 animate-spin text-[#D4AF37]" />
+              <span>Đang tải thêm...</span>
+            </div>
+          )}
+        </div>
+      </main>
     </div>
   );
 }

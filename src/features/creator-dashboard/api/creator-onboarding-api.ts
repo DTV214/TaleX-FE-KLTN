@@ -11,6 +11,29 @@ export type CreatorTermsVersion = {
   updatedAt?: string | null;
 };
 
+export type CreatorAnalyticData = {
+  likes?: number;
+  views?: number;
+  comments?: number;
+  shares?: number;
+  bookmarks?: number;
+  watchTime?: number;
+};
+
+export type CreatorTierData = {
+  creatorTierId?: string;
+  tierName?: string;
+  tierLevel?: number;
+  minFollowerRequired?: number;
+  minViewsRequired?: number;
+  minWatchTimeRequired?: number;
+  premiumFundShareRatio?: number;
+  directPurchaseShareRatio?: number;
+  isDefault?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
 export type OwnCreatorResponse = {
   creatorId: string;
   accountId?: string;
@@ -24,6 +47,9 @@ export type OwnCreatorResponse = {
   termsVersion?: CreatorTermsVersion | null;
   updatedAt?: string;
   followerCount?: number;
+  followToCount?: number;
+  analyticData?: CreatorAnalyticData;
+  creatorTier?: CreatorTierData;
 };
 
 export type RegisterCreatorResponse = OwnCreatorResponse;
