@@ -10,6 +10,7 @@ import {
   Award,
   Users,
   Eye,
+  Clock,
   Play,
   Loader2,
   Plus,
@@ -35,9 +36,8 @@ import {
 import {
   getOwnCreator,
   creatorOnboardingKeys,
+  type OwnCreatorResponse,
 } from "@/features/creator-dashboard/api/creator-onboarding-api";
-import { getFollowers } from "@/features/series/api/creator-follows-api";
-import { useCoinWallet } from "@/features/coin";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -60,6 +60,22 @@ type TabType = "overview" | "analytics" | "content" | "revenue";
 interface DashboardOverviewViewProps {
   onNavigate: (view: any) => void;
   initialTab?: TabType;
+}
+
+const pad = (n: number) => n.toString().padStart(2, "0");
+
+function formatWatchTime(seconds: number): string {
+  if (seconds <= 0) return "0s";
+  if (seconds < 60) return `${seconds}s`;
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  if (minutes < 60) {
+    return remainingSeconds > 0
+      ? `${minutes}m ${remainingSeconds}s`
+      : `${minutes}m`;
+  }
+  const hours = (seconds / 3600).toFixed(1);
+  return `${hours}h`;
 }
 
 function formatNumber(num: number = 0): string {
@@ -106,25 +122,28 @@ function getStatusBadge(status: string): { label: string; className: string } {
 function OverviewDashboardContent({
   seriesList,
   isLoadingSeries,
-  followerCount,
-  isLoadingFollowers,
-  walletBalance,
-  totalEarned,
-  isLoadingWallet,
+  ownCreatorData,
+  isLoadingOwnCreator,
   onNavigate,
   onNavigateToAnalytics,
 }: {
   seriesList: SeriesResponse[];
   isLoadingSeries: boolean;
-  followerCount: number;
-  isLoadingFollowers: boolean;
-  walletBalance: number;
-  totalEarned: number;
-  isLoadingWallet: boolean;
+  ownCreatorData?: OwnCreatorResponse;
+  isLoadingOwnCreator: boolean;
   onNavigate: (view: any) => void;
   onNavigateToAnalytics: () => void;
 }) {
   const [preset, setPreset] = useState<"7d" | "30d">("7d");
+
+  // Lifetime KPI metrics directly from GET /api/v1/creators/own
+  const totalViews = ownCreatorData?.analyticData?.views ?? 0;
+  const followerCount = ownCreatorData?.followerCount ?? 0;
+  const totalEngagement =
+    (ownCreatorData?.analyticData?.likes || 0) +
+    (ownCreatorData?.analyticData?.comments || 0) +
+    (ownCreatorData?.analyticData?.bookmarks || 0) +
+    (ownCreatorData?.analyticData?.shares || 0);
 
   const queryParams = useMemo(() => {
     const now = new Date();
@@ -174,35 +193,19 @@ function OverviewDashboardContent({
     };
   }, [logs]);
 
-  const totalEngagement =
-    totals.likes +
-    totals.comments +
-    totals.bookmarks +
-    totals.shares +
-    totals.follows;
-
   // Dữ liệu Area Chart (Views, Engagement, Follows) theo N ngày liên tục từ quá khứ đến HÔM NAY
   const areaChartData = useMemo(() => {
     const daysCount = preset === "7d" ? 7 : 30;
     const now = new Date();
-    const pad = (n: number) => n.toString().padStart(2, "0");
-
-    // Index logs by all possible date representations to guarantee today's logs match regardless of UTC/local shift
+    // Index logs by local date
     const logsByDate = new Map<string, any[]>();
     for (const item of logs) {
       if (!item.hourBucket) continue;
       const d = new Date(item.hourBucket);
       const localKey = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-      const utcKey = `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;
-      const rawKey = item.hourBucket.slice(0, 10);
-
-      const keys = Array.from(new Set([localKey, utcKey, rawKey]));
-      for (const k of keys) {
-        if (!k || k.length < 10) continue;
-        const list = logsByDate.get(k) || [];
-        list.push(item);
-        logsByDate.set(k, list);
-      }
+      const list = logsByDate.get(localKey) || [];
+      list.push(item);
+      logsByDate.set(localKey, list);
     }
 
     const result = [];
@@ -213,7 +216,6 @@ function OverviewDashboardContent({
       const dayLabel = `${pad(targetDate.getDate())}/${pad(targetDate.getMonth() + 1)}`;
 
       const itemsForDay = logsByDate.get(key) || [];
-      // De-duplicate items if matched by multiple keys
       const uniqueItemsMap = new Map<string, any>();
       for (const it of itemsForDay) {
         const itemKey = it.creatorLogId || it.hourBucket;
@@ -255,7 +257,7 @@ function OverviewDashboardContent({
     return result;
   }, [logs, preset]);
 
-  // Donut Chart Items (Cơ cấu tương tác)
+  // Donut Chart Items (Cơ cấu tương tác trong kỳ)
   const donutItems = [
     { name: "Thích", value: totals.likes, color: "#f43f5e" },
     { name: "Bình luận", value: totals.comments, color: "#3b82f6" },
@@ -265,8 +267,12 @@ function OverviewDashboardContent({
   ];
 
   const validDonutData = donutItems.filter((d) => d.value > 0);
+  const periodEngagementTotal = donutItems.reduce(
+    (acc, item) => acc + item.value,
+    0,
+  );
 
-  // Top Series Bar Chart Data
+  // Top Series Bar Chart Data (Lượt xem & Thời gian xem)
   const topSeriesChartData = useMemo(() => {
     if (!seriesList.length) return [];
     return [...seriesList]
@@ -277,17 +283,16 @@ function OverviewDashboardContent({
           s.views ??
           s.viewsCount ??
           0;
-        const subscribers =
-          s.totalSubscriptions ??
-          s.totalCreatorFollowers ??
-          s.followersCount ??
-          s.followers ??
+        const watchTime =
+          s.analyticData?.watchTime ??
+          s.totalWatchTime ??
+          s.watchTime ??
           0;
         const titleStr = s.title || s.name || "Tác phẩm";
         return {
           name: titleStr.length > 16 ? titleStr.slice(0, 16) + "..." : titleStr,
           views,
-          subscribers,
+          watchTime,
         };
       })
       .sort((a, b) => b.views - a.views)
@@ -305,16 +310,9 @@ function OverviewDashboardContent({
       if (!item.hourBucket) continue;
       const d = new Date(item.hourBucket);
       const localKey = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-      const utcKey = `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;
-      const rawKey = item.hourBucket.slice(0, 10);
-
-      const keys = Array.from(new Set([localKey, utcKey, rawKey]));
-      for (const k of keys) {
-        if (!k || k.length < 10) continue;
-        const list = logsByDate.get(k) || [];
-        list.push(item);
-        logsByDate.set(k, list);
-      }
+      const list = logsByDate.get(localKey) || [];
+      list.push(item);
+      logsByDate.set(localKey, list);
     }
 
     const result = [];
@@ -367,10 +365,10 @@ function OverviewDashboardContent({
               </span>
             </div>
             <div className="text-2xl font-black text-[#D4AF37]">
-              {logsQuery.isLoading ? (
+              {isLoadingOwnCreator ? (
                 <Loader2 className="h-5 w-5 animate-spin text-[#D4AF37]" />
               ) : (
-                formatNumber(totals.views)
+                formatNumber(totalViews)
               )}
             </div>
             <span className="text-xs text-zinc-500 font-medium block">
@@ -395,7 +393,7 @@ function OverviewDashboardContent({
               </span>
             </div>
             <div className="text-2xl font-black text-white">
-              {isLoadingFollowers ? (
+              {isLoadingOwnCreator ? (
                 <Loader2 className="h-5 w-5 animate-spin text-zinc-400" />
               ) : (
                 formatNumber(followerCount)
@@ -423,7 +421,7 @@ function OverviewDashboardContent({
               </span>
             </div>
             <div className="text-2xl font-black text-white">
-              {logsQuery.isLoading ? (
+              {isLoadingOwnCreator ? (
                 <Loader2 className="h-5 w-5 animate-spin text-zinc-400" />
               ) : (
                 formatNumber(totalEngagement)
@@ -630,9 +628,10 @@ function OverviewDashboardContent({
                         if (active && payload && payload.length) {
                           const item = payload[0];
                           const pct =
-                            totalEngagement > 0
+                            periodEngagementTotal > 0
                               ? Math.round(
-                                  (Number(item.value) / totalEngagement) * 100,
+                                  (Number(item.value) / periodEngagementTotal) *
+                                    100,
                                 )
                               : 0;
                           return (
@@ -667,7 +666,7 @@ function OverviewDashboardContent({
                     Tổng cộng
                   </span>
                   <span className="text-xl font-black text-white">
-                    {formatNumber(totalEngagement)}
+                    {formatNumber(periodEngagementTotal)}
                   </span>
                 </div>
               </div>
@@ -702,7 +701,7 @@ function OverviewDashboardContent({
                 Top Tác Phẩm Nổi Bật
               </h3>
               <p className="text-xs text-zinc-400 font-medium mt-0.5">
-                So sánh lượt xem và lượt người theo dõi giữa các tác phẩm
+                So sánh lượt xem và thời gian xem giữa các tác phẩm
               </p>
             </div>
           </div>
@@ -756,6 +755,15 @@ function OverviewDashboardContent({
                       color: "#fff",
                       fontSize: "12px",
                     }}
+                    formatter={(value: any, name: any) => {
+                      if (name === "Thời gian xem") {
+                        return [
+                          formatWatchTime(Number(value) || 0),
+                          "Thời gian xem",
+                        ];
+                      }
+                      return [formatNumber(Number(value) || 0), name];
+                    }}
                   />
                   <Legend
                     wrapperStyle={{ fontSize: "11px", paddingTop: "8px" }}
@@ -768,9 +776,9 @@ function OverviewDashboardContent({
                     barSize={14}
                   />
                   <Bar
-                    dataKey="subscribers"
-                    fill="#10b981"
-                    name="Người theo dõi"
+                    dataKey="watchTime"
+                    fill="#818cf8"
+                    name="Thời gian xem"
                     radius={[0, 6, 6, 0]}
                     barSize={14}
                   />
@@ -780,19 +788,119 @@ function OverviewDashboardContent({
           )}
         </div>
 
-        {/* Right 1/3: Xu hướng thời gian xem (Watch Time) */}
-        <div className="rounded-[24px] border border-white/10 bg-[#17171a] p-6 shadow-xl flex flex-col space-y-4">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-base font-black text-white flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-indigo-400" />
-                Thời gian khán giả xem
-              </h3>
-              <p className="text-xs text-zinc-400 font-medium mt-0.5">
-                Tổng số phút theo dõi (phút)
-              </p>
+        {/* Right 1/3: Danh sách Tác phẩm gần đây (Xếp dọc) */}
+        <div className="rounded-[24px] border border-white/10 bg-[#17171a] p-6 shadow-xl flex flex-col justify-between space-y-4">
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h3 className="text-base font-black text-white flex items-center gap-2">
+                  <BookOpen size={18} className="text-[#D4AF37]" />
+                  Tác Phẩm Gần Đây
+                </h3>
+                <p className="text-xs text-zinc-400 font-medium mt-0.5">
+                  Đăng tải & cập nhật gần nhất
+                </p>
+              </div>
+              <button
+                onClick={() => onNavigate("series")}
+                className="text-xs font-bold text-[#D4AF37] hover:underline transition flex items-center gap-0.5 cursor-pointer"
+              >
+                Xem tất cả <ChevronRight size={14} />
+              </button>
             </div>
-            <span className="text-xs font-bold text-indigo-400">
+
+            {isLoadingSeries ? (
+              <div className="flex h-56 items-center justify-center text-zinc-500 gap-2">
+                <Loader2 className="h-5 w-5 animate-spin text-[#D4AF37]" />
+              </div>
+            ) : recentSeries.length === 0 ? (
+              <div className="flex h-56 items-center justify-center text-xs text-zinc-500">
+                Chưa có tác phẩm nào
+              </div>
+            ) : (
+              <div className="flex flex-col space-y-2.5">
+                {recentSeries.slice(0, 3).map((item) => {
+                  const badge = getStatusBadge(item.status);
+                  const itemViews =
+                    (item as any).analyticData?.views ??
+                    item.totalViews ??
+                    (item as any).views ??
+                    0;
+                  const itemWatchTime =
+                    (item as any).analyticData?.watchTime ??
+                    (item as any).totalWatchTime ??
+                    (item as any).watchTime ??
+                    0;
+                  return (
+                    <div
+                      key={item.seriesId}
+                      className="flex items-center gap-3 rounded-2xl border border-white/5 bg-white/[0.03] p-2.5 transition hover:border-white/20 hover:bg-white/[0.05]"
+                    >
+                      <div className="relative h-12 w-10 shrink-0 overflow-hidden rounded-xl bg-zinc-800">
+                        {item.coverUrl ? (
+                          <img
+                            src={item.coverUrl}
+                            alt={item.title}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center text-zinc-600">
+                            <Film size={18} />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-1">
+                          <span
+                            className={cn(
+                              "rounded-full border px-1.5 py-0.2 text-[9px] font-bold",
+                              badge.className,
+                            )}
+                          >
+                            {badge.label}
+                          </span>
+                          <span className="text-[10px] text-zinc-500 font-semibold uppercase">
+                            {item.contentType === "COMIC" ? "Comic" : "Video"}
+                          </span>
+                        </div>
+                        <h4 className="text-xs font-bold text-white truncate mt-0.5">
+                          {item.title}
+                        </h4>
+                        <div className="flex items-center gap-3 text-[11px] text-zinc-400 mt-0.5">
+                          <span className="flex items-center gap-1">
+                            <Eye size={11} className="text-[#D4AF37]" />
+                            {formatNumber(itemViews)}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Clock size={11} className="text-indigo-400" />
+                            {formatWatchTime(itemWatchTime)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ================= ROW 4: THỜI GIAN KHÁN GIẢ XEM (FULL WIDTH) ================= */}
+      <div className="rounded-[24px] border border-white/10 bg-[#17171a] p-6 shadow-xl flex flex-col space-y-4">
+        <div className="flex items-center justify-between mb-2">
+          <div>
+            <h3 className="text-base font-black text-white flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-indigo-400" />
+              Thời Gian Khán Giả Xem
+            </h3>
+            <p className="text-xs text-zinc-400 font-medium mt-0.5">
+              Tổng số phút khán giả theo dõi tác phẩm theo từng ngày (phút)
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-zinc-400 font-medium">Tổng thời gian:</span>
+            <span className="rounded-full bg-indigo-500/10 border border-indigo-500/20 px-3 py-1 text-xs font-black text-indigo-400">
               {formatNumber(
                 Math.round(
                   logs.reduce(
@@ -804,209 +912,57 @@ function OverviewDashboardContent({
               phút
             </span>
           </div>
-
-          {logsQuery.isLoading ? (
-            <div className="flex h-56 items-center justify-center text-zinc-500">
-              <Loader2 className="h-5 w-5 animate-spin text-indigo-400" />
-            </div>
-          ) : watchTimeChartData.length === 0 ? (
-            <div className="flex h-56 items-center justify-center text-xs text-zinc-500">
-              Chưa có dữ liệu thời gian xem
-            </div>
-          ) : (
-            <div className="h-64 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={watchTimeChartData}>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="#27272a"
-                    vertical={false}
-                  />
-                  <XAxis
-                    dataKey="day"
-                    stroke="#71717a"
-                    fontSize={10}
-                    tickLine={false}
-                  />
-                  <YAxis
-                    stroke="#71717a"
-                    fontSize={10}
-                    tickLine={false}
-                    width={30}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "#18181b",
-                      borderColor: "#3f3f46",
-                      borderRadius: "14px",
-                      color: "#fff",
-                      fontSize: "12px",
-                    }}
-                    formatter={(val: any) => [`${val} phút`, "Thời gian xem"]}
-                  />
-                  <Bar
-                    dataKey="watchMinutes"
-                    fill="#6366f1"
-                    radius={[4, 4, 0, 0]}
-                    name="Số phút"
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* ================= ROW 4: VÍ XU & THU NHẬP + TÁC PHẨM GẦN ĐÂY ================= */}
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-        {/* Left 1/3: Thẻ Ví Xu & Doanh thu */}
-        <div className="rounded-[24px] border border-amber-500/20 bg-gradient-to-br from-[#1c1811] via-[#17171a] to-[#121214] p-6 shadow-xl flex flex-col justify-between relative overflow-hidden">
-          <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-[#D4AF37]/10 blur-2xl pointer-events-none" />
-
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#D4AF37] flex items-center gap-1.5">
-                <Coins className="h-4 w-4" /> Ví Creator & Doanh thu
-              </span>
-              <span className="rounded-full bg-[#D4AF37]/10 px-2.5 py-0.5 text-[10px] font-bold text-[#D4AF37] border border-[#D4AF37]/20">
-                Live Wallet
-              </span>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <span className="text-xs text-zinc-400 font-medium">
-                  Số dư Xu khả dụng
-                </span>
-                <div className="text-3xl font-black text-white flex items-baseline gap-2 mt-0.5">
-                  {isLoadingWallet ? (
-                    <Loader2 className="h-6 w-6 animate-spin text-[#D4AF37]" />
-                  ) : (
-                    <>
-                      <span>{walletBalance.toLocaleString("vi-VN")}</span>
-                      <span className="text-sm font-bold text-[#D4AF37]">
-                        Xu
-                      </span>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              <div className="pt-3 border-t border-white/10 flex items-center justify-between">
-                <div>
-                  <span className="text-[11px] text-zinc-400 block font-medium">
-                    Tổng thu nhập tích lũy
-                  </span>
-                  <span className="text-base font-bold text-amber-400">
-                    {totalEarned.toLocaleString("vi-VN")} Xu
-                  </span>
-                </div>
-                <div>
-                  <span className="text-[11px] text-zinc-400 block font-medium">
-                    Quy đổi ước tính
-                  </span>
-                  <span className="text-base font-bold text-emerald-400">
-                    {(totalEarned * 100).toLocaleString("vi-VN")} VNĐ
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-6 pt-4 border-t border-white/10 flex items-center gap-3">
-            <button
-              onClick={() => onNavigate("revenue")}
-              className="flex-1 rounded-xl bg-[#D4AF37] py-2.5 text-center text-xs font-black text-zinc-950 shadow-lg hover:bg-[#b8972e] transition"
-            >
-              Chi tiết doanh thu
-            </button>
-          </div>
         </div>
 
-        {/* Right 2/3: Danh sách Tác phẩm mới cập nhật */}
-        <div className="rounded-[24px] border border-white/10 bg-[#17171a] p-6 shadow-xl lg:col-span-2 flex flex-col space-y-4">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-base font-black text-white flex items-center gap-2">
-                <BookOpen size={18} className="text-[#D4AF37]" />
-                Tác Phẩm Gần Đây
-              </h3>
-              <p className="text-xs text-zinc-400 font-medium mt-0.5">
-                Các bộ truyện / phim bạn đã đăng gần nhất
-              </p>
-            </div>
-            <button
-              onClick={() => onNavigate("series")}
-              className="text-xs font-bold text-zinc-400 hover:text-white transition flex items-center gap-1"
-            >
-              Xem tất cả ({seriesList.length}) <ChevronRight size={14} />
-            </button>
+        {logsQuery.isLoading ? (
+          <div className="flex h-56 items-center justify-center text-zinc-500">
+            <Loader2 className="h-5 w-5 animate-spin text-indigo-400" />
           </div>
-
-          {isLoadingSeries ? (
-            <div className="flex h-40 items-center justify-center text-zinc-500">
-              <Loader2 className="h-5 w-5 animate-spin text-[#D4AF37]" />
-            </div>
-          ) : recentSeries.length === 0 ? (
-            <div className="flex h-40 items-center justify-center text-xs text-zinc-500">
-              Chưa có tác phẩm nào
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              {recentSeries.map((item) => {
-                const badge = getStatusBadge(item.status);
-                return (
-                  <div
-                    key={item.seriesId}
-                    className="flex items-center gap-3 rounded-2xl border border-white/5 bg-white/[0.03] p-3 transition hover:border-white/20 hover:bg-white/[0.05]"
-                  >
-                    <div className="relative h-14 w-12 shrink-0 overflow-hidden rounded-xl bg-zinc-800">
-                      {item.coverUrl ? (
-                        <img
-                          src={item.coverUrl}
-                          alt={item.title}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center text-zinc-600">
-                          <Film size={20} />
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-1">
-                        <span
-                          className={cn(
-                            "rounded-full border px-2 py-0.5 text-[9px] font-bold",
-                            badge.className,
-                          )}
-                        >
-                          {badge.label}
-                        </span>
-                        <span className="text-[10px] text-zinc-500 font-semibold uppercase">
-                          {item.contentType === "COMIC" ? "Comic" : "Video"}
-                        </span>
-                      </div>
-                      <h4 className="text-xs font-bold text-white truncate mt-1">
-                        {item.title}
-                      </h4>
-                      <div className="flex items-center gap-3 text-[11px] text-zinc-400 mt-1">
-                        <span className="flex items-center gap-1">
-                          <Eye size={12} className="text-[#D4AF37]" />
-                          {formatNumber(item.totalViews || 0)}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Users size={12} className="text-emerald-400" />
-                          {formatNumber(item.totalSubscriptions || 0)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
+        ) : watchTimeChartData.length === 0 ? (
+          <div className="flex h-56 items-center justify-center text-xs text-zinc-500">
+            Chưa có dữ liệu thời gian xem
+          </div>
+        ) : (
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={watchTimeChartData} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="#27272a"
+                  vertical={false}
+                />
+                <XAxis
+                  dataKey="day"
+                  stroke="#71717a"
+                  fontSize={11}
+                  tickLine={false}
+                />
+                <YAxis
+                  stroke="#71717a"
+                  fontSize={11}
+                  tickLine={false}
+                  width={45}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#18181b",
+                    borderColor: "#3f3f46",
+                    borderRadius: "14px",
+                    color: "#fff",
+                    fontSize: "12px",
+                  }}
+                  formatter={(val: any) => [`${val} phút`, "Thời gian xem"]}
+                />
+                <Bar
+                  dataKey="watchMinutes"
+                  fill="#6366f1"
+                  radius={[6, 6, 0, 0]}
+                  name="Số phút"
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1037,13 +993,6 @@ export function DashboardOverviewView({
     queryFn: getOwnCreator,
   });
 
-  const followersQuery = useQuery({
-    queryKey: ["creator", "overview", "followers"],
-    queryFn: () => getFollowers(0, 100),
-  });
-
-  const walletQuery = useCoinWallet();
-
   const rawSeriesData = seriesQuery.data as any;
   const seriesList: SeriesResponse[] = Array.isArray(rawSeriesData?.content)
     ? rawSeriesData.content
@@ -1053,30 +1002,13 @@ export function DashboardOverviewView({
         ? rawSeriesData
         : [];
 
-  const rawFollowersData = followersQuery.data as any;
-  const followersList = Array.isArray(rawFollowersData?.content)
-    ? rawFollowersData.content
-    : [];
-  const followerCount = Math.max(
-    ownCreatorQuery.data?.followerCount || 0,
-    rawFollowersData?.numberOfElements || 0,
-    followersList.length || 0,
-  );
-  const walletBalance = walletQuery.data?.balance || 0;
-  const totalEarned = walletQuery.data?.totalEarned || 0;
-
   return (
     <div className="w-full pt-0 pb-6 -mt-6">
       <OverviewDashboardContent
         seriesList={seriesList}
         isLoadingSeries={seriesQuery.isLoading}
-        followerCount={followerCount}
-        isLoadingFollowers={
-          followersQuery.isLoading && ownCreatorQuery.isLoading
-        }
-        walletBalance={walletBalance}
-        totalEarned={totalEarned}
-        isLoadingWallet={walletQuery.isLoading}
+        ownCreatorData={ownCreatorQuery.data}
+        isLoadingOwnCreator={ownCreatorQuery.isLoading}
         onNavigate={onNavigate}
         onNavigateToAnalytics={() => {}}
       />
