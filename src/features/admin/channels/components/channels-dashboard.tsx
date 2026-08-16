@@ -138,9 +138,6 @@ export function AdminChannelsDashboard() {
               <h1 className="text-3xl font-bold tracking-tight text-slate-950 backoffice-dark:text-white">
                 Quản Lý Kênh Hiển Thị
               </h1>
-              <p className="mt-2 max-w-3xl text-sm font-medium leading-6 text-slate-500 backoffice-dark:text-white/55">
-                Theo dõi & quản lý các kênh nội dung tổng hợp và kênh đề xuất cá nhân trên TaleX
-              </p>
             </div>
           </div>
 
@@ -313,7 +310,7 @@ export function AdminChannelsDashboard() {
                       {selectedCard.creatorName}
                     </span>
                     <span className="text-xs text-slate-500">
-                      ID: {selectedCard.creatorId || selectedCard.accountId} • {selectedCard.totalCreatorFollowers ?? 0} người theo dõi
+                      {selectedCard.totalCreatorFollowers ?? 0} người theo dõi
                     </span>
                   </div>
                 </div>
@@ -323,7 +320,7 @@ export function AdminChannelsDashboard() {
                   <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-3">
                     <span className="flex items-center gap-1 text-slate-400 mb-1">
                       <Star className="h-3.5 w-3.5 text-amber-500 fill-amber-500" />
-                      Đánh giá trung bình
+                      Rating
                     </span>
                     <span className="font-bold text-slate-900 text-sm">
                       {selectedCard.averageRating != null ? Number(selectedCard.averageRating).toFixed(1) : "N/A"} / 5.0
@@ -353,7 +350,7 @@ export function AdminChannelsDashboard() {
                   <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-3">
                     <span className="flex items-center gap-1 text-slate-400 mb-1">
                       <Calendar className="h-3.5 w-3.5 text-slate-400" />
-                      Cập nhật mới
+                      Cập nhật
                     </span>
                     <span className="font-bold text-slate-900 text-xs">
                       {formatDate(selectedCard.releasedUpdateTime || selectedCard.updatedAt)}

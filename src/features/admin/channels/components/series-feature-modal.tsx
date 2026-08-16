@@ -177,9 +177,6 @@ export function SeriesFeatureModal({
                 </p>
 
                 <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500 backoffice-dark:text-white/60 pt-1">
-                  <span className="flex items-center gap-1 font-mono text-[11px]">
-                    ID: {feature.id}
-                  </span>
                   <span className="flex items-center gap-1">
                     <Calendar className="h-3.5 w-3.5 text-slate-400" />
                     Cập nhật: {formatDate(feature.releasedUpdatedAt)}
@@ -189,25 +186,25 @@ export function SeriesFeatureModal({
                 {/* Categories & Tags */}
                 {((feature.category && feature.category.length > 0) ||
                   (feature.tags && feature.tags.length > 0)) && (
-                  <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                    {feature.category?.map((cat, idx) => (
-                      <span
-                        key={`cat-${idx}`}
-                        className="rounded-md bg-indigo-50 border border-indigo-200 px-2 py-0.5 text-[11px] font-semibold text-indigo-700 backoffice-dark:border-indigo-800/40 backoffice-dark:bg-indigo-950/40 backoffice-dark:text-indigo-300"
-                      >
-                        {cat}
-                      </span>
-                    ))}
-                    {feature.tags?.map((tag, idx) => (
-                      <span
-                        key={`tag-${idx}`}
-                        className="rounded-md bg-slate-100 px-2 py-0.5 text-[11px] text-slate-600 backoffice-dark:bg-white/10 backoffice-dark:text-white/70"
-                      >
-                        #{tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
+                    <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                      {feature.category?.map((cat, idx) => (
+                        <span
+                          key={`cat-${idx}`}
+                          className="rounded-md bg-indigo-50 border border-indigo-200 px-2 py-0.5 text-[11px] font-semibold text-indigo-700 backoffice-dark:border-indigo-800/40 backoffice-dark:bg-indigo-950/40 backoffice-dark:text-indigo-300"
+                        >
+                          {cat}
+                        </span>
+                      ))}
+                      {feature.tags?.map((tag, idx) => (
+                        <span
+                          key={`tag-${idx}`}
+                          className="rounded-md bg-slate-100 px-2 py-0.5 text-[11px] text-slate-600 backoffice-dark:bg-white/10 backoffice-dark:text-white/70"
+                        >
+                          #{tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
               </div>
             </div>
 
@@ -216,14 +213,14 @@ export function SeriesFeatureModal({
               <div className="flex items-center gap-2 mb-3">
                 <Clock className="h-4 w-4 text-indigo-600 backoffice-dark:text-indigo-400" />
                 <h4 className="text-xs font-bold text-slate-900 backoffice-dark:text-white">
-                  Mức Độ Tương Tác Sâu (Engagement Watch Time)
+                  Mức Độ Tương Tác
                 </h4>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="rounded-xl bg-white p-3 border border-indigo-100/80 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/5">
                   <span className="text-[11px] text-slate-500 backoffice-dark:text-white/60 block">
-                    Tổng thời gian xem (All Time)
+                    Tổng thời gian xem
                   </span>
                   <span className="text-base font-extrabold text-indigo-700 backoffice-dark:text-indigo-300 mt-1 block">
                     {formatTime(feature.engagementStats?.totalWatchTime)}
@@ -255,7 +252,7 @@ export function SeriesFeatureModal({
               <div className="flex items-center gap-2">
                 <Activity className="h-4 w-4 text-violet-600 backoffice-dark:text-violet-400" />
                 <h4 className="text-xs font-bold text-slate-900 backoffice-dark:text-white">
-                  Tương Tác Người Dùng & Tỷ Lệ Chuyển Đổi (Interaction Stats)
+                  Tương Tác Người Dùng
                 </h4>
               </div>
 
