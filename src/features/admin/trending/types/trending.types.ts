@@ -11,6 +11,7 @@ export type TrendingConfig = {
   maxImpression: number;
   updatedAt?: string | null;
   gravity: number;
+  confidenceScore?: number;
 };
 
 export type TrendingConfigRequest = {
@@ -19,6 +20,7 @@ export type TrendingConfigRequest = {
   minImpression: number;
   maxImpression: number;
   gravity: number;
+  confidenceScore: number;
 };
 
 export type TrendingCandidateParams = {
