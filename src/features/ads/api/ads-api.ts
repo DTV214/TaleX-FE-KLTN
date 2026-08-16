@@ -150,8 +150,8 @@ export const adsApi = {
   serveAllAds: (slotCode: string) =>
     api.get<{ data: AdServeResponse[] }>(`/api/v1/ads/serve/all?slotCode=${slotCode}`).then((res) => res.data.data),
 
-  trackImpression: (campaignId: string) =>
-    api.post("/api/v1/ads/track/impression", { campaignId }),
+  trackImpression: (campaignId: string, source?: string) =>
+    api.post("/api/v1/ads/track/impression", { campaignId, source }),
 
   trackClick: (campaignId: string) =>
     api.post("/api/v1/ads/track/click", { campaignId }),
