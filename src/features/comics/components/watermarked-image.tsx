@@ -103,7 +103,7 @@ export function WatermarkedImage({
         // Vẽ Viewer ID (Watermark nổi)
         if (accountId) {
           ctx.globalCompositeOperation = "difference"; // Trộn màu tương phản
-          ctx.fillStyle = "rgba(255, 255, 255, 0.04)"; // Chữ mờ tương phản
+          ctx.fillStyle = "rgba(255, 255, 255, 0.02)"; // Độ mờ 2% chuẩn
           ctx.font = "bold 40px sans-serif";
           const textToDraw = `${accountId}`;
           if (canvas.height > 400) {
@@ -123,7 +123,7 @@ export function WatermarkedImage({
 
         // Vẽ Logo Website mờ ở giữa (luôn hiển thị để đánh dấu bản quyền)
         ctx.globalCompositeOperation = "difference";
-        ctx.fillStyle = "rgba(255, 255, 255, 0.08)"; // Độ mờ
+        ctx.fillStyle = "rgba(255, 255, 255, 0.06)"; // Độ mờ 6% chuẩn
         ctx.font = "bold 60px sans-serif";
         const brandText = "talex.pro.vn";
         const brandMetrics = ctx.measureText(brandText);
@@ -220,42 +220,17 @@ export function WatermarkedImage({
     onContextMenu?.(event);
   };
 
-  const isUsingFallback = Boolean(error || !objectUrl);
-
   return (
-    <div className="relative inline-block w-full overflow-hidden" style={style}>
-      {/* eslint-disable-next-line @next/next/no-img-element -- Watermarking needs a canvas-generated blob URL. */}
-      <img
-        {...props}
-        src={srcToUse}
-        alt={props.alt ?? ""}
-        className={`${className ?? ""} select-none`}
-        style={protectedStyle}
-        draggable={!antiPiracyEnabled}
-        onDragStart={handleDragStart}
-        onContextMenu={handleContextMenu}
-      />
-
-      {/* Lớp Watermark Overlay bảo vệ kép: Nếu canvas bị lỗi CORS ở môi trường deploy, watermark vẫn phủ 100% lên ảnh */}
-      {isUsingFallback && (
-        <div className="pointer-events-none absolute inset-0 z-10 flex flex-col justify-between p-6 select-none opacity-20 mix-blend-difference">
-          {accountId && (
-            <div className="text-xs font-mono font-black text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
-              {accountId}
-            </div>
-          )}
-          <div className="flex items-center justify-center">
-            <span className="-rotate-12 font-mono text-xl font-black text-white tracking-widest uppercase">
-              talex.pro.vn
-            </span>
-          </div>
-          {accountId && (
-            <div className="self-end text-xs font-mono font-black text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
-              {accountId}
-            </div>
-          )}
-        </div>
-      )}
-    </div>
+    // eslint-disable-next-line @next/next/no-img-element -- Watermarking needs a canvas-generated blob URL.
+    <img
+      {...props}
+      src={srcToUse}
+      alt={props.alt ?? ""}
+      className={`${className ?? ""} select-none`}
+      style={protectedStyle}
+      draggable={!antiPiracyEnabled}
+      onDragStart={handleDragStart}
+      onContextMenu={handleContextMenu}
+    />
   );
 }
