@@ -2,6 +2,7 @@
 @plugin "tailwindcss-animate";
 
 @custom-variant dark (&:is(.dark *));
+@custom-variant backoffice-dark (&:is(.backoffice-theme-dark *));
 
 /* 
   BƯỚC 1: Khai báo giá trị màu thực tế ở root.
@@ -358,34 +359,28 @@
   }
 
   .backoffice-theme-dark [class~="bg-gray-50"],
-  .backoffice-theme-dark [class~="bg-gray-50/80"],
   .backoffice-theme-dark [class~="bg-slate-50"],
-  .backoffice-theme-dark [class~="bg-slate-50/80"],
-  .backoffice-theme-dark [class~="bg-slate-50/30"] {
-    background-color: var(--backoffice-surface-2) !important;
+  .backoffice-theme-dark [class~="bg-emerald-50"],
+  .backoffice-theme-dark [class~="bg-indigo-50"],
+  .backoffice-theme-dark [class~="bg-violet-50"],
+  .backoffice-theme-dark [class~="bg-amber-50"],
+  .backoffice-theme-dark [class~="bg-sky-50"],
+  .backoffice-theme-dark [class~="bg-blue-50"],
+  .backoffice-theme-dark [class~="bg-orange-50"],
+  .backoffice-theme-dark [class~="bg-red-50"],
+  .backoffice-theme-dark [class~="bg-[#ECFDF5]"],
+  .backoffice-theme-dark [class~="bg-[#E5FAFF]"],
+  .backoffice-theme-dark [class~="bg-[#F3F0FF]"],
+  .backoffice-theme-dark [class~="bg-[#E6F6F4]"],
+  .backoffice-theme-dark [class~="bg-[#E6F7F9]"] {
+    background-color: rgba(255, 255, 255, 0.035) !important;
   }
 
   .backoffice-theme-dark [class~="bg-gray-100"],
   .backoffice-theme-dark [class~="bg-slate-100"],
   .backoffice-theme-dark [class~="bg-gray-200"],
   .backoffice-theme-dark [class~="bg-slate-200"] {
-    background-color: var(--backoffice-surface-3) !important;
-  }
-
-  .backoffice-theme-dark [class~="bg-violet-50"],
-  .backoffice-theme-dark [class~="bg-[#ECFDF5]"],
-  .backoffice-theme-dark [class~="bg-[#E5FAFF]"],
-  .backoffice-theme-dark [class~="bg-[#F3F0FF]"],
-  .backoffice-theme-dark [class~="bg-[#E6F6F4]"],
-  .backoffice-theme-dark [class~="bg-[#E6F7F9]"] {
-    background-color: rgba(212, 175, 55, 0.12) !important;
-  }
-
-  .backoffice-theme-dark [class~="bg-blue-50"],
-  .backoffice-theme-dark [class~="bg-amber-50"],
-  .backoffice-theme-dark [class~="bg-orange-50"],
-  .backoffice-theme-dark [class~="bg-red-50"] {
-    background-color: rgba(255, 255, 255, 0.055) !important;
+    background-color: rgba(255, 255, 255, 0.06) !important;
   }
 
   .backoffice-theme-dark [class~="text-gray-900"],

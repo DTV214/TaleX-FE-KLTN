@@ -175,13 +175,13 @@ function AdminNavLink({
         isSidebarOpen ? "justify-start gap-3 px-4" : "justify-center px-0"
       } ${
         isActive
-          ? "bg-violet-50 text-violet-600"
-          : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+          ? "bg-violet-50 text-violet-600 backoffice-dark:bg-white/10 backoffice-dark:text-white font-semibold"
+          : "text-slate-700 hover:bg-slate-100 hover:text-slate-900 backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/5 backoffice-dark:hover:text-white"
       }`}
     >
       <Icon
         className={`h-5 w-5 shrink-0 ${
-          isActive ? "text-violet-600" : "text-slate-400"
+          isActive ? "text-violet-600 backoffice-dark:text-violet-400" : "text-slate-400 backoffice-dark:text-white/40"
         }`}
       />
       <span
@@ -231,17 +231,17 @@ function AdminNavGroup({
         onClick={() => setIsOpen((open) => !open)}
         title={label}
         aria-expanded={isOpen}
-        className={`flex w-full items-center rounded-lg py-3 text-sm font-medium transition-all duration-300 ${
+        className={`flex w-full items-center rounded-lg py-3 text-sm font-medium transition-all duration-300 cursor-pointer ${
           isSidebarOpen ? "justify-start gap-3 px-4" : "justify-center px-0"
         } ${
           isActive
-            ? "bg-violet-50 text-violet-600"
-            : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+            ? "bg-violet-50 text-violet-600 backoffice-dark:bg-white/10 backoffice-dark:text-white font-semibold"
+            : "text-slate-700 hover:bg-slate-100 hover:text-slate-900 backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/5 backoffice-dark:hover:text-white"
         }`}
       >
         <Icon
           className={`h-5 w-5 shrink-0 ${
-            isActive ? "text-violet-600" : "text-slate-400"
+            isActive ? "text-violet-600 backoffice-dark:text-violet-400" : "text-slate-400 backoffice-dark:text-white/40"
           }`}
         />
         <span
@@ -284,13 +284,13 @@ function AdminNavGroup({
                       : "justify-center px-0"
                   } ${
                     itemActive
-                      ? "bg-violet-50 text-violet-600"
-                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                      ? "bg-violet-50 text-violet-600 backoffice-dark:bg-white/10 backoffice-dark:text-white font-semibold"
+                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 backoffice-dark:text-white/60 backoffice-dark:hover:bg-white/5 backoffice-dark:hover:text-white"
                   }`}
                 >
                   <ItemIcon
                     className={`h-4 w-4 shrink-0 ${
-                      itemActive ? "text-violet-600" : "text-slate-400"
+                      itemActive ? "text-violet-600 backoffice-dark:text-violet-400" : "text-slate-400 backoffice-dark:text-white/40"
                     }`}
                   />
                   <span
@@ -356,7 +356,7 @@ export function AdminSidebar() {
 
   return (
     <aside
-      className={`hidden h-[calc(100vh-64px)] flex-shrink-0 flex-col overflow-x-hidden overflow-y-auto border-r border-slate-100 bg-white py-4 transition-all duration-300 ease-in-out lg:flex ${sidebarScrollbarClass} ${
+      className={`hidden h-[calc(100vh-64px)] flex-shrink-0 flex-col overflow-x-hidden overflow-y-auto border-r border-slate-100 bg-white py-4 transition-all duration-300 ease-in-out lg:flex backoffice-dark:border-white/10 backoffice-dark:bg-transparent ${sidebarScrollbarClass} ${
         isSidebarOpen ? "w-[260px] px-4" : "w-[80px] px-2"
       }`}
     >
@@ -446,15 +446,15 @@ export function AdminSidebar() {
       </nav>
 
       <div className="mt-auto flex flex-col gap-4">
-        <div className="space-y-1 border-t border-slate-100 pt-4">
+        <div className="space-y-1 border-t border-slate-100 pt-4 backoffice-dark:border-white/10">
           <Link
             href="/"
-            className={`flex w-full items-center rounded-lg py-2.5 text-sm font-medium text-slate-600 transition-all hover:bg-slate-100 hover:text-slate-900 ${
+            className={`flex w-full items-center rounded-lg py-2.5 text-sm font-medium text-slate-600 transition-all hover:bg-slate-100 hover:text-slate-900 backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/5 backoffice-dark:hover:text-white ${
               isSidebarOpen ? "justify-start gap-3 px-4" : "justify-center px-0"
             }`}
             title="Về Trang Chủ"
           >
-            <Home className="h-5 w-5 shrink-0 text-slate-400" />
+            <Home className="h-5 w-5 shrink-0 text-slate-400 backoffice-dark:text-white/40" />
             <span
               className={`truncate whitespace-nowrap transition-all duration-200 ${
                 isSidebarOpen
@@ -468,12 +468,12 @@ export function AdminSidebar() {
 
           <Link
             href="/admin/support"
-            className={`flex w-full items-center rounded-lg py-2.5 text-sm font-medium text-slate-600 transition-all hover:bg-slate-100 hover:text-slate-900 ${
+            className={`flex w-full items-center rounded-lg py-2.5 text-sm font-medium text-slate-600 transition-all hover:bg-slate-100 hover:text-slate-900 backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/5 backoffice-dark:hover:text-white ${
               isSidebarOpen ? "justify-start gap-3 px-4" : "justify-center px-0"
             }`}
             title="Hỗ Trợ"
           >
-            <Settings className="h-5 w-5 shrink-0 text-slate-400" />
+            <Settings className="h-5 w-5 shrink-0 text-slate-400 backoffice-dark:text-white/40" />
             <span
               className={`truncate whitespace-nowrap transition-all duration-200 ${
                 isSidebarOpen
@@ -487,12 +487,12 @@ export function AdminSidebar() {
           <button
             type="button"
             onClick={handleLogout}
-            className={`flex w-full items-center rounded-lg py-2.5 text-sm font-medium text-slate-600 transition-all hover:bg-red-50 hover:text-red-600 ${
+            className={`flex w-full items-center rounded-lg py-2.5 text-sm font-medium text-slate-600 transition-all hover:bg-red-50 hover:text-red-600 backoffice-dark:text-white/70 backoffice-dark:hover:bg-red-500/10 backoffice-dark:hover:text-red-400 cursor-pointer ${
               isSidebarOpen ? "justify-start gap-3 px-4" : "justify-center px-0"
             }`}
             title="Đăng xuất"
           >
-            <LogOut className="h-5 w-5 shrink-0 text-slate-400" />
+            <LogOut className="h-5 w-5 shrink-0 text-slate-400 backoffice-dark:text-white/40" />
             <span
               className={`truncate whitespace-nowrap transition-all duration-200 ${
                 isSidebarOpen

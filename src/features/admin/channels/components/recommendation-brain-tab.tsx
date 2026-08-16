@@ -8,7 +8,7 @@ import {
   useRankCandidates,
   useDownloadTrainData,
 } from "../hooks/use-admin-channels";
-import type { RankCandidatesResponse } from "../types/channels.types";
+import type { RankCandidatesResponse, TrainInitResponse } from "../types/channels.types";
 import {
   Brain,
   Zap,
@@ -53,6 +53,8 @@ export function RecommendationBrainTab() {
     "SERIES_DEMO_001, SERIES_DEMO_002, SERIES_DEMO_003, SERIES_DEMO_004, SERIES_DEMO_005"
   );
   const [rankingResult, setRankingResult] = useState<RankCandidatesResponse | null>(null);
+  const [trainInitResult, setTrainInitResult] = useState<TrainInitResponse | null>(null);
+  const [trainInitRealResult, setTrainInitRealResult] = useState<TrainInitResponse | null>(null);
 
   // Mutations
   const trainInitMutation = useTrainInit();
@@ -63,22 +65,23 @@ export function RecommendationBrainTab() {
   // Handler: Trigger Train Init (Mock Data)
   const handleTrainInit = async () => {
     setActiveLog({
-      title: "POST /api/v1/recommendations/train-init",
+      title: "POST /api/v1/recommendations/model/train-init",
       status: "loading",
       timestamp: new Date().toLocaleTimeString("vi-VN"),
     });
 
     try {
-      const res = await trainInitMutation.mutateAsync(token);
+      const res = await trainInitMutation.mutateAsync();
+      setTrainInitResult(res);
       setActiveLog({
-        title: "POST /api/v1/recommendations/train-init",
+        title: "POST /api/v1/recommendations/model/train-init",
         status: "success",
         timestamp: new Date().toLocaleTimeString("vi-VN"),
         data: res,
       });
     } catch (err) {
       setActiveLog({
-        title: "POST /api/v1/recommendations/train-init",
+        title: "POST /api/v1/recommendations/model/train-init",
         status: "error",
         timestamp: new Date().toLocaleTimeString("vi-VN"),
         error: err instanceof Error ? err.message : "Thao tác khởi tạo thất bại",
@@ -86,25 +89,26 @@ export function RecommendationBrainTab() {
     }
   };
 
-  // Handler: Trigger Train Init Real (Supabase DB + MongoDB Atlas)
+  // Handler: Trigger Train Init Real (PostgreSQL + MongoDB Atlas)
   const handleTrainInitReal = async () => {
     setActiveLog({
-      title: "POST /api/v1/recommendations/train-init-real",
+      title: `POST /api/v1/recommendations/model/train-init-real?maxSamples=${maxSamples}`,
       status: "loading",
       timestamp: new Date().toLocaleTimeString("vi-VN"),
     });
 
     try {
-      const res = await trainInitRealMutation.mutateAsync({ token, maxSamples });
+      const res = await trainInitRealMutation.mutateAsync(maxSamples);
+      setTrainInitRealResult(res);
       setActiveLog({
-        title: "POST /api/v1/recommendations/train-init-real",
+        title: `POST /api/v1/recommendations/model/train-init-real?maxSamples=${maxSamples}`,
         status: "success",
         timestamp: new Date().toLocaleTimeString("vi-VN"),
         data: res,
       });
     } catch (err) {
       setActiveLog({
-        title: "POST /api/v1/recommendations/train-init-real",
+        title: `POST /api/v1/recommendations/model/train-init-real?maxSamples=${maxSamples}`,
         status: "error",
         timestamp: new Date().toLocaleTimeString("vi-VN"),
         error: err instanceof Error ? err.message : "Huấn luyện từ dữ liệu thực thất bại",
@@ -115,22 +119,31 @@ export function RecommendationBrainTab() {
   // Handler: Download Train Data Excel
   const handleDownloadTrainData = async () => {
     setActiveLog({
-      title: "GET /api/v1/recommendations/train-data/download",
+      title: "GET /api/v1/recommendations/model/train-data/download",
       status: "loading",
       timestamp: new Date().toLocaleTimeString("vi-VN"),
     });
 
     try {
-      await downloadTrainDataMutation.mutateAsync();
+      const blob = await downloadTrainDataMutation.mutateAsync();
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "train_data.xlsx");
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode?.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
       setActiveLog({
-        title: "GET /api/v1/recommendations/train-data/download",
+        title: "GET /api/v1/recommendations/model/train-data/download",
         status: "success",
         timestamp: new Date().toLocaleTimeString("vi-VN"),
         data: { message: "Đã tải xuống thành công tập dữ liệu train_data.xlsx" },
       });
     } catch (err) {
       setActiveLog({
-        title: "GET /api/v1/recommendations/train-data/download",
+        title: "GET /api/v1/recommendations/model/train-data/download",
         status: "error",
         timestamp: new Date().toLocaleTimeString("vi-VN"),
         error: err instanceof Error ? err.message : "Tải tập dữ liệu thất bại",
@@ -228,7 +241,7 @@ export function RecommendationBrainTab() {
                 File Model Storage
               </div>
               <p className="text-xs font-bold text-emerald-200 mt-1 truncate">
-                data/lgb_ranking_model.txt
+                {trainInitResult?.model_saved_at || "data/lgb_ranking_model.txt"}
               </p>
             </div>
           </div>
@@ -238,44 +251,64 @@ export function RecommendationBrainTab() {
       {/* 2. Control Cards Grid: Train Init, Train Init Real, Download Dataset */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* CARD 1: Train Init (Mock Data) */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm flex flex-col justify-between hover:shadow-md transition-all">
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm flex flex-col justify-between hover:shadow-md transition-all backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.03]">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-100 text-violet-700 font-bold border border-violet-200">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-100 text-violet-700 font-bold border border-violet-200 backoffice-dark:border-violet-800/40 backoffice-dark:bg-violet-950/40 backoffice-dark:text-violet-300">
                 <RotateCcw className="h-5 w-5" />
               </div>
-              <span className="rounded-full bg-violet-50 px-2.5 py-1 text-[11px] font-bold text-violet-700 border border-violet-200">
+              <span className="rounded-full bg-violet-50 px-2.5 py-1 text-[11px] font-bold text-violet-700 border border-violet-200 backoffice-dark:bg-violet-950/50 backoffice-dark:text-violet-300 backoffice-dark:border-violet-800">
                 Mock Pipeline
               </span>
             </div>
 
             <div>
-              <h3 className="text-base font-bold text-slate-900">
+              <h3 className="text-base font-bold text-slate-900 backoffice-dark:text-white">
                 Khởi Tạo Dữ Liệu Mẫu
               </h3>
-              <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+              <p className="text-xs text-slate-500 backoffice-dark:text-white/60 mt-1 leading-relaxed">
                 Khởi tạo 12,000 mẫu dữ liệu sinh tự động bởi AI bao gồm các giả định về thói quen và lựa chọn của người dùng. Được sử dụng khi hệ thống chưa có đủ dữ liệu.
               </p>
             </div>
 
-            <div className="rounded-xl bg-slate-50 p-3 border border-slate-100 space-y-1.5">
+            <div className="rounded-xl bg-slate-50 p-3 border border-slate-100 space-y-1.5 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
               <div className="flex justify-between text-xs">
-                <span className="text-slate-500">Mẫu khởi tạo:</span>
-                <span className="font-bold text-slate-800">12,000 samples</span>
+                <span className="text-slate-500 backoffice-dark:text-white/50">Mẫu khởi tạo:</span>
+                <span className="font-bold text-slate-800 backoffice-dark:text-white">
+                  {trainInitResult?.total_samples_generated != null
+                    ? `${trainInitResult.total_samples_generated.toLocaleString()} samples`
+                    : "12,000 samples"}
+                </span>
               </div>
               <div className="flex justify-between text-xs">
-                <span className="text-slate-500">Mô hình:</span>
-                <span className="font-semibold text-violet-600">LightGBM Model</span>
+                <span className="text-slate-500 backoffice-dark:text-white/50">Mô hình:</span>
+                <span className="font-semibold text-violet-600 backoffice-dark:text-violet-300">LightGBM Model</span>
               </div>
+              {trainInitResult?.model_saved_at && (
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-500 backoffice-dark:text-white/50">File model:</span>
+                  <span className="font-mono text-[11px] text-emerald-600 backoffice-dark:text-emerald-400 truncate max-w-[150px]">
+                    {trainInitResult.model_saved_at}
+                  </span>
+                </div>
+              )}
+              {trainInitResult?.status && (
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-500 backoffice-dark:text-white/50">Trạng thái:</span>
+                  <span className="font-bold text-emerald-600 backoffice-dark:text-emerald-400">
+                    {trainInitResult.status}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 
-          <div className="mt-6 pt-4 border-t border-slate-100">
+          <div className="mt-6 pt-4 border-t border-slate-100 backoffice-dark:border-white/10">
             <button
               type="button"
               onClick={handleTrainInit}
               disabled={trainInitMutation.isPending}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-violet-200 transition-all hover:bg-violet-700 active:scale-95 disabled:opacity-50"
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-violet-200 transition-all hover:bg-violet-700 active:scale-95 disabled:opacity-50 cursor-pointer"
             >
               {trainInitMutation.isPending ? (
                 <RotateCcw className="h-4 w-4 animate-spin" />
@@ -288,34 +321,34 @@ export function RecommendationBrainTab() {
         </div>
 
         {/* CARD 2: Train Init Real (Dữ Liệu Thực Tế) */}
-        <div className="rounded-2xl border border-indigo-200 bg-gradient-to-b from-indigo-50/50 to-white p-6 shadow-sm flex flex-col justify-between hover:shadow-md transition-all">
+        <div className="rounded-2xl border border-indigo-200 bg-gradient-to-b from-indigo-50/50 to-white p-6 shadow-sm flex flex-col justify-between hover:shadow-md transition-all backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.03] backoffice-dark:from-transparent backoffice-dark:to-transparent">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-white font-bold shadow-md shadow-indigo-200">
                 <Database className="h-5 w-5" />
               </div>
-              <span className="rounded-full bg-indigo-100 px-2.5 py-1 text-[11px] font-bold text-indigo-700 border border-indigo-200">
+              <span className="rounded-full bg-indigo-100 px-2.5 py-1 text-[11px] font-bold text-indigo-700 border border-indigo-200 backoffice-dark:bg-indigo-950/50 backoffice-dark:text-indigo-300 backoffice-dark:border-indigo-800">
                 Real DB Pipeline
               </span>
             </div>
 
             <div>
-              <h3 className="text-base font-bold text-slate-900">
+              <h3 className="text-base font-bold text-slate-900 backoffice-dark:text-white">
                 Đồng Bộ Dữ Liệu Thực
               </h3>
-              <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+              <p className="text-xs text-slate-500 backoffice-dark:text-white/60 mt-1 leading-relaxed">
                 Lấy dữ liệu thực từ Database. Trích xuất thói quen người dùng, đặc điểm mô tả của các series, huấn luyện và xuất tập dữ liệu Excel/CSV.
               </p>
             </div>
 
             {/* Parameter: max_samples */}
-            <div className="space-y-2 rounded-xl bg-white p-3 border border-indigo-100 shadow-inner">
+            <div className="space-y-2 rounded-xl bg-white p-3 border border-indigo-100 shadow-inner backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
               <div className="flex items-center justify-between text-xs">
-                <label htmlFor="max-samples-slider" className="font-semibold text-slate-700 flex items-center gap-1">
-                  <Sliders className="h-3.5 w-3.5 text-indigo-600" />
+                <label htmlFor="max-samples-slider" className="font-semibold text-slate-700 backoffice-dark:text-white flex items-center gap-1">
+                  <Sliders className="h-3.5 w-3.5 text-indigo-600 backoffice-dark:text-indigo-400" />
                   Max Samples:
                 </label>
-                <span className="font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md">
+                <span className="font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md backoffice-dark:bg-indigo-950/50 backoffice-dark:text-indigo-300">
                   {maxSamples.toLocaleString("vi-VN")}
                 </span>
               </div>
@@ -327,17 +360,46 @@ export function RecommendationBrainTab() {
                 step={1000}
                 value={maxSamples}
                 onChange={(e) => setMaxSamples(Number(e.target.value))}
-                className="w-full accent-indigo-600 h-1.5 bg-slate-200 rounded-lg cursor-pointer"
+                className="w-full accent-indigo-600 h-1.5 bg-slate-200 backoffice-dark:bg-white/10 rounded-lg cursor-pointer"
               />
             </div>
+
+            {trainInitRealResult && (
+              <div className="rounded-xl bg-indigo-50/70 p-3 border border-indigo-100 space-y-1.5 text-xs animate-in fade-in backoffice-dark:border-white/10 backoffice-dark:bg-indigo-950/20">
+                {trainInitRealResult.total_samples_generated != null && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-500 backoffice-dark:text-white/50">Mẫu thực tế:</span>
+                    <span className="font-bold text-indigo-900 backoffice-dark:text-indigo-200">
+                      {trainInitRealResult.total_samples_generated.toLocaleString()} dòng dữ liệu
+                    </span>
+                  </div>
+                )}
+                {trainInitRealResult.model_saved_at && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-500 backoffice-dark:text-white/50">File model:</span>
+                    <span className="font-mono text-[11px] text-indigo-700 backoffice-dark:text-indigo-300 truncate max-w-[150px]">
+                      {trainInitRealResult.model_saved_at}
+                    </span>
+                  </div>
+                )}
+                {trainInitRealResult.status && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-500 backoffice-dark:text-white/50">Trạng thái:</span>
+                    <span className="font-bold text-emerald-600 backoffice-dark:text-emerald-400">
+                      {trainInitRealResult.status}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
-          <div className="mt-6 pt-4 border-t border-indigo-100">
+          <div className="mt-6 pt-4 border-t border-indigo-100 backoffice-dark:border-white/10">
             <button
               type="button"
               onClick={handleTrainInitReal}
               disabled={trainInitRealMutation.isPending}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-indigo-200 transition-all hover:bg-indigo-700 active:scale-95 disabled:opacity-50"
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-indigo-200 transition-all hover:bg-indigo-700 active:scale-95 disabled:opacity-50 cursor-pointer"
             >
               {trainInitRealMutation.isPending ? (
                 <RotateCcw className="h-4 w-4 animate-spin" />
@@ -350,44 +412,46 @@ export function RecommendationBrainTab() {
         </div>
 
         {/* CARD 3: Download Train Data (Excel Export) */}
-        <div className="rounded-2xl border border-emerald-200 bg-gradient-to-b from-emerald-50/50 to-white p-6 shadow-sm flex flex-col justify-between hover:shadow-md transition-all">
+        <div className="rounded-2xl border border-emerald-200 bg-gradient-to-b from-emerald-50/50 to-white p-6 shadow-sm flex flex-col justify-between hover:shadow-md transition-all backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.03] backoffice-dark:from-transparent backoffice-dark:to-transparent">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600 text-white font-bold shadow-md shadow-emerald-200">
                 <FileSpreadsheet className="h-5 w-5" />
               </div>
-              <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-bold text-emerald-700 border border-emerald-200">
+              <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-bold text-emerald-700 border border-emerald-200 backoffice-dark:bg-emerald-950/50 backoffice-dark:text-emerald-300 backoffice-dark:border-emerald-800">
                 Excel File (.xlsx)
               </span>
             </div>
 
             <div>
-              <h3 className="text-base font-bold text-slate-900">
+              <h3 className="text-base font-bold text-slate-900 backoffice-dark:text-white">
                 Tải Tập Dữ Liệu Huấn Luyện
               </h3>
-              <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+              <p className="text-xs text-slate-500 backoffice-dark:text-white/60 mt-1 leading-relaxed">
                 Tải xuống file tập dữ liệu huấn luyện dạng Excel từ server (`train_data.xlsx`) để phục vụ phân tích hoặc kiểm định offline.
               </p>
             </div>
 
-            <div className="rounded-xl bg-white p-3 border border-emerald-100 space-y-1.5">
+            <div className="rounded-xl bg-white p-3 border border-emerald-100 space-y-1.5 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
               <div className="flex justify-between text-xs">
-                <span className="text-slate-500">Định dạng file:</span>
-                <span className="font-bold text-emerald-700">Microsoft Excel (.xlsx)</span>
+                <span className="text-slate-500 backoffice-dark:text-white/50">Định dạng file:</span>
+                <span className="font-bold text-emerald-700 backoffice-dark:text-emerald-300">Microsoft Excel (.xlsx)</span>
               </div>
               <div className="flex justify-between text-xs">
-                <span className="text-slate-500">Endpoint:</span>
-                <span className="text-[11px] text-slate-600">/recommendations/train-data/download</span>
+                <span className="text-slate-500 backoffice-dark:text-white/50">Endpoint:</span>
+                <span className="text-[11px] text-slate-600 backoffice-dark:text-white/70 truncate max-w-[200px]">
+                  /api/v1/recommendations/model/train-data/download
+                </span>
               </div>
             </div>
           </div>
 
-          <div className="mt-6 pt-4 border-t border-emerald-100">
+          <div className="mt-6 pt-4 border-t border-emerald-100 backoffice-dark:border-white/10">
             <button
               type="button"
               onClick={handleDownloadTrainData}
               disabled={downloadTrainDataMutation.isPending}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-emerald-200 transition-all hover:bg-emerald-700 active:scale-95 disabled:opacity-50"
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-emerald-200 transition-all hover:bg-emerald-700 active:scale-95 disabled:opacity-50 cursor-pointer"
             >
               {downloadTrainDataMutation.isPending ? (
                 <RotateCcw className="h-4 w-4 animate-spin" />
@@ -401,23 +465,23 @@ export function RecommendationBrainTab() {
       </div>
 
       {/* 3. Candidate Ranking Lab Section */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-6 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.03]">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4 backoffice-dark:border-white/10">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-700 font-bold border border-amber-200">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-700 font-bold border border-amber-200 backoffice-dark:border-amber-800/40 backoffice-dark:bg-amber-950/40 backoffice-dark:text-amber-300">
               <TrendingUp className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-900">
+              <h3 className="text-base font-bold text-slate-900 backoffice-dark:text-white">
                 Phòng Thử Nghiệm Candidate Ranking Lab
               </h3>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500 backoffice-dark:text-white/60">
                 Gửi trực tiếp danh sách ứng viên tới endpoint `POST /api/v1/recommendations/rank` để xem điểm AI Score và xếp hạng
               </p>
             </div>
           </div>
 
-          <span className="self-start sm:self-auto rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">
+          <span className="self-start sm:self-auto rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700 backoffice-dark:bg-white/10 backoffice-dark:text-white/80">
             AI Inference Lab
           </span>
         </div>
@@ -427,14 +491,14 @@ export function RecommendationBrainTab() {
           <div className="space-y-4 lg:col-span-1">
             {/* Account Selector */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                <User className="h-3.5 w-3.5 text-violet-600" />
+              <label className="text-xs font-bold text-slate-700 backoffice-dark:text-white flex items-center gap-1.5">
+                <User className="h-3.5 w-3.5 text-violet-600 backoffice-dark:text-violet-400" />
                 Chọn Tài Khoản Người Dùng:
               </label>
               <select
                 value={selectedAccountId}
                 onChange={(e) => setSelectedAccountId(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-800 outline-none focus:border-violet-500 focus:bg-white transition-all"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-800 outline-none focus:border-violet-500 focus:bg-white transition-all backoffice-dark:border-white/10 backoffice-dark:bg-slate-900 backoffice-dark:text-white"
               >
                 <option value="">-- Chọn User (Default account) --</option>
                 {accounts?.map((acc) => (
@@ -447,8 +511,8 @@ export function RecommendationBrainTab() {
 
             {/* Candidate Series IDs Input */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                <Layers className="h-3.5 w-3.5 text-violet-600" />
+              <label className="text-xs font-bold text-slate-700 backoffice-dark:text-white flex items-center gap-1.5">
+                <Layers className="h-3.5 w-3.5 text-violet-600 backoffice-dark:text-violet-400" />
                 Candidate Series IDs (Phân cách bằng dấu phẩy):
               </label>
               <textarea
@@ -456,7 +520,7 @@ export function RecommendationBrainTab() {
                 value={candidateIdsInput}
                 onChange={(e) => setCandidateIdsInput(e.target.value)}
                 placeholder="SERIES_001, SERIES_002, SERIES_003..."
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-800 outline-none focus:border-violet-500 focus:bg-white transition-all"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-800 outline-none focus:border-violet-500 focus:bg-white transition-all backoffice-dark:border-white/10 backoffice-dark:bg-slate-900 backoffice-dark:text-white"
               />
             </div>
 
@@ -464,7 +528,7 @@ export function RecommendationBrainTab() {
               type="button"
               onClick={handleRankCandidates}
               disabled={rankCandidatesMutation.isPending}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-amber-600 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-amber-200 transition-all hover:bg-amber-700 active:scale-95 disabled:opacity-50"
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-amber-600 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-amber-200 transition-all hover:bg-amber-700 active:scale-95 disabled:opacity-50 cursor-pointer"
             >
               {rankCandidatesMutation.isPending ? (
                 <RotateCcw className="h-4 w-4 animate-spin" />
@@ -476,14 +540,14 @@ export function RecommendationBrainTab() {
           </div>
 
           {/* Results Output View */}
-          <div className="lg:col-span-2 rounded-xl border border-slate-200 bg-slate-50/50 p-4 space-y-4">
+          <div className="lg:col-span-2 rounded-xl border border-slate-200 bg-slate-50/50 p-4 space-y-4 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.02]">
             <div className="flex items-center justify-between">
-              <h4 className="text-xs font-bold text-slate-700 flex items-center gap-2">
+              <h4 className="text-xs font-bold text-slate-700 backoffice-dark:text-white flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-amber-500" />
                 Kết Quả Xếp Hạng Candidate Model:
               </h4>
               {rankingResult && (
-                <span className="text-[11px] text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                <span className="text-[11px] text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 backoffice-dark:bg-emerald-950/50 backoffice-dark:text-emerald-300 backoffice-dark:border-emerald-800">
                   HTTP 200 OK
                 </span>
               )}
@@ -491,9 +555,9 @@ export function RecommendationBrainTab() {
 
             {rankingResult ? (
               <div className="space-y-3">
-                <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+                <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white backoffice-dark:border-white/10 backoffice-dark:bg-white/5">
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-100 font-semibold text-slate-700 border-b border-slate-200">
+                    <thead className="bg-slate-100 font-semibold text-slate-700 border-b border-slate-200 backoffice-dark:bg-slate-800 backoffice-dark:text-white/80 backoffice-dark:border-white/10">
                       <tr>
                         <th className="p-3 w-16">Hạng</th>
                         <th className="p-3">Candidate Series ID</th>
@@ -501,7 +565,7 @@ export function RecommendationBrainTab() {
                         <th className="p-3 w-40">Trực Quan Hóa</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 text-slate-800">
+                    <tbody className="divide-y divide-slate-100 text-slate-800 backoffice-dark:divide-white/10 backoffice-dark:text-white/80">
                       {(
                         rankingResult.rankedCandidates ||
                         rankingResult.ranked_candidates ||
@@ -511,29 +575,29 @@ export function RecommendationBrainTab() {
                         const scoreVal = typeof item.score === "number" ? item.score : 0.5;
                         const scorePct = Math.min(Math.max(Math.round(scoreVal * 100), 0), 100);
                         return (
-                          <tr key={item.seriesId || idx} className="hover:bg-slate-50">
+                          <tr key={item.seriesId || idx} className="hover:bg-slate-50 backoffice-dark:hover:bg-white/5">
                             <td className="p-3 font-bold text-center">
-                              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-violet-100 text-violet-700 text-xs">
-                                #{idx + 1}
+                              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-violet-100 text-violet-700 text-xs backoffice-dark:bg-violet-950/50 backoffice-dark:text-violet-300">
+                                {idx + 1}
                               </span>
                             </td>
-                            <td className="p-3 font-semibold text-slate-900">
+                            <td className="p-3 font-mono text-slate-900 font-semibold backoffice-dark:text-white">
                               {item.seriesId || item.title || `Series #${idx + 1}`}
                             </td>
-                            <td className="p-3 font-bold text-violet-600">
-                              {typeof item.score === "number"
-                                ? item.score.toFixed(4)
-                                : String(item.score || "N/A")}
+                            <td className="p-3 font-bold text-amber-600 backoffice-dark:text-amber-400">
+                              {scoreVal.toFixed(4)}
                             </td>
                             <td className="p-3">
                               <div className="flex items-center gap-2">
-                                <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                                <div className="h-2 flex-1 rounded-full bg-slate-200 overflow-hidden backoffice-dark:bg-white/10">
                                   <div
-                                    className="h-full bg-gradient-to-r from-violet-500 to-indigo-600 rounded-full"
+                                    className="h-full bg-amber-500 rounded-full"
                                     style={{ width: `${scorePct}%` }}
                                   />
                                 </div>
-                                <span className="text-[10px] text-slate-500">{scorePct}%</span>
+                                <span className="text-[11px] text-slate-500 backoffice-dark:text-white/50 w-8 text-right font-semibold">
+                                  {scorePct}%
+                                </span>
                               </div>
                             </td>
                           </tr>
@@ -544,11 +608,13 @@ export function RecommendationBrainTab() {
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center py-12 text-slate-400 space-y-2">
-                <Terminal className="h-8 w-8 text-slate-300" />
-                <p className="text-xs">Chưa có kết quả chạy candidate ranking.</p>
-                <p className="text-[11px] text-slate-400">
-                  Nhập thông số ở bên trái và bấm &quot;Chạy Xếp Hạng candidates&quot;.
+              <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-white py-12 px-4 text-center backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.02]">
+                <Cpu className="h-8 w-8 text-slate-300 stroke-[1.5] backoffice-dark:text-white/20" />
+                <p className="mt-2 text-xs font-semibold text-slate-600 backoffice-dark:text-white">
+                  Chưa có kết quả xếp hạng nào
+                </p>
+                <p className="mt-0.5 text-[11px] text-slate-400 backoffice-dark:text-white/50">
+                  Nhập danh sách ID series ứng viên và bấm &quot;Chạy Xếp Hạng candidates&quot; để suy luận.
                 </p>
               </div>
             )}

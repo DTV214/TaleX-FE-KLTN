@@ -57,10 +57,10 @@ export function ChannelCardItem({ card, score, rank, onSelect }: ChannelCardItem
   return (
     <div
       onClick={() => onSelect?.(card)}
-      className="group relative flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-violet-300 cursor-pointer"
+      className="group relative flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-violet-300 cursor-pointer backoffice-dark:border-white/10 backoffice-dark:bg-slate-900/90 backoffice-dark:hover:border-violet-500/50"
     >
       {/* Cover / Banner Image Container */}
-      <div className="relative aspect-[16/9] w-full overflow-hidden bg-slate-100">
+      <div className="relative aspect-[16/9] w-full overflow-hidden bg-slate-100 backoffice-dark:bg-white/5">
         {card.bannerUrl || card.coverUrl ? (
           <Image
             src={imageError ? "/images/placeholder.png" : (card.bannerUrl || card.coverUrl)}
@@ -71,7 +71,7 @@ export function ChannelCardItem({ card, score, rank, onSelect }: ChannelCardItem
             unoptimized
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-violet-100 to-indigo-50 text-slate-400">
+          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-violet-100 to-indigo-50 text-slate-400 backoffice-dark:from-violet-950/40 backoffice-dark:to-indigo-950/40 backoffice-dark:text-white/40">
             {isVideo ? <Film className="h-10 w-10 stroke-[1.5]" /> : <BookOpen className="h-10 w-10 stroke-[1.5]" />}
           </div>
         )}
@@ -141,18 +141,18 @@ export function ChannelCardItem({ card, score, rank, onSelect }: ChannelCardItem
       {/* Card Content Body */}
       <div className="flex flex-1 flex-col p-4">
         {/* Title */}
-        <h4 className="line-clamp-1 font-bold text-slate-900 transition-colors group-hover:text-violet-600">
+        <h4 className="line-clamp-1 font-bold text-slate-900 transition-colors group-hover:text-violet-600 backoffice-dark:text-white backoffice-dark:group-hover:text-violet-300">
           {card.title || "Chưa có tiêu đề"}
         </h4>
 
         {/* Description */}
-        <p className="mt-1 line-clamp-2 text-xs text-slate-500 min-h-[32px]">
+        <p className="mt-1 line-clamp-2 text-xs text-slate-500 min-h-[32px] backoffice-dark:text-white/60">
           {card.description || "Không có mô tả cho series này."}
         </p>
 
         {/* Creator Info */}
-        <div className="mt-3 flex items-center gap-2.5 border-t border-slate-100 pt-3">
-          <div className="relative h-7 w-7 shrink-0 overflow-hidden rounded-full bg-slate-200 border border-slate-200">
+        <div className="mt-3 flex items-center gap-2.5 border-t border-slate-100 pt-3 backoffice-dark:border-white/10">
+          <div className="relative h-7 w-7 shrink-0 overflow-hidden rounded-full bg-slate-200 border border-slate-200 backoffice-dark:border-white/10 backoffice-dark:bg-white/10">
             {card.creatorAvatar && !avatarError ? (
               <Image
                 src={card.creatorAvatar}
@@ -163,17 +163,17 @@ export function ChannelCardItem({ card, score, rank, onSelect }: ChannelCardItem
                 unoptimized
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center bg-violet-100 text-violet-700 text-xs font-bold">
+              <div className="flex h-full w-full items-center justify-center bg-violet-100 text-violet-700 text-xs font-bold backoffice-dark:bg-violet-950/50 backoffice-dark:text-violet-300">
                 {(card.creatorName || "C").charAt(0).toUpperCase()}
               </div>
             )}
           </div>
 
           <div className="flex flex-1 flex-col overflow-hidden">
-            <span className="truncate text-xs font-semibold text-slate-800">
+            <span className="truncate text-xs font-semibold text-slate-800 backoffice-dark:text-white/90">
               {card.creatorName || "Người sáng tạo"}
             </span>
-            <span className="flex items-center gap-1 text-[11px] text-slate-400">
+            <span className="flex items-center gap-1 text-[11px] text-slate-400 backoffice-dark:text-white/50">
               <Users className="h-3 w-3" />
               {card.totalCreatorFollowers ?? 0} người theo dõi
             </span>
@@ -181,13 +181,13 @@ export function ChannelCardItem({ card, score, rank, onSelect }: ChannelCardItem
         </div>
 
         {/* Stats & Timestamps Footer */}
-        <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-2 text-[11px] text-slate-500">
-          <div className="flex items-center gap-1 text-slate-600 font-medium">
-            <Eye className="h-3.5 w-3.5 text-slate-400" />
+        <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-2 text-[11px] text-slate-500 backoffice-dark:border-white/10">
+          <div className="flex items-center gap-1 text-slate-600 font-medium backoffice-dark:text-white/70">
+            <Eye className="h-3.5 w-3.5 text-slate-400 backoffice-dark:text-white/50" />
             <span>{(card.totalViews ?? 0).toLocaleString()} lượt xem</span>
           </div>
 
-          <div className="flex items-center gap-1 text-slate-400" title={`Mới cập nhật: ${formatDate(card.releasedUpdateTime || card.updatedAt)}`}>
+          <div className="flex items-center gap-1 text-slate-400 backoffice-dark:text-white/50" title={`Mới cập nhật: ${formatDate(card.releasedUpdateTime || card.updatedAt)}`}>
             <Clock className="h-3.5 w-3.5" />
             <span className="truncate max-w-[100px]">
               {formatDate(card.releasedUpdateTime || card.updatedAt).split(",")[0]}
