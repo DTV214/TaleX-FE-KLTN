@@ -2,6 +2,8 @@
 
 import {
   AlertTriangle,
+  ChevronLeft,
+  ChevronRight,
   Loader2,
   Mail,
   ShieldAlert,
@@ -9,7 +11,7 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   type AdminCreatorItem,
   type AdminCreatorStatus,
@@ -26,6 +28,8 @@ const statusStyles: Record<AdminCreatorStatus, string> = {
   SUSPENDED: "border-orange-200 bg-orange-50 text-orange-700",
   PENDING: "border-blue-200 bg-blue-50 text-blue-700",
 };
+
+const CREATOR_PAGE_SIZE = 10;
 
 function getInitials(name: string) {
   return name
@@ -171,7 +175,21 @@ export function CreatorManagement() {
   const creatorsQuery = useGetAdminCreators();
   const [selectedCreator, setSelectedCreator] =
     useState<AdminCreatorItem | null>(null);
-  const creators = creatorsQuery.data ?? [];
+  const [page, setPage] = useState(1);
+  const creators = useMemo(() => creatorsQuery.data ?? [], [creatorsQuery.data]);
+  const totalPages = Math.max(1, Math.ceil(creators.length / CREATOR_PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const firstItem =
+    creators.length === 0 ? 0 : (currentPage - 1) * CREATOR_PAGE_SIZE + 1;
+  const lastItem = Math.min(currentPage * CREATOR_PAGE_SIZE, creators.length);
+  const paginatedCreators = useMemo(
+    () =>
+      creators.slice(
+        (currentPage - 1) * CREATOR_PAGE_SIZE,
+        currentPage * CREATOR_PAGE_SIZE,
+      ),
+    [creators, currentPage],
+  );
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
@@ -248,7 +266,7 @@ export function CreatorManagement() {
                   </tr>
                 )}
 
-              {creators.map((creator) => (
+              {paginatedCreators.map((creator) => (
                 <tr key={creator.id} className="transition hover:bg-slate-50/80 backoffice-dark:hover:bg-white/[0.05]">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
@@ -277,7 +295,7 @@ export function CreatorManagement() {
                       <button
                         type="button"
                         onClick={() => setSelectedCreator(creator)}
-                        className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700 transition hover:border-violet-200 hover:bg-violet-50 hover:text-violet-600"
+                        className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700 transition hover:border-violet-200 hover:bg-violet-50 hover:text-violet-600 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.05] backoffice-dark:text-white/75 backoffice-dark:hover:bg-white/10"
                       >
                         <ShieldAlert className="h-4 w-4" />
                         Hồ sơ vi phạm
@@ -289,6 +307,39 @@ export function CreatorManagement() {
             </tbody>
           </table>
         </div>
+
+        {!creatorsQuery.isLoading && !creatorsQuery.isError && creators.length > 0 && (
+          <div className="flex flex-col gap-3 border-t border-slate-200 bg-slate-50 px-6 py-4 sm:flex-row sm:items-center sm:justify-between backoffice-dark:border-white/10 backoffice-dark:bg-black/30">
+            <p className="text-sm font-bold text-slate-500 backoffice-dark:text-white/55">
+              Hiển thị {firstItem}-{lastItem} / {creators.length} creator
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setPage((current) => Math.max(1, current - 1))}
+                disabled={currentPage === 1}
+                className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-bold text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-45 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.05] backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/10"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Trước
+              </button>
+              <span className="inline-flex h-10 min-w-16 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-sm font-black text-slate-900 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.08] backoffice-dark:text-white">
+                {currentPage} / {totalPages}
+              </span>
+              <button
+                type="button"
+                onClick={() =>
+                  setPage((current) => Math.min(totalPages, current + 1))
+                }
+                disabled={currentPage === totalPages}
+                className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-bold text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-45 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.05] backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/10"
+              >
+                Sau
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       <ViolationSummaryModal

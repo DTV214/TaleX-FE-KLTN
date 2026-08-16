@@ -102,9 +102,7 @@ export function SubscriptionsTable({
   }, [toastMessage]);
 
   async function handleDelete(subscription: Subscription) {
-    const confirmed = window.confirm(
-      `Xóa gói Premium "${subscription.tier}"?`,
-    );
+    const confirmed = window.confirm(`Xóa gói Premium "${subscription.tier}"?`);
 
     if (!confirmed) {
       return;
@@ -239,7 +237,7 @@ export function SubscriptionsTable({
         </table>
       </div>
 
-      <div className="flex flex-col gap-3 border-t border-gray-100 bg-gray-50/30 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 border-t border-gray-100 bg-black-50/30 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm font-semibold text-gray-500">
           Hiển thị {firstItem}-{lastItem} / {totalElements} gói
         </p>

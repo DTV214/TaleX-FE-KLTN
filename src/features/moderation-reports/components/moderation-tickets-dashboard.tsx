@@ -1,44 +1,35 @@
 "use client";
 
-import { type FormEvent, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   AlertTriangle,
   ChevronLeft,
   ChevronRight,
   Eye,
-  Film,
+  EyeOff,
   Flag,
-  Image as ImageIcon,
   Loader2,
   RefreshCcw,
   UserCheck,
-  X,
 } from "lucide-react";
-import { toast } from "sonner";
 import {
   type ModerationTicket,
-  type PenaltyLevel,
   type ReportTargetType,
   type TicketStatus,
 } from "../api/moderation-reports.api";
 import {
   useAssignTicket,
-  useModerationTargetDetail,
-  useProcessTicket,
   useTickets,
 } from "../hooks/use-moderation-reports";
 import {
   formatDateTime,
-  labelForPenaltyLevel,
   labelForReason,
   labelForTargetType,
   labelForTicketStatus,
-  penaltyLevelOptions,
   reportTargetOptions,
   statusTone,
   ticketStatusOptions,
 } from "../utils/moderation-labels";
-import { WatermarkScanner } from "./watermark-scanner";
 
 import { TicketDetailModal } from "./ticket-detail-modal";
 
@@ -54,6 +45,52 @@ function statusBadge(status?: string) {
       className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-black ${statusTone(status)}`}
     >
       {labelForTicketStatus(status)}
+    </span>
+  );
+}
+
+function shortId(value?: string | null) {
+  if (!value) return "-";
+  if (value.length <= 14) return value;
+  return `${value.slice(0, 8)}...${value.slice(-6)}`;
+}
+
+function MaskedId({
+  label,
+  value,
+  className = "",
+}: {
+  label: string;
+  value?: string | null;
+  className?: string;
+}) {
+  const [isVisible, setIsVisible] = useState(false);
+
+  if (!value) return <span className={className}>-</span>;
+
+  return (
+    <span className={`inline-flex max-w-full items-center gap-2 ${className}`}>
+      <span
+        className={`min-w-0 font-bold text-slate-600 backoffice-dark:text-white/65 ${
+          isVisible ? "break-all" : "truncate"
+        }`}
+        title={isVisible ? value : `${label}: ${shortId(value)}`}
+      >
+        {isVisible ? value : shortId(value)}
+      </span>
+      <button
+        type="button"
+        onClick={() => setIsVisible((current) => !current)}
+        className="inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.05] backoffice-dark:text-white/55 backoffice-dark:hover:border-amber-300/60 backoffice-dark:hover:bg-amber-300/10 backoffice-dark:hover:text-amber-200"
+        aria-label={isVisible ? `Ẩn ${label}` : `Hiện ${label}`}
+        title={isVisible ? `Ẩn ${label}` : `Hiện ${label}`}
+      >
+        {isVisible ? (
+          <EyeOff className="h-3.5 w-3.5" />
+        ) : (
+          <Eye className="h-3.5 w-3.5" />
+        )}
+      </button>
     </span>
   );
 }
@@ -178,7 +215,7 @@ export function ModerationTicketsDashboard({ scope = "staff" }: Props) {
             <button
               type="button"
               onClick={() => ticketsQuery.refetch()}
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-black text-slate-600 transition hover:bg-slate-50"
+              className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-black text-slate-600 transition hover:bg-slate-50 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.05] backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/10"
             >
               <RefreshCcw className="h-4 w-4" />
               Tải lại
@@ -213,8 +250,8 @@ export function ModerationTicketsDashboard({ scope = "staff" }: Props) {
       {tickets.length > 0 && (
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[980px] text-left text-sm">
-              <thead className="border-b border-slate-200 bg-slate-50 text-xs font-black uppercase tracking-wide text-slate-500">
+            <table className="w-full min-w-[1040px] text-left text-sm">
+              <thead className="border-b border-slate-200 bg-slate-50 text-xs font-black uppercase tracking-wide text-slate-500 backoffice-dark:border-white/10 backoffice-dark:bg-white/5 backoffice-dark:text-white/45">
                 <tr>
                   <th className="px-5 py-4">Thời gian</th>
                   <th className="px-5 py-4">Đối tượng</th>
@@ -224,30 +261,35 @@ export function ModerationTicketsDashboard({ scope = "staff" }: Props) {
                   <th className="px-5 py-4 text-right">Thao tác</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 backoffice-dark:divide-white/10">
                 {tickets.map((ticket, index) => {
                   const dominantReason = getDominantReason(ticket);
 
                   return (
-                  <tr key={ticket.ticketId} className="transition hover:bg-slate-50">
+                  <tr key={ticket.ticketId} className="transition hover:bg-slate-50 backoffice-dark:hover:bg-white/[0.05]">
                     <td className="px-5 py-4">
-                      <div className="space-y-1.5">
+                      <div className="max-w-[250px] space-y-1.5">
+                        <MaskedId
+                          label="Ticket ID"
+                          value={ticket.ticketId}
+                          className="text-xs"
+                        />
                         <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
                           Ngày tạo
                         </p>
-                        <p className="font-black text-slate-950">
+                        <p className="font-black text-slate-950 backoffice-dark:text-white">
                           {formatDateTime(ticket.createdAt)}
                         </p>
-                        <p className="text-xs font-semibold text-slate-500">
+                        <p className="text-xs font-semibold text-slate-500 backoffice-dark:text-white/55">
                           Cập nhật: {formatDateTime(ticket.updatedAt)}
                         </p>
                       </div>
                     </td>
                     <td className="px-5 py-4">
-                      <p className="font-black text-slate-800">
+                      <p className="font-black text-slate-800 backoffice-dark:text-white">
                         {getTargetPreview(ticket, index)}
                       </p>
-                      <p className="mt-1 text-xs font-semibold text-slate-500">
+                      <p className="mt-1 text-xs font-semibold text-slate-500 backoffice-dark:text-white/55">
                         {labelForTargetType(ticket.targetType)}
                       </p>
                     </td>
@@ -260,20 +302,30 @@ export function ModerationTicketsDashboard({ scope = "staff" }: Props) {
                           {ticket.priorityScore} điểm
                         </span>
                       </div>
-                      <p className="mt-1 text-xs font-semibold text-slate-500">
+                      <p className="mt-1 text-xs font-semibold text-slate-500 backoffice-dark:text-white/55">
                         {labelForReason(dominantReason)}
                       </p>
                     </td>
                     <td className="px-5 py-4">{statusBadge(ticket.status)}</td>
                     <td className="px-5 py-4 text-xs font-bold text-slate-500">
-                      {ticket.assignedStaffUsername || ticket.assignedStaffId || "Chưa nhận"}
+                      {ticket.assignedStaffUsername ? (
+                        <span className="text-slate-700 backoffice-dark:text-white/75">
+                          {ticket.assignedStaffUsername}
+                        </span>
+                      ) : (
+                        <MaskedId
+                          label="Staff ID"
+                          value={ticket.assignedStaffId}
+                          className="max-w-[180px]"
+                        />
+                      )}
                     </td>
                     <td className="px-5 py-4">
                       <div className="flex justify-end gap-2">
                         <button
                           type="button"
                           onClick={() => setSelectedTicket(ticket)}
-                          className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-black text-slate-600 transition hover:bg-slate-50"
+                          className="inline-flex h-9 cursor-pointer items-center gap-2 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-3 text-xs font-black text-slate-600 transition hover:bg-slate-50 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.05] backoffice-dark:text-white/75 backoffice-dark:hover:bg-white/10"
                         >
                           <Eye className="h-4 w-4" />
                           Chi tiết
@@ -286,7 +338,7 @@ export function ModerationTicketsDashboard({ scope = "staff" }: Props) {
                             ticket.status === "RESOLVED" ||
                             ticket.status === "DISMISSED"
                           }
-                          className="inline-flex h-9 items-center gap-2 rounded-lg bg-slate-950 px-3 text-xs font-black text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
+                          className="inline-flex h-9 cursor-pointer items-center gap-2 whitespace-nowrap rounded-lg bg-slate-950 px-3 text-xs font-black text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40 backoffice-dark:bg-white backoffice-dark:text-slate-950 backoffice-dark:hover:bg-white/85"
                         >
                           {assignMutation.isPending ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -305,8 +357,8 @@ export function ModerationTicketsDashboard({ scope = "staff" }: Props) {
           </div>
 
           {ticketsQuery.data && ticketsQuery.data.totalPages > 1 && (
-            <div className="flex items-center justify-between border-t border-slate-200 px-5 py-3">
-              <p className="text-sm font-semibold text-slate-500">
+            <div className="flex items-center justify-between border-t border-slate-200 px-5 py-3 backoffice-dark:border-white/10">
+              <p className="text-sm font-semibold text-slate-500 backoffice-dark:text-white/55">
                 Trang {ticketsQuery.data.pageNumber} / {ticketsQuery.data.totalPages} ·{" "}
                 {ticketsQuery.data.totalElements} ticket
               </p>
@@ -315,7 +367,7 @@ export function ModerationTicketsDashboard({ scope = "staff" }: Props) {
                   type="button"
                   onClick={() => setPage((current) => Math.max(1, current - 1))}
                   disabled={ticketsQuery.data.isFirst || ticketsQuery.isFetching}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:bg-slate-50 disabled:opacity-40"
+                  className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 backoffice-dark:border-white/10 backoffice-dark:text-white/60 backoffice-dark:hover:bg-white/10"
                   aria-label="Trang trước"
                 >
                   <ChevronLeft className="h-4 w-4" />
@@ -324,7 +376,7 @@ export function ModerationTicketsDashboard({ scope = "staff" }: Props) {
                   type="button"
                   onClick={() => setPage((current) => current + 1)}
                   disabled={ticketsQuery.data.isLast || ticketsQuery.isFetching}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:bg-slate-50 disabled:opacity-40"
+                  className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 backoffice-dark:border-white/10 backoffice-dark:text-white/60 backoffice-dark:hover:bg-white/10"
                   aria-label="Trang sau"
                 >
                   <ChevronRight className="h-4 w-4" />
@@ -334,14 +386,6 @@ export function ModerationTicketsDashboard({ scope = "staff" }: Props) {
           )}
         </div>
       )}
-
-      <TicketDetailModal
-        isAssigning={assignMutation.isPending}
-        onAssign={handleAssign}
-        ticket={selectedTicket}
-        onClose={() => setSelectedTicket(null)}
-        onProcessed={() => setSelectedTicket(null)}
-      />
     </div>
   );
 }

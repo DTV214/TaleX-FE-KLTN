@@ -137,8 +137,8 @@ export function TermsManagementTable() {
             Điều khoản & Điều kiện
           </h2>
           <p className="mt-2 text-sm font-medium text-gray-500 backoffice-dark:text-white/55">
-            Quản lý các điều khoản dịch vụ, điều khoản nhà sáng tạo và quy
-            trình bật kiếm tiền.
+            Quản lý các điều khoản dịch vụ, điều khoản nhà sáng tạo và quy trình
+            bật kiếm tiền.
           </p>
         </div>
         <button
@@ -327,7 +327,7 @@ export function TermsManagementTable() {
         </div>
 
         {!isLoading && !isError && serverTermsList.length > 0 && (
-          <div className="flex items-center justify-between border-t border-slate-200 bg-slate-50/50 px-6 py-4 backoffice-dark:border-white/10 backoffice-dark:bg-black/20">
+          <div className="flex items-center justify-between border-t border-slate-200 bg-black-50/50 px-6 py-4 backoffice-dark:border-white/10 backoffice-dark:bg-black/20">
             <span className="text-sm text-gray-500">
               Đang hiển thị{" "}
               <span className="font-medium text-gray-900">

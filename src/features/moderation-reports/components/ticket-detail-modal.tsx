@@ -2,6 +2,8 @@
 
 import { type FormEvent, useState } from "react";
 import {
+  Eye,
+  EyeOff,
   Film,
   Flag,
   Image as ImageIcon,
@@ -35,6 +37,50 @@ function statusBadge(status?: string) {
       className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-black ${statusTone(status)}`}
     >
       {labelForTicketStatus(status)}
+    </span>
+  );
+}
+
+function shortId(value?: string | null) {
+  if (!value) return "-";
+  if (value.length <= 14) return value;
+  return `${value.slice(0, 8)}...${value.slice(-6)}`;
+}
+
+function MaskedId({
+  label,
+  value,
+}: {
+  label: string;
+  value?: string | null;
+}) {
+  const [isVisible, setIsVisible] = useState(false);
+
+  if (!value) return <span>-</span>;
+
+  return (
+    <span className="inline-flex max-w-full items-center gap-2">
+      <span
+        className={`min-w-0 text-xs font-bold text-slate-500 backoffice-dark:text-white/55 ${
+          isVisible ? "break-all" : "truncate"
+        }`}
+        title={isVisible ? value : `${label}: ${shortId(value)}`}
+      >
+        {isVisible ? value : shortId(value)}
+      </span>
+      <button
+        type="button"
+        onClick={() => setIsVisible((current) => !current)}
+        className="inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.05] backoffice-dark:text-white/55 backoffice-dark:hover:border-amber-300/60 backoffice-dark:hover:bg-amber-300/10 backoffice-dark:hover:text-amber-200"
+        aria-label={isVisible ? `Ẩn ${label}` : `Hiện ${label}`}
+        title={isVisible ? `Ẩn ${label}` : `Hiện ${label}`}
+      >
+        {isVisible ? (
+          <EyeOff className="h-3.5 w-3.5" />
+        ) : (
+          <Eye className="h-3.5 w-3.5" />
+        )}
+      </button>
     </span>
   );
 }
@@ -205,6 +251,9 @@ export function TicketDetailModal({
               {formatDateTime(ticket.createdAt)} · cập nhật{" "}
               {formatDateTime(ticket.updatedAt)}
             </p>
+            <div className="mt-2 max-w-sm">
+              <MaskedId label="Ticket ID" value={ticket.ticketId} />
+            </div>
           </div>
           <button
             type="button"
@@ -244,9 +293,10 @@ export function TicketDetailModal({
                         targetDetail?.targetType ?? ticket.targetType,
                       )}
                     </span>
-                    <span className="text-xs font-semibold text-slate-400">
-                      ID: {targetDetail?.targetId ?? ticket.targetId}
-                    </span>
+                    <MaskedId
+                      label="Target ID"
+                      value={targetDetail?.targetId ?? ticket.targetId}
+                    />
                   </div>
                   <h3 className="truncate text-base font-black text-slate-950 backoffice-dark:text-white">
                     {targetDetail?.title || "Không có tiêu đề đối tượng"}

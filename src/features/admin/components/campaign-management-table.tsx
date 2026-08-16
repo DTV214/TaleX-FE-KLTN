@@ -64,7 +64,9 @@ function shortenId(value?: string | null) {
     return "Chưa có";
   }
 
-  return value.length > 18 ? `${value.slice(0, 10)}...${value.slice(-6)}` : value;
+  return value.length > 18
+    ? `${value.slice(0, 10)}...${value.slice(-6)}`
+    : value;
 }
 
 function getProgress(campaign: AdminCampaign) {
@@ -92,13 +94,7 @@ function TableSkeleton() {
   );
 }
 
-function AnalyticsValue({
-  label,
-  value,
-}: {
-  label: string;
-  value?: unknown;
-}) {
+function AnalyticsValue({ label, value }: { label: string; value?: unknown }) {
   return (
     <span className="inline-flex items-center gap-1 rounded-md bg-slate-50 px-2 py-1 text-xs font-bold text-slate-600">
       <span className="text-slate-400">{label}</span>
@@ -120,7 +116,8 @@ export function CampaignManagementTable({
   onDelete,
 }: CampaignManagementTableProps) {
   const deleteMutation = useDeleteAdminCampaign();
-  const [internalDeletingCampaign, setInternalDeletingCampaign] = useState<AdminCampaign | null>(null);
+  const [internalDeletingCampaign, setInternalDeletingCampaign] =
+    useState<AdminCampaign | null>(null);
   const firstItem = totalElements === 0 ? 0 : (page - 1) * pageSize + 1;
   const lastItem = Math.min(page * pageSize, totalElements);
 
@@ -232,8 +229,14 @@ export function CampaignManagementTable({
 
                     <td className="px-5 py-5">
                       <div className="flex max-w-xs flex-wrap gap-2">
-                        <AnalyticsValue label="Views" value={analyticData.views} />
-                        <AnalyticsValue label="Likes" value={analyticData.likes} />
+                        <AnalyticsValue
+                          label="Views"
+                          value={analyticData.views}
+                        />
+                        <AnalyticsValue
+                          label="Likes"
+                          value={analyticData.likes}
+                        />
                         <AnalyticsValue
                           label="Comments"
                           value={analyticData.comments}
@@ -296,7 +299,7 @@ export function CampaignManagementTable({
         </table>
       </div>
 
-      <div className="flex flex-col gap-3 border-t border-gray-100 bg-gray-50/30 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 border-t border-gray-100 bg-black-50/30 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm font-semibold text-gray-500">
           Hiển thị {firstItem}-{lastItem} / {totalElements} chiến dịch
         </p>
