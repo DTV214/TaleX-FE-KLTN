@@ -1,4 +1,3 @@
-import axios from "axios";
 import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -25,18 +24,41 @@ export async function GET(request: NextRequest) {
     return new NextResponse("Missing url parameter", { status: 400 });
   }
 
+  // Xác định origin để gửi Referer/Origin header đúng
+  const origin = request.headers.get("origin") || request.headers.get("referer") || "https://talex.pro.vn";
+  const originUrl = origin.startsWith("http") ? new URL(origin).origin : "https://talex.pro.vn";
+
   try {
-    const response = await axios.get(targetUrl, {
-      responseType: "arraybuffer",
-      timeout: 15000,
+    // Dùng fetch API native (thay vì axios) — nhẹ hơn, tương thích serverless tốt hơn
+    const response = await fetch(targetUrl, {
+      method: "GET",
       headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        // Giả lập đầy đủ headers của trình duyệt Chrome để CloudFront/WAF không chặn
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+        "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9,vi;q=0.8",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Referer": `${originUrl}/`,
+        "Origin": originUrl,
+        "Sec-Fetch-Dest": "image",
+        "Sec-Fetch-Mode": "cors",
+        "Sec-Fetch-Site": "cross-site",
+        "Sec-Ch-Ua": '"Chromium";v="126", "Google Chrome";v="126", "Not-A.Brand";v="8"',
+        "Sec-Ch-Ua-Mobile": "?0",
+        "Sec-Ch-Ua-Platform": '"Windows"',
       },
+      signal: AbortSignal.timeout(15000),
     });
 
-    const contentType = String(response.headers["content-type"] || "image/png");
+    if (!response.ok) {
+      console.error(`[image-proxy] CloudFront returned ${response.status} ${response.statusText} for: ${targetUrl.substring(0, 120)}`);
+      return new NextResponse(`Upstream error: ${response.status}`, { status: response.status });
+    }
 
-    return new NextResponse(response.data, {
+    const arrayBuffer = await response.arrayBuffer();
+    const contentType = response.headers.get("content-type") || "image/png";
+
+    return new NextResponse(arrayBuffer, {
       status: 200,
       headers: {
         "Content-Type": contentType,
@@ -45,10 +67,9 @@ export async function GET(request: NextRequest) {
         "Cache-Control": "public, max-age=31536000, immutable",
       },
     });
-  } catch (error: any) {
-    console.error("[image-proxy] Error proxying image with axios:", error.message);
-    return new NextResponse(`Internal proxy error: ${error.message}`, { status: 500 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(`[image-proxy] Fetch error for ${targetUrl.substring(0, 120)}: ${message}`);
+    return new NextResponse(`Internal proxy error: ${message}`, { status: 502 });
   }
 }
-
-
