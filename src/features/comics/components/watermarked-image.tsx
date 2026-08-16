@@ -67,7 +67,17 @@ export function WatermarkedImage({
 
         await new Promise((resolve, reject) => {
           img.onload = resolve;
-          img.onerror = () => reject(new Error("Failed to load image for canvas"));
+          img.onerror = () => {
+            // Thử load trực tiếp nếu proxy gặp sự cố
+            const directImg = new Image();
+            directImg.crossOrigin = "anonymous";
+            directImg.onload = () => {
+              img.src = directImg.src;
+              resolve(null);
+            };
+            directImg.onerror = () => reject(new Error("Failed to load image for canvas"));
+            directImg.src = fallbackUrl;
+          };
 
           // Dùng Next.js API Route proxy để vượt qua lỗi CORS của Cloudfront/S3 (chỉ áp dụng cho link ngoài)
           if (fallbackUrl.startsWith("http")) {
@@ -93,18 +103,14 @@ export function WatermarkedImage({
         // Vẽ Viewer ID (Watermark nổi)
         if (accountId) {
           ctx.globalCompositeOperation = "difference"; // Trộn màu tương phản
-          ctx.fillStyle = "rgba(255, 255, 255, 0.02)"; // Chữ mờ 6% (tăng lên 1 chút để có thể nhìn thấy)
+          ctx.fillStyle = "rgba(255, 255, 255, 0.04)"; // Chữ mờ tương phản
           ctx.font = "bold 40px sans-serif";
           const textToDraw = `${accountId}`;
-          // Chỉ in 2 dòng chữ mờ trên mỗi bức ảnh (để không cản trở việc đọc truyện)
-          // Nếu ảnh quá lùn thì chỉ in 1 cái ở giữa
           if (canvas.height > 400) {
-            // Nửa trên ảnh
             const y1 = 100 + Math.random() * (canvas.height / 2 - 200);
             const x1 = 50 + Math.random() * Math.max(0, canvas.width - 600);
             ctx.fillText(textToDraw, x1, y1);
 
-            // Nửa dưới ảnh
             const y2 = (canvas.height / 2) + Math.random() * (canvas.height / 2 - 100);
             const x2 = 50 + Math.random() * Math.max(0, canvas.width - 600);
             ctx.fillText(textToDraw, x2, y2);
@@ -112,12 +118,12 @@ export function WatermarkedImage({
             ctx.fillText(textToDraw, 10, canvas.height / 2);
           }
 
-          ctx.globalCompositeOperation = "source-over"; // Trả lại bình thường
-        } // <-- Dấu ngoặc bị thiếu
+          ctx.globalCompositeOperation = "source-over";
+        }
 
         // Vẽ Logo Website mờ ở giữa (luôn hiển thị để đánh dấu bản quyền)
         ctx.globalCompositeOperation = "difference";
-        ctx.fillStyle = "rgba(255, 255, 255, 0.06)"; // Độ mờ 6%
+        ctx.fillStyle = "rgba(255, 255, 255, 0.08)"; // Độ mờ
         ctx.font = "bold 60px sans-serif";
         const brandText = "talex.pro.vn";
         const brandMetrics = ctx.measureText(brandText);
@@ -126,12 +132,12 @@ export function WatermarkedImage({
         ctx.save();
         ctx.translate(canvas.width / 2, canvas.height / 2);
         ctx.rotate((-30 * Math.PI) / 180);
-        ctx.fillText(brandText, -brandMetrics.width / 2, 0); // Vẽ ở tọa độ 0,0 vì đã translate
+        ctx.fillText(brandText, -brandMetrics.width / 2, 0);
         ctx.restore();
         
         ctx.globalCompositeOperation = "source-over";
 
-        // --- Nhúng LSB (Least Significant Bit) — ẩn User ID vào bit cuối cùng mầu Đỏ ---
+        // --- Nhúng LSB (Least Significant Bit) ---
         if (accountId) {
           const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
           const textToHide = `${accountId}`;
@@ -214,17 +220,42 @@ export function WatermarkedImage({
     onContextMenu?.(event);
   };
 
+  const isUsingFallback = Boolean(error || !objectUrl);
+
   return (
-    // eslint-disable-next-line @next/next/no-img-element -- Watermarking needs a canvas-generated blob URL.
-    <img
-      {...props}
-      src={srcToUse}
-      alt={props.alt ?? ""}
-      className={`${className ?? ""} select-none`}
-      style={protectedStyle}
-      draggable={!antiPiracyEnabled}
-      onDragStart={handleDragStart}
-      onContextMenu={handleContextMenu}
-    />
+    <div className="relative inline-block w-full overflow-hidden" style={style}>
+      {/* eslint-disable-next-line @next/next/no-img-element -- Watermarking needs a canvas-generated blob URL. */}
+      <img
+        {...props}
+        src={srcToUse}
+        alt={props.alt ?? ""}
+        className={`${className ?? ""} select-none`}
+        style={protectedStyle}
+        draggable={!antiPiracyEnabled}
+        onDragStart={handleDragStart}
+        onContextMenu={handleContextMenu}
+      />
+
+      {/* Lớp Watermark Overlay bảo vệ kép: Nếu canvas bị lỗi CORS ở môi trường deploy, watermark vẫn phủ 100% lên ảnh */}
+      {isUsingFallback && (
+        <div className="pointer-events-none absolute inset-0 z-10 flex flex-col justify-between p-6 select-none opacity-20 mix-blend-difference">
+          {accountId && (
+            <div className="text-xs font-mono font-black text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+              {accountId}
+            </div>
+          )}
+          <div className="flex items-center justify-center">
+            <span className="-rotate-12 font-mono text-xl font-black text-white tracking-widest uppercase">
+              talex.pro.vn
+            </span>
+          </div>
+          {accountId && (
+            <div className="self-end text-xs font-mono font-black text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+              {accountId}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
