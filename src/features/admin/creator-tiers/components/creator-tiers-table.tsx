@@ -69,9 +69,7 @@ export function CreatorTiersTable({
   }, [toastMessage]);
 
   async function handleDelete(tier: CreatorTier) {
-    const confirmed = window.confirm(
-      `Xóa mềm cấp Creator "${tier.tierName}"?`,
-    );
+    const confirmed = window.confirm(`Xóa mềm cấp Creator "${tier.tierName}"?`);
 
     if (!confirmed) {
       return;
@@ -214,27 +212,27 @@ export function CreatorTiersTable({
         </table>
       </div>
 
-      <div className="flex flex-col gap-3 border-t border-gray-100 bg-gray-50/30 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm font-semibold text-gray-500">
+      <div className="flex flex-col gap-3 border-t border-gray-100 bg-black-50/30 px-5 py-4 backoffice-dark:border-white/10 backoffice-dark:bg-black/25 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm font-semibold text-gray-500 backoffice-dark:text-white/65">
           Hiển thị {firstItem}-{lastItem} / {totalElements} tiers
         </p>
         <div className="flex items-center gap-2">
           <Button
             type="button"
             variant="outline"
-            className="border-gray-200 bg-white text-gray-700 shadow-sm hover:bg-gray-50 hover:text-gray-900"
+            className="border-gray-200 bg-white text-gray-700 shadow-sm hover:bg-gray-50 hover:text-gray-900 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/10 backoffice-dark:hover:text-white"
             disabled={page <= 1 || isLoading}
             onClick={() => onPageChange(page - 1)}
           >
             Trước
           </Button>
-          <span className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-black text-gray-700 shadow-sm">
+          <span className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-black text-gray-700 shadow-sm backoffice-dark:border-[var(--backoffice-primary)]/25 backoffice-dark:bg-black backoffice-dark:text-white">
             {page} / {Math.max(totalPages, 1)}
           </span>
           <Button
             type="button"
             variant="outline"
-            className="border-gray-200 bg-white text-gray-700 shadow-sm hover:bg-gray-50 hover:text-gray-900"
+            className="border-gray-200 bg-white text-gray-700 shadow-sm hover:bg-gray-50 hover:text-gray-900 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/10 backoffice-dark:hover:text-white"
             disabled={page >= totalPages || isLoading}
             onClick={() => onPageChange(page + 1)}
           >
