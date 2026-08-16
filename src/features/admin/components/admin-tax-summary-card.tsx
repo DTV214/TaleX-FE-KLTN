@@ -9,6 +9,8 @@ import {
   Receipt,
   Scale,
   PieChart as PieIcon,
+  DollarSign,
+  TrendingUp,
 } from "lucide-react";
 import {
   Cell,
@@ -77,10 +79,10 @@ export function AdminTaxSummaryCard() {
               <select
                 value={selectedYear}
                 onChange={(e) => setSelectedYear(Number(e.target.value))}
-                className="appearance-none bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2 pr-9 text-sm font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500 cursor-pointer shadow-sm"
+                className="appearance-none bg-white backoffice-dark:bg-slate-900 border border-gray-200 backoffice-dark:border-white/10 rounded-xl px-4 py-2 pr-9 text-xs sm:text-sm font-bold text-gray-800 backoffice-dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500 cursor-pointer shadow-sm hover:border-gray-300"
               >
                 {YEAR_OPTIONS.map((year) => (
-                  <option key={year} value={year}>
+                  <option key={year} value={year} className="bg-white text-gray-900 backoffice-dark:bg-slate-900 backoffice-dark:text-white">
                     Năm {year}
                   </option>
                 ))}
@@ -96,13 +98,13 @@ export function AdminTaxSummaryCard() {
                     e.target.value ? Number(e.target.value) : undefined
                   )
                 }
-                className="appearance-none bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2 pr-8 text-xs font-bold text-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500 cursor-pointer shadow-sm"
+                className="appearance-none bg-white backoffice-dark:bg-slate-900 border border-gray-200 backoffice-dark:border-white/10 rounded-xl px-3.5 py-2 pr-8 text-xs font-bold text-gray-800 backoffice-dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500 cursor-pointer shadow-sm hover:border-gray-300"
               >
-                <option value="">Tất cả các quý</option>
-                <option value="1">Quý 1</option>
-                <option value="2">Quý 2</option>
-                <option value="3">Quý 3</option>
-                <option value="4">Quý 4</option>
+                <option value="" className="bg-white text-gray-900 backoffice-dark:bg-slate-900 backoffice-dark:text-white">Tất cả các quý</option>
+                <option value="1" className="bg-white text-gray-900 backoffice-dark:bg-slate-900 backoffice-dark:text-white">Quý 1</option>
+                <option value="2" className="bg-white text-gray-900 backoffice-dark:bg-slate-900 backoffice-dark:text-white">Quý 2</option>
+                <option value="3" className="bg-white text-gray-900 backoffice-dark:bg-slate-900 backoffice-dark:text-white">Quý 3</option>
+                <option value="4" className="bg-white text-gray-900 backoffice-dark:bg-slate-900 backoffice-dark:text-white">Quý 4</option>
               </select>
               <ChevronDown className="w-3.5 h-3.5 text-gray-500 absolute right-2.5 pointer-events-none" />
             </div>
@@ -141,43 +143,55 @@ export function AdminTaxSummaryCard() {
       {/* 2. Top Row of 4 KPI Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Gross Amount */}
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] transition hover:shadow-md">
-          <p className="text-xs font-bold uppercase tracking-wider text-gray-500 backoffice-dark:text-white/60 mb-2">
+        <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] transition hover:shadow-md">
+          <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center mb-4 backoffice-dark:bg-blue-500/20">
+            <TrendingUp className="h-5 w-5 text-blue-600 backoffice-dark:text-blue-300" />
+          </div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 backoffice-dark:text-white/60 mb-1">
             Tổng Gross
           </p>
-          <h4 className="text-2xl font-extrabold text-gray-900 backoffice-dark:text-white">
+          <h3 className="text-2xl font-bold text-gray-900 backoffice-dark:text-white">
             {formatVND(summary?.totalGrossAmount)}
-          </h4>
+          </h3>
         </div>
 
         {/* Total VAT */}
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] transition hover:shadow-md">
-          <p className="text-xs font-bold uppercase tracking-wider text-gray-500 backoffice-dark:text-white/60 mb-2">
+        <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] transition hover:shadow-md">
+          <div className="h-10 w-10 rounded-xl bg-purple-50 flex items-center justify-center mb-4 backoffice-dark:bg-purple-500/20">
+            <Receipt className="h-5 w-5 text-purple-600 backoffice-dark:text-purple-300" />
+          </div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 backoffice-dark:text-white/60 mb-1">
             Tổng Thuế VAT
           </p>
-          <h4 className="text-2xl font-extrabold text-violet-600 dark:text-violet-400">
+          <h3 className="text-2xl font-bold text-gray-900 backoffice-dark:text-white">
             {formatVND(summary?.totalVatAmount)}
-          </h4>
+          </h3>
         </div>
 
         {/* PIT Withheld */}
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] transition hover:shadow-md">
-          <p className="text-xs font-bold uppercase tracking-wider text-gray-500 backoffice-dark:text-white/60 mb-2">
+        <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] transition hover:shadow-md">
+          <div className="h-10 w-10 rounded-xl bg-rose-50 flex items-center justify-center mb-4 backoffice-dark:bg-rose-500/20">
+            <Scale className="h-5 w-5 text-rose-600 backoffice-dark:text-rose-300" />
+          </div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 backoffice-dark:text-white/60 mb-1">
             Thuế TNCN (PIT) Khấu Trừ
           </p>
-          <h4 className="text-2xl font-extrabold text-gray-900 backoffice-dark:text-white">
+          <h3 className="text-2xl font-bold text-gray-900 backoffice-dark:text-white">
             {formatVND(summary?.totalPitWithheld)}
-          </h4>
+          </h3>
         </div>
 
         {/* Net Payout */}
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] transition hover:shadow-md">
-          <p className="text-xs font-bold uppercase tracking-wider text-gray-500 backoffice-dark:text-white/60 mb-2">
+        <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] transition hover:shadow-md">
+          <div className="h-10 w-10 rounded-xl bg-emerald-50 flex items-center justify-center mb-4 backoffice-dark:bg-emerald-500/20">
+            <DollarSign className="h-5 w-5 text-emerald-600 backoffice-dark:text-emerald-300" />
+          </div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 backoffice-dark:text-white/60 mb-1">
             Tổng Thực Nhận (Net Payout)
           </p>
-          <h4 className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">
+          <h3 className="text-2xl font-bold text-gray-900 backoffice-dark:text-white">
             {formatVND(summary?.totalNetPayout)}
-          </h4>
+          </h3>
         </div>
       </div>
 
@@ -234,10 +248,10 @@ export function AdminTaxSummaryCard() {
 
             {/* Centered Total Overlay inside Donut hole */}
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10 text-center">
-              <span className="text-[11px] font-bold tracking-wider uppercase text-gray-400">
+              <span className="text-[11px] font-bold tracking-wider uppercase text-gray-500 backoffice-dark:text-white/60">
                 TỔNG VAT
               </span>
-              <span className="text-sm sm:text-base font-black text-gray-900 dark:text-white">
+              <span className="text-sm sm:text-base font-black text-violet-600 backoffice-dark:text-violet-400">
                 {formatVND(summary?.totalVatAmount)}
               </span>
             </div>
@@ -290,7 +304,7 @@ export function AdminTaxSummaryCard() {
               <span className="font-medium text-gray-600 backoffice-dark:text-white/70">
                 Tổng Thuế VAT
               </span>
-              <span className="font-extrabold text-violet-600 dark:text-violet-400">
+              <span className="font-extrabold text-gray-900 backoffice-dark:text-white">
                 {formatVND(summary?.totalVatAmount)}
               </span>
             </div>
@@ -308,7 +322,7 @@ export function AdminTaxSummaryCard() {
               <span className="font-medium text-gray-600 backoffice-dark:text-white/70">
                 Tổng Thực Nhận (Net Payout)
               </span>
-              <span className="font-extrabold text-emerald-600 dark:text-emerald-400">
+              <span className="font-extrabold text-gray-900 backoffice-dark:text-white">
                 {formatVND(summary?.totalNetPayout)}
               </span>
             </div>
