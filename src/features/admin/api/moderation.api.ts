@@ -225,6 +225,27 @@ export async function getApprovedMedia(
   return normalizePage(response.data, page, size);
 }
 
+export async function getRejectedMedia(
+  page = 0,
+  size = 12,
+  mediaType: ModerationTypeFilter = "all",
+  keyword = "",
+) {
+  const response = await httpClient.get<BaseResponse<ModerationPagePayload> | ModerationPagePayload>(
+    `${MODERATION_ENDPOINT}/rejected`,
+    {
+      params: {
+        page,
+        size,
+        mediaType: mediaType === "all" ? undefined : mediaType,
+        keyword: keyword.trim() || undefined,
+      },
+    },
+  );
+
+  return normalizePage(response.data, page, size);
+}
+
 export async function approveMedia(id: string) {
   await httpClient.patch(`${MODERATION_ENDPOINT}/${id}/approve`);
 }

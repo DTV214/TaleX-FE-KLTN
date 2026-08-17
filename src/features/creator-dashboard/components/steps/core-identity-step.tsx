@@ -1,18 +1,6 @@
 import React, { useState, useRef } from "react";
 import { Upload, X, ChevronDown, Check, ImageIcon } from "lucide-react";
-
-// Khớp enum ContentWarningGroup bên BE (ContentPipelineServiceImpl) — chỉ có ý nghĩa khi
-// ageRating=MATURE, dùng để AI tự động duyệt vi phạm đã được khai báo trước thay vì luôn
-// đẩy Staff review.
-export const CONTENT_WARNING_OPTIONS: { id: string; label: string }[] = [
-  { id: "SEXUAL_NUDITY", label: "Khỏa thân / Nội dung tình dục" },
-  { id: "VIOLENCE_GORE", label: "Bạo lực / Máu me" },
-  { id: "DRUGS_TOBACCO", label: "Ma túy / Thuốc lá" },
-  { id: "ALCOHOL", label: "Rượu bia" },
-  { id: "GAMBLING", label: "Cờ bạc" },
-  { id: "HATE_SYMBOLS", label: "Biểu tượng thù hận" },
-  { id: "RUDE_GESTURES", label: "Cử chỉ thô tục" },
-];
+import { useGetActiveContentWarningCategories } from "@/features/admin/hooks/use-content-warning-category";
 
 export interface CoreIdentityData {
   title: string;
@@ -40,6 +28,11 @@ interface CoreIdentityStepProps {
 }
 
 export function CoreIdentityStep({ initialData, onSave, onCancel, categories, tags, isUpdate }: CoreIdentityStepProps) {
+  // Danh sách nhóm cảnh báo nội dung — CRUD được ở Admin (trước đây hardcode, xem
+  // ContentWarningCategoryManagement), chỉ trả nhóm đang active.
+  const contentWarningOptionsQuery = useGetActiveContentWarningCategories();
+  const contentWarningOptions = contentWarningOptionsQuery.data ?? [];
+
   const [formData, setFormData] = useState<CoreIdentityData>({
     title: initialData?.title || "",
     description: initialData?.description || "",
@@ -244,21 +237,25 @@ export function CoreIdentityStep({ initialData, onSave, onCancel, categories, ta
                 Khai đúng nội dung nhạy cảm series thực sự có — hệ thống sẽ tự động duyệt các
                 vi phạm AI phát hiện thuộc đúng nhóm đã khai, không cần chờ Staff xem lại.
               </p>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {CONTENT_WARNING_OPTIONS.map((warning) => (
-                  <button
-                    key={warning.id}
-                    type="button"
-                    onClick={() => toggleContentWarning(warning.id)}
-                    className={`px-3 py-2 rounded-md text-sm transition-colors border ${formData.contentWarnings.includes(warning.id)
-                      ? "bg-creator-gold text-black font-semibold border-creator-gold"
-                      : "bg-creator-sidebar border-creator-border text-creator-muted hover:border-white/30"
-                      }`}
-                  >
-                    {warning.label}
-                  </button>
-                ))}
-              </div>
+              {contentWarningOptionsQuery.isLoading ? (
+                <p className="text-sm text-creator-muted">Đang tải danh sách nhóm...</p>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {contentWarningOptions.map((warning) => (
+                    <button
+                      key={warning.code}
+                      type="button"
+                      onClick={() => toggleContentWarning(warning.code)}
+                      className={`px-3 py-2 rounded-md text-sm transition-colors border ${formData.contentWarnings.includes(warning.code)
+                        ? "bg-creator-gold text-black font-semibold border-creator-gold"
+                        : "bg-creator-sidebar border-creator-border text-creator-muted hover:border-white/30"
+                        }`}
+                    >
+                      {warning.label}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>

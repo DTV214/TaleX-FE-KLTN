@@ -10,6 +10,7 @@ import {
   getMediaById,
   getMediaViolations,
   getPendingMedia,
+  getRejectedMedia,
   type ModerationTypeFilter,
   rejectMedia,
 } from "@/features/admin/api/moderation.api";
@@ -29,6 +30,12 @@ export const moderationKeys = {
     mediaType: ModerationTypeFilter,
     keyword: string,
   ) => [...moderationKeys.all, "approved", page, size, filter, mediaType, keyword] as const,
+  rejected: (
+    page: number,
+    size: number,
+    mediaType: ModerationTypeFilter,
+    keyword: string,
+  ) => [...moderationKeys.all, "rejected", page, size, mediaType, keyword] as const,
   violations: (mediaId: string) =>
     [...moderationKeys.all, "violations", mediaId] as const,
   mediaDetail: (mediaId: string) =>
@@ -100,6 +107,19 @@ export function useGetApprovedMedia(
   return useQuery({
     queryKey: moderationKeys.approved(page, size, filter, mediaType, keyword),
     queryFn: () => getApprovedMedia(page, size, filter, mediaType, keyword),
+    staleTime: 30 * 1000,
+  });
+}
+
+export function useGetRejectedMedia(
+  page = 0,
+  size = 12,
+  mediaType: ModerationTypeFilter = "all",
+  keyword = "",
+) {
+  return useQuery({
+    queryKey: moderationKeys.rejected(page, size, mediaType, keyword),
+    queryFn: () => getRejectedMedia(page, size, mediaType, keyword),
     staleTime: 30 * 1000,
   });
 }

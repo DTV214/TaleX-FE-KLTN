@@ -7,6 +7,7 @@ import { create } from "zustand";
 import { logoutAction } from "@/features/auth/api/auth.actions";
 import { useAuthStore } from "@/features/auth/store/auth.store";
 import {
+  AlertTriangle,
   Ban,
   ChevronRight,
   CircleDollarSign,
@@ -63,6 +64,7 @@ const contentNavItems: NavItem[] = [
   { name: "Thẻ", href: "/admin/tags", icon: Tag },
   { name: "Kiểm duyệt", href: "/admin/moderation", icon: ShieldAlert },
   { name: "Nhãn kiểm duyệt", href: "/admin/violation-labels", icon: Languages },
+  { name: "Cảnh báo nội dung", href: "/admin/content-warnings", icon: AlertTriangle },
   { name: "Xu hướng", href: "/admin/trending", icon: TrendingUp },
   { name: "Báo cáo", href: "/admin/reports", icon: Flag },
   { name: "Hình phạt", href: "/admin/penalties", icon: Ban },
