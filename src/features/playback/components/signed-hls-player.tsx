@@ -42,6 +42,7 @@ import { VideoPrerollAdWidget } from "@/features/ads/components/video-preroll-ad
 import { ContentPaywallGate } from "@/features/checkout-content/components/content-paywall-gate";
 import { isNotEntitledError } from "@/features/checkout-content/utils/is-not-entitled-error";
 import { useAuthStore } from "@/features/auth/store/auth.store";
+import { useContentEntitlement } from "@/features/series/hooks/use-content-entitlement";
 import { FollowButton } from "@/features/series/components/follow-button";
 import { EpisodeCommentsSection } from "@/features/comments";
 import { useCreatorFollow } from "@/features/series/hooks/use-creator-follow";
@@ -173,6 +174,13 @@ export function SignedHlsPlayer({
       ),
     [seasonEpisodes, isAscending],
   );
+
+  // Quyền truy cập nội dung (tập đã mua, subscription, hoặc tác giả)
+  const { isEpisodeUnlocked } = useContentEntitlement({
+    contentType: episodeDetail?.contentType || "VIDEO",
+    creatorAccountId: episodeDetail?.creatorId,
+    episodes: sortedSeasonEpisodes,
+  });
 
   // Quản lý trạng thái like của tập phim
   const { totalLikes, isLiked, toggleLike, isMutating, likedUsers } =
@@ -648,6 +656,9 @@ export function SignedHlsPlayer({
                     <div className="flex flex-wrap gap-2.5">
                       {sortedSeasonEpisodes.map((ep) => {
                         const isActive = ep.episodeId === episodeId;
+                        const isPaid = ep.unlockType === "PAID";
+                        const isUnlocked = isEpisodeUnlocked(ep);
+                        const showLock = isPaid && !isUnlocked;
                         return (
                           <Link
                             key={ep.episodeId}
@@ -659,7 +670,7 @@ export function SignedHlsPlayer({
                             }`}
                           >
                             <span>Tập {ep.episodeNumber}</span>
-                            {ep.unlockType === "PAID" && (
+                            {showLock && (
                               <Lock className="w-3.5 h-3.5 text-amber-500/90" />
                             )}
                           </Link>

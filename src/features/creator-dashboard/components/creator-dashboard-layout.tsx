@@ -17,8 +17,7 @@ export type CreatorDashboardLayoutView =
   | "analytics"
   | "revenue"
   | "monetization"
-  | "campaign"
-  | "production";
+  | "campaign";
 
 type CreatorDashboardLayoutProps = {
   activeView: CreatorDashboardLayoutView;
