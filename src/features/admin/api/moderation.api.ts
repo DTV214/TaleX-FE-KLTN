@@ -1,6 +1,7 @@
 import { httpClient, type BaseResponse } from "@/shared/api/http-client";
 
 const MODERATION_ENDPOINT = "/api/v1/media";
+const ADMIN_MEDIA_ENDPOINT = "/api/v1/admin/media";
 
 export type ModerationMediaType = "VIDEO" | "IMAGE";
 
@@ -266,6 +267,17 @@ export async function forceHideEpisode(episodeId: string) {
 // hành vi forceUnhide ở Media (chỉ về HIDDEN, chờ Creator tự bấm Bỏ ẩn).
 export async function forceUnhideEpisode(episodeId: string) {
   await httpClient.patch(`/api/v1/episodes/${episodeId}/force-unhide`);
+}
+
+// Xóa VĨNH VIỄN 1 Media (Postgres hard-delete + Milvus fingerprint + S3/CloudFront) — chỉ
+// Admin, không thể hoàn tác. Khác hẳn reject/force-hide (vẫn soft-delete, giữ fingerprint
+// chống đạo nhái) — endpoint riêng dưới /api/v1/admin/media, không phải MODERATION_ENDPOINT.
+// BE trả 409 nếu media này đang là nguồn (source_media_id) của 1 vi phạm khác — phải xử lý
+// vi phạm đó trước khi purge được (bảo vệ bằng chứng đạo nhái).
+export async function purgeMedia(mediaId: string, reason: string) {
+  await httpClient.delete(`${ADMIN_MEDIA_ENDPOINT}/${mediaId}/purge`, {
+    data: { reason },
+  });
 }
 
 export type MediaCopyrightViolation = {

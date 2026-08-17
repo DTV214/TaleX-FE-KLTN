@@ -12,6 +12,7 @@ import {
   getPendingMedia,
   getRejectedMedia,
   type ModerationTypeFilter,
+  purgeMedia,
   rejectMedia,
 } from "@/features/admin/api/moderation.api";
 
@@ -140,6 +141,18 @@ export function useForceUnhideEpisode() {
 
   return useMutation({
     mutationFn: (episodeId: string) => forceUnhideEpisode(episodeId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: moderationKeys.all });
+    },
+  });
+}
+
+export function usePurgeMedia() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
+      purgeMedia(id, reason),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: moderationKeys.all });
     },
