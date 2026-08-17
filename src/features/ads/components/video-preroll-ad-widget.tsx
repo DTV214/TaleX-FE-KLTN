@@ -138,6 +138,21 @@ export function VideoPrerollAdWidget({ onAdFinished }: VideoPrerollAdWidgetProps
     return () => clearTimeout(timer);
   }, [ad, view6sTracked]);
 
+  // Handle Autoplay reliably
+  useEffect(() => {
+    if (ad && ad.mediaType === "VIDEO" && videoRef.current) {
+      setIsPlaying(true);
+      const playPromise = videoRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {
+          // Trình duyệt chặn tự động phát có tiếng.
+          // Ta bắt lỗi này trong im lặng để Console không bị rác.
+          setIsPlaying(false);
+        });
+      }
+    }
+  }, [ad]);
+
   const handleSkip = () => {
     onAdFinished();
   };
@@ -217,6 +232,7 @@ export function VideoPrerollAdWidget({ onAdFinished }: VideoPrerollAdWidgetProps
           ref={videoRef}
           src={ad.mediaUrl}
           autoPlay
+          muted={isMuted}
           playsInline
           onEnded={onAdFinished}
           onTimeUpdate={handleTimeUpdate}
