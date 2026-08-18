@@ -65,6 +65,7 @@ const contentNavItems: NavItem[] = [
   { name: "Kiểm duyệt", href: "/admin/moderation", icon: ShieldAlert },
   { name: "Nhãn kiểm duyệt", href: "/admin/violation-labels", icon: Languages },
   { name: "Cảnh báo nội dung", href: "/admin/content-warnings", icon: AlertTriangle },
+  { name: "Cấu hình AI Pipeline", href: "/admin/ai-pipeline-config", icon: SlidersHorizontal },
   { name: "Xu hướng", href: "/admin/trending", icon: TrendingUp },
   { name: "Báo cáo", href: "/admin/reports", icon: Flag },
   { name: "Hình phạt", href: "/admin/penalties", icon: Ban },
