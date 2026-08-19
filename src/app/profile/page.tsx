@@ -1,4 +1,5 @@
 import { ChangePasswordForm } from "@/features/auth/components/change-password-form";
+import { ProfilePreferencesForm } from "@/features/auth/components/profile-preferences-form";
 import { ProfileView } from "@/features/auth/components/profile-view";
 import { UpdateProfileForm } from "@/features/auth/components/update-profile-form";
 import { CoinBalanceSummary } from "@/features/coin";
@@ -35,6 +36,7 @@ export default function ProfilePage() {
 
           <div className="space-y-6">
             <UpdateProfileForm />
+            <ProfilePreferencesForm />
             <CoinBalanceSummary />
             <ChangePasswordForm />
           </div>

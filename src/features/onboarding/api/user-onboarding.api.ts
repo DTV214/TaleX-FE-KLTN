@@ -37,12 +37,8 @@ export type UserFeatureProfile = {
 export type UserFeatureRequest = {
   gender: OnboardingGender;
   age: OnboardingAgeSegment;
-  onboardingMovieGeneres: string[];
   onboardingGenres: string[];
   onboardingTags: string[];
-  // Compatibility aliases for the current Swagger contract.
-  onboardingMovieGenres: string[];
-  onboardingComicGenres: string[];
 };
 
 export type PublicCategoryOption = {
@@ -74,6 +70,9 @@ type TagApiItem = {
 };
 
 type FlexibleListPayload<T> = T[] | BasePageResponse<T>;
+type UserFeatureMutationResponse =
+  | UserFeatureProfile
+  | BaseResponse<UserFeatureProfile>;
 
 export const userOnboardingKeys = {
   all: ["user-onboarding"] as const,
@@ -114,6 +113,25 @@ function normalizeTag(item: TagApiItem): PublicTagOption | null {
     name,
     description: item.description,
   };
+}
+
+function isBaseResponse<T>(value: unknown): value is BaseResponse<T> {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "data" in value &&
+    "message" in value
+  );
+}
+
+function isUserFeatureProfile(value: unknown): value is UserFeatureProfile {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    ("accountId" in value ||
+      "onboardingGenres" in value ||
+      "onboardingTags" in value)
+  );
 }
 
 export function isMissingUserFeatureError(error: unknown) {
@@ -186,14 +204,21 @@ export function useCreateUserFeatureProfile() {
     mutationFn: async (
       payload: UserFeatureRequest,
     ): Promise<UserFeatureProfile> => {
-      const response = await httpClient.post<UserFeatureProfile>(
+      const response = await httpClient.post<UserFeatureMutationResponse>(
         USER_FEATURE_ENDPOINT,
         payload,
       );
-      return response.data;
+      const responsePayload = isBaseResponse<unknown>(response.data)
+        ? response.data.data
+        : response.data;
+
+      return isUserFeatureProfile(responsePayload)
+        ? responsePayload
+        : payload;
     },
     onSuccess: (data) => {
       queryClient.setQueryData(userOnboardingKeys.me(), data);
+      void queryClient.invalidateQueries({ queryKey: userOnboardingKeys.me() });
     },
   });
 }

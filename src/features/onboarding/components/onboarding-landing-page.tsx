@@ -431,11 +431,8 @@ export function OnboardingLandingPage() {
       {
         gender,
         age,
-        onboardingMovieGeneres: selectedCategoryIds,
         onboardingGenres: selectedCategoryIds,
         onboardingTags: selectedTagIds,
-        onboardingMovieGenres: selectedCategoryIds,
-        onboardingComicGenres: selectedTagIds,
       },
       {
         onSuccess: () => {
