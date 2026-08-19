@@ -8,7 +8,6 @@ import {
   BadgeDollarSign,
   CreditCard,
   DollarSign,
-  Settings,
   Search,
   User,
   LogOut,
@@ -18,6 +17,8 @@ import {
   Home,
   Tv,
   ShieldAlert,
+  Lock,
+  ArrowRight,
 } from "lucide-react";
 import { DropdownMenu } from "radix-ui";
 import { logoutAction } from "@/features/auth/api/auth.actions";
@@ -28,14 +29,22 @@ interface CreatorLayoutProps {
   children: React.ReactNode;
   activeView?: string;
   onNavigate?: (view: string) => void;
+  lockedViews?: readonly string[];
+  onStartMonetization?: () => void;
 }
 
 export function CreatorLayout({
   children,
   activeView,
   onNavigate,
+  lockedViews = [],
+  onStartMonetization,
 }: CreatorLayoutProps) {
   const router = useRouter();
+  const [lockedNavItem, setLockedNavItem] = React.useState<{
+    label: string;
+    view: string;
+  } | null>(null);
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const user = useAuthStore((state) => state.user);
   const profileUser = isFullProfile(user) ? user : null;
@@ -79,20 +88,34 @@ export function CreatorLayout({
           <div className="space-y-1">
             {navItems.map((item) => {
               // Basic active state logic
+              const isLocked = lockedViews.includes(item.view);
               const isActive =
-                activeView === item.view ||
-                (item.view === "series" && activeView === "create");
+                !isLocked &&
+                (activeView === item.view ||
+                  (item.view === "series" && activeView === "create"));
 
               return (
                 <button
                   key={item.label}
+                  type="button"
+                  aria-disabled={isLocked}
                   onClick={() => {
+                    if (isLocked) {
+                      setLockedNavItem({
+                        label: item.label,
+                        view: item.view,
+                      });
+                      return;
+                    }
+
                     if (item.view && onNavigate) {
                       onNavigate(item.view);
                     }
                   }}
                   className={`group flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left transition-colors ${
-                    isActive
+                    isLocked
+                      ? "cursor-not-allowed border border-white/5 bg-white/[0.025] text-creator-muted/45"
+                      : isActive
                       ? "border border-creator-gold/20 bg-creator-gold/15 text-creator-gold shadow-[0_10px_30px_rgba(226,177,60,0.08)]"
                       : "text-creator-muted hover:bg-white/[0.055] hover:text-white"
                   }`}
@@ -100,12 +123,22 @@ export function CreatorLayout({
                   <item.icon
                     size={18}
                     className={
-                      isActive
+                      isLocked
+                        ? "text-creator-muted/45"
+                        : isActive
                         ? "text-creator-gold"
                         : "text-creator-muted transition-colors group-hover:text-creator-gold"
                     }
                   />
-                  <span className="text-sm font-semibold">{item.label}</span>
+                  <span className="min-w-0 flex-1 text-sm font-semibold">
+                    {item.label}
+                  </span>
+                  {isLocked && (
+                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-creator-gold/20 bg-creator-gold/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-creator-gold/80">
+                      <Lock className="h-3 w-3" />
+                      Khóa
+                    </span>
+                  )}
                 </button>
               );
             })}
@@ -120,10 +153,6 @@ export function CreatorLayout({
             <Home size={18} />
             Về Trang Chủ
           </Link>
-          <button className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-creator-muted transition-colors hover:bg-white/[0.055] hover:text-white">
-            <Settings size={18} />
-            Cài đặt
-          </button>
           <button
             type="button"
             onClick={handleLogout}
@@ -213,6 +242,57 @@ export function CreatorLayout({
           </div>
         </main>
       </div>
+
+      {lockedNavItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6 backdrop-blur-md">
+          <div className="relative w-full max-w-lg overflow-hidden rounded-[28px] border border-creator-gold/25 bg-[#101012] p-6 text-white shadow-[0_28px_90px_rgba(0,0,0,0.72),0_0_46px_rgba(226,177,60,0.12)]">
+            <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-creator-gold/80 to-transparent" />
+
+            <div className="relative flex items-start gap-4">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-creator-gold/25 bg-creator-gold/10 text-creator-gold">
+                <Lock className="h-7 w-7" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-creator-gold">
+                  Cần bật kiếm tiền
+                </p>
+                <h2 className="mt-2 text-2xl font-black">
+                  {lockedNavItem.label} chưa khả dụng
+                </h2>
+                <p className="mt-3 text-sm font-semibold leading-6 text-creator-muted">
+                  Bạn cần hoàn tất điều khoản, thông tin thuế và tài khoản
+                  thanh toán trước khi sử dụng mục này.
+                </p>
+              </div>
+            </div>
+
+            <div className="relative mt-7 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setLockedNavItem(null)}
+                className="inline-flex h-11 items-center justify-center rounded-xl border border-white/10 bg-white/[0.035] px-5 text-sm font-black text-zinc-200 transition hover:border-creator-gold/40 hover:text-creator-gold"
+              >
+                Để sau
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setLockedNavItem(null);
+                  if (onStartMonetization) {
+                    onStartMonetization();
+                    return;
+                  }
+                  onNavigate?.("monetization");
+                }}
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-creator-gold px-5 text-sm font-black text-black shadow-[0_16px_42px_rgba(226,177,60,0.22)] transition hover:bg-creator-gold-hover"
+              >
+                Thực hiện
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -122,6 +122,10 @@ import {
 import { SignedHlsPlayer } from "@/features/playback/components/signed-hls-player";
 import { ComboManagementView } from "@/features/creator-dashboard/components/combo-management";
 import { CreatorMonetizationView } from "@/features/creator-dashboard/components/views/creator-monetization-view";
+import {
+  creatorMonetizationKeys,
+  getCreatorVerificationStatus,
+} from "@/features/creator-dashboard/api/creator-monetization-api";
 import { CreatorPaymentProfilesView } from "@/features/creator-dashboard/components/views/creator-payment-profiles-view";
 import { CreatorCampaignPurchaseView } from "@/features/creator-dashboard/components/views/creator-campaign-purchase-view";
 import { CreatorCampaignsView } from "@/features/creator-dashboard/components/views/creator-campaigns-view";
@@ -164,6 +168,8 @@ const dashboardViews: DashboardView[] = [
   "analytics",
   "revenue",
 ];
+
+const monetizationRequiredViews: DashboardView[] = ["revenue", "combos"];
 
 const defaultDashboardRouteState: DashboardRouteState = {
   view: "dashboard",
@@ -218,6 +224,58 @@ function writeDashboardRouteState(nextState: DashboardRouteState) {
   const query = params.toString();
   const nextUrl = `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`;
   window.history.replaceState(null, "", nextUrl);
+}
+
+function isVerifiedPaymentStatus(status: unknown) {
+  return String(status ?? "").trim().toUpperCase() === "VERIFIED";
+}
+
+function MonetizationRequiredPanel({
+  title,
+  isChecking,
+  onStart,
+}: {
+  title: string;
+  isChecking: boolean;
+  onStart: () => void;
+}) {
+  return (
+    <section className="creator-shine-card relative overflow-hidden rounded-[2rem] border border-creator-gold/25 bg-black/45 p-8 text-white shadow-[0_24px_90px_rgba(0,0,0,0.42)] backdrop-blur-2xl">
+      <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-creator-gold/80 to-transparent" />
+
+      <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex max-w-3xl items-start gap-5">
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-creator-gold/25 bg-creator-gold/10 text-creator-gold">
+            {isChecking ? (
+              <Loader2 className="h-7 w-7 animate-spin" />
+            ) : (
+              <Lock className="h-7 w-7" />
+            )}
+          </div>
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-creator-gold">
+              Cần bật kiếm tiền
+            </p>
+            <h2 className="mt-2 text-3xl font-black">{title} chưa khả dụng</h2>
+            <p className="mt-3 text-sm font-semibold leading-6 text-creator-muted">
+              Hoàn tất điều khoản, thông tin thuế và tài khoản thanh toán để mở
+              khóa mục này. Các thao tác tạo tác phẩm và quản lý nội dung khác
+              vẫn hoạt động bình thường.
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={onStart}
+          className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-2xl bg-creator-gold px-6 text-sm font-black text-black shadow-[0_18px_44px_rgba(226,177,60,0.2)] transition hover:bg-creator-gold-hover"
+        >
+          Thực hiện bật kiếm tiền
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      </div>
+    </section>
+  );
 }
 
 const viewMeta: Record<
@@ -465,10 +523,29 @@ function CreatorDashboardContent() {
   const authUser = useAuthStore((state) => state.user);
   const accountId = authUser?.accountId ?? "";
   const canManageEpisodePricing = authUser?.roleName === "CREATOR";
+  const verificationStatusQuery = useQuery({
+    queryKey: creatorMonetizationKeys.verificationStatus(),
+    queryFn: getCreatorVerificationStatus,
+    enabled: Boolean(accountId),
+    retry: false,
+    staleTime: 60 * 1000,
+  });
+  const creatorMonetizationStatus = verificationStatusQuery.data;
+  const isCreatorMonetizationEnabled = Boolean(
+    creatorMonetizationStatus?.isCreatorVerified &&
+    creatorMonetizationStatus?.isTermsAccepted &&
+    creatorMonetizationStatus?.taxId?.trim() &&
+    isVerifiedPaymentStatus(creatorMonetizationStatus?.paymentStatus),
+  );
+  const lockedCreatorViews = isCreatorMonetizationEnabled
+    ? []
+    : monetizationRequiredViews;
   const initialRouteState = useMemo(() => readDashboardRouteState(), []);
   const [activeView, setActiveView] = useState<DashboardView>(
     initialRouteState.view,
   );
+  const isMonetizationRequiredView =
+    monetizationRequiredViews.includes(activeView);
   // Danh sách media mới nhất, cập nhật bởi effect polling-fallback bên dưới (khai báo
   // trước vì usePipelineSSE cần callback này ngay, còn mediaQuery thì khai báo sau).
   const suppressionMediaListRef = useRef<MediaResponse[]>([]);
@@ -517,6 +594,16 @@ function CreatorDashboardContent() {
     setSelectedSeasonId(nextState.seasonId);
     setSelectedEpisodeId(nextState.episodeId);
     writeDashboardRouteState(nextState);
+  }
+
+  function openMonetizationView() {
+    clearUploadDrafts();
+    setDashboardRouteState({
+      view: "monetization",
+      seriesId: "",
+      seasonId: "",
+      episodeId: "",
+    });
   }
 
   const seriesQuery = useQuery({
@@ -1752,6 +1839,8 @@ function CreatorDashboardContent() {
     <>
       <CreatorLayout
         activeView={activeView}
+        lockedViews={lockedCreatorViews}
+        onStartMonetization={openMonetizationView}
         onNavigate={(view) => {
           clearUploadDrafts();
           setDashboardRouteState({
@@ -1766,7 +1855,13 @@ function CreatorDashboardContent() {
           {isSeriesFlow && <CreatorStepper steps={stepperSteps} />}
 
           <div className="mt-4 pb-20">
-            {activeView === "series" ? (
+            {isMonetizationRequiredView && !isCreatorMonetizationEnabled ? (
+              <MonetizationRequiredPanel
+                title={viewMeta[activeView].title}
+                isChecking={verificationStatusQuery.isLoading}
+                onStart={openMonetizationView}
+              />
+            ) : activeView === "series" ? (
               <CreatorSeriesList
                 seriesList={displaySeriesRows}
                 onSelect={(seriesId) => {
