@@ -60,9 +60,10 @@ const sidebarItems: SidebarItem[] = [
     icon: BadgeDollarSign,
   },
   {
-    label: "Tăng tương tác",
+    label: "Chiến dịch",
     view: "campaign",
     icon: Rocket,
+    activeViews: ["campaign", "campaigns" as any],
   },
 ];
 

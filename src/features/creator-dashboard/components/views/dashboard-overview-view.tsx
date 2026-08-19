@@ -161,7 +161,8 @@ function OverviewDashboardContent({
   const logsQuery = useQuery({
     queryKey: ["overview-creator-logs", queryParams],
     queryFn: () => getCreatorLogs(queryParams),
-    staleTime: 60 * 1000,
+    refetchOnMount: "always",
+    staleTime: 30 * 1000,
   });
 
   const logs = logsQuery.data || [];
@@ -356,23 +357,18 @@ function OverviewDashboardContent({
         {/* Card 1: Tổng lượt xem */}
         <div className="rounded-[24px] border border-white/10 bg-[#17171a] p-6 shadow-xl flex items-center justify-between">
           <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">
-                Tổng lượt xem
-              </span>
-              <span className="rounded-full bg-[#D4AF37]/10 px-2 py-0.5 text-[10px] font-bold text-[#D4AF37]">
-                Lượt xem
-              </span>
-            </div>
+            <span className="text-xs font-bold uppercase tracking-wider text-zinc-400 block">
+              Tổng lượt xem
+            </span>
             <div className="text-2xl font-black text-[#D4AF37]">
-              {isLoadingOwnCreator ? (
+              {logsQuery.isLoading ? (
                 <Loader2 className="h-5 w-5 animate-spin text-[#D4AF37]" />
               ) : (
-                formatNumber(totalViews)
+                formatNumber(totals.views)
               )}
             </div>
             <span className="text-xs text-zinc-500 font-medium block">
-              Tổng số lượt xem kênh
+              Lượt xem nội dung kênh
             </span>
           </div>
           {/* Icon Badge Gold */}
@@ -384,23 +380,18 @@ function OverviewDashboardContent({
         {/* Card 2: Người đăng ký */}
         <div className="rounded-[24px] border border-white/10 bg-[#17171a] p-6 shadow-xl flex items-center justify-between">
           <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">
-                Người đăng ký
-              </span>
-              <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
-                Đăng ký
-              </span>
-            </div>
+            <span className="text-xs font-bold uppercase tracking-wider text-zinc-400 block">
+              Người đăng ký
+            </span>
             <div className="text-2xl font-black text-white">
-              {isLoadingOwnCreator ? (
+              {logsQuery.isLoading ? (
                 <Loader2 className="h-5 w-5 animate-spin text-zinc-400" />
               ) : (
-                formatNumber(followerCount)
+                formatNumber(totals.follows)
               )}
             </div>
             <span className="text-xs text-zinc-500 font-medium block">
-              Số người theo dõi kênh
+              Số người theo dõi mới
             </span>
           </div>
           {/* Icon Badge Emerald */}
@@ -412,23 +403,23 @@ function OverviewDashboardContent({
         {/* Card 3: Tổng tương tác */}
         <div className="rounded-[24px] border border-white/10 bg-[#17171a] p-6 shadow-xl flex items-center justify-between">
           <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">
-                Tổng tương tác
-              </span>
-              <span className="rounded-full bg-rose-500/10 px-2 py-0.5 text-[10px] font-bold text-rose-400">
-                Tương tác
-              </span>
-            </div>
+            <span className="text-xs font-bold uppercase tracking-wider text-zinc-400 block">
+              Tổng tương tác
+            </span>
             <div className="text-2xl font-black text-white">
-              {isLoadingOwnCreator ? (
+              {logsQuery.isLoading ? (
                 <Loader2 className="h-5 w-5 animate-spin text-zinc-400" />
               ) : (
-                formatNumber(totalEngagement)
+                formatNumber(
+                  totals.likes +
+                    totals.comments +
+                    totals.bookmarks +
+                    totals.shares,
+                )
               )}
             </div>
             <span className="text-xs text-zinc-500 font-medium block">
-              Thích, Bình luận, Lưu, Chia sẻ
+              Thích, bình luận, lưu, chia sẻ
             </span>
           </div>
           {/* Icon Badge Rose */}
@@ -986,11 +977,13 @@ export function DashboardOverviewView({
   const seriesQuery = useQuery({
     queryKey: ["creator-dashboard", "series"],
     queryFn: () => listSeriesByCreator(0, 100),
+    refetchOnMount: "always",
   });
 
   const ownCreatorQuery = useQuery({
     queryKey: creatorOnboardingKeys.ownCreator(),
     queryFn: getOwnCreator,
+    refetchOnMount: "always",
   });
 
   const rawSeriesData = seriesQuery.data as any;

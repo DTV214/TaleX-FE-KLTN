@@ -609,6 +609,7 @@ function CreatorDashboardContent() {
   const seriesQuery = useQuery({
     queryKey: ["creator-dashboard", "series"],
     queryFn: () => listSeriesByCreator(),
+    refetchOnMount: "always",
   });
 
   const realSeriesRows =
@@ -2255,9 +2256,7 @@ function CreatorDashboardContent() {
               <CreatorPaymentProfilesView />
             ) : activeView === "violations" ? (
               <CreatorViolationsView />
-            ) : activeView === "campaign" ? (
-              <CreatorCampaignPurchaseView />
-            ) : activeView === "campaigns" ? (
+            ) : activeView === "campaign" || activeView === "campaigns" ? (
               <CreatorCampaignsView />
             ) : (
               <div className="p-8 text-white flex flex-col items-center justify-center min-h-[50vh]">

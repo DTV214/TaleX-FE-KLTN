@@ -1,6 +1,7 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, RefreshCw, Sparkles } from "lucide-react";
 import type { ReactNode } from "react";
 import {
@@ -9,6 +10,10 @@ import {
   isCreatorNotFoundError,
   shouldRetryOwnCreatorQuery,
 } from "@/features/creator-dashboard/api/creator-onboarding-api";
+import {
+  listSeriesByCreator,
+  getCreatorLogs,
+} from "@/features/creator-dashboard/api/creator-content-api";
 import { TermsAcceptanceModal } from "@/features/creator-dashboard/components/terms-acceptance-modal";
 
 type CreatorGuardProps = {
@@ -99,13 +104,37 @@ function getErrorMessage(error: unknown) {
 }
 
 export function CreatorGuard({ children }: CreatorGuardProps) {
+  const queryClient = useQueryClient();
+
   const ownCreatorQuery = useQuery({
     queryKey: creatorOnboardingKeys.ownCreator(),
     queryFn: getOwnCreator,
     retry: shouldRetryOwnCreatorQuery,
-    staleTime: 30 * 1000,
-    refetchOnWindowFocus: false,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
   });
+
+  // Tải trước ngầm dữ liệu ngay trong lúc Guard đang xác thực
+  useEffect(() => {
+    const now = new Date();
+    const fromDate = new Date(now);
+    fromDate.setDate(now.getDate() - 6);
+    fromDate.setHours(0, 0, 0, 0);
+    const toDate = new Date(now);
+    toDate.setHours(23, 59, 59, 999);
+    const queryParams = { from: fromDate.toISOString(), to: toDate.toISOString() };
+
+    void queryClient.prefetchQuery({
+      queryKey: ["creator-dashboard", "series"],
+      queryFn: () => listSeriesByCreator(0, 100),
+    });
+
+    void queryClient.prefetchQuery({
+      queryKey: ["overview-creator-logs", queryParams],
+      queryFn: () => getCreatorLogs(queryParams),
+    });
+  }, [queryClient]);
 
   if (ownCreatorQuery.isPending) {
     return <CreatorGuardLoadingScreen />;

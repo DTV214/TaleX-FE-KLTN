@@ -14,6 +14,7 @@ import {
   Tag,
   Zap,
   Megaphone,
+  Rocket,
   Home,
   Tv,
   ShieldAlert,
@@ -62,8 +63,7 @@ export function CreatorLayout({
       icon: CreditCard,
     },
     { label: "Quản lý Combo", view: "combos", icon: Tag },
-    { label: "Tăng tương tác", view: "campaign", icon: Zap },
-    { label: "Chiến dịch", view: "campaigns", icon: Megaphone },
+    { label: "Chiến dịch", view: "campaign", icon: Rocket },
     { label: "Vi phạm & Khiếu nại", view: "violations", icon: ShieldAlert },
   ];
 
@@ -92,7 +92,8 @@ export function CreatorLayout({
               const isActive =
                 !isLocked &&
                 (activeView === item.view ||
-                  (item.view === "series" && activeView === "create"));
+                  (item.view === "series" && activeView === "create") ||
+                  (item.view === "campaign" && activeView === "campaigns"));
 
               return (
                 <button

@@ -88,12 +88,13 @@ export type CreateEngagementOrderRequest = {
 export type CreateEngagementOrderResponse = BaseResponse<OrderResponse>;
 
 export type CreatorCampaignStatus =
+    | "RUNNING"
+    | "PAUSED"
+    | "COMPLETED"
+    | "CANCELLED"
+    | "UNAVAILABLE"
     | "PENDING"
     | "ACTIVE"
-    | "RUNNING"
-    | "COMPLETED"
-    | "PAUSED"
-    | "CANCELLED"
     | "FAILED"
     | string;
 
