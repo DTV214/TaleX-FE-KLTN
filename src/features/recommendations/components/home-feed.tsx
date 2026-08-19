@@ -69,8 +69,6 @@ const RECOMMENDATION_POOLS: HomeFeedPoolKey[] = [
 ];
 
 const MIXED_RECOMMENDATION_LIMIT = 10;
-const MIXED_INITIAL_VISIBLE = 10;
-const MIXED_LOAD_STEP = 8;
 const MIN_RECOMMENDATION_AFTER_DEDUPE = 8;
 
 const poolCopy: Record<
@@ -84,59 +82,59 @@ const poolCopy: Record<
   }
 > = {
   promoted: {
-    eyebrow: "TaleX chọn lọc",
-    comicTitle: "Truyện nổi bật hôm nay",
-    videoTitle: "Phim nổi bật hôm nay",
-    description: "Những nội dung đang được TaleX ưu tiên giới thiệu.",
+    eyebrow: "",
+    comicTitle: "Kênh quảng bá truyện",
+    videoTitle: "Kênh quảng bá phim",
+    description: "",
     variant: "hero",
   },
   trending: {
-    eyebrow: "Đang tăng nhiệt",
-    comicTitle: "Truyện tranh thịnh hành",
+    eyebrow: "",
+    comicTitle: "Truyện thịnh hành",
     videoTitle: "Video thịnh hành",
-    description: "Các series đang có tín hiệu nổi bật trong cộng đồng.",
+    description: "",
     variant: "ranking",
   },
   newReleases: {
-    eyebrow: "Vừa ra mắt",
+    eyebrow: "",
     comicTitle: "Truyện mới ra mắt",
     videoTitle: "Phim mới ra mắt",
-    description: "Những series mới được phát hành gần đây.",
+    description: "",
     variant: "row",
   },
   recentlyUpdated: {
-    eyebrow: "Có cập nhật",
+    eyebrow: "",
     comicTitle: "Truyện vừa cập nhật",
     videoTitle: "Phim vừa cập nhật",
-    description: "Các series vừa có hoạt động mới trên hệ thống.",
+    description: "",
     variant: "row",
   },
   latestCommunityChoice: {
-    eyebrow: "Dành cho bạn",
+    eyebrow: "",
     comicTitle: "Đề xuất truyện",
     videoTitle: "Đề xuất video",
-    description: "Các nội dung được TaleX gợi ý dựa trên tín hiệu cộng đồng.",
+    description: "",
     variant: "row",
   },
   communityChoice: {
-    eyebrow: "Dành cho bạn",
+    eyebrow: "",
     comicTitle: "Đề xuất truyện",
     videoTitle: "Đề xuất video",
-    description: "Các nội dung được TaleX gợi ý dựa trên tín hiệu cộng đồng.",
+    description: "",
     variant: "row",
   },
   randomCategory: {
-    eyebrow: "Khám phá thêm",
-    comicTitle: "Khám phá truyện tranh",
-    videoTitle: "Khám phá phim bộ",
-    description: "Một góc nội dung khác để đổi vị nhẹ nhàng.",
+    eyebrow: "",
+    comicTitle: "Khám phá truyện",
+    videoTitle: "Khám phá phim",
+    description: "",
     variant: "spotlight",
   },
   accountSubscription: {
-    eyebrow: "Kênh theo dõi",
-    comicTitle: "Truyện từ kênh bạn theo dõi",
-    videoTitle: "Video từ kênh bạn theo dõi",
-    description: "Các cập nhật từ những kênh bạn đã đăng ký.",
+    eyebrow: "",
+    comicTitle: "Truyện từ kênh theo dõi",
+    videoTitle: "Video từ kênh theo dõi",
+    description: "",
     variant: "row",
   },
 };
@@ -192,43 +190,40 @@ function buildChannelSections(
 ) {
   if (!feed) return [];
 
-  const videoSections: TypedHomeSection[] = [];
-  const comicSections: TypedHomeSection[] = [];
+  const sections: TypedHomeSection[] = [];
 
   CHANNEL_POOL_ORDER.forEach((poolKey) => {
     const config = poolCopy[poolKey];
     const items = uniqueSeries(feed[poolKey] ?? []);
-    const comics = items.filter((item) => normalizeKind(item) === "COMIC");
-    const videos = items.filter((item) => normalizeKind(item) === "VIDEO");
+    const itemsByKind = {
+      COMIC: items.filter((item) => normalizeKind(item) === "COMIC"),
+      VIDEO: items.filter((item) => normalizeKind(item) === "VIDEO"),
+    } satisfies Record<FeedKind, HomeFeedSeries[]>;
+    const kindOrder: FeedKind[] =
+      poolKey === "trending" ||
+      poolKey === "newReleases" ||
+      poolKey === "randomCategory"
+        ? ["COMIC", "VIDEO"]
+        : ["VIDEO", "COMIC"];
 
-    if (videos.length > 0) {
-      videoSections.push({
-        id: `${poolKey}-video`,
+    kindOrder.forEach((kind) => {
+      const typedItems = itemsByKind[kind];
+      if (typedItems.length === 0) return;
+
+      sections.push({
+        id: `${poolKey}-${kind.toLowerCase()}`,
         poolKey,
-        kind: "VIDEO",
+        kind,
         eyebrow: config.eyebrow,
-        title: config.videoTitle,
+        title: kind === "COMIC" ? config.comicTitle : config.videoTitle,
         description: config.description,
-        items: videos,
+        items: typedItems,
         variant: config.variant,
       });
-    }
-
-    if (comics.length > 0) {
-      comicSections.push({
-        id: `${poolKey}-comic`,
-        poolKey,
-        kind: "COMIC",
-        eyebrow: config.eyebrow,
-        title: config.comicTitle,
-        description: config.description,
-        items: comics,
-        variant: config.variant,
-      });
-    }
+    });
   });
 
-  return [...videoSections, ...comicSections];
+  return sections;
 }
 
 function buildMixedRecommendations(
@@ -292,9 +287,6 @@ export function HomeFeed({
   );
   const { data: feed, isError, isLoading, refetch } = useHomeFeed(queryParams);
   const channelSections = useMemo(() => buildChannelSections(feed), [feed]);
-  const firstVideoSectionIndex = channelSections.findIndex(
-    (section) => section.kind === "VIDEO",
-  );
   const firstComicSectionIndex = channelSections.findIndex(
     (section) => section.kind === "COMIC",
   );
@@ -355,10 +347,10 @@ export function HomeFeed({
       className="mt-5 flex w-full max-w-full flex-col gap-y-10 overflow-hidden pb-24"
     >
       <HomeFeedNav sections={navSections} />
+      <ContinueWatching />
 
       {channelSections.map((section, index) => {
         let content: ReactNode;
-        const isFirstVideoSection = index === firstVideoSectionIndex;
         const isFirstComicSection = index === firstComicSectionIndex;
 
         if (section.variant === "hero") {
@@ -374,25 +366,8 @@ export function HomeFeed({
         return (
           <Fragment key={section.id}>
             {index > 0 ? <DecorativeSectionDivider /> : null}
-            {isFirstVideoSection ? (
-              <>
-                <ContinueWatching />
-                <HomeFeedZoneTitle
-                  icon={<Film className="h-5 w-5" />}
-                  title="Khu vực phim bộ"
-                  description="Các nội dung video đang nổi bật, thịnh hành và mới cập nhật trên TaleX."
-                />
-              </>
-            ) : null}
             {isFirstComicSection && promotedComicAfter ? (
               <CompactSponsorFrame>{promotedComicAfter}</CompactSponsorFrame>
-            ) : null}
-            {isFirstComicSection ? (
-              <HomeFeedZoneTitle
-                icon={<BookOpen className="h-5 w-5" />}
-                title="Khu vực truyện tranh"
-                description="Các series truyện được sắp xếp riêng để người đọc dễ khám phá hơn."
-              />
             ) : null}
             {content}
             {shouldShowHomeAdBreak(index, channelSections.length) ? (
@@ -411,41 +386,6 @@ function shouldShowHomeAdBreak(index: number, total: number) {
   if (total <= 1) return index === 0;
   if (index === 1) return true;
   return total >= 5 && index === 3;
-}
-
-function HomeFeedZoneTitle({
-  icon,
-  title,
-  description,
-}: {
-  icon: ReactNode;
-  title: string;
-  description: string;
-}) {
-  return (
-    <div className="relative overflow-hidden rounded-[1.35rem] border border-[#D4AF37]/16 bg-[linear-gradient(115deg,rgba(212,175,55,0.14),rgba(255,255,255,0.055)_38%,rgba(91,112,184,0.12)_74%,rgba(12,12,14,0.9))] px-5 py-4 shadow-[0_16px_44px_rgba(0,0,0,0.24)]">
-      <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[#D4AF37]/55 to-transparent" />
-      <div className="pointer-events-none absolute -right-8 -top-10 h-28 w-28 rounded-full bg-[#D4AF37]/12 blur-3xl" />
-      <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-start gap-3">
-          <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[#D4AF37]/24 bg-[#D4AF37]/12 text-[#F4D663] shadow-[0_0_22px_rgba(212,175,55,0.12)]">
-            {icon}
-          </span>
-          <div>
-            <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#D4AF37]">
-              TaleX zone
-            </p>
-            <h2 className="mt-1 bg-[linear-gradient(110deg,rgba(255,255,255,0.9),rgba(255,255,255,0.72),rgba(212,175,55,0.95))] bg-clip-text text-2xl font-black text-transparent md:text-3xl">
-              {title}
-            </h2>
-            <p className="mt-1 max-w-3xl text-sm font-semibold leading-relaxed text-white/46">
-              {description}
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 function CompactSponsorFrame({ children }: { children: ReactNode }) {
@@ -1491,10 +1431,9 @@ function MixedRecommendationSection({
         <div className="mb-5 flex items-end justify-between gap-4">
           <SectionHeading
             section={{
-              eyebrow: "TaleX đề xuất",
+              eyebrow: "",
               title: "Đề xuất cho bạn",
-              description:
-                "Video và truyện tranh được gợi ý cá nhân hóa bởi AI LightGBM (Cuộn vô cùng).",
+              description: "",
             }}
             icon={<Sparkles className="h-5 w-5" />}
           />
@@ -1511,10 +1450,9 @@ function MixedRecommendationSection({
       <div className="mb-5 flex items-end justify-between gap-4">
         <SectionHeading
           section={{
-            eyebrow: "TaleX đề xuất",
+            eyebrow: "",
             title: "Đề xuất cho bạn",
-            description:
-              "Video và truyện tranh được gợi ý cá nhân hóa dựa trên thói quen xem & AI LightGBM.",
+            description: "",
           }}
           icon={<Sparkles className="h-5 w-5" />}
         />
@@ -1608,7 +1546,7 @@ function ScrollableRow({ children }: { children: ReactNode }) {
       ) : null}
       <div
         ref={rowRef}
-        className="flex gap-4 overflow-x-auto scroll-smooth pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+        className="flex gap-6 overflow-x-auto scroll-smooth pb-2 md:gap-7 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
       >
         {children}
       </div>
@@ -1867,22 +1805,26 @@ function SectionHeading({
 }) {
   return (
     <div>
-      <div className="flex items-center gap-2 text-[#D4AF37]">
-        {icon}
-        <span className="text-[11px] font-black uppercase tracking-[0.22em]">
-          {section.eyebrow}
+      <div className="flex items-center gap-3">
+        <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[#D4AF37]/22 bg-[#D4AF37]/10 text-[#D4AF37] shadow-[0_0_20px_rgba(212,175,55,0.12)]">
+          {icon}
         </span>
+        <div className="min-w-0">
+          {section.eyebrow ? (
+            <p className="mb-1 text-[11px] font-black uppercase tracking-[0.22em] text-[#D4AF37]">
+              {section.eyebrow}
+            </p>
+          ) : null}
+          <h2 className="bg-[linear-gradient(110deg,rgba(255,255,255,0.76),rgba(255,255,255,0.76),rgba(212,175,55,0.92),rgba(151,176,255,0.7),rgba(255,255,255,0.76))] bg-[length:220%_100%] bg-clip-text font-sans text-2xl font-semibold tracking-normal text-white/82 transition-[color,filter] duration-300 hover:text-transparent hover:drop-shadow-[0_0_18px_rgba(212,175,55,0.18)] md:text-4xl">
+            {section.title}
+          </h2>
+        </div>
       </div>
-      <div className={compact ? "mt-2" : "mt-1"}>
-        <h2 className="bg-[linear-gradient(110deg,rgba(255,255,255,0.76),rgba(255,255,255,0.76),rgba(212,175,55,0.92),rgba(151,176,255,0.7),rgba(255,255,255,0.76))] bg-[length:220%_100%] bg-clip-text font-sans text-2xl font-semibold tracking-tight text-white/82 transition-[color,filter] duration-300 hover:text-transparent hover:drop-shadow-[0_0_18px_rgba(212,175,55,0.18)] md:text-4xl">
-          {section.title}
-        </h2>
-        {!compact ? (
-          <p className="mt-1 text-sm font-medium text-white/38">
-            {section.description}
-          </p>
-        ) : null}
-      </div>
+      {!compact && section.description ? (
+        <p className="mt-2 text-sm font-medium text-white/38">
+          {section.description}
+        </p>
+      ) : null}
     </div>
   );
 }

@@ -128,17 +128,13 @@ export function ContinueWatching() {
       <div className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-white/18 to-transparent" />
       <div className="relative z-10">
         <div className="mb-5 flex items-end justify-between gap-4">
-          <div>
-            <p className="mb-1 flex items-center gap-2 text-xs font-black uppercase tracking-[0.2em] text-[#D4AF37]">
+          <div className="flex items-center gap-3">
+            <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[#D4AF37]/22 bg-[#D4AF37]/10 text-[#D4AF37] shadow-[0_0_20px_rgba(212,175,55,0.12)]">
               <History className="h-5 w-5" />
-              Lịch sử cá nhân
-            </p>
+            </span>
             <h2 className="font-heading text-3xl font-black leading-tight text-white md:text-4xl">
               Tiếp tục xem
             </h2>
-            <p className="mt-2 text-sm font-semibold text-white/42">
-              Quay lại các tập phim và chương truyện bạn vừa theo dõi.
-            </p>
           </div>
           <Link
             href="/history"
