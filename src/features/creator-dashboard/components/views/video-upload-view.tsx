@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo, useCallback, FormEvent, DragEvent, ReactNode } from 'react';
+import React, { useState, useRef, useEffect, useCallback, FormEvent, DragEvent, ReactNode } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { PlayCircle, ImagePlus, Video, ShieldAlert, AlertTriangle, Fingerprint, BarChart3, ArrowDown, ArrowUp, BookOpen, Calendar, ChevronDown, ChevronLeft, ChevronRight, CircleAlert, Clapperboard, CloudUpload, Edit3, Eye, FileVideo, GripVertical, Image as ImageIcon, Info, Library, Loader2, Lock, Plus, RefreshCw, Search, Settings2, Tag, Trash2, UploadCloud, Wallet, X, Zap, type LucideIcon } from 'lucide-react';
 import { toast } from 'sonner';
@@ -404,7 +404,9 @@ export function VideoUploadView({
                 <Info className="h-3 w-3 text-black" />
               </div>
               <p className="text-sm font-medium text-creator-muted max-w-sm">
-                Quá trình quét thường mất từ ​​2 đến 5 phút.
+                Thời gian kiểm duyệt phụ thuộc vào độ dài video. Bạn có thể
+                rời trang này và quay lại sau, hệ thống sẽ tự động cập nhật tiến
+                trình.
               </p>
             </div>
             {canSchedule && (

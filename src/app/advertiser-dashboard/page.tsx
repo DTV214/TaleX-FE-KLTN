@@ -817,6 +817,10 @@ function ScheduleUpdateModal({ campaign, onClose }: { campaign: any, onClose: ()
   });
 
   const handleSubmit = () => {
+    const now = new Date();
+    if (startDate && new Date(startDate) < now) {
+      return toast.error("Start date cannot be before current time");
+    }
     if (startDate && endDate && new Date(endDate) <= new Date(startDate)) {
       return toast.error("End date must be after start date");
     }
@@ -843,6 +847,7 @@ function ScheduleUpdateModal({ campaign, onClose }: { campaign: any, onClose: ()
             <input 
               type="datetime-local" 
               value={startDate}
+              min={new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16)}
               onChange={(e) => setStartDate(e.target.value)}
               className="w-full border border-slate-300 rounded-sm px-3 py-2 outline-none focus:border-slate-800 text-sm"
             />
@@ -852,6 +857,7 @@ function ScheduleUpdateModal({ campaign, onClose }: { campaign: any, onClose: ()
             <input 
               type="datetime-local" 
               value={endDate}
+              min={startDate || new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16)}
               onChange={(e) => setEndDate(e.target.value)}
               className="w-full border border-slate-300 rounded-sm px-3 py-2 outline-none focus:border-slate-800 text-sm"
             />
@@ -1109,6 +1115,8 @@ function CreateCampaignPanel({ onClose }: { onClose: () => void }) {
     if (step === 2) {
       if (formData.campaignBudget < 10000) return toast.error("Minimum budget is 10,000 VND");
       if (profile && formData.campaignBudget > profile.walletBalance) return toast.error("Budget exceeds your Master Wallet balance");
+      const now = new Date();
+      if (formData.startDate && new Date(formData.startDate) < now) return toast.error("Start date cannot be before current time");
       if (formData.startDate && formData.endDate && new Date(formData.endDate) <= new Date(formData.startDate)) return toast.error("End date must be after start date");
     }
     setStep(step + 1);
@@ -1261,6 +1269,7 @@ function CreateCampaignPanel({ onClose }: { onClose: () => void }) {
                       <input 
                         type="datetime-local" 
                         value={formData.startDate} 
+                        min={new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16)}
                         onChange={(e) => setFormData({...formData, startDate: e.target.value})}
                         className="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm outline-none focus:border-slate-800" 
                       />
@@ -1270,6 +1279,7 @@ function CreateCampaignPanel({ onClose }: { onClose: () => void }) {
                       <input 
                         type="datetime-local" 
                         value={formData.endDate} 
+                        min={formData.startDate || new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16)}
                         onChange={(e) => setFormData({...formData, endDate: e.target.value})}
                         className="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm outline-none focus:border-slate-800" 
                       />

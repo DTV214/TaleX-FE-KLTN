@@ -61,23 +61,47 @@ export function WatermarkedImage({
           throw new Error("No fallbackUrl provided");
         }
 
-        // Tạo Image object để load ảnh
+        // Tải dữ liệu ảnh dưới dạng Blob qua Proxy (đảm bảo không bị CORS/Tainted Canvas trên Deploy)
+        let blob: Blob | null = null;
+        if (fallbackUrl.startsWith("http")) {
+          try {
+            const proxyRes = await fetch(`/api/image-proxy?url=${encodeURIComponent(fallbackUrl)}`);
+            if (proxyRes.ok) {
+              blob = await proxyRes.blob();
+            }
+          } catch (e) {
+            console.warn("[watermark] Proxy fetch failed, trying direct fetch:", e);
+          }
+        }
+
+        if (!blob) {
+          try {
+            const directRes = await fetch(fallbackUrl, { mode: "cors" });
+            if (directRes.ok) {
+              blob = await directRes.blob();
+            }
+          } catch (e) {
+            console.warn("[watermark] Direct fetch failed:", e);
+          }
+        }
+
+        if (!blob) {
+          throw new Error("Could not fetch image blob for canvas watermarking");
+        }
+
+        const tempBlobUrl = URL.createObjectURL(blob);
         const img = new Image();
-        img.crossOrigin = "anonymous"; // Bắt buộc để tránh lỗi Tainted Canvas
 
         await new Promise((resolve, reject) => {
           img.onload = resolve;
-          img.onerror = () => reject(new Error("Failed to load image for canvas"));
-
-          // Dùng Next.js API Route proxy để vượt qua lỗi CORS của Cloudfront/S3 (chỉ áp dụng cho link ngoài)
-          if (fallbackUrl.startsWith("http")) {
-            img.src = `/api/image-proxy?url=${encodeURIComponent(fallbackUrl)}`;
-          } else {
-            img.src = fallbackUrl;
-          }
+          img.onerror = () => reject(new Error("Failed to decode blob image into HTMLImageElement"));
+          img.src = tempBlobUrl;
         });
 
-        if (!isMounted) return;
+        if (!isMounted) {
+          URL.revokeObjectURL(tempBlobUrl);
+          return;
+        }
 
         // Vẽ lên Canvas
         const canvas = document.createElement("canvas");
@@ -93,18 +117,14 @@ export function WatermarkedImage({
         // Vẽ Viewer ID (Watermark nổi)
         if (accountId) {
           ctx.globalCompositeOperation = "difference"; // Trộn màu tương phản
-          ctx.fillStyle = "rgba(255, 255, 255, 0.02)"; // Chữ mờ 6% (tăng lên 1 chút để có thể nhìn thấy)
+          ctx.fillStyle = "rgba(255, 255, 255, 0.02)"; // Độ mờ 2% chuẩn
           ctx.font = "bold 40px sans-serif";
           const textToDraw = `${accountId}`;
-          // Chỉ in 2 dòng chữ mờ trên mỗi bức ảnh (để không cản trở việc đọc truyện)
-          // Nếu ảnh quá lùn thì chỉ in 1 cái ở giữa
           if (canvas.height > 400) {
-            // Nửa trên ảnh
             const y1 = 100 + Math.random() * (canvas.height / 2 - 200);
             const x1 = 50 + Math.random() * Math.max(0, canvas.width - 600);
             ctx.fillText(textToDraw, x1, y1);
 
-            // Nửa dưới ảnh
             const y2 = (canvas.height / 2) + Math.random() * (canvas.height / 2 - 100);
             const x2 = 50 + Math.random() * Math.max(0, canvas.width - 600);
             ctx.fillText(textToDraw, x2, y2);
@@ -112,12 +132,12 @@ export function WatermarkedImage({
             ctx.fillText(textToDraw, 10, canvas.height / 2);
           }
 
-          ctx.globalCompositeOperation = "source-over"; // Trả lại bình thường
-        } // <-- Dấu ngoặc bị thiếu
+          ctx.globalCompositeOperation = "source-over";
+        }
 
         // Vẽ Logo Website mờ ở giữa (luôn hiển thị để đánh dấu bản quyền)
         ctx.globalCompositeOperation = "difference";
-        ctx.fillStyle = "rgba(255, 255, 255, 0.06)"; // Độ mờ 6%
+        ctx.fillStyle = "rgba(255, 255, 255, 0.06)"; // Độ mờ 6% chuẩn
         ctx.font = "bold 60px sans-serif";
         const brandText = "talex.pro.vn";
         const brandMetrics = ctx.measureText(brandText);
@@ -126,12 +146,12 @@ export function WatermarkedImage({
         ctx.save();
         ctx.translate(canvas.width / 2, canvas.height / 2);
         ctx.rotate((-30 * Math.PI) / 180);
-        ctx.fillText(brandText, -brandMetrics.width / 2, 0); // Vẽ ở tọa độ 0,0 vì đã translate
+        ctx.fillText(brandText, -brandMetrics.width / 2, 0);
         ctx.restore();
         
         ctx.globalCompositeOperation = "source-over";
 
-        // --- Nhúng LSB (Least Significant Bit) — ẩn User ID vào bit cuối cùng mầu Đỏ ---
+        // --- Nhúng LSB (Least Significant Bit) ---
         if (accountId) {
           const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
           const textToHide = `${accountId}`;
@@ -154,6 +174,7 @@ export function WatermarkedImage({
 
         // Chuyển Canvas thành Blob để làm src cho <img>
         canvas.toBlob((blob) => {
+          URL.revokeObjectURL(tempBlobUrl);
           if (blob && isMounted) {
             url = URL.createObjectURL(blob);
             setObjectUrl(url);

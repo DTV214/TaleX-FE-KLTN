@@ -96,7 +96,7 @@ export function CreatorTiersTable({
 
       <div className="overflow-x-auto">
         <table className="w-full min-w-[1120px] text-left text-sm">
-          <thead className="border-b border-gray-100 bg-gray-50/80 text-xs font-bold uppercase tracking-wider text-gray-500">
+          <thead className="border-b border-gray-100 bg-black-50/80 text-xs font-bold uppercase tracking-wider text-gray-500">
             <tr>
               <th className="px-5 py-4">Tier</th>
               <th className="px-5 py-4">Level</th>

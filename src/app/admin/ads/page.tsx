@@ -322,6 +322,36 @@ export default function AdminAdsPage() {
     onError: (error) => toast.error(getErrorMessage(error)),
   });
 
+  // Cấu hình In-Video Preroll
+  const { data: inVideoConfig } = useQuery({
+    queryKey: ["ad-in-video-config-admin"],
+    queryFn: adsApi.getInVideoConfig,
+  });
+  const [skipAfterSec, setSkipAfterSec] = useState<number>(5);
+  const [inVideoCooldown, setInVideoCooldown] = useState<number>(30);
+
+  const inVideoConfigSynced = useRef(false);
+  useEffect(() => {
+    if (inVideoConfig && !inVideoConfigSynced.current) {
+      setSkipAfterSec(inVideoConfig.skipAfterSec);
+      setInVideoCooldown(inVideoConfig.cooldownSeconds);
+      inVideoConfigSynced.current = true;
+    }
+  }, [inVideoConfig]);
+
+  const updateInVideoConfigMutation = useMutation({
+    mutationFn: (config: { skipAfterSec: number; cooldownSeconds: number }) =>
+      adsApi.updateInVideoConfig(config),
+    onSuccess: (data) => {
+      setSkipAfterSec(data.skipAfterSec);
+      setInVideoCooldown(data.cooldownSeconds);
+      queryClient.invalidateQueries({ queryKey: ["ad-in-video-config-admin"] });
+      queryClient.invalidateQueries({ queryKey: ["ad-in-video-config"] });
+      toast.success("Đã lưu cấu hình In-Video.");
+    },
+    onError: (error) => toast.error(getErrorMessage(error)),
+  });
+
   const handleAddRoute = () => {
     const route = routeInput.trim();
     if (!route) return;
@@ -653,8 +683,74 @@ export default function AdminAdsPage() {
               {updateConfigMutation.isPending && (
                 <Loader2 className="h-4 w-4 animate-spin" />
               )}
-              Lưu cấu hình
+              Lưu cấu hình Popup
             </button>
+          </div>
+
+          {/* Card Cấu hình In-Video Preroll */}
+          <div className="mt-8 border-t border-slate-200 pt-8 backoffice-dark:border-white/10">
+            <div className="flex items-center gap-3">
+              <div className="rounded-xl bg-violet-100 p-2.5 text-violet-700 backoffice-dark:bg-white/10 backoffice-dark:text-[var(--backoffice-primary)]">
+                <Video className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="text-base font-bold text-slate-950 backoffice-dark:text-white">
+                  Cấu hình In-Video Preroll
+                </h2>
+                <p className="text-xs font-medium text-slate-500 backoffice-dark:text-white/55">
+                  Cấu hình số giây bắt buộc xem trước khi hiện nút Skip và thời gian hồi (cooldown) chống spam F5.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 grid gap-5 sm:grid-cols-2">
+              <label className="block">
+                <span className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-500 backoffice-dark:text-white/45">
+                  Số giây xem trước khi hiện Skip (giây)
+                </span>
+                <input
+                  type="number"
+                  value={skipAfterSec}
+                  onChange={(e) => setSkipAfterSec(Number(e.target.value))}
+                  min={0}
+                  step={1}
+                  className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 font-mono text-sm font-semibold text-slate-900 outline-none transition focus:border-violet-500 focus:ring-4 focus:ring-violet-100 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white"
+                />
+              </label>
+
+              <label className="block">
+                <span className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-500 backoffice-dark:text-white/45">
+                  Thời gian hồi / Chống spam F5 (giây)
+                </span>
+                <input
+                  type="number"
+                  value={inVideoCooldown}
+                  onChange={(e) => setInVideoCooldown(Number(e.target.value))}
+                  min={0}
+                  step={5}
+                  className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 font-mono text-sm font-semibold text-slate-900 outline-none transition focus:border-violet-500 focus:ring-4 focus:ring-violet-100 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white"
+                />
+              </label>
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <button
+                type="button"
+                onClick={() =>
+                  updateInVideoConfigMutation.mutate({
+                    skipAfterSec,
+                    cooldownSeconds: inVideoCooldown,
+                  })
+                }
+                disabled={updateInVideoConfigMutation.isPending}
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-violet-600 px-6 text-sm font-bold text-white shadow-sm transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60 backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black"
+              >
+                {updateInVideoConfigMutation.isPending && (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                )}
+                Lưu cấu hình In-Video
+              </button>
+            </div>
           </div>
         </section>
       )}

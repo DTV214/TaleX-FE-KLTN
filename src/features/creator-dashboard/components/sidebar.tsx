@@ -7,7 +7,6 @@ import {
   Clapperboard,
   Home,
   LayoutDashboard,
-  LineChart,
   Menu,
   Rocket,
   WalletCards,
@@ -64,11 +63,6 @@ const sidebarItems: SidebarItem[] = [
     label: "Tăng tương tác",
     view: "campaign",
     icon: Rocket,
-  },
-  {
-    label: "Sản xuất",
-    view: "production",
-    icon: LineChart,
   },
 ];
 

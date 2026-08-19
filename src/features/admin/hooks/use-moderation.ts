@@ -10,7 +10,9 @@ import {
   getMediaById,
   getMediaViolations,
   getPendingMedia,
+  getRejectedMedia,
   type ModerationTypeFilter,
+  purgeMedia,
   rejectMedia,
 } from "@/features/admin/api/moderation.api";
 
@@ -29,6 +31,12 @@ export const moderationKeys = {
     mediaType: ModerationTypeFilter,
     keyword: string,
   ) => [...moderationKeys.all, "approved", page, size, filter, mediaType, keyword] as const,
+  rejected: (
+    page: number,
+    size: number,
+    mediaType: ModerationTypeFilter,
+    keyword: string,
+  ) => [...moderationKeys.all, "rejected", page, size, mediaType, keyword] as const,
   violations: (mediaId: string) =>
     [...moderationKeys.all, "violations", mediaId] as const,
   mediaDetail: (mediaId: string) =>
@@ -104,6 +112,19 @@ export function useGetApprovedMedia(
   });
 }
 
+export function useGetRejectedMedia(
+  page = 0,
+  size = 12,
+  mediaType: ModerationTypeFilter = "all",
+  keyword = "",
+) {
+  return useQuery({
+    queryKey: moderationKeys.rejected(page, size, mediaType, keyword),
+    queryFn: () => getRejectedMedia(page, size, mediaType, keyword),
+    staleTime: 30 * 1000,
+  });
+}
+
 export function useForceHideEpisode() {
   const queryClient = useQueryClient();
 
@@ -120,6 +141,18 @@ export function useForceUnhideEpisode() {
 
   return useMutation({
     mutationFn: (episodeId: string) => forceUnhideEpisode(episodeId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: moderationKeys.all });
+    },
+  });
+}
+
+export function usePurgeMedia() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
+      purgeMedia(id, reason),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: moderationKeys.all });
     },

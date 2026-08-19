@@ -34,6 +34,7 @@ import { useRouter } from "next/navigation";
 import { getMyLikedEpisodes, getEpisodeLikes } from "../api/episode-likes-api";
 import { useGetPublicCombos } from "@/features/public/hooks/use-public-combos";
 import { useCreatorFollow } from "../hooks/use-creator-follow";
+import { useContentEntitlement } from "../hooks/use-content-entitlement";
 import { getFollowers } from "../api/creator-follows-api";
 import { FollowButton } from "./follow-button";
 import { EpisodeBookmarkButton } from "./episode-bookmark-button";
@@ -185,6 +186,13 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
         : b.episodeNumber - a.episodeNumber,
     );
   }, [episodes, isAscending]);
+
+  // Quyền truy cập nội dung (tập đã mua, subscription, hoặc tác giả)
+  const { isEpisodeUnlocked } = useContentEntitlement({
+    contentType: series?.contentType,
+    creatorAccountId: series?.accountId || series?.creatorId,
+    episodes: sortedEpisodes,
+  });
 
   // Lấy tập đầu tiên để làm nút "Xem từ đầu"
   const firstEpisodeId = sortedEpisodes[0]?.episodeId;
@@ -956,6 +964,8 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
             >
               {sortedEpisodes.map((episode) => {
                 const isPaid = episode.unlockType === "PAID";
+                const isUnlocked = isEpisodeUnlocked(episode);
+                const showLock = isPaid && !isUnlocked;
                 return (
                   <Link
                     key={episode.episodeId}
@@ -972,7 +982,7 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
                         ? `Chương ${episode.episodeNumber}`
                         : `Tập ${episode.episodeNumber}`}
                     </span>
-                    {isPaid && (
+                    {showLock && (
                       <Lock className="w-3 h-3 text-amber-400 group-hover:text-black shrink-0 ml-0.5" />
                     )}
                   </Link>

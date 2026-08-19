@@ -12,6 +12,7 @@ import {
   Search,
   ShieldAlert,
   Smile,
+  Trash2,
   Video,
   X,
 } from "lucide-react";
@@ -27,10 +28,14 @@ import {
   useForceUnhideEpisode,
   useGetApprovedMedia,
   useGetPendingMedia,
+  useGetRejectedMedia,
   useMediaDetail,
   useMediaViolations,
+  usePurgeMedia,
   useRejectMedia,
 } from "@/features/admin/hooks/use-moderation";
+import { useAuthStore } from "@/features/auth/store/auth.store";
+import { getApiErrorMessage } from "@/shared/api/http-client";
 import { useViolationLabelMap } from "@/shared/hooks/use-violation-label-map";
 
 const PAGE_SIZE = 12;
@@ -224,6 +229,123 @@ function ConfirmForceHideModal({
           >
             {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
             Tạm ẩn episode
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Xóa vĩnh viễn (hard-delete Postgres + Milvus fingerprint + S3) KHÔNG THỂ HOÀN TÁC — khác
+// hẳn Từ chối/Tạm ẩn (vẫn soft-delete, khôi phục được). Bắt Admin gõ lại đúng mediaId để
+// xác nhận (chống bấm nhầm khi đang duyệt nhanh hàng loạt) + bắt buộc nhập lý do (BE cũng
+// validate @NotBlank, ghi vào audit log pháp lý media_purge_log).
+function ConfirmPurgeModal({
+  errorMessage,
+  isLoading,
+  media,
+  onClose,
+  onConfirm,
+  open,
+}: {
+  errorMessage: string | null;
+  isLoading: boolean;
+  media: ModerationMedia | null;
+  onClose: () => void;
+  onConfirm: (reason: string) => void;
+  open: boolean;
+}) {
+  const [confirmText, setConfirmText] = useState("");
+  const [reason, setReason] = useState("");
+
+  if (!open || !media) return null;
+
+  const canConfirm = confirmText.trim() === media.id && reason.trim().length > 0;
+
+  return (
+    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="w-full max-w-lg rounded-2xl border-2 border-red-200 bg-white p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+        <div className="mb-6 flex items-start justify-between gap-4">
+          <div>
+            <h2 className="flex items-center gap-2 text-xl font-bold text-red-700">
+              <Trash2 className="h-5 w-5" />
+              Xóa vĩnh viễn nội dung
+            </h2>
+            <p className="mt-1 text-sm font-medium text-slate-500">
+              Hành động này KHÔNG THỂ HOÀN TÁC — xóa hẳn khỏi database, xóa file gốc trên S3
+              và xóa fingerprint chống đạo nhái trên Milvus. Chỉ dùng cho yêu cầu pháp lý
+              (DMCA, lệnh tòa, GDPR) đã xác nhận.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isLoading}
+            className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50"
+            aria-label="Đóng"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 p-3">
+          <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
+            Mã nội dung cần xóa
+          </p>
+          <p className="mt-1 break-all text-sm font-bold text-slate-900">{media.id}</p>
+        </div>
+
+        <div className="mb-4">
+          <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">
+            Lý do (bắt buộc, ghi vào nhật ký pháp lý)
+          </label>
+          <textarea
+            value={reason}
+            onChange={(event) => setReason(event.target.value)}
+            disabled={isLoading}
+            rows={3}
+            placeholder="VD: Yêu cầu gỡ bỏ theo DMCA #12345, đã xác nhận bởi..."
+            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-red-400 focus:ring-2 focus:ring-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+          />
+        </div>
+
+        <div className="mb-4">
+          <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">
+            Gõ lại chính xác mã nội dung ở trên để xác nhận
+          </label>
+          <input
+            type="text"
+            value={confirmText}
+            onChange={(event) => setConfirmText(event.target.value)}
+            disabled={isLoading}
+            placeholder={media.id}
+            className="w-full rounded-lg border border-slate-200 px-3 py-2 font-mono text-sm text-slate-900 outline-none transition focus:border-red-400 focus:ring-2 focus:ring-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+          />
+        </div>
+
+        {errorMessage && (
+          <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-700">
+            {errorMessage}
+          </p>
+        )}
+
+        <div className="mt-2 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isLoading}
+            className="inline-flex h-11 items-center justify-center rounded-lg border border-slate-200 bg-white px-5 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Hủy
+          </button>
+          <button
+            type="button"
+            onClick={() => onConfirm(reason.trim())}
+            disabled={isLoading || !canConfirm}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-red-600 px-5 text-sm font-bold text-white shadow-sm transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+            Xóa vĩnh viễn
           </button>
         </div>
       </div>
@@ -1091,7 +1213,7 @@ function ModerationListItem({
   isSelected: boolean;
   media: ModerationMedia;
   mediaCount?: number;
-  mode: "pending" | "approved";
+  mode: "pending" | "approved" | "rejected";
   onSelect: () => void;
 }) {
   const isEpisodeForceHidden = media.episodeStatus === "FORCE_HIDDEN";
@@ -1124,16 +1246,20 @@ function ModerationListItem({
               className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-black ${
                 mode === "pending"
                   ? "bg-amber-50 text-amber-700 backoffice-dark:bg-amber-300/10 backoffice-dark:text-amber-100"
-                  : isEpisodeForceHidden
+                  : mode === "rejected"
                     ? "bg-red-50 text-red-700 backoffice-dark:bg-red-400/10 backoffice-dark:text-red-200"
-                    : "bg-emerald-50 text-emerald-700 backoffice-dark:bg-emerald-400/10 backoffice-dark:text-emerald-200"
+                    : isEpisodeForceHidden
+                      ? "bg-red-50 text-red-700 backoffice-dark:bg-red-400/10 backoffice-dark:text-red-200"
+                      : "bg-emerald-50 text-emerald-700 backoffice-dark:bg-emerald-400/10 backoffice-dark:text-emerald-200"
               }`}
             >
               {mode === "pending"
                 ? "Chờ duyệt"
-                : isEpisodeForceHidden
-                  ? "Đang ẩn"
-                  : "Đã duyệt"}
+                : mode === "rejected"
+                  ? "Đã từ chối"
+                  : isEpisodeForceHidden
+                    ? "Đang ẩn"
+                    : "Đã duyệt"}
             </span>
           </div>
 
@@ -1200,15 +1326,19 @@ function DetailInfoGrid({ media }: { media: ModerationMedia }) {
 }
 
 function PendingDetailPanel({
+  canPurge,
   isMutating,
   media,
   onApprove,
+  onPurge,
   onReject,
   onViewDetail,
 }: {
+  canPurge: boolean;
   isMutating: boolean;
   media: ModerationMedia | null;
   onApprove: (media: ModerationMedia) => void;
+  onPurge: (media: ModerationMedia) => void;
   onReject: (media: ModerationMedia) => void;
   onViewDetail: (media: ModerationMedia) => void;
 }) {
@@ -1276,24 +1406,40 @@ function PendingDetailPanel({
             Chi tiết
           </button>
         </div>
+
+        {canPurge && (
+          <button
+            type="button"
+            onClick={() => onPurge(media)}
+            disabled={isMutating}
+            className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 text-xs font-black text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            Xóa vĩnh viễn (không thể hoàn tác)
+          </button>
+        )}
       </div>
     </article>
   );
 }
 
 function ApprovedDetailPanel({
+  canPurge,
   isMutating,
   media,
   mediaCount,
   onForceHide,
   onForceUnhide,
+  onPurge,
   onViewDetail,
 }: {
+  canPurge: boolean;
   isMutating: boolean;
   media: ModerationMedia | null;
   mediaCount: number;
   onForceHide: (media: ModerationMedia) => void;
   onForceUnhide: (media: ModerationMedia) => void;
+  onPurge: (media: ModerationMedia) => void;
   onViewDetail: (media: ModerationMedia) => void;
 }) {
   if (!media) {
@@ -1376,6 +1522,112 @@ function ApprovedDetailPanel({
             Chi tiết
           </button>
         </div>
+
+        {canPurge && (
+          <button
+            type="button"
+            onClick={() => onPurge(media)}
+            disabled={isMutating}
+            className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 text-xs font-black text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            Xóa vĩnh viễn (không thể hoàn tác)
+          </button>
+        )}
+      </div>
+    </article>
+  );
+}
+
+function RejectedDetailPanel({
+  canPurge,
+  isMutating,
+  media,
+  mediaCount,
+  onApprove,
+  onPurge,
+  onViewDetail,
+}: {
+  canPurge: boolean;
+  isMutating: boolean;
+  media: ModerationMedia | null;
+  mediaCount: number;
+  onApprove: (media: ModerationMedia) => void;
+  onPurge: (media: ModerationMedia) => void;
+  onViewDetail: (media: ModerationMedia) => void;
+}) {
+  if (!media) {
+    return (
+      <div className="flex min-h-[520px] items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
+        <p className="text-sm font-semibold text-slate-500 backoffice-dark:text-white/55">
+          Chọn một nội dung bị từ chối để xem thông tin episode.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
+      <div className="aspect-video overflow-hidden border-b border-slate-200 bg-slate-100 backoffice-dark:border-white/10">
+        <ModerationPreview media={media} />
+      </div>
+
+      <div className="space-y-5 p-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <p className="text-xs font-black uppercase tracking-wide text-slate-400 backoffice-dark:text-white/45">
+              Episode bị từ chối
+            </p>
+            <h2 className="mt-1 break-all text-xl font-black text-slate-950 backoffice-dark:text-white">
+              {media.episodeTitle || media.episodeId || media.id}
+            </h2>
+          </div>
+          <div className="flex shrink-0 flex-wrap gap-2">
+            <MediaTypeBadge media={media} />
+            <span className="inline-flex rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-bold text-red-700 backoffice-dark:border-red-400/30 backoffice-dark:bg-red-400/10 backoffice-dark:text-red-200">
+              Đã từ chối
+            </span>
+            {mediaCount > 1 ? (
+              <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-bold text-slate-600 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/65">
+                {mediaCount} media
+              </span>
+            ) : null}
+          </div>
+        </div>
+
+        <DetailInfoGrid media={media} />
+
+        <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+          <button
+            type="button"
+            onClick={() => onApprove(media)}
+            disabled={isMutating}
+            className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 text-sm font-black text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <Check className="h-4 w-4" />
+            Duyệt lại
+          </button>
+          <button
+            type="button"
+            onClick={() => onViewDetail(media)}
+            className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 text-sm font-bold text-slate-700 transition hover:bg-slate-50 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/10"
+          >
+            <Eye className="h-4 w-4" />
+            Chi tiết
+          </button>
+        </div>
+
+        {canPurge && (
+          <button
+            type="button"
+            onClick={() => onPurge(media)}
+            disabled={isMutating}
+            className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 text-xs font-black text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            Xóa vĩnh viễn (không thể hoàn tác)
+          </button>
+        )}
       </div>
     </article>
   );
@@ -1427,22 +1679,32 @@ function ModerationPagination({
 }
 
 export function ModerationManagement() {
-  const [activeTab, setActiveTab] = useState<"pending" | "approved">("pending");
+  // Xóa vĩnh viễn chỉ Admin dùng được — BE đã chặn bằng @PreAuthorize("hasRole('ADMIN')"),
+  // check này ở FE chỉ để ẩn nút khỏi Staff (UX), không thay thế authz thật (xem AdminGuard).
+  const { user } = useAuthStore();
+  const isAdmin = user?.roleName === "ADMIN";
+  const [activeTab, setActiveTab] = useState<"pending" | "approved" | "rejected">("pending");
   const [approvedFilter, setApprovedFilter] = useState<"all" | "manual" | "clean">("all");
   const [pendingTypeFilter, setPendingTypeFilter] = useState<ModerationTypeFilter>("all");
   const [approvedTypeFilter, setApprovedTypeFilter] = useState<ModerationTypeFilter>("all");
+  const [rejectedTypeFilter, setRejectedTypeFilter] = useState<ModerationTypeFilter>("all");
   // Riêng theo từng tab (giống pendingTypeFilter/approvedTypeFilter) — đổi tab không nên
   // xóa mất từ khóa đang gõ dở ở tab kia.
   const [pendingKeyword, setPendingKeyword] = useState("");
   const [approvedKeyword, setApprovedKeyword] = useState("");
+  const [rejectedKeyword, setRejectedKeyword] = useState("");
   const [page, setPage] = useState(0);
   const [approvedPage, setApprovedPage] = useState(0);
+  const [rejectedPage, setRejectedPage] = useState(0);
   const [approveTarget, setApproveTarget] = useState<ModerationMedia | null>(null);
   const [rejectTarget, setRejectTarget] = useState<ModerationMedia | null>(null);
   const [forceHideTarget, setForceHideTarget] = useState<ModerationMedia | null>(null);
+  const [purgeTarget, setPurgeTarget] = useState<ModerationMedia | null>(null);
+  const [purgeErrorMessage, setPurgeErrorMessage] = useState<string | null>(null);
   const [detailTarget, setDetailTarget] = useState<ModerationMedia | null>(null);
   const [selectedPendingId, setSelectedPendingId] = useState<string | null>(null);
   const [selectedApprovedId, setSelectedApprovedId] = useState<string | null>(null);
+  const [selectedRejectedId, setSelectedRejectedId] = useState<string | null>(null);
   const pendingQuery = useGetPendingMedia(page, PAGE_SIZE, pendingTypeFilter, pendingKeyword);
   // Lọc "manual"/"clean" chạy ở BE (MediaServiceImpl.listApproved) — approvalReviewedBy
   // KHÔNG đủ để tự lọc ở FE: pipeline tự duyệt sạch cũng ghi giá trị actor hệ thống vào
@@ -1455,10 +1717,12 @@ export function ModerationManagement() {
     approvedTypeFilter,
     approvedKeyword,
   );
+  const rejectedQuery = useGetRejectedMedia(rejectedPage, PAGE_SIZE, rejectedTypeFilter, rejectedKeyword);
   const approveMutation = useApproveMedia();
   const rejectMutation = useRejectMedia();
   const forceHideMutation = useForceHideEpisode();
   const forceUnhideMutation = useForceUnhideEpisode();
+  const purgeMutation = usePurgeMedia();
   const pendingPage = pendingQuery.data;
   const items = pendingPage?.content ?? [];
   // BE đã group theo episode và trả sẵn episodeMediaCount (xem MediaServiceImpl.listApproved
@@ -1467,6 +1731,7 @@ export function ModerationManagement() {
   // có thể bị cắt rải qua nhiều trang, hiện lại thành nhiều card cho cùng 1 episode (bug thật
   // đã gặp) — nay BE phân trang trực tiếp theo episode nên vấn đề này không còn nữa.
   const approvedItems = approvedQuery.data?.content ?? [];
+  const rejectedItems = rejectedQuery.data?.content ?? [];
   const isMutating = approveMutation.isPending || rejectMutation.isPending;
   const isApprovedMutating = forceHideMutation.isPending || forceUnhideMutation.isPending;
   const selectedPendingMedia =
@@ -1481,6 +1746,12 @@ export function ModerationManagement() {
       : null) ??
     approvedItems[0] ??
     null;
+  const selectedRejectedMedia =
+    (selectedRejectedId
+      ? rejectedItems.find((media) => media.id === selectedRejectedId)
+      : null) ??
+    rejectedItems[0] ??
+    null;
 
   function handlePendingKeywordChange(value: string) {
     setPendingKeyword(value);
@@ -1490,6 +1761,11 @@ export function ModerationManagement() {
   function handleApprovedKeywordChange(value: string) {
     setApprovedKeyword(value);
     setApprovedPage(0);
+  }
+
+  function handleRejectedKeywordChange(value: string) {
+    setRejectedKeyword(value);
+    setRejectedPage(0);
   }
 
   function confirmApprove() {
@@ -1548,6 +1824,31 @@ export function ModerationManagement() {
     });
   }
 
+  function handlePurge(media: ModerationMedia) {
+    setPurgeErrorMessage(null);
+    setPurgeTarget(media);
+  }
+
+  function confirmPurge(reason: string) {
+    if (!purgeTarget) return;
+    setPurgeErrorMessage(null);
+    purgeMutation.mutate(
+      { id: purgeTarget.id, reason },
+      {
+        onSuccess: () => {
+          toast.success("Đã xóa vĩnh viễn nội dung.");
+          setPurgeTarget(null);
+          setDetailTarget(null);
+        },
+        // Dùng getApiErrorMessage (thay vì getErrorMessage cục bộ) để lấy đúng message BE
+        // trả về — quan trọng nhất là lỗi 409 khi media này đang là nguồn của 1 vi phạm
+        // khác (ContentModuleException.conflict), Admin cần biết CHÍNH XÁC lý do bị chặn
+        // chứ không phải thông báo lỗi chung chung.
+        onError: (error) => setPurgeErrorMessage(getApiErrorMessage(error)),
+      },
+    );
+  }
+
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
       <div>
@@ -1567,6 +1868,7 @@ export function ModerationManagement() {
               [
                 { key: "pending", label: "Chờ duyệt", count: pendingPage?.totalElements ?? items.length },
                 { key: "approved", label: "Đã duyệt", count: approvedQuery.data?.totalElements ?? approvedItems.length },
+                { key: "rejected", label: "Từ chối", count: rejectedQuery.data?.totalElements ?? rejectedItems.length },
               ] as const
             ).map((option) => (
               <button
@@ -1604,7 +1906,9 @@ export function ModerationManagement() {
               const isActive =
                 activeTab === "pending"
                   ? pendingTypeFilter === option.key
-                  : approvedTypeFilter === option.key;
+                  : activeTab === "approved"
+                    ? approvedTypeFilter === option.key
+                    : rejectedTypeFilter === option.key;
 
               return (
                 <button
@@ -1617,8 +1921,14 @@ export function ModerationManagement() {
                       return;
                     }
 
-                    setApprovedTypeFilter(option.key);
-                    setApprovedPage(0);
+                    if (activeTab === "approved") {
+                      setApprovedTypeFilter(option.key);
+                      setApprovedPage(0);
+                      return;
+                    }
+
+                    setRejectedTypeFilter(option.key);
+                    setRejectedPage(0);
                   }}
                   className={`h-10 rounded-lg border px-4 text-xs font-black transition ${
                     isActive
@@ -1660,13 +1970,25 @@ export function ModerationManagement() {
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
-            placeholder="Tìm theo tên tập/phần/bộ truyện hoặc mã nội dung..."
-            value={activeTab === "pending" ? pendingKeyword : approvedKeyword}
-            onChange={(event) =>
+            placeholder="Tìm theo tên tập/phần/bộ truyện, mã nội dung hoặc tên Creator..."
+            value={
               activeTab === "pending"
-                ? handlePendingKeywordChange(event.target.value)
-                : handleApprovedKeywordChange(event.target.value)
+                ? pendingKeyword
+                : activeTab === "approved"
+                  ? approvedKeyword
+                  : rejectedKeyword
             }
+            onChange={(event) => {
+              if (activeTab === "pending") {
+                handlePendingKeywordChange(event.target.value);
+                return;
+              }
+              if (activeTab === "approved") {
+                handleApprovedKeywordChange(event.target.value);
+                return;
+              }
+              handleRejectedKeywordChange(event.target.value);
+            }}
             className="h-11 w-full rounded-lg border border-slate-200 bg-white pl-10 pr-4 text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-violet-500 focus:ring-4 focus:ring-violet-100 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white backoffice-dark:placeholder:text-white/40"
           />
         </div>
@@ -1788,9 +2110,11 @@ export function ModerationManagement() {
 
             <div className="xl:sticky xl:top-24 xl:self-start">
               <PendingDetailPanel
+                canPurge={isAdmin}
                 isMutating={isMutating}
                 media={selectedPendingMedia}
                 onApprove={setApproveTarget}
+                onPurge={handlePurge}
                 onReject={setRejectTarget}
                 onViewDetail={setDetailTarget}
               />
@@ -1951,11 +2275,13 @@ export function ModerationManagement() {
 
             <div className="xl:sticky xl:top-24 xl:self-start">
               <ApprovedDetailPanel
+                canPurge={isAdmin}
                 isMutating={isApprovedMutating}
                 media={selectedApprovedMedia}
                 mediaCount={selectedApprovedMedia?.episodeMediaCount ?? 1}
                 onForceHide={handleForceHide}
                 onForceUnhide={handleForceUnhide}
+                onPurge={handlePurge}
                 onViewDetail={setDetailTarget}
               />
             </div>
@@ -1981,6 +2307,112 @@ export function ModerationManagement() {
                   type="button"
                   onClick={() => setApprovedPage((current) => current + 1)}
                   disabled={approvedQuery.data.isLast || approvedQuery.isFetching}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                  aria-label="Trang sau"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {activeTab === "rejected" && rejectedQuery.isLoading && (
+        <div className="rounded-2xl border border-slate-200 bg-white px-6 py-16 text-center shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
+          <Loader2 className="mx-auto h-7 w-7 animate-spin text-slate-400" />
+          <p className="mt-3 text-sm font-semibold text-slate-500">
+            Đang tải danh sách nội dung bị từ chối...
+          </p>
+        </div>
+      )}
+
+      {activeTab === "rejected" && rejectedQuery.isError && (
+        <div className="rounded-2xl border border-red-200 bg-white px-6 py-16 text-center text-sm font-semibold text-red-600 shadow-sm">
+          Không thể tải danh sách nội dung bị từ chối.
+        </div>
+      )}
+
+      {activeTab === "rejected" && !rejectedQuery.isLoading && !rejectedQuery.isError && rejectedItems.length === 0 && (
+        <div className="rounded-2xl border border-slate-200 bg-white px-6 py-16 text-center shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
+            <CircleAlert className="h-7 w-7" />
+          </div>
+          <h2 className="mt-4 text-lg font-bold text-slate-950">
+            Chưa có nội dung nào bị từ chối
+          </h2>
+          <p className="mt-2 text-sm font-medium text-slate-500">
+            Nội dung bị Staff từ chối tay hoặc pipeline tự động từ chối do lỗi hệ thống sẽ
+            hiển thị tại đây.
+          </p>
+        </div>
+      )}
+
+      {activeTab === "rejected" && rejectedItems.length > 0 && (
+        <>
+          <div className="grid gap-6 xl:grid-cols-[430px_minmax(0,1fr)]">
+            <aside className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-base font-black text-slate-950 backoffice-dark:text-white">
+                    Nội dung bị từ chối
+                  </h2>
+                  <p className="mt-1 text-xs font-semibold text-slate-500 backoffice-dark:text-white/55">
+                    Chọn episode để xem lý do và duyệt lại nếu cần.
+                  </p>
+                </div>
+                <span className="rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-black text-red-700 backoffice-dark:border-red-400/30 backoffice-dark:bg-red-400/10 backoffice-dark:text-red-200">
+                  {rejectedQuery.data?.totalElements ?? rejectedItems.length}
+                </span>
+              </div>
+
+              <div className="max-h-[680px] space-y-3 overflow-y-auto pr-1 [scrollbar-width:thin] [scrollbar-color:rgba(148,163,184,0.55)_transparent] backoffice-dark:[scrollbar-color:rgba(212,175,55,0.38)_transparent]">
+                {rejectedItems.map((media) => (
+                  <ModerationListItem
+                    key={media.episodeId || media.id}
+                    isSelected={selectedRejectedMedia?.id === media.id}
+                    media={media}
+                    mediaCount={media.episodeMediaCount ?? 1}
+                    mode="rejected"
+                    onSelect={() => setSelectedRejectedId(media.id)}
+                  />
+                ))}
+              </div>
+            </aside>
+
+            <div className="xl:sticky xl:top-24 xl:self-start">
+              <RejectedDetailPanel
+                canPurge={isAdmin}
+                isMutating={isMutating}
+                media={selectedRejectedMedia}
+                mediaCount={selectedRejectedMedia?.episodeMediaCount ?? 1}
+                onApprove={setApproveTarget}
+                onPurge={handlePurge}
+                onViewDetail={setDetailTarget}
+              />
+            </div>
+          </div>
+
+          {rejectedQuery.data && rejectedQuery.data.totalPages > 1 && (
+            <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-5 py-3 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
+              <p className="text-sm font-semibold text-slate-500">
+                Trang {rejectedQuery.data.pageNumber + 1} / {rejectedQuery.data.totalPages} -{" "}
+                {rejectedQuery.data.totalElements} nội dung
+              </p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setRejectedPage((current) => Math.max(0, current - 1))}
+                  disabled={rejectedQuery.data.isFirst || rejectedQuery.isFetching}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                  aria-label="Trang trước"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRejectedPage((current) => current + 1)}
+                  disabled={rejectedQuery.data.isLast || rejectedQuery.isFetching}
                   className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
                   aria-label="Trang sau"
                 >
@@ -2022,6 +2454,21 @@ export function ModerationManagement() {
         }}
         onConfirm={confirmForceHide}
         open={Boolean(forceHideTarget)}
+      />
+
+      <ConfirmPurgeModal
+        key={purgeTarget?.id ?? "none"}
+        errorMessage={purgeErrorMessage}
+        isLoading={purgeMutation.isPending}
+        media={purgeTarget}
+        onClose={() => {
+          if (!purgeMutation.isPending) {
+            setPurgeTarget(null);
+            setPurgeErrorMessage(null);
+          }
+        }}
+        onConfirm={confirmPurge}
+        open={Boolean(purgeTarget)}
       />
 
       <ModerationDetailModal
