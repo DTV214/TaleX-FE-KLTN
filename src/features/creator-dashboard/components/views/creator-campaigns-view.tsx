@@ -539,10 +539,7 @@ function CampaignWalletHistorySection() {
             <Receipt className="h-5 w-5" />
           </div>
           <div>
-            <h2 className="text-xl font-black text-white">Lịch sử biến động ví Campaign</h2>
-            <p className="text-xs font-semibold text-zinc-500">
-              Nhật ký thay đổi số dư ví Campaign Wallet của Creator
-            </p>
+            <h2 className="text-xl font-black text-white">Lịch sử giao dịch ví</h2>
           </div>
         </div>
 
@@ -1000,10 +997,7 @@ function PayoutRequestsListSection() {
             <Landmark className="h-5 w-5" />
           </div>
           <div>
-            <h2 className="text-xl font-black text-white">Lịch sử Yêu cầu Rút tiền của tôi</h2>
-            <p className="text-xs font-semibold text-zinc-500">
-              API /api/v1/payout-requests/own (Danh sách yêu cầu rút tiền cá nhân)
-            </p>
+            <h2 className="text-xl font-black text-white">Lịch sử Yêu cầu Rút tiền</h2>
           </div>
         </div>
 
@@ -1060,13 +1054,12 @@ function PayoutRequestsListSection() {
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge
                         variant="outline"
-                        className={`px-2 py-0.5 text-[10px] font-bold ${
-                          isPaid
-                            ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300"
-                            : isRejected
-                              ? "border-red-400/30 bg-red-400/10 text-red-300"
-                              : "border-yellow-400/30 bg-yellow-400/10 text-yellow-300"
-                        }`}
+                        className={`px-2 py-0.5 text-[10px] font-bold ${isPaid
+                          ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300"
+                          : isRejected
+                            ? "border-red-400/30 bg-red-400/10 text-red-300"
+                            : "border-yellow-400/30 bg-yellow-400/10 text-yellow-300"
+                          }`}
                       >
                         {item.status}
                       </Badge>
@@ -1123,12 +1116,12 @@ function CampaignStatCard({
         tone === "neutral" && "border-white/10",
       )}
     >
-      <Icon
+      {/* <Icon
         className={cn(
           "h-5 w-5",
           tone === "green" ? "text-emerald-300" : "text-[#D4AF37]",
         )}
-      />
+      /> */}
       <p className="mt-4 text-sm font-semibold text-zinc-400">{label}</p>
       <p className="mt-2 text-2xl font-black text-white">{value}</p>
     </div>
@@ -1156,9 +1149,6 @@ function CampaignCard({
             <Badge className={getStatusClass(campaign.status)} variant="outline">
               {getStatusLabel(campaign.status)}
             </Badge>
-            <span className="text-xs font-bold uppercase tracking-[0.14em] text-zinc-600">
-              {shortenId(campaign.campaignId)}
-            </span>
           </div>
           <h3 className="mt-3 truncate text-lg font-black text-white">
             Chiến dịch {shortenId(campaign.campaignId)}
@@ -1194,9 +1184,6 @@ function CampaignCard({
         </div>
 
         <div className="flex flex-col gap-3 sm:flex-row lg:flex-col xl:flex-row xl:items-center">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37]">
-            <Megaphone className="h-5 w-5" />
-          </div>
           <Button
             type="button"
             variant="outline"
@@ -2465,14 +2452,6 @@ export function CampaignDetailDashboard({
               Danh sách
             </Button>
 
-            {campaignSeriesItems.map((item) => (
-              <CampaignSeriesStatusToggleButton
-                key={item.campaignSeriesId}
-                campaignSeriesId={item.campaignSeriesId}
-                currentStatus={item.status}
-              />
-            ))}
-
             <Button
               type="button"
               variant="outline"
@@ -2487,9 +2466,9 @@ export function CampaignDetailDashboard({
           <h2 className="text-4xl font-black tracking-tight text-white md:text-6xl">
             Chi Tiết Chiến Dịch
           </h2>
-          <p className="mt-2 break-all text-sm font-semibold text-zinc-500">
+          {/* <p className="mt-2 break-all text-sm font-semibold text-zinc-500">
             ID: {campaign.campaignId}
-          </p>
+          </p> */}
         </div>
 
         <div className={cn("rounded-3xl border px-7 py-6 shadow-[0_18px_55px_rgba(0,0,0,0.2)]", getStatusClass(campaign.status))}>
@@ -2503,7 +2482,7 @@ export function CampaignDetailDashboard({
         </div>
       </div>
 
-      <section className="mt-8 rounded-[28px] border border-white/10 bg-black/20 p-5 md:p-6">
+      {/* <section className="mt-8 rounded-[28px] border border-white/10 bg-black/20 p-5 md:p-6">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
             <h3 className="text-lg font-black text-white">Chuyển chiến dịch</h3>
@@ -2543,7 +2522,7 @@ export function CampaignDetailDashboard({
             );
           })}
         </div>
-      </section>
+      </section> */}
 
       <section className="mt-7 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <DetailMetric
@@ -2877,49 +2856,41 @@ export function CreatorCampaignsView() {
         <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_18%_0%,rgba(212,175,55,0.18),transparent_30%),radial-gradient(circle_at_86%_18%,rgba(59,130,246,0.14),transparent_34%)]" />
         <div className="pointer-events-none absolute inset-x-10 top-12 -z-10 h-px bg-gradient-to-r from-transparent via-[#D4AF37]/30 to-transparent" />
 
-        <div className="grid gap-8 xl:grid-cols-[1fr_520px] xl:items-end">
-          <div>
-            <Badge variant="premium" className="mb-5">
-              TaleX Campaigns
-            </Badge>
-            <h1 className="text-5xl font-black tracking-tight text-white">
+        <div className="relative z-10 flex flex-col gap-7 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-3xl">
+            <h1 className="font-heading text-3xl font-black tracking-tight text-white md:text-5xl">
               Chiến dịch tăng tương tác
             </h1>
-            <p className="mt-4 max-w-2xl text-base font-semibold leading-7 text-zinc-400">
-              Theo dõi các chiến dịch đã mua, tiến độ phân phối và dữ liệu phân
-              tích từ hệ thống đề xuất TaleX.
-            </p>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="relative group">
-              <CampaignStatCard
-                icon={Coins}
-                label="Ví Campaign"
-                value={
-                  campaignWalletQuery.isLoading
-                    ? "Đang tải..."
-                    : campaignWalletQuery.data === null
-                      ? "Chưa tạo ví"
-                      : `${formatNumber(campaignWalletQuery.data?.balance)}đ`
-                }
-                tone="gold"
-              />
-              {campaignWalletQuery.data && campaignWalletQuery.data.balance > 0 ? (
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={() => setIsPayoutModalOpen(true)}
-                  className="mt-2 w-full h-8 rounded-xl bg-[#D4AF37] text-xs font-black text-black hover:bg-[#e6c75b]"
-                >
-                  <Landmark className="mr-1.5 h-3.5 w-3.5" />
-                  Rút tiền về ví
-                </Button>
-              ) : null}
-            </div>
+          <div className="flex flex-col gap-4 sm:flex-row">            <div className="relative group">
+            <CampaignStatCard
+              icon={Coins}
+              label="Số Dư Ví"
+              value={
+                campaignWalletQuery.isLoading
+                  ? "Đang tải..."
+                  : campaignWalletQuery.data === null
+                    ? "Chưa tạo ví"
+                    : `${formatNumber(campaignWalletQuery.data?.balance)}đ`
+              }
+              tone="gold"
+            />
+            {campaignWalletQuery.data && campaignWalletQuery.data.balance > 0 ? (
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => setIsPayoutModalOpen(true)}
+                className="mt-2 w-full h-8 rounded-xl bg-[#D4AF37] text-xs font-black text-black hover:bg-[#e6c75b]"
+              >
+                <Landmark className="mr-1.5 h-3.5 w-3.5" />
+                Rút tiền về ví
+              </Button>
+            ) : null}
+          </div>
             <CampaignStatCard
               icon={Megaphone}
-              label="Tổng chiến dịch"
+              label="Chiến dịch"
               value={formatNumber(totalElements)}
             />
             <CampaignStatCard

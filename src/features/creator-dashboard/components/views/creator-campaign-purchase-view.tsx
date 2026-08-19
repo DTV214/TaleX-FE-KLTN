@@ -45,14 +45,10 @@ export function CreatorCampaignPurchaseView() {
         <div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-creator-gold/10 blur-3xl" />
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(212,175,55,0.08),transparent_34%)]" />
         <div className="relative grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-center">
-          <div>
-            <h2 className="creator-spotlight-text mt-4 text-4xl font-black tracking-tight text-zinc-50 md:text-5xl">
-              Dịch Vụ Tăng Tương Tác
-            </h2>
-            <p className="mt-4 max-w-2xl text-base font-semibold leading-7 text-zinc-400">
-              Đẩy tác phẩm của bạn tới nhiều độc giả và khán giả, tăng tốc lượt
-              xem, lượt thích và cơ hội xuất hiện trên các khu vực đề xuất.
-            </p>
+          <div className="max-w-3xl">
+            <h1 className="font-heading text-3xl font-black tracking-tight text-white md:text-5xl">
+              Dịch vụ tăng tương tác
+            </h1>
           </div>
         </div>
       </section>
