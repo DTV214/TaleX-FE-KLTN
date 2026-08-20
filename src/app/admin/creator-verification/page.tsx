@@ -74,8 +74,8 @@ export default function AdminCreatorVerificationPage() {
     requestedTab === "payment" ? "payment" : "tax";
   const pageTitle =
     tab === "payment"
-      ? "Kiểm duyệt Hồ sơ Thanh toán"
-      : "Kiểm duyệt Hồ sơ Thuế";
+      ? "Hồ sơ Thanh toán"
+      : "Hồ sơ Thuế";
   const [selectedIdentity, setSelectedIdentity] =
     useState<CreatorIdentityRecord | null>(null);
   const [selectedPaymentProfile, setSelectedPaymentProfile] =
@@ -220,22 +220,13 @@ export default function AdminCreatorVerificationPage() {
   const isPaymentSubmitting = submitPaymentMutation.isPending;
 
   return (
-    <section className="w-full rounded-2xl border border-slate-200 bg-white p-6 text-gray-900 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white">
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight text-slate-950 backoffice-dark:text-white">
+          {pageTitle}
+        </h1>
+      </div>
       <div className="flex flex-col gap-6">
-        <div className="flex flex-col gap-4 border-b border-gray-200 pb-6 backoffice-dark:border-white/10 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-violet-600 backoffice-dark:text-[var(--backoffice-primary)]">
-              Admin Panel
-            </p>
-            <h1 className="mt-2 text-3xl font-bold tracking-tight text-gray-900 backoffice-dark:text-white">
-              {pageTitle}
-            </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-gray-500 backoffice-dark:text-white/55">
-              Xử lý hồ sơ thuế và tài khoản thanh toán trước khi Creator được
-              bật kiếm tiền trên TaleX.
-            </p>
-          </div>
-        </div>
 
         {activeQuery.isLoading ? (
           <div className="flex min-h-72 items-center justify-center rounded-xl border border-gray-200 bg-white backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
@@ -272,8 +263,8 @@ export default function AdminCreatorVerificationPage() {
         ) : null}
 
         {!activeQuery.isLoading &&
-        !activeQuery.isError &&
-        tab === "payment" ? (
+          !activeQuery.isError &&
+          tab === "payment" ? (
           <PaymentProfileTable
             records={paymentProfilesQuery.data ?? []}
             onOpenVerification={handleOpenPaymentVerification}
@@ -399,7 +390,7 @@ export default function AdminCreatorVerificationPage() {
           </div>
         </DialogContent>
       </Dialog>
-    </section>
+    </div>
   );
 }
 
@@ -418,7 +409,7 @@ function IdentityTable({
         <table className="w-full min-w-[760px] border-collapse text-left text-sm">
           <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-500">
             <tr>
-              <th className="px-4 py-3 font-semibold">Tên Creator</th>
+              <th className="px-4 py-3 font-semibold">Tên Tài Khoản</th>
               <th className="px-4 py-3 font-semibold">Mã số thuế</th>
               <th className="px-4 py-3 font-semibold">Trạng thái</th>
               <th className="px-4 py-3 text-right font-semibold">Hành động</th>
@@ -493,9 +484,9 @@ function PaymentProfileTable({
         <table className="w-full min-w-[920px] border-collapse text-left text-sm">
           <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-500">
             <tr>
-              <th className="px-4 py-3 font-semibold">Tên Creator</th>
+              <th className="px-4 py-3 font-semibold">Tên Tài Khoản</th>
               <th className="px-4 py-3 font-semibold">Ngân hàng</th>
-              <th className="px-4 py-3 font-semibold">Số TK</th>
+              <th className="px-4 py-3 font-semibold">Số Tài Khoản</th>
               <th className="px-4 py-3 font-semibold">Trạng thái</th>
               <th className="px-4 py-3 text-right font-semibold">Hành động</th>
             </tr>
@@ -554,6 +545,7 @@ function PaymentProfileTable({
         </table>
       </div>
     </div>
+
   );
 }
 

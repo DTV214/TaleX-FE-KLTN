@@ -45,6 +45,7 @@ import {
   X,
   Zap,
   type LucideIcon,
+  Tag,
 } from "lucide-react";
 import { CreatorCampaignPlanList } from "./creator-campaign-plan-list";
 import { CreatorCampaignCheckoutModal } from "./creator-campaign-checkout-modal";
@@ -473,12 +474,12 @@ function CampaignSeriesStatusToggleButton({
       ) : isRunning ? (
         <>
           <Pause className="mr-1.5 h-4 w-4 text-orange-300" />
-          Tạm dừng series #{campaignSeriesId.slice(0, 8)}
+          Tạm dừng
         </>
       ) : (
         <>
           <Play className="mr-1.5 h-4 w-4 text-emerald-300" />
-          Tiếp tục series #{campaignSeriesId.slice(0, 8)}
+          Tiếp tục
         </>
       )}
     </Button>
@@ -523,10 +524,9 @@ function CreatorCampaignCancelModal({
           Xác nhận hủy chiến dịch
         </h3>
         <p className="mt-2 text-xs font-semibold leading-relaxed text-zinc-400">
-          Bạn có chắc chắn muốn hủy chiến dịch{" "}
-          <span className="font-mono text-white">{campaignId}</span> không?
+          Bạn có chắc chắn muốn hủy chiến dịch này không?
           Chiến dịch sẽ ngừng phân phối và số tiền hoàn lại (nếu có) sẽ được
-          hoàn tự động về Ví Campaign của bạn.
+          hoàn tự động về Ví Chiến Dịch của bạn.
         </p>
 
         <div className="mt-6 flex gap-3">
@@ -649,7 +649,7 @@ function CampaignWalletHistorySection() {
           </div>
         ) : transactions.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-white/10 bg-black/20 p-6 text-center text-xs font-semibold text-zinc-500">
-            Chưa có lịch sử biến động số dư ví Campaign.
+            Chưa có lịch sử biến động số dư ví chiến dịch.
           </div>
         ) : (
           <div className="space-y-3">
@@ -690,11 +690,11 @@ function CampaignWalletHistorySection() {
                         </span>
                       </div>
                       <p className="mt-1 line-clamp-2 text-sm font-bold text-white">
-                        {tx.description || "Giao dịch ví Campaign"}
+                        {tx.description || "Giao dịch ví chiến dịch"}
                       </p>
                       {tx.referenceId ? (
                         <p className="mt-1 font-mono text-xs font-semibold text-zinc-500">
-                          Ref ID: {shortenId(tx.referenceId)}
+                          {tx.referenceType}: {tx.referenceId}
                         </p>
                       ) : null}
                     </div>
@@ -775,7 +775,7 @@ function CampaignOrderPollingCard({ orderId }: { orderId: string }) {
           <div>
             <div className="flex items-center gap-2">
               <h4 className="text-base font-black text-white">
-                Trạng thái thanh toán
+                Trạng thái đơn hàng
               </h4>
               {orderQuery.isFetching ? (
                 <span className="flex items-center text-[10px] font-bold text-yellow-400">
@@ -784,9 +784,6 @@ function CampaignOrderPollingCard({ orderId }: { orderId: string }) {
                 </span>
               ) : null}
             </div>
-            <p className="text-xs font-mono font-semibold text-zinc-400">
-              Mã đơn hàng: {orderId}
-            </p>
           </div>
         </div>
 
@@ -828,7 +825,7 @@ function CampaignOrderPollingCard({ orderId }: { orderId: string }) {
           </div>
           <div>
             <p className="text-zinc-500 font-bold uppercase tracking-wider">
-              Khấu trừ Ví Campaign
+              Khấu trừ Ví Chiến Dịch
             </p>
             <p className="mt-1 text-sm font-black text-emerald-400">
               {order.walletAmount
@@ -838,10 +835,10 @@ function CampaignOrderPollingCard({ orderId }: { orderId: string }) {
           </div>
           <div>
             <p className="text-zinc-500 font-bold uppercase tracking-wider">
-              Hạn thanh toán
+              Ngày Tạo Đơn
             </p>
             <p className="mt-1 text-xs font-bold text-zinc-300">
-              {formatDateTime(order.expiresAt)}
+              {formatDateTime(order.createdAt)}
             </p>
           </div>
         </div>
@@ -853,7 +850,7 @@ function CampaignOrderPollingCard({ orderId }: { orderId: string }) {
         <div className="rounded-xl border border-white/10 bg-black/20 p-4">
           <div className="flex items-center justify-between">
             <p className="text-xs font-bold text-zinc-300">
-              Thanh toán trực tiếp qua ngân hàng / QR
+              Lịch Sử Giao Dịch
             </p>
           </div>
 
@@ -896,7 +893,7 @@ function CampaignOrderPollingCard({ orderId }: { orderId: string }) {
         <div className="rounded-xl border border-white/10 bg-black/20 p-4">
           <div className="flex items-center justify-between">
             <p className="text-xs font-bold text-zinc-300">
-              Khấu trừ từ Ví Campaign
+              Khấu trừ từ Ví Chiến Dịch
             </p>
           </div>
 
@@ -992,11 +989,8 @@ function CampaignPayoutModal({
             </div>
             <div>
               <h3 className="text-lg font-black text-white">
-                Yêu cầu rút tiền Ví Campaign
+                Yêu cầu rút tiền
               </h3>
-              <p className="text-xs font-semibold text-zinc-500">
-                API /api/v1/payout-requests
-              </p>
             </div>
           </div>
           <button
@@ -1074,14 +1068,14 @@ function CampaignPayoutModal({
           <div className="mt-5 space-y-4">
             <div className="rounded-2xl border border-white/10 bg-black/30 p-4 text-center">
               <p className="text-xs font-bold text-zinc-400">
-                Số dư khả dụng trong Ví Campaign
+                Số dư khả dụng trong Ví
               </p>
               <p className="mt-2 text-3xl font-black text-[#F5D46E]">
                 {formatNumber(balance)}đ
               </p>
               <p className="mt-2 text-[11px] font-semibold text-zinc-500">
                 Yêu cầu rút tiền áp dụng cho toàn bộ số dư (tối thiểu 2.000đ) về
-                Payment Profile chính đã đăng ký.
+                tài khoản ngân hàng chính đã đăng ký.
               </p>
             </div>
 
@@ -1202,13 +1196,12 @@ function PayoutRequestsListSection() {
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge
                         variant="outline"
-                        className={`px-2 py-0.5 text-[10px] font-bold ${
-                          isPaid
-                            ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300"
-                            : isRejected
-                              ? "border-red-400/30 bg-red-400/10 text-red-300"
-                              : "border-yellow-400/30 bg-yellow-400/10 text-yellow-300"
-                        }`}
+                        className={`px-2 py-0.5 text-[10px] font-bold ${isPaid
+                          ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300"
+                          : isRejected
+                            ? "border-red-400/30 bg-red-400/10 text-red-300"
+                            : "border-yellow-400/30 bg-yellow-400/10 text-yellow-300"
+                          }`}
                       >
                         {item.status}
                       </Badge>
@@ -1376,9 +1369,9 @@ function CampaignSeriesInsights({
   const selectedRow = isShowingAllSeries
     ? null
     : (rows.find(
-        (row) =>
-          row.campaignSeries.campaignSeriesId === selectedCampaignSeriesId,
-      ) ?? rows[0]);
+      (row) =>
+        row.campaignSeries.campaignSeriesId === selectedCampaignSeriesId,
+    ) ?? rows[0]);
   const defaultLogRange = useMemo(
     () => getCampaignSeriesLogRange(campaign),
     [campaign],
@@ -1585,7 +1578,7 @@ function CampaignSeriesPickerItem({
             {getStatusLabel(campaignSeries.status)}
           </Badge>
           <span className="text-xs font-bold text-zinc-500">
-            {formatNumber(campaignSeries.totalImpression)} impression
+            {formatNumber(campaignSeries.totalImpression)} lượt hiển thị
           </span>
         </div>
         <p className="mt-1 text-xs font-semibold text-zinc-600">
@@ -1676,8 +1669,8 @@ function CampaignSeriesOverviewPanelV2({
   const sharePercent =
     totalSeriesImpression > 0
       ? Math.round(
-          ((campaignSeries.totalImpression ?? 0) / totalSeriesImpression) * 100,
-        )
+        ((campaignSeries.totalImpression ?? 0) / totalSeriesImpression) * 100,
+      )
       : 0;
   const snapshotMetrics = [
     {
@@ -1831,19 +1824,19 @@ function CampaignSeriesOverviewPanelV2({
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
             <SeriesMiniMetric
               icon={Megaphone}
-              label="Impression"
+              label="Hiển Thị"
               value={formatNumber(campaignSeries.totalImpression)}
               tone="gold"
             />
             <SeriesMiniMetric
               icon={Eye}
-              label="Total views"
+              label="Tổng Lượt Xem"
               value={formatNumber(series?.totalViews)}
               tone="blue"
             />
             <SeriesMiniMetric
               icon={Bookmark}
-              label="Subscriptions"
+              label="Bookmark"
               value={formatNumber(series?.totalSubscriptions)}
               tone="green"
             />
@@ -2111,7 +2104,7 @@ function CampaignSeriesOverviewPanelV2({
                         stroke="#60A5FA"
                         strokeWidth={3}
                         dot={false}
-                        name="Xem"
+                        name="View"
                       />
                       <Line
                         type="monotone"
@@ -2119,7 +2112,7 @@ function CampaignSeriesOverviewPanelV2({
                         stroke="#D4AF37"
                         strokeWidth={3}
                         dot={false}
-                        name="Thích"
+                        name="Like"
                       />
                       <Line
                         type="monotone"
@@ -2127,7 +2120,7 @@ function CampaignSeriesOverviewPanelV2({
                         stroke="#34D399"
                         strokeWidth={3}
                         dot={false}
-                        name="Bình Luận"
+                        name="Comment"
                       />
                       <Line
                         type="monotone"
@@ -2135,7 +2128,7 @@ function CampaignSeriesOverviewPanelV2({
                         stroke="#F472B6"
                         strokeWidth={3}
                         dot={false}
-                        name="Chia Sẻ"
+                        name="Share"
                       />
                     </LineChart>
                   </ResponsiveContainer>
@@ -2143,7 +2136,7 @@ function CampaignSeriesOverviewPanelV2({
               </div>
 
               <div className="rounded-2xl border border-white/[0.08] bg-black/20 p-4">
-                <p className="text-sm font-black text-white">Tổng log</p>
+                <p className="text-sm font-black text-white">Tổng quan</p>
                 <div className="mt-4 space-y-3">
                   {logMetrics.map((metric) => (
                     <div key={metric.key}>
@@ -2221,8 +2214,8 @@ function CampaignSeriesOverviewPanel({
   const sharePercent =
     totalSeriesImpression > 0
       ? Math.round(
-          ((campaignSeries.totalImpression ?? 0) / totalSeriesImpression) * 100,
-        )
+        ((campaignSeries.totalImpression ?? 0) / totalSeriesImpression) * 100,
+      )
       : 0;
   const overviewChartData = analytics.map((item) => ({
     name: item.label,
@@ -2332,7 +2325,7 @@ function CampaignSeriesOverviewPanel({
         <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <SeriesMiniMetric
             icon={Megaphone}
-            label="Impression"
+            label="Hiển Thị"
             value={formatNumber(campaignSeries.totalImpression)}
             tone="gold"
           />
@@ -2646,7 +2639,7 @@ function CampaignSeriesDetailDashboard({
                     stroke="#D4AF37"
                     strokeWidth={3}
                     fill="url(#impressionGradient)"
-                    name="Impression"
+                    name="Lượt Hiển Thị"
                   />
                 </AreaChart>
               </ResponsiveContainer>
@@ -2849,21 +2842,13 @@ function CampaignSeriesCard({ row }: { row: CampaignSeriesDashboardRow }) {
         <div className="flex min-w-0 flex-col p-5 md:p-6">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#D4AF37]">
-                Campaign Series
-              </p>
+
               <h4 className="mt-2 line-clamp-2 text-2xl font-black text-white">
                 {isSeriesLoading
                   ? "Đang tải thông tin series..."
                   : (series?.title ?? shortenId(campaignSeries.seriesId))}
               </h4>
-              <p className="mt-2 text-sm font-semibold text-zinc-500">
-                {isSeriesError
-                  ? "Không tải được thông tin public series"
-                  : series?.creatorName
-                    ? `Creator: ${series.creatorName}`
-                    : `Series ID: ${shortenId(campaignSeries.seriesId)}`}
-              </p>
+
             </div>
             <div className="flex items-center gap-2">
               <CampaignSeriesStatusToggleButton
@@ -2871,9 +2856,6 @@ function CampaignSeriesCard({ row }: { row: CampaignSeriesDashboardRow }) {
                 currentStatus={campaignSeries.status}
                 size="sm"
               />
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37]">
-                <Megaphone className="h-5 w-5" />
-              </div>
             </div>
           </div>
 
@@ -2906,7 +2888,7 @@ function CampaignSeriesCard({ row }: { row: CampaignSeriesDashboardRow }) {
           <div className="mt-5 grid gap-3 sm:grid-cols-3">
             <div className="rounded-2xl border border-[#D4AF37]/20 bg-[#D4AF37]/10 p-4">
               <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-zinc-500">
-                Impression
+                Hiển Thị
               </p>
               <p className="mt-1 text-xl font-black text-[#F5D46E]">
                 {formatNumber(campaignSeries.totalImpression)}
@@ -2914,7 +2896,7 @@ function CampaignSeriesCard({ row }: { row: CampaignSeriesDashboardRow }) {
             </div>
             <div className="rounded-2xl border border-white/[0.08] bg-black/20 p-4">
               <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-zinc-500">
-                Tổng view
+                Lượt Xem
               </p>
               <p className="mt-1 flex items-center gap-2 text-xl font-black text-white">
                 <Eye className="h-4 w-4 text-[#D4AF37]" />
@@ -2976,27 +2958,27 @@ export function CampaignDetailDashboard({
   const chartMetrics = numericAnalytics.length
     ? numericAnalytics.slice(0, 6)
     : [
-        {
-          key: "likes",
-          label: "Lượt thích",
-          value: getAnalyticNumber(campaign, "likes"),
-        },
-        {
-          key: "views",
-          label: "Lượt xem",
-          value: getAnalyticNumber(campaign, "views"),
-        },
-        {
-          key: "comments",
-          label: "Bình luận",
-          value: getAnalyticNumber(campaign, "comments"),
-        },
-        {
-          key: "shares",
-          label: "Chia sẻ",
-          value: getAnalyticNumber(campaign, "shares"),
-        },
-      ];
+      {
+        key: "likes",
+        label: "Lượt thích",
+        value: getAnalyticNumber(campaign, "likes"),
+      },
+      {
+        key: "views",
+        label: "Lượt xem",
+        value: getAnalyticNumber(campaign, "views"),
+      },
+      {
+        key: "comments",
+        label: "Bình luận",
+        value: getAnalyticNumber(campaign, "comments"),
+      },
+      {
+        key: "shares",
+        label: "Chia sẻ",
+        value: getAnalyticNumber(campaign, "shares"),
+      },
+    ];
   const chartPalette = [
     "#D4AF37",
     "#60A5FA",
@@ -3012,9 +2994,9 @@ export function CampaignDetailDashboard({
   const pieProgressData = progressData.some((item) => item.value > 0)
     ? progressData
     : [
-        { name: "Đã đạt", value: 0 },
-        { name: "Còn lại", value: 1 },
-      ];
+      { name: "Đã đạt", value: 0 },
+      { name: "Còn lại", value: 1 },
+    ];
   const selectorCampaigns = campaigns.length ? campaigns : [campaign];
   const campaignSeriesQuery = useGetCreatorCampaignSeriesByCampaignId(
     campaign.campaignId,
@@ -3115,7 +3097,6 @@ export function CampaignDetailDashboard({
             !["RUNNING", "PAUSED", "PAUSE", "COMPLETED", "CANCELLED", "UNAVAILABLE"].includes(campaign.status ?? "") && "border-white/10 bg-white/5 text-zinc-300",
           )}
         >
-          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-zinc-400">TRẠNG THÁI</p>
           <div className="mt-0.5 flex items-center justify-center sm:justify-end gap-1.5 font-black text-sm md:text-base">
             {campaign.status === "RUNNING" && (
               <span className="relative flex h-2 w-2">
@@ -3137,23 +3118,6 @@ export function CampaignDetailDashboard({
         <h1 className="font-heading text-3xl font-black tracking-tight text-white md:text-5xl">
           Chi Tiết Chiến Dịch
         </h1>
-        <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-zinc-400">
-          <span className="text-zinc-200 font-bold text-sm">{getServiceName(campaign.engagementServiceId)}</span>
-          <span>•</span>
-          <button
-            type="button"
-            onClick={handleCopyId}
-            className="flex items-center gap-1 font-mono text-zinc-400 hover:text-white transition cursor-pointer"
-            title="Nhấn để sao chép mã chiến dịch"
-          >
-            <span>#{campaign.campaignId}</span>
-            {isCopiedId ? (
-              <Check className="h-3 w-3 text-emerald-400" />
-            ) : (
-              <Copy className="h-3 w-3" />
-            )}
-          </button>
-        </div>
       </div>
 
       {/* Hero Overview Banner */}
@@ -3164,11 +3128,8 @@ export function CampaignDetailDashboard({
         <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-2">
             <h2 className="font-heading text-xl font-black text-white md:text-3xl tracking-tight">
-              {getServiceName(campaign.engagementServiceId)}
+              Tiến trình phân phối
             </h2>
-            <p className="text-xs font-semibold text-zinc-400 md:text-sm max-w-xl">
-              Chiến dịch phân phối nội dung tự động đạt mục tiêu hiển thị trong hệ sinh thái TaleX.
-            </p>
           </div>
 
           {/* 4 Quick KPI Cards */}
@@ -3210,9 +3171,8 @@ export function CampaignDetailDashboard({
         </div>
 
         {/* Dynamic Studio Progress Bar */}
-        <div className="mt-7 space-y-2">
+        <div className="mt-2 space-y-2">
           <div className="flex items-center justify-between text-xs font-bold">
-            <span className="text-zinc-400">Tiến trình phân phối hiển thị</span>
             <span className="text-[#D4AF37] font-mono">
               {formatNumber(campaign.currentImpression)} /{" "}
               {formatNumber(campaign.targetImpression)} lượt ({progress}%)
@@ -3277,9 +3237,6 @@ export function CampaignDetailDashboard({
                     <h3 className="text-lg font-black text-white">
                       Chỉ số tương tác đạt được
                     </h3>
-                    <p className="text-xs font-semibold text-zinc-500">
-                      Tương tác thu về từ người dùng xem nội dung
-                    </p>
                   </div>
                 </div>
               </div>
@@ -3355,9 +3312,6 @@ export function CampaignDetailDashboard({
                     <h3 className="text-lg font-black text-white">
                       Tỷ trọng tiến độ hiển thị
                     </h3>
-                    <p className="text-xs font-semibold text-zinc-500">
-                      So sánh lượt đã hoàn thành và mục tiêu còn lại
-                    </p>
                   </div>
                 </div>
               </div>
@@ -3429,14 +3383,28 @@ export function CampaignDetailDashboard({
                     <h3 className="text-lg font-black text-white">
                       Thông tin chiến dịch
                     </h3>
-                    <p className="text-xs font-semibold text-zinc-500">
-                      Chi tiết dịch vụ và lịch trình thực thi
-                    </p>
                   </div>
                 </div>
               </div>
 
               <div className="mt-5 space-y-3.5">
+                {/* Gói dịch vụ */}
+                <div className="rounded-2xl border border-white/[0.08] bg-black/25 p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/5 text-[#D4AF37]">
+                      <Tag className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[11px] font-bold uppercase tracking-wider text-zinc-500">
+                        Mã Chiến Dịch
+                      </p>
+                      <p className="truncate font-mono text-xs font-bold text-zinc-200 mt-0.5">
+                        {campaign.campaignId ?? "Chưa liên kết"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Gói dịch vụ */}
                 <div className="rounded-2xl border border-white/[0.08] bg-black/25 p-4 flex items-center justify-between">
                   <div className="flex items-center gap-3 min-w-0">
@@ -3612,29 +3580,29 @@ const campaignBenefits: Array<{
   description: string;
   icon: LucideIcon;
 }> = [
-  {
-    title: "Khán giả thực",
-    description:
-      "Tăng tiếp cận tới người dùng đang hoạt động trong hệ sinh thái TaleX.",
-    icon: Eye,
-  },
-  {
-    title: "Đảm bảo phân phối",
-    description: "Phân phối nội dung cho đến khi đạt mục tiêu đã đặt ra.",
-    icon: Zap,
-  },
-  {
-    title: "Thống kê thời gian thực",
-    description:
-      "Theo dõi lượt xem, lượt thích và hiệu quả từng gói ngay trong dashboard.",
-    icon: BarChart3,
-  },
-];
+    {
+      title: "Khán giả thực",
+      description:
+        "Tăng tiếp cận tới người dùng đang hoạt động trong hệ sinh thái TaleX.",
+      icon: Eye,
+    },
+    {
+      title: "Đảm bảo phân phối",
+      description: "Phân phối nội dung cho đến khi đạt mục tiêu đã đặt ra.",
+      icon: Zap,
+    },
+    {
+      title: "Thống kê thời gian thực",
+      description:
+        "Theo dõi lượt xem, lượt thích và hiệu quả từng gói ngay trong dashboard.",
+      icon: BarChart3,
+    },
+  ];
 
 export function CreatorCampaignsView() {
   const [activeTab, setActiveTab] = useState<
     "campaigns" | "packages" | "wallet"
-  >("campaigns");
+  >("packages");
   const [selectedPlan, setSelectedPlan] =
     useState<CreatorCampaignService | null>(null);
   const [page, setPage] = useState(1);
@@ -3787,11 +3755,8 @@ export function CreatorCampaignsView() {
         <div className="relative z-10 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h1 className="font-heading text-2xl font-black tracking-tight text-white md:text-3xl">
-              Tăng tương tác & Chiến dịch
+              Chiến Dịch Tăng Tương Tác
             </h1>
-            <p className="mt-1 text-xs font-semibold text-zinc-400 md:text-sm max-w-xl">
-              Khám phá gói dịch vụ tăng trưởng và theo dõi hiệu suất các chiến dịch quảng bá tác phẩm.
-            </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
@@ -3803,22 +3768,11 @@ export function CreatorCampaignsView() {
                   campaignWalletQuery.isLoading
                     ? "Đang tải..."
                     : campaignWalletQuery.data === null
-                      ? "Chưa tạo ví"
+                      ? "Chưa có"
                       : `${formatNumber(campaignWalletQuery.data?.balance)}đ`
                 }
                 tone="gold"
               />
-              {campaignWalletQuery.data &&
-              campaignWalletQuery.data.balance > 0 ? (
-                <button
-                  type="button"
-                  onClick={() => setIsPayoutModalOpen(true)}
-                  className="mt-1 flex items-center gap-1 text-[11px] font-bold text-[#F5D46E] hover:underline cursor-pointer"
-                >
-                  <Landmark className="h-3 w-3" />
-                  Rút tiền
-                </button>
-              ) : null}
             </div>
             <CampaignStatCard
               icon={Megaphone}
@@ -3845,6 +3799,20 @@ export function CreatorCampaignsView() {
         <div className="inline-flex rounded-2xl border border-white/10 bg-white/[0.04] p-1.5 backdrop-blur-md">
           <button
             type="button"
+            onClick={() => setActiveTab("packages")}
+            className={cn(
+              "flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-black transition-all cursor-pointer",
+              activeTab === "packages"
+                ? "bg-[#D4AF37] text-zinc-950 shadow-lg shadow-[#D4AF37]/20"
+                : "text-zinc-400 hover:text-white hover:bg-white/5",
+            )}
+          >
+            <Rocket className="h-4 w-4" />
+            Gói tăng tương tác
+          </button>
+
+          <button
+            type="button"
             onClick={() => setActiveTab("campaigns")}
             className={cn(
               "flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-black transition-all cursor-pointer",
@@ -3865,20 +3833,6 @@ export function CreatorCampaignsView() {
             >
               {totalElements}
             </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab("packages")}
-            className={cn(
-              "flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-black transition-all cursor-pointer",
-              activeTab === "packages"
-                ? "bg-[#D4AF37] text-zinc-950 shadow-lg shadow-[#D4AF37]/20"
-                : "text-zinc-400 hover:text-white hover:bg-white/5",
-            )}
-          >
-            <Rocket className="h-4 w-4" />
-            Gói tăng tương tác
           </button>
 
           <button
@@ -3906,6 +3860,17 @@ export function CreatorCampaignsView() {
             Tạo chiến dịch mới
           </Button>
         )}
+
+        {activeTab === "wallet" && campaignWalletQuery.data &&
+          campaignWalletQuery.data.balance > 0 ? (
+          <Button
+            type="button"
+            onClick={() => setIsPayoutModalOpen(true)}
+            className="h-11 rounded-2xl bg-[#D4AF37] px-5 text-xs font-black text-black shadow-lg shadow-[#D4AF37]/25 hover:bg-[#e6c75b] cursor-pointer"
+          >
+            Rút tiền
+          </Button>
+        ) : null}
       </div>
 
       <CampaignPayoutModal
@@ -3923,7 +3888,7 @@ export function CreatorCampaignsView() {
                 <Filter className="mt-1 h-5 w-5 text-[#D4AF37]" />
                 <div>
                   <h2 className="text-xl font-black text-white">
-                    Bộ lọc chiến dịch
+                    Bộ lọc
                   </h2>
                   {activeFilterCount > 0 ? (
                     <p className="mt-1 text-xs font-bold text-[#F5D46E]">

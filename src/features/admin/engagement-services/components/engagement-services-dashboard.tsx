@@ -64,32 +64,9 @@ export function EngagementServicesDashboard() {
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-8">
-      <div className="flex flex-col gap-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex items-start gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-600 backoffice-dark:bg-[var(--backoffice-primary-soft)] backoffice-dark:text-[var(--backoffice-primary)]">
-            <Megaphone className="h-6 w-6" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900 backoffice-dark:text-white">
-              Quản lý Dịch vụ Tương tác
-            </h1>
-            <p className="mt-2 max-w-2xl text-sm font-medium leading-6 text-slate-500 backoffice-dark:text-white/55">
-              Quản lý các gói đẩy lượt xem, lượt theo dõi và lượt thích cho hệ
-              thống TaleX.
-            </p>
-          </div>
-        </div>
-
-        <Button
-          type="button"
-          onClick={openCreateForm}
-          className="h-11 bg-violet-600 px-5 font-bold text-white hover:bg-violet-700 backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black backoffice-dark:hover:bg-[var(--backoffice-primary-bright)]"
-        >
-          <Plus className="h-4 w-4" />
-          Tạo mới dịch vụ
-        </Button>
-      </div>
-
+      <h1 className="text-3xl font-bold tracking-tight text-slate-900 backoffice-dark:text-white">
+        Quản lý Dịch vụ Tương tác
+      </h1>
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_180px_180px_auto] lg:items-end">
           <label className="space-y-2">
@@ -118,6 +95,15 @@ export function EngagementServicesDashboard() {
                 }`}
             />
             Làm mới
+          </Button>
+
+          <Button
+            type="button"
+            onClick={openCreateForm}
+            className="h-11 bg-violet-600 px-5 font-bold text-white hover:bg-violet-700 backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black backoffice-dark:hover:bg-[var(--backoffice-primary-bright)]"
+          >
+            <Plus className="h-4 w-4" />
+            Tạo mới dịch vụ
           </Button>
         </div>
       </section>

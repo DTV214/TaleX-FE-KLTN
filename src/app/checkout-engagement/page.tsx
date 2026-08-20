@@ -179,22 +179,31 @@ function CheckoutEngagementContent() {
       </div>
       <div className="relative mx-auto grid max-w-7xl gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
         <div className="space-y-5">
-          <PaymentFrame>
-            <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-              <div className="flex items-start gap-4">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-[#D4AF37]/25 bg-[#D4AF37]/10 text-[#D4AF37]">
-                  <Sparkles className="h-7 w-7" />
-                </div>
-                <div>
-                  <p className="text-xs font-black uppercase tracking-[0.3em] text-[#D4AF37]">
-                    TaleX Engagement
-                  </p>
-                  <h1 className="mt-3 text-3xl font-black md:text-5xl">
-                    Thanh toán gói tăng tương tác
-                  </h1>
-                  <p className="mt-3 max-w-2xl text-sm font-semibold leading-6 text-zinc-400">
-                    Đơn hàng sẽ được kích hoạt sau khi hệ thống xác nhận giao dịch.
-                  </p>
+          <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-start gap-4">
+              <div>
+                <h1 className="mt-3 text-3xl font-black md:text-5xl">
+                  Thanh toán gói tăng tương tác
+                </h1>
+              </div>
+            </div>
+
+          </div>
+
+          <PaymentWarningBanner message="Vui lòng chuyển khoản đúng nội dung để hệ thống tự động xử lý trong vài giây." />
+
+          <PaymentFrame className="border-[#D4AF37]/20">
+            <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_320px] md:items-center">
+              <div>
+                <p className="text-sm font-bold text-zinc-500">Số tiền thanh toán</p>
+                <div className="mt-4 flex flex-wrap items-center gap-3">
+                  <span className="text-4xl font-black text-[#F3DF85] md:text-5xl">
+                    {formatCurrency(order.fiatAmount)}
+                  </span>
+                  <span className="inline-flex items-center gap-2 rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-4 py-2 text-sm font-bold text-[#E8D37A]">
+                    <ShieldCheck className="h-4 w-4" />
+                    SePay bảo vệ
+                  </span>
                 </div>
               </div>
               <div className="rounded-2xl border border-white/10 bg-black/30 px-5 py-4">
@@ -206,47 +215,14 @@ function CheckoutEngagementContent() {
             </div>
           </PaymentFrame>
 
-          <PaymentWarningBanner message="Vui lòng chuyển khoản đúng nội dung để hệ thống tự động xử lý trong vài giây." />
-
-          <PaymentFrame className="border-[#D4AF37]/20">
-            <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_320px] md:items-center">
-              <div>
-                <p className="text-sm font-bold text-zinc-500">Số tiền thanh toán</p>
-                <div className="mt-4 flex flex-wrap items-center gap-3">
-                  <span className="text-4xl font-black text-[#F3DF85] md:text-5xl">
-                    {formatCurrency(order.totalAmount)}
-                  </span>
-                  <span className="inline-flex items-center gap-2 rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-4 py-2 text-sm font-bold text-[#E8D37A]">
-                    <ShieldCheck className="h-4 w-4" />
-                    SePay bảo vệ
-                  </span>
-                </div>
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
-                <div className="flex items-center justify-between text-sm font-bold">
-                  <span className="text-zinc-500">Tiến trình</span>
-                  <span className="text-[#F3DF85]">{progress}%</span>
-                </div>
-                <Progress value={progress} className="mt-3 h-2 bg-white/10" />
-                <p className="mt-3 flex items-center gap-2 text-sm font-semibold text-zinc-400">
-                  <Sparkles className="h-4 w-4 text-[#D4AF37]" />
-                  Chờ ngân hàng xác nhận
-                </p>
-              </div>
-            </div>
-          </PaymentFrame>
-
           <PaymentFrame>
             <div className="mb-5">
               <p className="text-sm font-black text-[#D4AF37]">
                 Thông tin chuyển khoản
               </p>
               <h2 className="mt-2 text-2xl font-black">
-                Copy chính xác từng trường
+                Vui lòng sao chép chính xác nội dung
               </h2>
-              <p className="mt-2 text-sm font-semibold leading-6 text-zinc-400">
-                Nội dung chuyển khoản là khóa đối soát tự động, vui lòng không sửa.
-              </p>
             </div>
             <div className="grid gap-3 md:grid-cols-2">
               <CopyableField label="Tên tài khoản" value={SEPAY_ACCOUNT_HOLDER} />
@@ -268,7 +244,6 @@ function CheckoutEngagementContent() {
             </div>
             <div>
               <p className="text-sm font-bold text-zinc-500">TaleX Order</p>
-              <h2 className="text-lg font-black">Gói tăng tương tác</h2>
             </div>
           </div>
 
@@ -283,8 +258,8 @@ function CheckoutEngagementContent() {
               <span className="text-[#F3DF85]">{order.paymentCode}</span>
             </div>
             <div className="flex justify-between text-lg font-black">
-              <span>Total</span>
-              <span className="text-[#F3DF85]">{formatCurrency(order.totalAmount)}</span>
+              <span>Tổng</span>
+              <span className="text-[#F3DF85]">{formatCurrency(order.fiatAmount)}</span>
             </div>
           </div>
 
@@ -303,14 +278,6 @@ function CheckoutEngagementContent() {
           </div>
 
           <div className="mt-6 grid gap-3">
-            <div className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] py-3 text-sm font-bold text-zinc-300">
-              <Building2 className="h-4 w-4 text-[#D4AF37]" />
-              {SEPAY_BANK_NAME}
-            </div>
-            <div className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] py-3 text-sm font-bold text-zinc-300">
-              <WalletCards className="h-4 w-4 text-[#D4AF37]" />
-              SePay VietQR
-            </div>
             <Button
               type="button"
               variant="outline"
@@ -342,10 +309,6 @@ function CheckoutEngagementContent() {
             </div>
           ) : null}
 
-          <div className="mt-5 flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] py-3 text-sm font-bold text-zinc-300">
-            <BadgeCheck className="h-4 w-4 text-[#D4AF37]" />
-            SSL 256-bit
-          </div>
         </PaymentFrame>
       </div>
     </main>

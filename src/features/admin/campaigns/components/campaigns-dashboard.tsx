@@ -103,16 +103,16 @@ export function CampaignsDashboard() {
       campaigns.length === 0
         ? 0
         : Math.round(
-            campaigns.reduce(
-              (sum, campaign) =>
-                sum +
-                getProgress(
-                  campaign.currentImpression,
-                  campaign.targetImpression,
-                ),
-              0,
-            ) / campaigns.length,
-          );
+          campaigns.reduce(
+            (sum, campaign) =>
+              sum +
+              getProgress(
+                campaign.currentImpression,
+                campaign.targetImpression,
+              ),
+            0,
+          ) / campaigns.length,
+        );
 
     return {
       activeCampaigns,
@@ -148,21 +148,9 @@ export function CampaignsDashboard() {
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-8">
       <header className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
         <div className="flex gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-600 backoffice-dark:bg-[var(--backoffice-primary-soft)] backoffice-dark:text-[var(--backoffice-primary)]">
-            <Megaphone className="h-6 w-6" />
-          </div>
-          <div>
-            <p className="mb-1 text-sm font-medium text-gray-500 backoffice-dark:text-white/55">
-              Admin / Chiến dịch tương tác
-            </p>
-            <h1 className="text-3xl font-bold tracking-tight text-gray-900 backoffice-dark:text-white">
-              Quản lý Chiến dịch
-            </h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-500 backoffice-dark:text-white/55">
-              Theo dõi các chiến dịch đẩy tương tác cho phim/truyện, cập nhật
-              trạng thái vận hành và hủy chiến dịch khi cần.
-            </p>
-          </div>
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900 backoffice-dark:text-white">
+            Quản lý Chiến dịch
+          </h1>
         </div>
 
         <Button
@@ -189,25 +177,21 @@ export function CampaignsDashboard() {
           icon={Target}
           label="Tổng chiến dịch"
           value={formatNumber(totalElements)}
-          detail="Theo dữ liệu backend"
         />
         <StatCard
           icon={TrendingUp}
-          label="Đang chạy"
+          label="Đang hoạt động"
           value={formatNumber(stats.activeCampaigns)}
-          detail="Trong trang hiện tại"
         />
         <StatCard
           icon={ShieldCheck}
           label="Hoàn tất"
           value={formatNumber(stats.completedCampaigns)}
-          detail="Trong trang hiện tại"
         />
         <StatCard
           icon={BarChart3}
-          label="Tiến độ TB"
+          label="Tiến độ Trung bình"
           value={`${stats.averageProgress}%`}
-          detail={`${formatNumber(stats.currentImpressions)} lượt đã đạt`}
         />
       </div>
 
@@ -390,15 +374,14 @@ function AdminPayoutRequestsTable() {
                   <td className="py-3 font-bold">{item.bankAccountName || "—"}</td>
                   <td className="py-3">
                     <span
-                      className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${
-                        isPaid
-                          ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-400"
-                          : isApproved
-                            ? "border-cyan-400/30 bg-cyan-400/10 text-cyan-400"
-                            : isRejected
-                              ? "border-red-400/30 bg-red-400/10 text-red-400"
-                              : "border-amber-400/30 bg-amber-400/10 text-amber-500"
-                      }`}
+                      className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${isPaid
+                        ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-400"
+                        : isApproved
+                          ? "border-cyan-400/30 bg-cyan-400/10 text-cyan-400"
+                          : isRejected
+                            ? "border-red-400/30 bg-red-400/10 text-red-400"
+                            : "border-amber-400/30 bg-amber-400/10 text-amber-500"
+                        }`}
                     >
                       {item.status}
                     </span>
@@ -512,11 +495,10 @@ function AdminPayoutRequestsTable() {
                 type="button"
                 disabled={processPayoutMutation.isPending}
                 onClick={handleProcessSubmit}
-                className={`flex-1 h-10 rounded-xl text-xs font-black text-white ${
-                  processingItem.action === "APPROVED"
-                    ? "bg-emerald-600 hover:bg-emerald-500"
-                    : "bg-red-600 hover:bg-red-500"
-                }`}
+                className={`flex-1 h-10 rounded-xl text-xs font-black text-white ${processingItem.action === "APPROVED"
+                  ? "bg-emerald-600 hover:bg-emerald-500"
+                  : "bg-red-600 hover:bg-red-500"
+                  }`}
               >
                 {processPayoutMutation.isPending ? (
                   <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
@@ -535,12 +517,10 @@ function StatCard({
   icon: Icon,
   label,
   value,
-  detail,
 }: {
   icon: LucideIcon;
   label: string;
   value: string;
-  detail: string;
 }) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
@@ -549,7 +529,6 @@ function StatCard({
         <p className="text-xs font-bold uppercase tracking-wider">{label}</p>
       </div>
       <p className="mt-4 text-3xl font-black text-gray-900">{value}</p>
-      <p className="mt-2 text-sm font-semibold text-gray-500">{detail}</p>
     </div>
   );
 }

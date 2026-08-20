@@ -77,8 +77,8 @@ export default function StaffCreatorVerificationPage() {
 
   const pageTitle =
     tab === "payment"
-      ? "Kiểm duyệt Hồ sơ Thanh toán"
-      : "Kiểm duyệt Hồ sơ Thuế";
+      ? "Hồ sơ Thanh toán"
+      : "Hồ sơ Thuế";
 
   const [selectedIdentity, setSelectedIdentity] =
     useState<CreatorIdentityRecord | null>(null);
@@ -304,8 +304,8 @@ export default function StaffCreatorVerificationPage() {
         ) : null}
 
         {!activeQuery.isLoading &&
-        !activeQuery.isError &&
-        tab === "payment" ? (
+          !activeQuery.isError &&
+          tab === "payment" ? (
           <PaymentProfileTable
             records={paymentProfilesQuery.data ?? []}
             onOpenVerification={handleOpenPaymentVerification}

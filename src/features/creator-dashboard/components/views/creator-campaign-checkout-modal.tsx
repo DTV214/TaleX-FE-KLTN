@@ -175,9 +175,6 @@ export function CreatorCampaignCheckoutModal({
                                 <h3 className="text-lg font-black text-white">
                                     Chọn nội dung áp dụng
                                 </h3>
-                                <p className="mt-1 text-sm font-semibold text-zinc-500">
-                                    Chỉ hiển thị series đã xuất bản của creator hiện tại.
-                                </p>
                             </div>
                             <Badge className="w-fit border-white/10 bg-white/[0.06] text-zinc-300">
                                 Đã chọn {selectedCount}
@@ -217,11 +214,10 @@ export function CreatorCampaignCheckoutModal({
                                             key={series.seriesId}
                                             type="button"
                                             onClick={() => toggleSeries(series.seriesId)}
-                                            className={`group relative overflow-hidden rounded-2xl border p-3 text-left transition hover:-translate-y-0.5 ${
-                                                isSelected
+                                            className={`group relative overflow-hidden rounded-2xl border p-3 text-left transition hover:-translate-y-0.5 ${isSelected
                                                     ? "border-yellow-400/70 bg-yellow-400/10"
                                                     : "border-white/10 bg-black/25 hover:border-yellow-400/35 hover:bg-white/[0.055]"
-                                            }`}
+                                                }`}
                                         >
                                             <div className="flex gap-3">
                                                 <div className="relative h-20 w-24 shrink-0 overflow-hidden rounded-xl bg-white/[0.06] sm:w-28">
@@ -259,11 +255,10 @@ export function CreatorCampaignCheckoutModal({
                                                     </p>
                                                 </div>
                                                 <span
-                                                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border ${
-                                                        isSelected
+                                                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border ${isSelected
                                                             ? "border-yellow-400 bg-yellow-400 text-black"
                                                             : "border-white/15 bg-black/30 text-zinc-500"
-                                                    }`}
+                                                        }`}
                                                 >
                                                     <CheckCircle2 className="h-4 w-4" />
                                                 </span>

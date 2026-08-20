@@ -192,18 +192,9 @@ export function CampaignManagementTable({
                   >
                     <td className="px-5 py-5">
                       <div className="flex items-start gap-3">
-                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-violet-50 text-violet-600 backoffice-dark:bg-[var(--backoffice-primary-soft)] backoffice-dark:text-[var(--backoffice-primary)]">
-                          <Megaphone className="h-5 w-5" />
-                        </div>
                         <div className="min-w-0">
                           <p className="font-black text-gray-900">
-                            Campaign {shortenId(campaign.campaignId)}
-                          </p>
-                          <p className="mt-1 text-xs font-semibold text-gray-500">
-                            Order: {shortenId(campaign.orderId)}
-                          </p>
-                          <p className="mt-1 text-xs font-semibold text-gray-500">
-                            Service: {shortenId(campaign.engagementServiceId)}
+                            {campaign.campaignId}
                           </p>
                         </div>
                       </div>

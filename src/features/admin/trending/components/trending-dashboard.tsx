@@ -765,29 +765,6 @@ export function AdminTrendingDashboard() {
           Quản lý Xu hướng
         </h1>
       </div>
-      {/* <section className="flex flex-col gap-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] lg:flex-row lg:items-end lg:justify-between">
-
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:w-[520px]">
-          <MetricCard
-            label="Ứng viên"
-            value={formatNumber(candidates.length)}
-          />
-          <MetricCard
-            label="Trong pool"
-            value={formatNumber(pool.length)}
-          />
-          <MetricCard
-            label="Impression"
-            value={formatNumber(currentTotals.impression)}
-          />
-          <MetricCard
-            label="Click"
-            value={formatNumber(
-              currentTotals.engageClick + currentTotals.interactionClick,
-            )}
-          />
-        </div>
-      </section> */}
 
       <Panel className="p-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">

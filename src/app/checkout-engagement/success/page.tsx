@@ -39,19 +39,9 @@ function EngagementCheckoutSuccessContent() {
             Creator Studio để theo dõi trạng thái chiến dịch.
           </p>
 
-          <div className="mx-auto mt-8 grid max-w-2xl gap-4 text-left md:grid-cols-2">
-            <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
-              <ReceiptText className="h-5 w-5 text-[#D4AF37]" />
-              <p className="mt-4 text-sm font-bold text-zinc-500">Mã đơn hàng</p>
-              <p className="mt-1 break-all text-lg font-black text-white">
-                {orderId || "--"}
-              </p>
-            </div>
-            <div className="rounded-2xl border border-[#D4AF37]/20 bg-[#D4AF37]/10 p-5">
-              <p className="text-sm font-bold text-zinc-400">Tổng thanh toán</p>
-              <p className="mt-3 text-3xl font-black text-[#f1dc7a]">
-                {formatCurrency(amount)}
-              </p>
+          <div className="mx-auto mt-8 grid max-w-2xl gap-4 text-left md:grid-cols-1">
+            <div className="flex items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] p-5">
+              <p className="text-lg font-bold text-zinc-500">Mã đơn hàng: <span className="text-[#D4AF37]">{orderId || "--"}</span></p>
             </div>
           </div>
 
