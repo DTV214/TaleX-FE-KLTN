@@ -172,3 +172,27 @@ export function useSeriesFeature(seriesId: string) {
   });
 }
 
+// 13. Hook to fetch SeriesChannelConfig (GET /api/v1/series-channel-configs)
+export function useSeriesChannelConfig(enabled = true) {
+  return useQuery({
+    queryKey: [...adminChannelKeys.all, "config"],
+    queryFn: () => adminChannelsApi.getSeriesChannelConfig(),
+    enabled,
+    staleTime: 60 * 1000,
+  });
+}
+
+// 14. Hook to update SeriesChannelConfig (PUT /api/v1/series-channel-configs)
+export function useUpdateSeriesChannelConfig() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: adminChannelsApi.updateSeriesChannelConfig,
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [...adminChannelKeys.all, "config"],
+      });
+    },
+  });
+}
+

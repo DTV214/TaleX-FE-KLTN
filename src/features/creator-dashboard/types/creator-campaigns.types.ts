@@ -254,4 +254,25 @@ export type PayoutRequestPageResponse = BasePageResponse<PayoutRequest>;
 
 export type PayoutRequestListResponse = BaseResponse<PayoutRequestPageResponse>;
 
+export type WalletPayoutTransaction = {
+  walletPayoutTransactionId: string;
+  batchReferenceId?: string | null;
+  transactionReferenceId?: string | null;
+  gatewayBatchId?: string | null;
+  payoutReference?: string | null;
+  amount: number;
+  status: string;
+  failureReason?: string | null;
+  paidAt?: string | null;
+  toBin?: string | null;
+  toAccountNumber?: string | null;
+  toAccountName?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+};
+
+export type WalletPayoutTransactionsResponse = BaseResponse<WalletPayoutTransaction[]>;
+
+
+
 

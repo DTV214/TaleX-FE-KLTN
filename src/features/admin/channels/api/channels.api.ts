@@ -11,6 +11,8 @@ import type {
   RankCandidatesRequest,
   RankCandidatesResponse,
   SeriesFeatureData,
+  SeriesChannelConfig,
+  UpdateSeriesChannelConfigRequest,
 } from "../types/channels.types";
 import { getAdminAccounts, type AdminAccountItem } from "@/features/admin/api/account.api";
 
@@ -280,6 +282,20 @@ export const adminChannelsApi = {
       return body.data;
     }
     return body as unknown as SeriesFeatureData;
+  },
+
+  // 20. GET /api/v1/series-channel-configs - Lấy thông tin cấu hình SeriesChannelConfig
+  async getSeriesChannelConfig(): Promise<SeriesChannelConfig> {
+    return unwrapBaseResponse(
+      httpClient.get<BaseResponse<SeriesChannelConfig>>("/api/v1/series-channel-configs")
+    );
+  },
+
+  // 21. PUT /api/v1/series-channel-configs - Cập nhật thông số cấu hình SeriesChannelConfig
+  async updateSeriesChannelConfig(payload: UpdateSeriesChannelConfigRequest): Promise<SeriesChannelConfig> {
+    return unwrapBaseResponse(
+      httpClient.put<BaseResponse<SeriesChannelConfig>>("/api/v1/series-channel-configs", payload)
+    );
   },
 };
 

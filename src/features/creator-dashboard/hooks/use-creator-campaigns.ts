@@ -39,6 +39,7 @@ import type {
     CampaignWalletTransaction,
     PayoutRequestFilterParams,
     PayoutRequestPageResponse,
+    WalletPayoutTransaction,
     ProcessPayoutRequestRequest,
 } from "@/features/creator-dashboard/types/creator-campaigns.types";
 
@@ -280,12 +281,11 @@ export function useGetOwnPayoutRequests(
 
 export function useGetPayoutRequestTransactions(
     payoutRequestId?: string,
-    params: PayoutRequestFilterParams = { page: 1, pageSize: 20 },
     enabled = true,
 ) {
-    return useQuery<PayoutRequestPageResponse>({
-        queryKey: [...creatorCampaignQueryKeys.all, "payout-request-transactions", payoutRequestId, params] as const,
-        queryFn: () => getPayoutRequestTransactions(payoutRequestId!, params),
+    return useQuery<WalletPayoutTransaction[]>({
+        queryKey: [...creatorCampaignQueryKeys.all, "payout-request-transactions", payoutRequestId] as const,
+        queryFn: () => getPayoutRequestTransactions(payoutRequestId!),
         enabled: Boolean(payoutRequestId) && enabled,
         staleTime: 30 * 1000,
     });

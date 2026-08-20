@@ -94,7 +94,7 @@ function CampaignStatusDialog({
         <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-6 py-5">
           <div>
             <p className="text-xs font-black uppercase tracking-wider text-violet-600 backoffice-dark:text-[var(--backoffice-primary)]">
-              Campaign Update
+              Quản trị chiến dịch
             </p>
             <h2 className="mt-1 text-2xl font-black text-slate-900">
               Cập nhật chiến dịch
@@ -118,13 +118,13 @@ function CampaignStatusDialog({
           <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-4">
             <dl className="grid gap-4 text-sm sm:grid-cols-2">
               <div>
-                <dt className="font-bold text-slate-500">Campaign ID</dt>
+                <dt className="font-bold text-slate-500">Mã chiến dịch</dt>
                 <dd className="mt-1 break-all font-black text-slate-900">
                   {activeCampaign.campaignId}
                 </dd>
               </div>
               <div>
-                <dt className="font-bold text-slate-500">Order</dt>
+                <dt className="font-bold text-slate-500">Mã đơn hàng</dt>
                 <dd className="mt-1 font-black text-slate-900">
                   {shortenId(activeCampaign.orderId)}
                 </dd>

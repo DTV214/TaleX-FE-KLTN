@@ -23,6 +23,7 @@ import type {
 import { adminCampaignStatusOptions } from "./campaign-status";
 import { CampaignDeleteModal } from "./campaign-delete-modal";
 import { CampaignStatusModal } from "./campaign-status-modal";
+import { PayoutTransactionsModal } from "./payout-transactions-modal";
 import {
   useGetPayoutRequests,
   useProcessPayoutRequest,
@@ -32,7 +33,7 @@ import {
 import type { PayoutRequest } from "@/features/creator-dashboard/types/creator-campaigns.types";
 import { getApiErrorMessage } from "@/shared/api/http-client";
 import { toast } from "sonner";
-import { CheckCircle2, XCircle, Loader2, Send } from "lucide-react";
+import { CheckCircle2, XCircle, Loader2, Send, Receipt } from "lucide-react";
 
 const DEFAULT_PAGE_SIZE = 10;
 const EMPTY_CAMPAIGNS: AdminCampaign[] = [];
@@ -272,6 +273,8 @@ function AdminPayoutRequestsTable() {
     id: string;
     action: "APPROVED" | "REJECTED";
   } | null>(null);
+  const [selectedTransactionsPayout, setSelectedTransactionsPayout] =
+    useState<PayoutRequest | null>(null);
   const [adminNote, setAdminNote] = useState("");
 
   const requests = payoutQuery.data?.content ?? [];
@@ -285,14 +288,14 @@ function AdminPayoutRequestsTable() {
         payoutRequestId: processingItem.id,
         body: {
           status: processingItem.action,
-          adminNote: adminNote || (processingItem.action === "APPROVED" ? "Đã duyệt chi trả tự động qua PayOS" : "Từ chối yêu cầu"),
+          adminNote: adminNote || (processingItem.action === "APPROVED" ? "Đã duyệt chi trả tự động" : "Từ chối yêu cầu"),
         },
       },
       {
         onSuccess: () => {
           toast.success(
             processingItem.action === "APPROVED"
-              ? "Đã duyệt yêu cầu rút tiền (Trạng thái: APPROVED). Vui lòng bấm nút 'Thực thi chi trả (PayOS)' để hoàn tất!"
+              ? "Đã duyệt yêu cầu rút tiền (Trạng thái: APPROVED). Vui lòng bấm nút 'Thực thi chi trả' để hoàn tất chuyển khoản!"
               : "Đã từ chối yêu cầu (hoàn lại số dư về ví Creator).",
           );
           setProcessingItem(null);
@@ -313,7 +316,7 @@ function AdminPayoutRequestsTable() {
             Danh sách Yêu cầu Rút tiền (Admin Payout Requests)
           </h3>
           <p className="text-xs font-semibold text-gray-500">
-            Bước 1: Duyệt (PUT /process) $\rightarrow$ Bước 2: Thực thi chi trả PayOS (POST /execute)
+            Bước 1: Duyệt yêu cầu $\rightarrow$ Bước 2: Thực thi chuyển khoản chi trả
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -366,11 +369,11 @@ function AdminPayoutRequestsTable() {
 
               return (
                 <tr key={item.payoutRequestId} className="text-gray-700 backoffice-dark:text-zinc-200">
-                  <td className="py-3 font-mono font-bold">{item.payoutRequestId.slice(0, 8)}...</td>
-                  <td className="py-3 font-mono text-gray-500">{item.accountId.slice(0, 8)}...</td>
+                  <td className="py-3 font-bold">{item.payoutRequestId.slice(0, 8)}...</td>
+                  <td className="py-3 text-gray-500">{item.accountId.slice(0, 8)}...</td>
                   <td className="py-3 font-black text-amber-500">{item.amount.toLocaleString("vi-VN")}đ</td>
                   <td className="py-3 font-bold">{item.bankName || "—"}</td>
-                  <td className="py-3 font-mono text-gray-500">{item.bankAccountNumber || "—"}</td>
+                  <td className="py-3 text-gray-500">{item.bankAccountNumber || "—"}</td>
                   <td className="py-3 font-bold">{item.bankAccountName || "—"}</td>
                   <td className="py-3">
                     <span
@@ -391,6 +394,17 @@ function AdminPayoutRequestsTable() {
                   </td>
                   <td className="py-3 text-right">
                     <div className="flex items-center justify-end gap-1.5">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setSelectedTransactionsPayout(item)}
+                        className="h-7 border-blue-200 bg-blue-50/70 px-2 text-[11px] font-bold text-blue-700 hover:bg-blue-100 backoffice-dark:border-blue-900/40 backoffice-dark:bg-blue-950/40 backoffice-dark:text-blue-300 backoffice-dark:hover:bg-blue-900/60"
+                        title="Xem chi tiết giao dịch chuyển khoản"
+                      >
+                        <Receipt className="mr-1 h-3 w-3" />
+                        Chi tiết GD
+                      </Button>
                       {isPending ? (
                         <>
                           <Button
@@ -398,7 +412,7 @@ function AdminPayoutRequestsTable() {
                             size="sm"
                             onClick={() => {
                               setProcessingItem({ id: item.payoutRequestId, action: "APPROVED" });
-                              setAdminNote("Đã duyệt chi trả tự động qua PayOS");
+                              setAdminNote("Đã duyệt chi trả tự động");
                             }}
                             className="h-7 bg-emerald-600 px-2.5 text-[11px] font-bold text-white hover:bg-emerald-500"
                           >
@@ -428,7 +442,7 @@ function AdminPayoutRequestsTable() {
                             executePayoutMutation.mutate(item.payoutRequestId, {
                               onSuccess: () => {
                                 toast.success(
-                                  `Thực thi chi trả tiền qua PayOS thành công (Trạng thái chuyển sang PAID) cho yêu cầu #${item.payoutRequestId.slice(0, 8)}`,
+                                  `Thực thi chuyển khoản chi trả thành công cho yêu cầu #${item.payoutRequestId.slice(0, 8)}`,
                                 );
                               },
                               onError: (err) => {
@@ -443,7 +457,7 @@ function AdminPayoutRequestsTable() {
                           ) : (
                             <Send className="mr-1 h-3 w-3" />
                           )}
-                          Thực thi chi trả (PayOS)
+                          Thực thi chi trả
                         </Button>
                       ) : (
                         <span className="text-[11px] font-semibold text-gray-400">Đã xử lý</span>
@@ -456,6 +470,14 @@ function AdminPayoutRequestsTable() {
           </tbody>
         </table>
       </div>
+
+      {/* PayOS Transactions Detail Modal */}
+      <PayoutTransactionsModal
+        payoutRequest={selectedTransactionsPayout}
+        isOpen={Boolean(selectedTransactionsPayout)}
+        onClose={() => setSelectedTransactionsPayout(null)}
+        variant="admin"
+      />
 
       {/* Admin Process Modal */}
       {processingItem ? (

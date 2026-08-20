@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useSeriesFeature } from "../hooks/use-admin-channels";
 import {
   X,
@@ -35,6 +36,19 @@ export function SeriesFeatureModal({
   const { data: feature, isLoading, isError, error } = useSeriesFeature(
     seriesId || ""
   );
+
+  // Close on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    if (seriesId) {
+      window.addEventListener("keydown", handleKeyDown);
+      return () => window.removeEventListener("keydown", handleKeyDown);
+    }
+  }, [seriesId, onClose]);
 
   if (!seriesId) return null;
 
@@ -72,13 +86,21 @@ export function SeriesFeatureModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl border border-slate-200/80 backoffice-dark:border-white/10 backoffice-dark:bg-slate-900 backoffice-dark:text-white">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200"
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl border border-slate-200/80 backoffice-dark:border-white/10 backoffice-dark:bg-slate-900 backoffice-dark:text-white flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Close Button */}
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-4 top-4 z-10 rounded-full bg-slate-100 p-2 text-slate-500 hover:bg-slate-200 hover:text-slate-900 backoffice-dark:bg-white/10 backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/20 transition-all cursor-pointer"
+          className="absolute right-4 top-4 z-20 rounded-full bg-slate-100/90 p-2 text-slate-600 hover:bg-slate-200 hover:text-slate-900 backoffice-dark:bg-white/15 backoffice-dark:text-white/80 backoffice-dark:hover:bg-white/25 backoffice-dark:hover:text-white transition-all cursor-pointer shadow-md border border-slate-200/50 backoffice-dark:border-white/10"
+          title="Đóng chi tiết"
+          aria-label="Đóng"
         >
           <X className="h-5 w-5" />
         </button>
@@ -261,7 +283,7 @@ export function SeriesFeatureModal({
                 <div className="rounded-xl bg-slate-50 p-3 border border-slate-200/80 backoffice-dark:border-white/10 backoffice-dark:bg-white/5 text-center">
                   <div className="flex items-center justify-center gap-1 text-[11px] text-slate-500 backoffice-dark:text-white/60 mb-1">
                     <Eye className="h-3.5 w-3.5 text-sky-500" />
-                    Clicks
+                    Lượt Click
                   </div>
                   <span className="text-sm font-black text-slate-900 backoffice-dark:text-white">
                     {(feature.interactionStats?.totalClicks ?? 0).toLocaleString()}
@@ -271,7 +293,7 @@ export function SeriesFeatureModal({
                 <div className="rounded-xl bg-slate-50 p-3 border border-slate-200/80 backoffice-dark:border-white/10 backoffice-dark:bg-white/5 text-center">
                   <div className="flex items-center justify-center gap-1 text-[11px] text-slate-500 backoffice-dark:text-white/60 mb-1">
                     <Heart className="h-3.5 w-3.5 text-rose-500" />
-                    Likes
+                    Lượt Thích
                   </div>
                   <span className="text-sm font-black text-slate-900 backoffice-dark:text-white">
                     {(feature.interactionStats?.totalLikes ?? 0).toLocaleString()}
@@ -281,7 +303,7 @@ export function SeriesFeatureModal({
                 <div className="rounded-xl bg-slate-50 p-3 border border-slate-200/80 backoffice-dark:border-white/10 backoffice-dark:bg-white/5 text-center">
                   <div className="flex items-center justify-center gap-1 text-[11px] text-slate-500 backoffice-dark:text-white/60 mb-1">
                     <Bookmark className="h-3.5 w-3.5 text-amber-500" />
-                    Bookmarks
+                    Lưu Dấu
                   </div>
                   <span className="text-sm font-black text-slate-900 backoffice-dark:text-white">
                     {(feature.interactionStats?.totalBookmarks ?? 0).toLocaleString()}
@@ -291,7 +313,7 @@ export function SeriesFeatureModal({
                 <div className="rounded-xl bg-slate-50 p-3 border border-slate-200/80 backoffice-dark:border-white/10 backoffice-dark:bg-white/5 text-center">
                   <div className="flex items-center justify-center gap-1 text-[11px] text-slate-500 backoffice-dark:text-white/60 mb-1">
                     <Share2 className="h-3.5 w-3.5 text-emerald-500" />
-                    Shares
+                    Chia Sẻ
                   </div>
                   <span className="text-sm font-black text-slate-900 backoffice-dark:text-white">
                     {(feature.interactionStats?.totalShares ?? 0).toLocaleString()}
@@ -301,7 +323,7 @@ export function SeriesFeatureModal({
                 <div className="rounded-xl bg-slate-50 p-3 border border-slate-200/80 backoffice-dark:border-white/10 backoffice-dark:bg-white/5 text-center col-span-2 sm:col-span-1">
                   <div className="flex items-center justify-center gap-1 text-[11px] text-slate-500 backoffice-dark:text-white/60 mb-1">
                     <MessageSquare className="h-3.5 w-3.5 text-violet-500" />
-                    Comments
+                    Bình Luận
                   </div>
                   <span className="text-sm font-black text-slate-900 backoffice-dark:text-white">
                     {(feature.interactionStats?.totalComments ?? 0).toLocaleString()}
@@ -323,7 +345,7 @@ export function SeriesFeatureModal({
                   <tbody className="divide-y divide-slate-100 backoffice-dark:divide-white/10 text-slate-700 backoffice-dark:text-white/80 font-medium">
                     <tr>
                       <td className="py-2.5 px-3.5 flex items-center gap-1.5 font-semibold text-slate-900 backoffice-dark:text-white">
-                        <Heart className="h-3 w-3 text-rose-500" /> Like / Click Ratio
+                        <Heart className="h-3 w-3 text-rose-500" /> Tỷ lệ Thích / Click
                       </td>
                       <td className="py-2.5 px-3.5 text-right font-bold text-rose-600 backoffice-dark:text-rose-400">
                         {formatPercentage(feature.interactionStats?.likeToClickRatio)}
@@ -338,7 +360,7 @@ export function SeriesFeatureModal({
 
                     <tr>
                       <td className="py-2.5 px-3.5 flex items-center gap-1.5 font-semibold text-slate-900 backoffice-dark:text-white">
-                        <Bookmark className="h-3 w-3 text-amber-500" /> Bookmark / Click Ratio
+                        <Bookmark className="h-3 w-3 text-amber-500" /> Tỷ lệ Lưu / Click
                       </td>
                       <td className="py-2.5 px-3.5 text-right font-bold text-amber-600 backoffice-dark:text-amber-400">
                         {formatPercentage(feature.interactionStats?.bookmarkToClickRatio)}
@@ -353,7 +375,7 @@ export function SeriesFeatureModal({
 
                     <tr>
                       <td className="py-2.5 px-3.5 flex items-center gap-1.5 font-semibold text-slate-900 backoffice-dark:text-white">
-                        <Share2 className="h-3 w-3 text-emerald-500" /> Share / Click Ratio
+                        <Share2 className="h-3 w-3 text-emerald-500" /> Tỷ lệ Chia Sẻ / Click
                       </td>
                       <td className="py-2.5 px-3.5 text-right font-bold text-emerald-600 backoffice-dark:text-emerald-400">
                         {formatPercentage(feature.interactionStats?.shareToClickRatio)}
@@ -368,7 +390,7 @@ export function SeriesFeatureModal({
 
                     <tr>
                       <td className="py-2.5 px-3.5 flex items-center gap-1.5 font-semibold text-slate-900 backoffice-dark:text-white">
-                        <MessageSquare className="h-3 w-3 text-violet-500" /> Comment / Click Ratio
+                        <MessageSquare className="h-3 w-3 text-violet-500" /> Tỷ lệ Bình Luận / Click
                       </td>
                       <td className="py-2.5 px-3.5 text-right font-bold text-violet-600 backoffice-dark:text-violet-400">
                         {formatPercentage(feature.interactionStats?.commentToClickRatio)}

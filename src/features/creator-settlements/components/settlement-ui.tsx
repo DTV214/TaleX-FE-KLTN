@@ -193,20 +193,20 @@ export function SettlementSummaryMetrics({
 }) {
   return (
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-      <SettlementMetricCard label="Gross" value={formatVND(settlement.grossAmount)} />
+      <SettlementMetricCard label="Tổng Gross" value={formatVND(settlement.grossAmount)} />
       <SettlementMetricCard
         label="Khấu trừ phạt"
         tone={settlement.totalPenaltyAmount > 0 ? "danger" : "default"}
         value={formatVND(settlement.totalPenaltyAmount)}
       />
       <SettlementMetricCard
-        label="Thuế PIT"
+        label="Thuế TNCN (PIT)"
         help={`Tỷ lệ ${formatPercent(settlement.taxRate)}`}
         tone={settlement.taxWithheldAmount > 0 ? "warn" : "default"}
         value={formatVND(settlement.taxWithheldAmount)}
       />
       <SettlementMetricCard
-        label="Net payout"
+        label="Thực nhận (Net)"
         tone="good"
         value={formatVND(settlement.netPayoutAmount)}
       />
@@ -222,11 +222,11 @@ function InfoRow({
   value?: ReactNode;
 }) {
   return (
-    <div className="flex items-start justify-between gap-4 border-b border-slate-100 py-3 last:border-b-0 backoffice-dark:border-white/10">
-      <span className="text-xs font-black uppercase tracking-[0.12em] text-slate-400 backoffice-dark:text-white/35">
+    <div className="flex items-start justify-between gap-3 border-b border-slate-100 py-2 last:border-b-0 backoffice-dark:border-white/10">
+      <span className="text-[11px] font-black uppercase tracking-[0.1em] text-slate-400 backoffice-dark:text-white/35 shrink-0">
         {label}
       </span>
-      <span className="text-right text-sm font-bold text-slate-800 backoffice-dark:text-white/80">
+      <span className="text-right text-xs font-bold text-slate-800 backoffice-dark:text-white/80 break-all">
         {value || "-"}
       </span>
     </div>
@@ -242,9 +242,9 @@ function RevenueTransactionsTable({
 
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.035]">
-      <div className="flex items-center gap-2 border-b border-slate-200 px-4 py-3 backoffice-dark:border-white/10">
+      <div className="flex items-center gap-2 border-b border-slate-200 px-4 py-2.5 backoffice-dark:border-white/10">
         <ReceiptText className="h-4 w-4 text-amber-500" />
-        <h3 className="text-sm font-black text-slate-950 backoffice-dark:text-white">
+        <h3 className="text-xs sm:text-sm font-black text-slate-950 backoffice-dark:text-white">
           Giao dịch doanh thu
         </h3>
         <span className="ml-auto text-xs font-bold text-slate-400">
@@ -253,36 +253,36 @@ function RevenueTransactionsTable({
       </div>
 
       {transactions.length === 0 ? (
-        <div className="px-4 py-8 text-center text-sm font-semibold text-slate-500 backoffice-dark:text-white/45">
+        <div className="px-4 py-6 text-center text-xs sm:text-sm font-semibold text-slate-500 backoffice-dark:text-white/45">
           Chưa có revenue transaction trong response.
         </div>
       ) : (
-        <div className="max-h-80 overflow-y-auto">
-          <table className="w-full min-w-[720px] text-left text-sm">
-            <thead className="sticky top-0 bg-slate-50 text-xs font-black uppercase tracking-wide text-slate-500 backoffice-dark:bg-[#141416] backoffice-dark:text-white/45">
+        <div className="w-full">
+          <table className="w-full text-left text-xs sm:text-sm">
+            <thead className="bg-slate-50 text-[11px] font-black uppercase tracking-wide text-slate-500 backoffice-dark:bg-[#141416] backoffice-dark:text-white/45">
               <tr>
-                <th className="px-4 py-3">Loại</th>
-                <th className="px-4 py-3">Tháng</th>
-                <th className="px-4 py-3">Mô tả</th>
-                <th className="px-4 py-3 text-right">Số tiền</th>
+                <th className="px-3.5 py-2">Loại</th>
+                <th className="px-3.5 py-2">Tháng</th>
+                <th className="px-3.5 py-2">Mô tả</th>
+                <th className="px-3.5 py-2 text-right">Số tiền</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 backoffice-dark:divide-white/10">
               {transactions.map((transaction) => (
                 <tr key={transaction.revenueTransactionId}>
-                  <td className="px-4 py-3 font-bold text-slate-800 backoffice-dark:text-white/85">
+                  <td className="px-3.5 py-2.5 font-bold text-slate-800 backoffice-dark:text-white/85">
                     {revenueTypeLabels[transaction.revenueTransactionType] ??
                       transaction.revenueTransactionType}
                   </td>
-                  <td className="px-4 py-3 text-xs font-semibold text-slate-500 backoffice-dark:text-white/45">
+                  <td className="px-3.5 py-2.5 text-xs font-semibold text-slate-500 backoffice-dark:text-white/45 whitespace-nowrap">
                     {formatDateTime(transaction.monthYear)}
                   </td>
-                  <td className="px-4 py-3 text-xs font-semibold text-slate-500 backoffice-dark:text-white/50">
+                  <td className="px-3.5 py-2.5 text-xs font-semibold text-slate-500 backoffice-dark:text-white/50 leading-relaxed">
                     {transaction.description || "-"}
                   </td>
                   <td
                     className={cn(
-                      "px-4 py-3 text-right font-black",
+                      "px-3.5 py-2.5 text-right font-black whitespace-nowrap",
                       transaction.amount < 0 ||
                         transaction.revenueTransactionType === "PENALTY_DEDUCTION"
                         ? "text-red-600"
@@ -306,9 +306,9 @@ function PayoutTransactionsTable({ detail }: { detail: CreatorSettlementDetail }
 
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.035]">
-      <div className="flex items-center gap-2 border-b border-slate-200 px-4 py-3 backoffice-dark:border-white/10">
+      <div className="flex items-center gap-2 border-b border-slate-200 px-4 py-2.5 backoffice-dark:border-white/10">
         <WalletCards className="h-4 w-4 text-cyan-500" />
-        <h3 className="text-sm font-black text-slate-950 backoffice-dark:text-white">
+        <h3 className="text-xs sm:text-sm font-black text-slate-950 backoffice-dark:text-white">
           Giao dịch chi trả
         </h3>
         <span className="ml-auto text-xs font-bold text-slate-400">
@@ -317,47 +317,47 @@ function PayoutTransactionsTable({ detail }: { detail: CreatorSettlementDetail }
       </div>
 
       {transactions.length === 0 ? (
-        <div className="px-4 py-8 text-center text-sm font-semibold text-slate-500 backoffice-dark:text-white/45">
+        <div className="px-4 py-6 text-center text-xs sm:text-sm font-semibold text-slate-500 backoffice-dark:text-white/45">
           Chưa có payout transaction. Settlement chỉ có payout sau khi được duyệt và xử lý chi trả.
         </div>
       ) : (
-        <div className="max-h-72 overflow-y-auto">
-          <table className="w-full min-w-[760px] text-left text-sm">
-            <thead className="sticky top-0 bg-slate-50 text-xs font-black uppercase tracking-wide text-slate-500 backoffice-dark:bg-[#141416] backoffice-dark:text-white/45">
+        <div className="w-full">
+          <table className="w-full text-left text-xs sm:text-sm">
+            <thead className="bg-slate-50 text-[11px] font-black uppercase tracking-wide text-slate-500 backoffice-dark:bg-[#141416] backoffice-dark:text-white/45">
               <tr>
-                <th className="px-4 py-3">Reference</th>
-                <th className="px-4 py-3">Tài khoản nhận</th>
-                <th className="px-4 py-3">Trạng thái</th>
-                <th className="px-4 py-3 text-right">Số tiền</th>
+                <th className="px-3.5 py-2">Mã tham chiếu</th>
+                <th className="px-3.5 py-2">Tài khoản nhận</th>
+                <th className="px-3.5 py-2">Trạng thái</th>
+                <th className="px-3.5 py-2 text-right">Số tiền</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 backoffice-dark:divide-white/10">
               {transactions.map((transaction) => (
                 <tr key={transaction.payoutTransactionId}>
-                  <td className="px-4 py-3">
-                    <p className="font-bold text-slate-800 backoffice-dark:text-white/85">
+                  <td className="px-3.5 py-2.5">
+                    <p className="font-bold text-slate-800 backoffice-dark:text-white/85 break-all">
                       {transaction.payoutReference ||
                         transaction.transactionReferenceId ||
                         transaction.payoutTransactionId}
                     </p>
-                    <p className="mt-1 text-xs font-semibold text-slate-400">
+                    <p className="mt-0.5 text-xs font-semibold text-slate-400 whitespace-nowrap">
                       {formatDateTime(transaction.paidAt || transaction.createdAt)}
                     </p>
                   </td>
-                  <td className="px-4 py-3 text-xs font-semibold text-slate-500 backoffice-dark:text-white/50">
-                    {transaction.toAccountName || "-"}
+                  <td className="px-3.5 py-2.5 text-xs font-semibold text-slate-500 backoffice-dark:text-white/50 leading-relaxed">
+                    <span className="font-bold text-slate-700 backoffice-dark:text-white/80">{transaction.toAccountName || "-"}</span>
                     <br />
                     {transaction.toBin || "-"} · {transaction.toAccountNumber || "-"}
                   </td>
-                  <td className={cn("px-4 py-3 text-xs font-black", payoutTone(transaction.status))}>
+                  <td className={cn("px-3.5 py-2.5 text-xs font-black whitespace-nowrap", payoutTone(transaction.status))}>
                     {payoutStatusLabels[transaction.status] ?? transaction.status}
                     {transaction.failureReason && (
-                      <p className="mt-1 font-semibold text-red-500">
+                      <p className="mt-0.5 font-semibold text-red-500">
                         {transaction.failureReason}
                       </p>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-right font-black text-slate-950 backoffice-dark:text-white">
+                  <td className="px-3.5 py-2.5 text-right font-black text-slate-950 backoffice-dark:text-white whitespace-nowrap">
                     {formatVND(transaction.amount)}
                   </td>
                 </tr>
@@ -383,10 +383,15 @@ function AdminStatusPanel({ detail }: { detail: CreatorSettlementDetail }) {
   const requiresNote = status === "UNDER_REVIEW" || status === "FORFEITED";
   const isTerminal = nextStatuses.length === 0;
 
+  // Nếu settlement đã ở trạng thái cuối (PAID, FORFEITED), không hiển thị khung cập nhật trạng thái
+  if (isTerminal) {
+    return null;
+  }
+
   async function handleSubmit() {
     const trimmedNote = note.trim();
     if (requiresNote && !trimmedNote) {
-      toast.error("Status này cần nhập ghi chú xử lý.");
+      toast.error("Vui lòng nhập ghi chú xử lý.");
       return;
     }
 
@@ -406,59 +411,50 @@ function AdminStatusPanel({ detail }: { detail: CreatorSettlementDetail }) {
           Cập nhật trạng thái
         </h3>
       </div>
-      <p className="mt-2 text-xs font-semibold leading-relaxed text-slate-500 backoffice-dark:text-white/45">
-        FE chỉ cho chọn các trạng thái hợp lệ theo contract BE. `PAID` và `FORFEITED` là trạng thái cuối.
-      </p>
 
-      {isTerminal ? (
-        <div className="mt-4 rounded-xl border border-slate-200 bg-white px-4 py-4 text-sm font-bold text-slate-500 backoffice-dark:border-white/10 backoffice-dark:bg-black/20 backoffice-dark:text-white/55">
-          Settlement này đã ở trạng thái cuối, không thể đổi tiếp.
-        </div>
-      ) : (
-        <div className="mt-4 space-y-3">
-          <label className="block">
-            <span className="mb-2 block text-xs font-black uppercase tracking-[0.12em] text-slate-400">
-              Chuyển sang
-            </span>
-            <select
-              value={status}
-              onChange={(event) => setStatus(event.target.value as SettlementStatus)}
-              disabled={updateMutation.isPending}
-              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-900 outline-none transition focus:border-amber-500 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white"
-            >
-              {nextStatuses.map((option) => (
-                <option key={option} value={option}>
-                  {labelForSettlementStatus(option)}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="block">
-            <span className="mb-2 block text-xs font-black uppercase tracking-[0.12em] text-slate-400">
-              Ghi chú {requiresNote ? "(bắt buộc)" : "(không bắt buộc)"}
-            </span>
-            <textarea
-              value={note}
-              onChange={(event) => setNote(event.target.value)}
-              disabled={updateMutation.isPending}
-              rows={4}
-              placeholder="Ví dụ: Đủ điều kiện duyệt chi trả kỳ này..."
-              className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-amber-500 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white"
-            />
-          </label>
-
-          <button
-            type="button"
-            onClick={handleSubmit}
+      <div className="mt-3.5 space-y-3">
+        <label className="block">
+          <span className="mb-1.5 block text-xs font-bold text-slate-600 backoffice-dark:text-white/70">
+            Chuyển sang
+          </span>
+          <select
+            value={status}
+            onChange={(event) => setStatus(event.target.value as SettlementStatus)}
             disabled={updateMutation.isPending}
-            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-slate-950 text-sm font-black text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50 backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black backoffice-dark:hover:bg-[var(--backoffice-primary-bright)]"
+            className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs sm:text-sm font-bold text-slate-900 outline-none transition focus:border-amber-500 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white"
           >
-            {updateMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-            Lưu trạng thái
-          </button>
-        </div>
-      )}
+            {nextStatuses.map((option) => (
+              <option key={option} value={option}>
+                {labelForSettlementStatus(option)}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="block">
+          <span className="mb-1.5 block text-xs font-bold text-slate-600 backoffice-dark:text-white/70">
+            Ghi chú {requiresNote ? "(bắt buộc)" : "(không bắt buộc)"}
+          </span>
+          <textarea
+            value={note}
+            onChange={(event) => setNote(event.target.value)}
+            disabled={updateMutation.isPending}
+            rows={3}
+            placeholder="Ví dụ: Đủ điều kiện duyệt chi trả kỳ này..."
+            className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs sm:text-sm font-semibold text-slate-900 outline-none transition focus:border-amber-500 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white"
+          />
+        </label>
+
+        <button
+          type="button"
+          onClick={handleSubmit}
+          disabled={updateMutation.isPending}
+          className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-slate-950 text-xs sm:text-sm font-black text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50 backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black backoffice-dark:hover:bg-[var(--backoffice-primary-bright)] cursor-pointer"
+        >
+          {updateMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+          Lưu trạng thái
+        </button>
+      </div>
     </div>
   );
 }
@@ -480,34 +476,38 @@ export function SettlementDetailDialog({
   return (
     <div
       className={cn(
-        "fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/60 px-4 py-8 backdrop-blur-sm",
+        "fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/60 p-3 sm:p-6 backdrop-blur-sm",
         role === "creator" && "backoffice-dark",
       )}
+      onClick={onClose}
     >
-      <div className="flex max-h-full w-full max-w-6xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl backoffice-dark:border-white/10 backoffice-dark:bg-[#111113]">
-        <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5 backoffice-dark:border-white/10">
+      <div
+        className="flex max-h-[96vh] w-full max-w-6xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl backoffice-dark:border-white/10 backoffice-dark:bg-[#111113]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between gap-4 border-b border-slate-200 px-5 py-3.5 backoffice-dark:border-white/10 shrink-0">
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-xl font-black text-slate-950 backoffice-dark:text-white">
+              <h2 className="text-lg font-black text-slate-950 backoffice-dark:text-white">
                 Chi tiết quyết toán
               </h2>
               {detail && <SettlementStatusBadge status={detail.status} />}
             </div>
-            <p className="mt-1 break-all text-xs font-semibold text-slate-500 backoffice-dark:text-white/45">
+            <p className="mt-0.5 break-all text-xs font-semibold text-slate-500 backoffice-dark:text-white/45">
               {settlementId}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 backoffice-dark:hover:bg-white/10 backoffice-dark:hover:text-white"
+            className="rounded-full p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 backoffice-dark:hover:bg-white/10 backoffice-dark:hover:text-white cursor-pointer"
             aria-label="Đóng"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto p-5">
+        <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-200 backoffice-dark:[&::-webkit-scrollbar-thumb]:bg-white/10">
           {detailQuery.isLoading && (
             <div className="flex h-80 items-center justify-center text-sm font-semibold text-slate-500">
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
@@ -525,24 +525,24 @@ export function SettlementDetailDialog({
           )}
 
           {detail && (
-            <div className="grid gap-5 xl:grid-cols-[1fr_360px]">
-              <div className="space-y-5">
-                <section className="rounded-2xl border border-slate-200 bg-slate-50 p-4 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.035]">
-                  <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div className="grid gap-4 xl:grid-cols-[1fr_340px]">
+              <div className="space-y-4">
+                <section className="rounded-2xl border border-slate-200 bg-slate-50 p-3.5 sm:p-4 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.035]">
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                     <div>
-                      <p className="text-xs font-black uppercase tracking-[0.16em] text-amber-600">
+                      <p className="text-[11px] font-black uppercase tracking-[0.16em] text-amber-600">
                         {formatMonth(detail.settlementMonth)}
                       </p>
-                      <h3 className="mt-1 text-lg font-black text-slate-950 backoffice-dark:text-white">
+                      <h3 className="mt-0.5 text-base sm:text-lg font-black text-slate-950 backoffice-dark:text-white">
                         {detail.creatorName ||
                           detail.creatorDetail?.username ||
                           "Creator"}
                       </h3>
                     </div>
-                    <div className="text-right text-xs font-bold text-slate-500 backoffice-dark:text-white/45">
-                      Cutoff: {formatDateTime(detail.cutoffDate)}
+                    <div className="text-right text-[11px] font-bold text-slate-500 backoffice-dark:text-white/45 leading-tight">
+                      Ngày tạo: {formatDateTime(detail.createdAt)}
                       <br />
-                      Tạo: {formatDateTime(detail.createdAt)}
+                      Hạn chốt: {formatDateTime(detail.cutoffDate)}
                     </div>
                   </div>
                   <SettlementSummaryMetrics settlement={detail} />
@@ -553,24 +553,44 @@ export function SettlementDetailDialog({
               </div>
 
               <aside className="space-y-4">
-                <div className="rounded-2xl border border-slate-200 bg-white p-4 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.035]">
+                <div className="rounded-2xl border border-slate-200 bg-white p-3.5 sm:p-4 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.035]">
                   <div className="mb-2 flex items-center gap-2">
                     <FileText className="h-4 w-4 text-violet-500" />
-                    <h3 className="text-sm font-black text-slate-950 backoffice-dark:text-white">
+                    <h3 className="text-xs sm:text-sm font-black text-slate-950 backoffice-dark:text-white">
                       Hồ sơ creator
                     </h3>
                   </div>
                   <InfoRow
-                    label="Username"
+                    label="Tên tài khoản"
                     value={detail.creatorDetail?.username || detail.creatorName}
                   />
                   <InfoRow label="Email" value={detail.creatorDetail?.email} />
-                  <InfoRow label="Creator ID" value={detail.creatorDetail?.creatorId || detail.creatorId} />
-                  <InfoRow label="Account" value={detail.creatorDetail?.accountStatus} />
-                  <InfoRow label="Tax ID" value={detail.creatorDetail?.taxId} />
-                  <InfoRow label="Tax status" value={detail.creatorDetail?.taxStatus} />
+                  <InfoRow label="Mã Creator" value={detail.creatorDetail?.creatorId || detail.creatorId} />
                   <InfoRow
-                    label="Banned"
+                    label="Tài khoản"
+                    value={
+                      detail.creatorDetail?.accountStatus === "ACTIVE"
+                        ? "Hoạt động"
+                        : detail.creatorDetail?.accountStatus === "BANNED"
+                          ? "Bị khóa"
+                          : detail.creatorDetail?.accountStatus || "-"
+                    }
+                  />
+                  <InfoRow label="Mã số thuế" value={detail.creatorDetail?.taxId} />
+                  <InfoRow
+                    label="Trạng thái thuế"
+                    value={
+                      detail.creatorDetail?.taxStatus === "APPROVED"
+                        ? "Đã duyệt"
+                        : detail.creatorDetail?.taxStatus === "PENDING"
+                          ? "Chờ duyệt"
+                          : detail.creatorDetail?.taxStatus === "REJECTED"
+                            ? "Bị từ chối"
+                            : detail.creatorDetail?.taxStatus || "-"
+                    }
+                  />
+                  <InfoRow
+                    label="Bị khóa"
                     value={detail.creatorDetail?.isBanned ? "Có" : "Không"}
                   />
                 </div>

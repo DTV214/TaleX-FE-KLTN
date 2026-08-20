@@ -134,22 +134,38 @@ export interface SeriesFeatureEngagementStats {
 }
 
 export interface SeriesFeatureData {
-  id: string;
-  contentType: string;
+  seriesId: string;
   title: string;
   description: string;
-  category: string[];
-  tags: string[];
+  coverUrl: string;
+  bannerUrl: string;
+  contentType: string;
   ageRating: string;
   language: string;
-  creatorTier?: string | null;
   rating: number;
+  totalViews: number;
+  category: string[];
+  tags: string[];
   releasedUpdatedAt: string;
-  coverUrl?: string | null;
-  bannerUrl?: string | null;
-  interactionStats?: SeriesFeatureInteractionStats;
-  engagementStats?: SeriesFeatureEngagementStats;
+  engagementStats: SeriesFeatureEngagementStats;
+  interactionStats: SeriesFeatureInteractionStats;
 }
+
+export interface SeriesChannelConfig {
+  configId: string;
+  trendingPoolNumber: number;
+  promotedPoolNumber: number;
+  newReleasedPoolNumber: number;
+  latestCommunityChoicePoolNumber: number;
+  communityChoicePoolNumber: number;
+  recentlyUpdatedPoolNumber: number;
+  randomCategoryPoolNumber: number;
+  subscribedPoolNumber: number;
+  numberPerCategory: number;
+  updatedAt?: string;
+}
+
+export type UpdateSeriesChannelConfigRequest = Partial<Omit<SeriesChannelConfig, "updatedAt">>;
 
 export type MainTabKey = "general" | "personal" | "ai-brain";
 

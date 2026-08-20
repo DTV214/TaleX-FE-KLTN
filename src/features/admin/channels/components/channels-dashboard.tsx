@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   GENERAL_CHANNELS,
@@ -11,11 +11,13 @@ import {
 import { ChannelSection } from "./channel-section";
 import { PersonalRecommendationsTab } from "./personal-recommendations-tab";
 import { RecommendationBrainTab } from "./recommendation-brain-tab";
+import { SeriesChannelConfigModal } from "./series-channel-config-modal";
 import { useTriggerChannelsPool } from "../hooks/use-admin-channels";
 import {
   Layers,
   Sparkles,
   RefreshCw,
+  SlidersHorizontal,
   X,
   Star,
   Eye,
@@ -40,6 +42,23 @@ export function AdminChannelsDashboard() {
   // Detail Modal state
   const [selectedCard, setSelectedCard] = useState<ChannelSeriesCard | null>(null);
 
+  // Config Modal state
+  const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
+
+  // Close modal on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setSelectedCard(null);
+        setIsConfigModalOpen(false);
+      }
+    };
+    if (selectedCard || isConfigModalOpen) {
+      window.addEventListener("keydown", handleKeyDown);
+      return () => window.removeEventListener("keydown", handleKeyDown);
+    }
+  }, [selectedCard, isConfigModalOpen]);
+
   // Trigger Pool Mutation (POST /api/v1/channels/pool)
   const triggerPoolMutation = useTriggerChannelsPool();
   const [notification, setNotification] = useState<{
@@ -51,7 +70,7 @@ export function AdminChannelsDashboard() {
     setNotification(null);
     try {
       await triggerPoolMutation.mutateAsync();
-      const successMsg = "Khởi tạo thành công";
+      const successMsg = "Đồng bộ và khởi tạo dữ liệu pool kênh thành công!";
       toast.success(successMsg, { duration: 3000 });
       setNotification({
         type: "success",
@@ -133,7 +152,6 @@ export function AdminChannelsDashboard() {
         {/* Top Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-
             <div>
               <h1 className="text-3xl font-bold tracking-tight text-slate-950 backoffice-dark:text-white">
                 Quản Lý Kênh Hiển Thị
@@ -141,18 +159,28 @@ export function AdminChannelsDashboard() {
             </div>
           </div>
 
-          {/* Action Button: Cập nhật Pool Kênh (only on Kênh chung tab) */}
+          {/* Action Buttons (only on Kênh chung tab) */}
           {activeMainTab === "general" && (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2.5">
+              <button
+                type="button"
+                onClick={() => setIsConfigModalOpen(true)}
+                className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 shadow-sm transition-all hover:bg-slate-50 hover:text-slate-900 active:scale-95 cursor-pointer backoffice-dark:border-white/10 backoffice-dark:bg-white/5 backoffice-dark:text-white backoffice-dark:hover:bg-white/10"
+                title="Cài đặt giới hạn số lượng kênh"
+              >
+                <SlidersHorizontal className="h-4 w-4 text-violet-600 backoffice-dark:text-violet-400" />
+                <span>Cài đặt</span>
+              </button>
+
               <button
                 type="button"
                 onClick={handleTriggerPool}
                 disabled={triggerPoolMutation.isPending}
-                className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 shadow-sm transition-all hover:bg-slate-50 hover:text-slate-900 active:scale-95 disabled:opacity-50"
-                title="Cập nhật pool kênh"
+                className="flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition-all hover:bg-violet-700 active:scale-95 disabled:opacity-50 cursor-pointer"
+                title="Đồng bộ lại pool kênh"
               >
-                <RefreshCw className={`h-4 w-4 text-violet-600 ${triggerPoolMutation.isPending ? "animate-spin" : ""}`} />
-                <span>Cập nhật</span>
+                <RefreshCw className={`h-4 w-4 ${triggerPoolMutation.isPending ? "animate-spin" : ""}`} />
+                <span>Đồng bộ Pool</span>
               </button>
             </div>
           )}
@@ -241,19 +269,32 @@ export function AdminChannelsDashboard() {
 
         {/* Series Detail Modal */}
         {selectedCard && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in">
-            <div className="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
-              {/* Close Button */}
-              <button
-                type="button"
-                onClick={() => setSelectedCard(null)}
-                className="absolute right-4 top-4 rounded-full bg-slate-100 p-2 text-slate-500 hover:bg-slate-200 hover:text-slate-900 transition-all"
-              >
-                <X className="h-5 w-5" />
-              </button>
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm animate-in fade-in duration-200"
+            onClick={() => setSelectedCard(null)}
+          >
+            <div
+              className="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl border border-slate-200/80 backoffice-dark:border-white/10 backoffice-dark:bg-slate-900 backoffice-dark:text-white flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Header (Close button outside image) */}
+              <div className="flex items-center justify-between pb-3">
+                <h3 className="text-base font-bold text-slate-900 backoffice-dark:text-white">
+                  Chi tiết Series
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setSelectedCard(null)}
+                  className="rounded-full bg-slate-100 p-2 text-slate-500 hover:bg-slate-200 hover:text-slate-900 backoffice-dark:bg-white/10 backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/20 transition-all cursor-pointer"
+                  title="Đóng"
+                  aria-label="Đóng"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
 
               {/* Banner/Cover Header */}
-              <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl bg-slate-100">
+              <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl bg-slate-100 backoffice-dark:bg-white/5 border border-slate-200/60 backoffice-dark:border-white/10">
                 {selectedCard.bannerUrl || selectedCard.coverUrl ? (
                   <Image
                     src={selectedCard.bannerUrl || selectedCard.coverUrl}
@@ -263,7 +304,7 @@ export function AdminChannelsDashboard() {
                     unoptimized
                   />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-violet-100 to-indigo-50 text-slate-400">
+                  <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-violet-100 to-indigo-50 text-slate-400 backoffice-dark:from-violet-950/40 backoffice-dark:to-indigo-950/40 backoffice-dark:text-white/40">
                     <Layers className="h-12 w-12" />
                   </div>
                 )}
@@ -282,15 +323,15 @@ export function AdminChannelsDashboard() {
               {/* Info details */}
               <div className="mt-5 space-y-4">
                 <div>
-                  <h3 className="text-xl font-bold text-slate-900">{selectedCard.title}</h3>
-                  <p className="mt-1 text-xs text-slate-600 leading-relaxed">
+                  <h3 className="text-xl font-bold text-slate-900 backoffice-dark:text-white">{selectedCard.title}</h3>
+                  <p className="mt-1 text-xs text-slate-600 backoffice-dark:text-white/70 leading-relaxed">
                     {selectedCard.description || "Không có mô tả."}
                   </p>
                 </div>
 
                 {/* Creator bar */}
-                <div className="flex items-center gap-3 rounded-xl bg-slate-50 p-3 border border-slate-100">
-                  <div className="relative h-10 w-10 overflow-hidden rounded-full bg-slate-200">
+                <div className="flex items-center gap-3 rounded-xl bg-slate-50 p-3 border border-slate-100 backoffice-dark:border-white/10 backoffice-dark:bg-white/5">
+                  <div className="relative h-10 w-10 overflow-hidden rounded-full bg-slate-200 backoffice-dark:bg-white/10">
                     {selectedCard.creatorAvatar ? (
                       <Image
                         src={selectedCard.creatorAvatar}
@@ -300,16 +341,16 @@ export function AdminChannelsDashboard() {
                         unoptimized
                       />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center bg-violet-200 text-violet-800 font-bold">
+                      <div className="flex h-full w-full items-center justify-center bg-violet-200 text-violet-800 font-bold backoffice-dark:bg-violet-950/50 backoffice-dark:text-violet-300">
                         {(selectedCard.creatorName || "C").charAt(0)}
                       </div>
                     )}
                   </div>
                   <div>
-                    <span className="block font-bold text-sm text-slate-900">
+                    <span className="block font-bold text-sm text-slate-900 backoffice-dark:text-white">
                       {selectedCard.creatorName}
                     </span>
-                    <span className="text-xs text-slate-500">
+                    <span className="text-xs text-slate-500 backoffice-dark:text-white/60">
                       {selectedCard.totalCreatorFollowers ?? 0} người theo dõi
                     </span>
                   </div>
@@ -317,42 +358,42 @@ export function AdminChannelsDashboard() {
 
                 {/* Metadata Grid */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                  <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-3">
-                    <span className="flex items-center gap-1 text-slate-400 mb-1">
+                  <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-3 backoffice-dark:border-white/10 backoffice-dark:bg-white/5">
+                    <span className="flex items-center gap-1 text-slate-400 backoffice-dark:text-white/60 mb-1">
                       <Star className="h-3.5 w-3.5 text-amber-500 fill-amber-500" />
-                      Rating
+                      Đánh giá
                     </span>
-                    <span className="font-bold text-slate-900 text-sm">
-                      {selectedCard.averageRating != null ? Number(selectedCard.averageRating).toFixed(1) : "N/A"} / 5.0
+                    <span className="font-bold text-slate-900 backoffice-dark:text-white text-sm">
+                      {selectedCard.averageRating != null ? Number(selectedCard.averageRating).toFixed(1) : "—"} / 5.0
                     </span>
                   </div>
 
-                  <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-3">
-                    <span className="flex items-center gap-1 text-slate-400 mb-1">
-                      <Eye className="h-3.5 w-3.5 text-slate-400" />
+                  <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-3 backoffice-dark:border-white/10 backoffice-dark:bg-white/5">
+                    <span className="flex items-center gap-1 text-slate-400 backoffice-dark:text-white/60 mb-1">
+                      <Eye className="h-3.5 w-3.5 text-slate-400 backoffice-dark:text-white/60" />
                       Tổng lượt xem
                     </span>
-                    <span className="font-bold text-slate-900 text-sm">
+                    <span className="font-bold text-slate-900 backoffice-dark:text-white text-sm">
                       {(selectedCard.totalViews ?? 0).toLocaleString()}
                     </span>
                   </div>
 
-                  <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-3">
-                    <span className="flex items-center gap-1 text-slate-400 mb-1">
-                      <Globe className="h-3.5 w-3.5 text-slate-400" />
+                  <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-3 backoffice-dark:border-white/10 backoffice-dark:bg-white/5">
+                    <span className="flex items-center gap-1 text-slate-400 backoffice-dark:text-white/60 mb-1">
+                      <Globe className="h-3.5 w-3.5 text-slate-400 backoffice-dark:text-white/60" />
                       Ngôn ngữ
                     </span>
-                    <span className="font-bold text-slate-900 text-sm">
-                      {selectedCard.language || "N/A"}
+                    <span className="font-bold text-slate-900 backoffice-dark:text-white text-sm">
+                      {selectedCard.language || "—"}
                     </span>
                   </div>
 
-                  <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-3">
-                    <span className="flex items-center gap-1 text-slate-400 mb-1">
-                      <Calendar className="h-3.5 w-3.5 text-slate-400" />
+                  <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-3 backoffice-dark:border-white/10 backoffice-dark:bg-white/5">
+                    <span className="flex items-center gap-1 text-slate-400 backoffice-dark:text-white/60 mb-1">
+                      <Calendar className="h-3.5 w-3.5 text-slate-400 backoffice-dark:text-white/60" />
                       Cập nhật
                     </span>
-                    <span className="font-bold text-slate-900 text-xs">
+                    <span className="font-bold text-slate-900 backoffice-dark:text-white text-xs">
                       {formatDate(selectedCard.releasedUpdateTime || selectedCard.updatedAt)}
                     </span>
                   </div>
@@ -361,6 +402,12 @@ export function AdminChannelsDashboard() {
             </div>
           </div>
         )}
+
+        {/* Series Channel Config Modal */}
+        <SeriesChannelConfigModal
+          isOpen={isConfigModalOpen}
+          onClose={() => setIsConfigModalOpen(false)}
+        />
       </div>
     </PageShell>
   );

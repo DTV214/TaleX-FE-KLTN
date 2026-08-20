@@ -32,6 +32,8 @@ import type {
     PayoutRequestSingleResponse,
     PayoutRequestPageResponse,
     PayoutRequestListResponse,
+    WalletPayoutTransaction,
+    WalletPayoutTransactionsResponse,
     ProcessPayoutRequestRequest,
 } from "@/features/creator-dashboard/types/creator-campaigns.types";
 import type { OrderResponse } from "@/features/payment/types/payment.types";
@@ -267,14 +269,12 @@ export async function getOwnPayoutRequests(
 
 export async function getPayoutRequestTransactions(
     payoutRequestId: string,
-    params: PayoutRequestFilterParams = { page: 1, pageSize: 20 },
-): Promise<PayoutRequestPageResponse> {
-    const response = await httpClient.get<PayoutRequestListResponse>(
+): Promise<WalletPayoutTransaction[]> {
+    const response = await httpClient.get<WalletPayoutTransactionsResponse>(
         `/api/v1/payout-requests/${payoutRequestId}/transactions`,
-        { params },
     );
 
-    return response.data.data;
+    return response.data.data ?? [];
 }
 
 export async function cancelCreatorCampaign(campaignId: string): Promise<void> {

@@ -49,6 +49,7 @@ import {
 } from "lucide-react";
 import { CreatorCampaignPlanList } from "./creator-campaign-plan-list";
 import { CreatorCampaignCheckoutModal } from "./creator-campaign-checkout-modal";
+import { PayoutTransactionsModal } from "@/features/admin/campaigns/components/payout-transactions-modal";
 import type { CreatorCampaignService } from "@/features/creator-dashboard/types/creator-campaigns.types";
 import {
   Area,
@@ -1117,6 +1118,8 @@ function CampaignPayoutModal({
 
 function PayoutRequestsListSection() {
   const [payoutPage, setPayoutPage] = useState(1);
+  const [selectedTransactionsPayout, setSelectedTransactionsPayout] =
+    useState<PayoutRequest | null>(null);
   const payoutQuery = useGetOwnPayoutRequests({
     page: payoutPage,
     pageSize: 5,
@@ -1190,7 +1193,7 @@ function PayoutRequestsListSection() {
               return (
                 <div
                   key={item.payoutRequestId}
-                  className="flex flex-col gap-3 rounded-2xl border border-white/[0.08] bg-black/20 p-4 sm:flex-row sm:items-center sm:justify-between"
+                  className="flex flex-col gap-3 rounded-2xl border border-white/[0.08] bg-black/20 p-4 sm:flex-row sm:items-center sm:justify-between hover:border-white/20 transition-all"
                 >
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
@@ -1205,7 +1208,7 @@ function PayoutRequestsListSection() {
                       >
                         {item.status}
                       </Badge>
-                      <span className="font-mono text-[11px] font-bold text-zinc-400">
+                      <span className="text-[11px] font-bold text-zinc-400">
                         ID: {shortenId(item.payoutRequestId)}
                       </span>
                       {item.createdAt ? (
@@ -1224,6 +1227,19 @@ function PayoutRequestsListSection() {
                         <span className="text-zinc-200">{item.adminNote}</span>
                       </p>
                     ) : null}
+
+                    <div className="mt-2 flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setSelectedTransactionsPayout(item)}
+                        className="h-7 px-2 text-[11px] font-bold text-blue-400 hover:text-blue-300 hover:bg-blue-950/30"
+                      >
+                        <Receipt className="mr-1.5 h-3.5 w-3.5" />
+                        Chi tiết giao dịch chi trả
+                      </Button>
+                    </div>
                   </div>
 
                   <div className="text-right shrink-0">
@@ -1240,6 +1256,14 @@ function PayoutRequestsListSection() {
           </div>
         )}
       </div>
+
+      {/* PayOS Transactions Modal for Creator */}
+      <PayoutTransactionsModal
+        payoutRequest={selectedTransactionsPayout}
+        isOpen={Boolean(selectedTransactionsPayout)}
+        onClose={() => setSelectedTransactionsPayout(null)}
+        variant="creator"
+      />
     </div>
   );
 }
