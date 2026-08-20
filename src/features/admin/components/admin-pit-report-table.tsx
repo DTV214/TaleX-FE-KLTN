@@ -148,16 +148,13 @@ export function AdminPitReportTable() {
           <div>
             <h2 className="text-xl font-bold text-gray-900 backoffice-dark:text-white tracking-tight flex items-center gap-2">
               <Scale className="w-5 h-5 text-violet-600" />
-              Báo Cáo Chi Tiết Thuế TNCN (PIT) Của Creator
+              Báo Cáo Chi Tiết Thuế TNCN (PIT)
             </h2>
-            <p className="text-xs font-semibold text-gray-500 mt-1 backoffice-dark:text-white/60">
-              Thống kê khấu trừ Thuế Thu Nhập Cá Nhân (PIT) theo kỳ quyết toán của Creator
-            </p>
           </div>
 
           <div className="flex items-center gap-3">
             <span className="rounded-xl bg-violet-50 backoffice-dark:bg-violet-950/40 border border-violet-200 backoffice-dark:border-violet-800/40 px-3 py-1.5 text-xs font-bold text-violet-700 backoffice-dark:text-violet-300">
-              Tổng cộng {totalElements} bản ghi PIT
+              Tổng cộng {totalElements} bản ghi
             </span>
 
             {/* Export Excel Button */}
@@ -172,7 +169,7 @@ export function AdminPitReportTable() {
               ) : (
                 <Download className="w-3.5 h-3.5" />
               )}
-              Xuất Bảng Kê 05-2/BK-TNCN
+              Xuất Excel PIT
             </Button>
           </div>
         </div>
@@ -271,13 +268,13 @@ export function AdminPitReportTable() {
                 <thead className="bg-gray-50 backoffice-dark:bg-slate-900 text-gray-500 backoffice-dark:text-gray-400 uppercase font-bold tracking-wider border-b border-gray-200 backoffice-dark:border-white/10">
                   <tr>
                     <th className="px-4 py-3.5">Kỳ quyết toán</th>
-                    <th className="px-4 py-3.5">Tên Creator</th>
+                    <th className="px-4 py-3.5">Họ Và Tên</th>
                     <th className="px-4 py-3.5">MST cá nhân</th>
                     <th className="px-4 py-3.5">Số CCCD/CMND</th>
-                    <th className="px-4 py-3.5 text-right">Thu nhập Gross</th>
-                    <th className="px-4 py-3.5 text-right">Tỷ lệ PIT</th>
-                    <th className="px-4 py-3.5 text-right">Thuế PIT khấu trừ</th>
-                    <th className="px-4 py-3.5 text-right">Thực nhận (Net)</th>
+                    <th className="px-4 py-3.5 text-right">Thu nhập</th>
+                    <th className="px-4 py-3.5 text-right">PIT (%)</th>
+                    <th className="px-4 py-3.5 text-right">Khấu trừ PIT</th>
+                    <th className="px-4 py-3.5 text-right">Thực nhận</th>
                     <th className="px-4 py-3.5">Trạng thái</th>
                     <th className="px-4 py-3.5">Ngày khởi tạo</th>
                   </tr>

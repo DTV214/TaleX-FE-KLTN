@@ -160,9 +160,6 @@ export function AdminVatReportTable() {
               <FileSpreadsheet className="w-5 h-5 text-violet-600" />
               Báo Cáo Chi Tiết Thuế VAT Theo Đơn Hàng
             </h2>
-            <p className="text-xs font-semibold text-gray-500 mt-1 backoffice-dark:text-white/60">
-              Tra cứu và đối soát dữ liệu thuế VAT phát sinh của từng mã giao dịch thanh toán
-            </p>
           </div>
 
           <div className="flex items-center gap-3">
@@ -182,7 +179,7 @@ export function AdminVatReportTable() {
               ) : (
                 <Download className="w-3.5 h-3.5" />
               )}
-              Xuất Excel VAT Bán Ra
+              Xuất Excel VAT
             </Button>
           </div>
         </div>
@@ -292,12 +289,12 @@ export function AdminVatReportTable() {
                   <tr>
                     <th className="px-4 py-3.5">Mã thanh toán</th>
                     <th className="px-4 py-3.5">Loại đơn</th>
-                    <th className="px-4 py-3.5">Nhóm doanh thu</th>
-                    <th className="px-4 py-3.5 text-right">Giá trị (Fiat)</th>
+                    <th className="px-4 py-3.5 text-right">Giá trị Trước Thuế</th>
+                    <th className="px-4 py-3.5 text-right">Giá trị Sau Thuế</th>
                     <th className="px-4 py-3.5 text-right">Tỷ lệ VAT</th>
                     <th className="px-4 py-3.5 text-right">Tiền VAT</th>
                     <th className="px-4 py-3.5">Ngày phát sinh</th>
-                    <th className="px-4 py-3.5">Mã đơn hàng (Order ID)</th>
+                    <th className="px-4 py-3.5">Mã đơn hàng</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 backoffice-dark:divide-white/10">
@@ -311,8 +308,8 @@ export function AdminVatReportTable() {
                           {item.paymentCode}
                         </td>
                         <td className="px-4 py-3.5">{getItemTypeBadge(item.itemType)}</td>
-                        <td className="px-4 py-3.5">
-                          {getRevenueGroupBadge(item.revenueGroup)}
+                        <td className="px-4 py-3.5 text-right font-extrabold text-gray-900 backoffice-dark:text-white">
+                          {formatVND(item.fiatAmount)}
                         </td>
                         <td className="px-4 py-3.5 text-right font-extrabold text-gray-900 backoffice-dark:text-white">
                           {formatVND(item.fiatAmount)}

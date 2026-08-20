@@ -101,16 +101,9 @@ function RunSettlementModal({
       >
         <div className="flex items-start justify-between gap-4 border-b border-slate-200 p-6 backoffice-dark:border-white/10">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-600">
-              Settlement process
-            </p>
             <h2 className="mt-2 text-2xl font-black text-slate-950 backoffice-dark:text-white">
               Chạy quyết toán thủ công
             </h2>
-            <p className="mt-2 text-sm font-semibold leading-relaxed text-slate-500 backoffice-dark:text-white/50">
-              Endpoint `demo-process` có thể chạy thử hoặc chạy thật. Chạy thật sẽ lưu settlement,
-              gắn revenue transaction và cập nhật balance creator ở BE.
-            </p>
           </div>
           <button
             type="button"
@@ -125,7 +118,7 @@ function RunSettlementModal({
         <div className="space-y-5 p-6">
           <label className="block">
             <span className="mb-2 block text-sm font-black text-slate-700 backoffice-dark:text-white/75">
-              Tháng target
+              Chọn Tháng
             </span>
             <input
               type="month"
@@ -139,11 +132,10 @@ function RunSettlementModal({
             <button
               type="button"
               onClick={() => setIsDemo(true)}
-              className={`rounded-2xl border px-4 py-4 text-left transition ${
-                isDemo
-                  ? "border-amber-300 bg-amber-50 text-amber-800 backoffice-dark:bg-amber-400/10 backoffice-dark:text-amber-200"
-                  : "border-slate-200 bg-white text-slate-600 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/60"
-              }`}
+              className={`rounded-2xl border px-4 py-4 text-left transition ${isDemo
+                ? "border-amber-300 bg-amber-50 text-amber-800 backoffice-dark:bg-amber-400/10 backoffice-dark:text-amber-200"
+                : "border-slate-200 bg-white text-slate-600 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/60"
+                }`}
             >
               <p className="font-black">Chạy demo</p>
               <p className="mt-1 text-xs font-semibold leading-relaxed">
@@ -153,15 +145,14 @@ function RunSettlementModal({
             <button
               type="button"
               onClick={() => setIsDemo(false)}
-              className={`rounded-2xl border px-4 py-4 text-left transition ${
-                !isDemo
-                  ? "border-red-300 bg-red-50 text-red-700 backoffice-dark:bg-red-400/10 backoffice-dark:text-red-200"
-                  : "border-slate-200 bg-white text-slate-600 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/60"
-              }`}
+              className={`rounded-2xl border px-4 py-4 text-left transition ${!isDemo
+                ? "border-red-300 bg-red-50 text-red-700 backoffice-dark:bg-red-400/10 backoffice-dark:text-red-200"
+                : "border-slate-200 bg-white text-slate-600 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/60"
+                }`}
             >
               <p className="font-black">Chạy thật</p>
               <p className="mt-1 text-xs font-semibold leading-relaxed">
-                Lưu settlement và cập nhật balance creator.
+                Lưu quyết toán và cập nhật doanh thu cho các nhà sáng tạo.
               </p>
             </button>
           </div>
@@ -200,11 +191,10 @@ function RunSettlementModal({
           <button
             type="submit"
             disabled={runMutation.isPending || !canRunReal}
-            className={`inline-flex items-center gap-2 rounded-2xl px-6 py-3 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-50 ${
-              isDemo
-                ? "bg-slate-950 text-white hover:bg-slate-800 backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black"
-                : "bg-red-600 text-white hover:bg-red-500"
-            }`}
+            className={`inline-flex items-center gap-2 rounded-2xl px-6 py-3 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-50 ${isDemo
+              ? "bg-slate-950 text-white hover:bg-slate-800 backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black"
+              : "bg-red-600 text-white hover:bg-red-500"
+              }`}
           >
             {runMutation.isPending ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -297,59 +287,47 @@ export function AdminSettlementsDashboard() {
   const totalTax = settlements.reduce((sum, item) => sum + item.taxWithheldAmount, 0);
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
-      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-black uppercase tracking-[0.16em] text-amber-700 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.06] backoffice-dark:text-[var(--backoffice-primary)]">
-              <WalletCards className="h-4 w-4" />
-              Creator Settlements
-            </div>
-            <h1 className="mt-4 text-3xl font-black tracking-tight text-slate-950 backoffice-dark:text-white">
-              Quyết toán doanh thu Creator
-            </h1>
-            <p className="mt-2 max-w-3xl text-sm font-semibold leading-relaxed text-slate-500 backoffice-dark:text-white/55">
-              Theo dõi các kỳ quyết toán đã được BE gom sổ theo tháng, xem chi tiết revenue transaction,
-              thuế PIT, payout và xử lý trạng thái duyệt chi trả.
-            </p>
-          </div>
+    <div className="flex flex-col gap-6 max-w-7xl mx-auto w-full font-sans">
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+        <h1 className="mt-4 text-3xl font-black tracking-tight text-slate-950 backoffice-dark:text-white">
+          Quyết Toán Doanh Thu
+        </h1>
 
-          <div className="flex items-center gap-3 shrink-0 flex-wrap sm:flex-nowrap">
-            <PayoutBalanceBadge />
-            <button
-              type="button"
-              onClick={() => settlementsQuery.refetch()}
-              disabled={settlementsQuery.isFetching}
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-black text-slate-700 transition hover:bg-slate-50 disabled:opacity-60 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/10"
-            >
-              <RefreshCw className={settlementsQuery.isFetching ? "h-4 w-4 animate-spin" : "h-4 w-4"} />
-              Tải lại
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsRunModalOpen(true)}
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 text-sm font-black text-white transition hover:bg-slate-800 backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black backoffice-dark:hover:bg-[var(--backoffice-primary-bright)]"
-            >
-              <Calculator className="h-4 w-4" />
-              Chạy quyết toán
-            </button>
-          </div>
+        <div className="flex items-center gap-3 shrink-0 flex-wrap sm:flex-nowrap">
+          <PayoutBalanceBadge />
+          <button
+            type="button"
+            onClick={() => settlementsQuery.refetch()}
+            disabled={settlementsQuery.isFetching}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-black text-slate-700 transition hover:bg-slate-50 disabled:opacity-60 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/10"
+          >
+            <RefreshCw className={settlementsQuery.isFetching ? "h-4 w-4 animate-spin" : "h-4 w-4"} />
+            Tải lại
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsRunModalOpen(true)}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 text-sm font-black text-white transition hover:bg-slate-800 backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black backoffice-dark:hover:bg-[var(--backoffice-primary-bright)]"
+          >
+            <Calculator className="h-4 w-4" />
+            Chạy quyết toán
+          </button>
         </div>
-      </section>
+      </div>
 
       <div className="grid gap-3 md:grid-cols-3">
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
-          <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">Settlement trên trang</p>
+          <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">Số Hồ Sơ trên trang</p>
           <p className="mt-2 text-3xl font-black text-slate-950 backoffice-dark:text-white">
             {settlements.length}
           </p>
         </div>
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
-          <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">Net payout trang này</p>
+          <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">Thu Nhập Ròng</p>
           <p className="mt-2 text-2xl font-black text-emerald-600">{formatVND(totalNet)}</p>
         </div>
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
-          <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">Thuế PIT trang này</p>
+          <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">Thuế TNCN (PIT)</p>
           <p className="mt-2 text-2xl font-black text-amber-600">{formatVND(totalTax)}</p>
         </div>
       </div>

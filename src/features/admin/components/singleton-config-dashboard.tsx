@@ -225,42 +225,26 @@ export function SingletonConfigDashboard<TConfig extends NumericConfig>({
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
-      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <div className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-amber-600 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.06] backoffice-dark:text-[var(--backoffice-primary)]">
-              {badge}
-            </div>
-            <h1 className="mt-4 text-3xl font-bold tracking-tight text-slate-950 backoffice-dark:text-white">
-              {title}
-            </h1>
-            <p className="mt-2 max-w-2xl text-sm font-medium leading-relaxed text-slate-500 backoffice-dark:text-white/55">
-              {description}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onRefresh}
-            disabled={isFetching}
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-60 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/10"
-          >
-            <RefreshCw
-              className={isFetching ? "h-4 w-4 animate-spin" : "h-4 w-4"}
-            />
-            Làm mới
-          </button>
-        </div>
-      </section>
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+        <h1 className="mt-4 text-3xl font-black tracking-tight text-slate-950 backoffice-dark:text-white">
+          {title}
+        </h1>
+        <button
+          type="button"
+          onClick={onRefresh}
+          disabled={isFetching}
+          className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-60 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/10"
+        >
+          <RefreshCw
+            className={isFetching ? "h-4 w-4 animate-spin" : "h-4 w-4"}
+          />
+          Làm mới
+        </button>
+      </div>
 
       <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-[linear-gradient(135deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))]">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--backoffice-primary)]">
-              {sectionLabel}
-            </p>
-            <h2 className="mt-1 text-xl font-bold text-slate-950 backoffice-dark:text-white">
-              {config ? activeTitle : emptyTitle}
-            </h2>
             <p className="mt-1 text-sm font-medium text-slate-500 backoffice-dark:text-white/55">
               {config
                 ? `Cập nhật lần cuối: ${formatDate(updatedAt)}`

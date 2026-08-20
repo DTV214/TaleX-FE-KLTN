@@ -70,15 +70,9 @@ export default function AdminDashboardPage() {
       {/* 1. Header & Filters */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-gray-100 pb-6">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-violet-600 backoffice-dark:text-[var(--backoffice-primary)]">
-            Admin Panel
-          </p>
-          <h1 className="mt-1 text-3xl font-bold tracking-tight text-gray-900 backoffice-dark:text-white">
+          <h1 className="text-3xl font-bold tracking-tight text-slate-950 backoffice-dark:text-white">
             Thống Kê Tài Chính
           </h1>
-          <p className="mt-1 text-sm font-medium text-gray-500 backoffice-dark:text-white/60">
-            Tổng quan GMV, doanh thu thuần, thuế VAT và lượng Coin sử dụng trên nền tảng.
-          </p>
         </div>
 
         {/* Date Filter Inputs */}

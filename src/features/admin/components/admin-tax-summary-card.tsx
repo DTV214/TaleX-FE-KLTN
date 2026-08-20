@@ -54,8 +54,8 @@ export function AdminTaxSummaryCard() {
   const creatorVat = summary?.creatorVatAmount ?? 0;
   const platformVat = summary?.platformVatAmount ?? 0;
   const donutData = [
-    { name: "VAT Creator", value: creatorVat },
-    { name: "VAT Nền Tảng", value: platformVat },
+    { name: "VAT từ Gói Bán Lẻ & Combo", value: creatorVat },
+    { name: "VAT từ Gói Dịch Vụ của Nền Tảng", value: platformVat },
   ];
 
   return (
@@ -68,9 +68,6 @@ export function AdminTaxSummaryCard() {
               <Receipt className="w-5 h-5 text-violet-600" />
               Tổng Quan Thuế
             </h2>
-            <p className="text-xs font-semibold text-gray-500 mt-1 backoffice-dark:text-white/60">
-              Tổng quan thuế VAT & PIT Enterprise
-            </p>
           </div>
 
           {/* Year & Quarter Selector */}
@@ -142,19 +139,6 @@ export function AdminTaxSummaryCard() {
 
       {/* 2. Top Row of 4 KPI Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Gross Amount */}
-        <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] transition hover:shadow-md">
-          <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center mb-4 backoffice-dark:bg-blue-500/20">
-            <TrendingUp className="h-5 w-5 text-blue-600 backoffice-dark:text-blue-300" />
-          </div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 backoffice-dark:text-white/60 mb-1">
-            Tổng Gross
-          </p>
-          <h3 className="text-2xl font-bold text-gray-900 backoffice-dark:text-white">
-            {formatVND(summary?.totalGrossAmount)}
-          </h3>
-        </div>
-
         {/* Total VAT */}
         <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] transition hover:shadow-md">
           <div className="h-10 w-10 rounded-xl bg-purple-50 flex items-center justify-center mb-4 backoffice-dark:bg-purple-500/20">
@@ -165,6 +149,19 @@ export function AdminTaxSummaryCard() {
           </p>
           <h3 className="text-2xl font-bold text-gray-900 backoffice-dark:text-white">
             {formatVND(summary?.totalVatAmount)}
+          </h3>
+        </div>
+
+        {/* Gross Amount */}
+        <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] transition hover:shadow-md">
+          <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center mb-4 backoffice-dark:bg-blue-500/20">
+            <TrendingUp className="h-5 w-5 text-blue-600 backoffice-dark:text-blue-300" />
+          </div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 backoffice-dark:text-white/60 mb-1">
+            Tổng Thu Nhập Các Nhà Sáng Tạo
+          </p>
+          <h3 className="text-2xl font-bold text-gray-900 backoffice-dark:text-white">
+            {formatVND(summary?.totalGrossAmount)}
           </h3>
         </div>
 
@@ -187,7 +184,7 @@ export function AdminTaxSummaryCard() {
             <DollarSign className="h-5 w-5 text-emerald-600 backoffice-dark:text-emerald-300" />
           </div>
           <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 backoffice-dark:text-white/60 mb-1">
-            Tổng Thực Nhận (Net Payout)
+            Tổng Thực Nhận
           </p>
           <h3 className="text-2xl font-bold text-gray-900 backoffice-dark:text-white">
             {formatVND(summary?.totalNetPayout)}
@@ -262,7 +259,7 @@ export function AdminTaxSummaryCard() {
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center gap-2 font-medium text-gray-700 backoffice-dark:text-white/80">
                 <span className="w-3 h-3 rounded-full bg-violet-500 inline-block" />
-                <span>VAT Creator</span>
+                <span>VAT từ Gói Bán Lẻ & Combo</span>
               </div>
               <span className="font-bold text-gray-900 backoffice-dark:text-white">
                 {formatVND(summary?.creatorVatAmount)}
@@ -272,7 +269,7 @@ export function AdminTaxSummaryCard() {
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center gap-2 font-medium text-gray-700 backoffice-dark:text-white/80">
                 <span className="w-3 h-3 rounded-full bg-blue-500 inline-block" />
-                <span>VAT Nền Tảng</span>
+                <span>VAT từ Gói Dịch Vụ của Nền Tảng</span>
               </div>
               <span className="font-bold text-gray-900 backoffice-dark:text-white">
                 {formatVND(summary?.platformVatAmount)}
@@ -293,19 +290,19 @@ export function AdminTaxSummaryCard() {
           <div className="divide-y divide-gray-100 backoffice-dark:divide-white/10 my-auto">
             <div className="py-3 flex items-center justify-between text-sm">
               <span className="font-medium text-gray-600 backoffice-dark:text-white/70">
-                Tổng Gross
+                Tổng Thuế VAT
               </span>
               <span className="font-extrabold text-gray-900 backoffice-dark:text-white">
-                {formatVND(summary?.totalGrossAmount)}
+                {formatVND(summary?.totalVatAmount)}
               </span>
             </div>
 
             <div className="py-3 flex items-center justify-between text-sm">
               <span className="font-medium text-gray-600 backoffice-dark:text-white/70">
-                Tổng Thuế VAT
+                Tổng Thu Nhập Các Nhà Sáng Tạo
               </span>
               <span className="font-extrabold text-gray-900 backoffice-dark:text-white">
-                {formatVND(summary?.totalVatAmount)}
+                {formatVND(summary?.totalGrossAmount)}
               </span>
             </div>
 
@@ -320,7 +317,7 @@ export function AdminTaxSummaryCard() {
 
             <div className="py-3 flex items-center justify-between text-sm">
               <span className="font-medium text-gray-600 backoffice-dark:text-white/70">
-                Tổng Thực Nhận (Net Payout)
+                Tổng Thực Nhận
               </span>
               <span className="font-extrabold text-gray-900 backoffice-dark:text-white">
                 {formatVND(summary?.totalNetPayout)}
