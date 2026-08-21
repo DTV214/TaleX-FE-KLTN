@@ -86,7 +86,7 @@ function TableSkeleton() {
       {Array.from({ length: 5 }).map((_, index) => (
         <tr key={index}>
           <td colSpan={6} className="px-5 py-4">
-            <div className="h-16 animate-pulse rounded-lg bg-slate-100" />
+            <div className="h-16 animate-pulse rounded-lg bg-slate-100 backoffice-dark:bg-white/5" />
           </td>
         </tr>
       ))}
@@ -96,8 +96,8 @@ function TableSkeleton() {
 
 function AnalyticsValue({ label, value }: { label: string; value?: unknown }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-md bg-slate-50 px-2 py-1 text-xs font-bold text-slate-600">
-      <span className="text-slate-400">{label}</span>
+    <span className="inline-flex items-center gap-1 rounded-md bg-slate-50 border border-slate-200/60 px-2 py-1 text-xs font-bold text-slate-700 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.06] backoffice-dark:text-zinc-200">
+      <span className="text-slate-400 backoffice-dark:text-zinc-400">{label}</span>
       {typeof value === "number" ? formatNumber(value) : String(value ?? 0)}
     </span>
   );
@@ -130,10 +130,10 @@ export function CampaignManagementTable({
   }
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+    <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[1120px] text-left text-sm text-gray-600">
-          <thead className="border-b border-gray-100 bg-gray-50/80 text-xs font-bold uppercase tracking-wider text-gray-500">
+        <table className="w-full min-w-[1120px] text-left text-sm text-gray-600 backoffice-dark:text-zinc-300">
+          <thead className="border-b border-gray-100 bg-gray-50/80 text-xs font-bold uppercase tracking-wider text-gray-500 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.03] backoffice-dark:text-zinc-400">
             <tr>
               <th className="px-5 py-4">Chiến dịch</th>
               <th className="px-5 py-4">Tiến độ</th>
@@ -143,13 +143,13 @@ export function CampaignManagementTable({
               <th className="px-5 py-4 text-right">Hành động</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-50">
+          <tbody className="divide-y divide-gray-50 backoffice-dark:divide-white/5">
             {isLoading && <TableSkeleton />}
 
             {!isLoading && isError && (
               <tr>
                 <td colSpan={6} className="px-5 py-10">
-                  <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-bold text-red-700">
+                  <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-bold text-red-700 backoffice-dark:border-red-500/30 backoffice-dark:bg-red-500/10 backoffice-dark:text-red-400">
                     Không thể tải danh sách chiến dịch. Vui lòng kiểm tra API
                     `/api/v1/campaigns`.
                   </div>
@@ -161,13 +161,13 @@ export function CampaignManagementTable({
               <tr>
                 <td colSpan={6} className="px-5 py-16 text-center">
                   <div className="mx-auto flex max-w-md flex-col items-center">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-violet-50 text-violet-600 backoffice-dark:bg-[var(--backoffice-primary-soft)] backoffice-dark:text-[var(--backoffice-primary)]">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-violet-50 text-violet-600 backoffice-dark:bg-violet-500/20 backoffice-dark:text-violet-300">
                       <Megaphone className="h-6 w-6" />
                     </div>
-                    <p className="mt-4 text-lg font-black text-gray-900">
+                    <p className="mt-4 text-lg font-black text-gray-900 backoffice-dark:text-white">
                       Chưa có chiến dịch tương tác
                     </p>
-                    <p className="mt-2 text-sm font-medium leading-6 text-gray-500">
+                    <p className="mt-2 text-sm font-medium leading-6 text-gray-500 backoffice-dark:text-zinc-400">
                       Khi creator mua gói tăng tương tác, chiến dịch sẽ xuất
                       hiện tại đây để admin theo dõi, cập nhật hoặc hủy.
                     </p>
@@ -188,12 +188,12 @@ export function CampaignManagementTable({
                 return (
                   <tr
                     key={campaign.campaignId}
-                    className="transition hover:bg-gray-50/80"
+                    className="transition hover:bg-gray-50/80 backoffice-dark:hover:bg-white/[0.03]"
                   >
                     <td className="px-5 py-5">
                       <div className="flex items-start gap-3">
                         <div className="min-w-0">
-                          <p className="font-black text-gray-900">
+                          <p className="font-bold text-gray-900 backoffice-dark:text-white font-mono text-xs">
                             {campaign.campaignId}
                           </p>
                         </div>
@@ -202,14 +202,14 @@ export function CampaignManagementTable({
 
                     <td className="px-5 py-5">
                       <div className="min-w-[180px]">
-                        <div className="mb-2 flex items-center justify-between text-xs font-bold text-gray-500">
+                        <div className="mb-2 flex items-center justify-between text-xs font-bold text-gray-500 backoffice-dark:text-zinc-400">
                           <span>{progress}%</span>
                           <span>
                             {formatNumber(campaign.currentImpression)} /{" "}
                             {formatNumber(campaign.targetImpression)}
                           </span>
                         </div>
-                        <div className="h-2 rounded-full bg-gray-100">
+                        <div className="h-2 rounded-full bg-gray-100 backoffice-dark:bg-white/10">
                           <div
                             className="h-full rounded-full bg-violet-600 transition-all backoffice-dark:bg-[var(--backoffice-primary)]"
                             style={{ width: `${progress}%` }}
@@ -240,18 +240,18 @@ export function CampaignManagementTable({
                     </td>
 
                     <td className="px-5 py-5">
-                      <div className="space-y-2 text-xs font-semibold text-gray-500">
+                      <div className="space-y-2 text-xs font-semibold text-gray-500 backoffice-dark:text-zinc-400">
                         <p className="flex items-center gap-2">
                           <CalendarClock className="h-4 w-4 text-violet-600 backoffice-dark:text-[var(--backoffice-primary)]" />
                           Bắt đầu:{" "}
-                          <span className="font-bold text-gray-800">
+                          <span className="font-bold text-gray-800 backoffice-dark:text-zinc-200">
                             {formatDateTime(campaign.startAt)}
                           </span>
                         </p>
                         <p className="flex items-center gap-2">
                           <BarChart3 className="h-4 w-4 text-violet-600 backoffice-dark:text-[var(--backoffice-primary)]" />
                           Cập nhật:{" "}
-                          <span className="font-bold text-gray-800">
+                          <span className="font-bold text-gray-800 backoffice-dark:text-zinc-200">
                             {formatDateTime(campaign.updatedAt)}
                           </span>
                         </p>
@@ -290,27 +290,27 @@ export function CampaignManagementTable({
         </table>
       </div>
 
-      <div className="flex flex-col gap-3 border-t border-gray-100 bg-black-50/30 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm font-semibold text-gray-500">
+      <div className="flex flex-col gap-3 border-t border-gray-100 bg-gray-50/50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between backoffice-dark:border-white/10 backoffice-dark:bg-transparent">
+        <p className="text-sm font-semibold text-gray-500 backoffice-dark:text-zinc-400">
           Hiển thị {firstItem}-{lastItem} / {totalElements} chiến dịch
         </p>
         <div className="flex items-center gap-2">
           <Button
             type="button"
             variant="outline"
-            className="border-gray-200 bg-white text-gray-700 shadow-sm hover:bg-gray-50 hover:text-gray-900"
+            className="border-gray-200 bg-white text-gray-700 shadow-sm hover:bg-gray-50 hover:text-gray-900 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-zinc-200 backoffice-dark:hover:bg-white/10"
             disabled={page <= 1 || isLoading}
             onClick={() => onPageChange(page - 1)}
           >
             Trước
           </Button>
-          <span className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-black text-gray-700 shadow-sm">
+          <span className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-black text-gray-700 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-zinc-200">
             {page} / {Math.max(totalPages, 1)}
           </span>
           <Button
             type="button"
             variant="outline"
-            className="border-gray-200 bg-white text-gray-700 shadow-sm hover:bg-gray-50 hover:text-gray-900"
+            className="border-gray-200 bg-white text-gray-700 shadow-sm hover:bg-gray-50 hover:text-gray-900 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-zinc-200 backoffice-dark:hover:bg-white/10"
             disabled={page >= totalPages || isLoading}
             onClick={() => onPageChange(page + 1)}
           >

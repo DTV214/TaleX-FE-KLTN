@@ -541,7 +541,7 @@ function FilterSelect({
 }) {
   return (
     <label className="block">
-      <span className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-500">
+      <span className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-500 backoffice-dark:text-zinc-400">
         {label}
       </span>
       <select
@@ -570,7 +570,7 @@ function NumberFilter({
 }) {
   return (
     <label className="block">
-      <span className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-500">
+      <span className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-500 backoffice-dark:text-zinc-400">
         {label}
       </span>
       <input
@@ -595,7 +595,7 @@ function DateTimeFilter({
 }) {
   return (
     <label className="block">
-      <span className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-500">
+      <span className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-500 backoffice-dark:text-zinc-400">
         {label}
       </span>
       <input

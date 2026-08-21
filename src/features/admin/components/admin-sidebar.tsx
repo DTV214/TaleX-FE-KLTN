@@ -112,7 +112,7 @@ const interactionNavItems: NavItem[] = [
 ];
 
 const navItems: NavItem[] = [
-  { name: "Bảng Điều Khiển", href: "/admin/dashboard", icon: LayoutDashboard },
+  { name: "Tổng Quan", href: "/admin/dashboard", icon: LayoutDashboard },
   { name: "Người Dùng", href: "/admin/users", icon: Users },
   {
     name: "Gói Premium",

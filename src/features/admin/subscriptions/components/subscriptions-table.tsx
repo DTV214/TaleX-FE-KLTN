@@ -68,10 +68,10 @@ function BenefitIcon({ enabled, label }: { enabled: boolean; label: string }) {
   return (
     <span
       title={label}
-      className={`inline-flex h-8 w-8 items-center justify-center rounded-full ${
+      className={`inline-flex h-8 w-8 items-center justify-center rounded-full border ${
         enabled
-          ? "bg-emerald-50 text-emerald-700"
-          : "bg-slate-100 text-slate-400"
+          ? "border-emerald-200 bg-emerald-50 text-emerald-700 backoffice-dark:border-emerald-500/30 backoffice-dark:bg-emerald-500/10 backoffice-dark:text-emerald-400"
+          : "border-slate-200 bg-slate-100 text-slate-400 backoffice-dark:border-white/10 backoffice-dark:bg-white/5 backoffice-dark:text-white/30"
       }`}
     >
       {enabled ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
@@ -119,9 +119,9 @@ export function SubscriptionsTable({
   const lastItem = Math.min(page * pageSize, totalElements);
 
   return (
-    <section className="relative overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+    <section className="relative overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
       {toastMessage && (
-        <div className="fixed right-6 top-6 z-50 flex max-w-md items-start gap-3 rounded-xl border border-red-200 bg-white px-4 py-3 text-sm font-semibold text-red-700 shadow-2xl">
+        <div className="fixed right-6 top-6 z-50 flex max-w-md items-start gap-3 rounded-xl border border-red-200 bg-white px-4 py-3 text-sm font-semibold text-red-700 shadow-2xl backoffice-dark:border-red-500/30 backoffice-dark:bg-red-950 backoffice-dark:text-red-300">
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
           <span>{toastMessage}</span>
         </div>
@@ -129,7 +129,7 @@ export function SubscriptionsTable({
 
       <div className="overflow-x-auto">
         <table className="w-full min-w-[1120px] text-left text-sm">
-          <thead className="border-b border-gray-100 bg-gray-50/80 text-xs font-bold uppercase tracking-wider text-gray-500">
+          <thead className="border-b border-gray-100 bg-gray-50/80 text-xs font-bold uppercase tracking-wider text-gray-500 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.03] backoffice-dark:text-zinc-400">
             <tr>
               <th className="px-5 py-4">Gói</th>
               <th className="px-5 py-4">Giá</th>
@@ -140,11 +140,11 @@ export function SubscriptionsTable({
               <th className="px-5 py-4 text-right">Hành động</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-50">
+          <tbody className="divide-y divide-gray-50 backoffice-dark:divide-white/5">
             {isLoading && (
               <tr>
                 <td colSpan={7} className="px-5 py-12 text-center">
-                  <span className="inline-flex items-center gap-2 text-sm font-bold text-gray-500">
+                  <span className="inline-flex items-center gap-2 text-sm font-bold text-gray-500 backoffice-dark:text-zinc-400">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     Đang tải gói Premium...
                   </span>
@@ -156,7 +156,7 @@ export function SubscriptionsTable({
               <tr>
                 <td
                   colSpan={7}
-                  className="px-5 py-12 text-center text-sm font-bold text-gray-500"
+                  className="px-5 py-12 text-center text-sm font-bold text-gray-500 backoffice-dark:text-zinc-400"
                 >
                   Chưa có gói Premium nào.
                 </td>
@@ -167,22 +167,22 @@ export function SubscriptionsTable({
               subscriptions.map((subscription) => (
                 <tr
                   key={subscription.subscriptionId}
-                  className="transition hover:bg-gray-50/80"
+                  className="transition hover:bg-gray-50/80 backoffice-dark:hover:bg-white/[0.03]"
                 >
                   <td className="px-5 py-4">
                     <div>
-                      <p className="font-black text-gray-900">
+                      <p className="font-black text-gray-900 backoffice-dark:text-white">
                         {subscription.tier}
                       </p>
-                      <p className="mt-1 max-w-xs truncate text-xs font-semibold text-gray-500">
+                      <p className="mt-1 max-w-xs truncate text-xs font-semibold text-gray-500 backoffice-dark:text-zinc-400">
                         {subscription.description || "Không có mô tả"}
                       </p>
                     </div>
                   </td>
-                  <td className="px-5 py-4 font-bold text-violet-600 backoffice-dark:text-[var(--backoffice-primary)]">
+                  <td className="px-5 py-4 font-bold text-violet-600 backoffice-dark:text-violet-400">
                     {formatCurrency(subscription.price)}
                   </td>
-                  <td className="px-5 py-4 text-sm font-semibold text-gray-700">
+                  <td className="px-5 py-4 text-sm font-semibold text-gray-700 backoffice-dark:text-zinc-300">
                     {formatDuration(subscription)}
                   </td>
                   <td className="px-5 py-4">
@@ -201,10 +201,10 @@ export function SubscriptionsTable({
                       />
                     </div>
                   </td>
-                  <td className="px-5 py-4 text-sm font-bold text-gray-900">
+                  <td className="px-5 py-4 text-sm font-bold text-gray-900 backoffice-dark:text-zinc-200">
                     {(subscription.totalPurchases || 0).toLocaleString("vi-VN")}
                   </td>
-                  <td className="px-5 py-4 text-xs font-semibold text-gray-500">
+                  <td className="px-5 py-4 text-xs font-semibold text-gray-500 backoffice-dark:text-zinc-400">
                     {formatDate(subscription.updatedAt)}
                   </td>
                   <td className="px-5 py-4">
@@ -237,27 +237,27 @@ export function SubscriptionsTable({
         </table>
       </div>
 
-      <div className="flex flex-col gap-3 border-t border-gray-100 bg-black-50/30 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm font-semibold text-gray-500">
+      <div className="flex flex-col gap-3 border-t border-gray-100 bg-gray-50/50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between backoffice-dark:border-white/10 backoffice-dark:bg-transparent">
+        <p className="text-sm font-semibold text-gray-500 backoffice-dark:text-zinc-400">
           Hiển thị {firstItem}-{lastItem} / {totalElements} gói
         </p>
         <div className="flex items-center gap-2">
           <Button
             type="button"
             variant="outline"
-            className="border-gray-200 bg-white text-gray-700 shadow-sm hover:bg-gray-50 hover:text-gray-900"
+            className="border-gray-200 bg-white text-gray-700 shadow-sm hover:bg-gray-50 hover:text-gray-900 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-zinc-200 backoffice-dark:hover:bg-white/10"
             disabled={page <= 1 || isLoading}
             onClick={() => onPageChange(page - 1)}
           >
             Trước
           </Button>
-          <span className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-black text-gray-700 shadow-sm">
+          <span className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-black text-gray-700 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-zinc-200">
             {page} / {Math.max(totalPages, 1)}
           </span>
           <Button
             type="button"
             variant="outline"
-            className="border-gray-200 bg-white text-gray-700 shadow-sm hover:bg-gray-50 hover:text-gray-900"
+            className="border-gray-200 bg-white text-gray-700 shadow-sm hover:bg-gray-50 hover:text-gray-900 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-zinc-200 backoffice-dark:hover:bg-white/10"
             disabled={page >= totalPages || isLoading}
             onClick={() => onPageChange(page + 1)}
           >

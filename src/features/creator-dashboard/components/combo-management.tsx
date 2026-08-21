@@ -2,7 +2,17 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Edit3, Trash2, Plus, ArrowLeft, ChevronRight, Layers } from "lucide-react";
+import {
+  Edit3,
+  Trash2,
+  Plus,
+  ArrowLeft,
+  ChevronRight,
+  Sparkles,
+  Film,
+  Package,
+  Layers,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
   listCombos,
@@ -31,8 +41,12 @@ export function ComboManagementView() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteCombo(id),
     onSuccess: () => {
+      toast.success("Xóa combo thành công");
       queryClient.invalidateQueries({ queryKey: ["creator-dashboard", "combos"] });
       queryClient.invalidateQueries({ queryKey: ["public-combos"] });
+    },
+    onError: () => {
+      toast.error("Không thể xóa combo. Vui lòng thử lại sau.");
     },
   });
 
@@ -58,138 +72,235 @@ export function ComboManagementView() {
 
   return (
     <div className="w-full py-6 text-creator-text space-y-8">
-      <div className="flex justify-between items-end border-b border-creator-border pb-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-creator-border pb-6">
         <div>
-          <h2 className="text-3xl font-bold text-white mb-2">Quản lý Combo</h2>
-          <p className="text-creator-muted text-sm">Gộp nhiều tập thành một combo với mức giá tùy chỉnh.</p>
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-creator-gold/10 border border-creator-gold/20 text-creator-gold">
+              <Package className="h-5 w-5" />
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-bold text-white">Quản lý Gói Combo</h2>
+          </div>
+          <p className="text-creator-muted text-xs sm:text-sm mt-1.5">
+            Gộp nhiều tập thành một gói combo với mức giá ưu đãi để kích thích mua hàng.
+          </p>
         </div>
         <button
           onClick={() => setView("create")}
-          className="inline-flex items-center gap-2 rounded bg-creator-gold px-6 py-2.5 text-sm font-bold text-black hover:opacity-90 transition-colors"
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-creator-gold px-5 py-2.5 text-sm font-bold text-black hover:opacity-90 transition-all shadow-lg shadow-creator-gold/10 cursor-pointer shrink-0"
         >
           <Plus className="h-4 w-4" />
-          Create Combo
+          <span>Tạo Combo Mới</span>
         </button>
       </div>
 
+      {/* Content */}
       {combosQuery.isLoading ? (
-        <div className="flex justify-center py-12">
+        <div className="flex flex-col items-center justify-center py-16 gap-3">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-creator-gold border-t-transparent"></div>
+          <span className="text-xs text-creator-muted font-medium">Đang tải danh sách combo...</span>
         </div>
       ) : combos.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-creator-border border-dashed bg-creator-sidebar/50 py-16">
-          <h3 className="text-lg font-bold text-white mb-2">Chưa có combo nào</h3>
-          <p className="mb-6 text-sm text-creator-muted max-w-sm text-center">Nhóm các tập lại với nhau để cung cấp mức giá ưu đãi cho độc giả.</p>
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-creator-border border-dashed bg-creator-sidebar/40 py-16 px-4 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-creator-gold/10 border border-creator-gold/20 text-creator-gold mb-4">
+            <Package className="h-7 w-7" />
+          </div>
+          <h3 className="text-lg font-bold text-white mb-2">Chưa có gói combo nào</h3>
+          <p className="mb-6 text-sm text-creator-muted max-w-md">
+            Hãy nhóm các tập lại với nhau để cung cấp mức giá ưu đãi hấp dẫn hơn cho độc giả và người xem.
+          </p>
           <button
             onClick={() => setView("create")}
-            className="rounded bg-creator-gold px-6 py-2.5 text-sm font-bold text-black hover:opacity-90 transition-colors"
+            className="inline-flex items-center gap-2 rounded-xl bg-creator-gold px-6 py-2.5 text-sm font-bold text-black hover:opacity-90 transition-colors cursor-pointer"
           >
-            Create Your First Combo
+            <Plus className="h-4 w-4" />
+            Tạo Combo Đầu Tiên
           </button>
         </div>
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {combos.map((combo) => (
-            <div
-              key={combo.comboId}
-              className="flex flex-col justify-between rounded-xl border border-creator-border bg-creator-sidebar shadow-xl transition-colors hover:border-creator-gold/50 group"
-            >
-              <div>
-                <div className="aspect-[3/4] w-full relative bg-creator-bg overflow-hidden border-b border-creator-border rounded-t-xl">
-                  {combo.episodes?.[0]?.thumbnail ? (
-                    <img src={combo.episodes[0].thumbnail} alt={combo.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Layers size={40} className="text-creator-muted/30" />
+          {combos.map((combo) => {
+            const episodeCount = combo.episodes?.length || 0;
+            const originalPrice = combo.originalPriceVnd || 0;
+            const comboPrice = combo.priceVnd || 0;
+            const savedAmount = Math.max(0, originalPrice - comboPrice);
+            const discountPercent =
+              originalPrice > 0 && savedAmount > 0
+                ? Math.round((savedAmount / originalPrice) * 100)
+                : 0;
+            const isExpanded = Boolean(expandedCombos[combo.comboId]);
+            const seriesTitle = combo.episodes?.[0]?.seriesTitle;
+
+            return (
+              <div
+                key={combo.comboId}
+                className="group relative flex flex-col justify-between rounded-2xl border border-creator-border/80 bg-creator-sidebar/90 p-0 shadow-lg backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-creator-gold/60 hover:shadow-2xl hover:shadow-creator-gold/5"
+              >
+                {/* 1. Card Top Header */}
+                <div className="p-5 pb-0">
+                  {/* Status & Discount Tags Row */}
+                  <div className="flex items-center justify-between gap-2 mb-3">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {/* Status Badge */}
+                      <span
+                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                          combo.status === "PUBLISHED"
+                            ? "border border-emerald-500/30 bg-emerald-950/80 text-emerald-400"
+                            : combo.status === "DRAFT"
+                            ? "border border-zinc-500/30 bg-zinc-900/80 text-zinc-300"
+                            : "border border-creator-gold/30 bg-creator-gold/10 text-creator-gold"
+                        }`}
+                      >
+                        <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
+                        {combo.status === "PUBLISHED"
+                          ? "Đang bán"
+                          : combo.status === "DRAFT"
+                          ? "Bản nháp"
+                          : combo.status || "PUBLISHED"}
+                      </span>
+
+                      {/* Episode Count Badge */}
+                      <span className="inline-flex items-center gap-1 rounded-full border border-creator-border bg-creator-bg/80 px-2.5 py-0.5 text-[10px] font-bold text-creator-muted">
+                        <Layers className="h-3 w-3 text-creator-gold" />
+                        {episodeCount} tập
+                      </span>
                     </div>
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
-                  <div className="absolute bottom-3 left-3 right-3">
-                    <span className={`inline-block px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider mb-2 ${
-                      combo.status === "PUBLISHED" ? "bg-green-500/20 text-green-500 border border-green-500/20" :
-                      combo.status === "DRAFT" ? "bg-creator-muted/20 text-creator-muted border border-creator-muted/20" :
-                      "bg-creator-gold/20 text-creator-gold border border-creator-gold/20"
-                    }`}>
-                      {combo.status || "PUBLISHED"}
-                    </span>
-                    <h3 className="text-lg font-bold text-white line-clamp-1">{combo.title}</h3>
-                  </div>
-                </div>
 
-              <div className="p-4">
-                <p className="text-sm text-creator-muted line-clamp-2 mb-6">{combo.description}</p>
-                
-                <div className="space-y-2 text-sm bg-creator-bg rounded-lg border border-creator-border p-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-creator-muted uppercase tracking-wider text-xs font-bold">Số tập</span>
-                    <span className="font-bold text-white">{combo.episodes?.length || 0}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-creator-muted uppercase tracking-wider text-xs font-bold">Giá gốc</span>
-                    <span className="font-medium line-through text-creator-muted">{(combo.originalPriceVnd || 0).toLocaleString()} đ</span>
-                  </div>
-                  <div className="flex justify-between items-center pt-2 border-t border-creator-border mt-2">
-                    <span className="text-creator-muted uppercase tracking-wider text-xs font-bold">Giá Combo</span>
-                    <span className="font-black text-creator-gold text-lg">{(combo.priceVnd || 0).toLocaleString()} đ</span>
-                  </div>
-                </div>
-
-                {combo.episodes && combo.episodes.length > 0 && (
-                  <div className="mt-4 border-t border-creator-border/50 pt-3">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setExpandedCombos((prev) => ({
-                          ...prev,
-                          [combo.comboId]: !prev[combo.comboId],
-                        }));
-                      }}
-                      className="text-xs font-bold text-creator-gold hover:opacity-80 flex items-center gap-1 cursor-pointer focus:outline-none"
-                    >
-                      {expandedCombos[combo.comboId] ? "Ẩn danh sách tập" : "Xem các tập bao gồm"}
-                      <ChevronRight className={`w-3.5 h-3.5 transition-transform duration-200 ${expandedCombos[combo.comboId] ? "rotate-90" : ""}`} />
-                    </button>
-                    {expandedCombos[combo.comboId] && (
-                      <ul className="mt-2 max-h-32 overflow-y-auto space-y-1.5 pl-2 text-xs text-creator-muted no-scrollbar">
-                        {combo.episodes.map((ep) => (
-                          <li key={ep.episodeId} className="flex items-center gap-1.5">
-                            <span className="w-1 h-1 rounded-full bg-creator-gold shrink-0" />
-                            <span className="truncate">
-                              {ep.episodeNumber != null ? `Tập ${ep.episodeNumber}: ` : ""}
-                              {ep.title}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
+                    {/* Savings Tag */}
+                    {discountPercent > 0 && (
+                      <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/40 bg-gradient-to-r from-amber-500 to-yellow-400 px-2.5 py-0.5 text-[11px] font-black text-black shadow-md">
+                        <Sparkles className="h-3 w-3" />
+                        - {discountPercent}%
+                      </span>
                     )}
                   </div>
-                )}
-              </div>
 
-                <div className="mt-6 flex items-center justify-end gap-2">
+                  {/* Title & Series */}
+                  <div className="space-y-1">
+                    <h3 className="text-lg font-bold text-white group-hover:text-creator-gold transition-colors line-clamp-1">
+                      {combo.title}
+                    </h3>
+                    {seriesTitle && (
+                      <p className="text-xs font-medium text-creator-muted/80 line-clamp-1 flex items-center gap-1">
+                        <span className="text-creator-gold">Series:</span> {seriesTitle}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* 2. Card Content Body */}
+                <div className="flex flex-1 flex-col p-5 pt-3">
+                  {/* Description */}
+                  <p className="min-h-[2.5rem] text-xs text-creator-muted/90 line-clamp-2 leading-relaxed mb-4">
+                    {combo.description || "Gói combo tiết kiệm bao gồm các tập chọn lọc."}
+                  </p>
+
+                  {/* Pricing Box */}
+                  <div className="rounded-xl border border-creator-border bg-creator-bg/90 p-4 space-y-2.5">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-semibold text-creator-muted">Giá gốc ({episodeCount} tập):</span>
+                      <span className="font-medium text-creator-muted line-through">
+                        {originalPrice.toLocaleString("vi-VN")} ₫
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between border-t border-creator-border/60 pt-2.5">
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-creator-muted">
+                          Giá Combo
+                        </span>
+                        {savedAmount > 0 && (
+                          <span className="text-[10px] font-semibold text-emerald-400">
+                            Tiết kiệm {savedAmount.toLocaleString("vi-VN")} ₫
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <span className="text-xl font-black text-creator-gold drop-shadow-sm">
+                          {comboPrice.toLocaleString("vi-VN")} ₫
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Episodes Toggle */}
+                  {combo.episodes && combo.episodes.length > 0 && (
+                    <div className="mt-4 border-t border-creator-border/50 pt-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setExpandedCombos((prev) => ({
+                            ...prev,
+                            [combo.comboId]: !prev[combo.comboId],
+                          }));
+                        }}
+                        className="flex w-full items-center justify-between text-xs font-bold text-creator-muted transition-colors hover:text-creator-gold cursor-pointer"
+                      >
+                        <span className="flex items-center gap-1.5">
+                          <Film className="h-3.5 w-3.5 text-creator-gold" />
+                          Danh sách {episodeCount} tập trong combo
+                        </span>
+                        <ChevronRight
+                          className={`h-3.5 w-3.5 transition-transform duration-200 ${
+                            isExpanded ? "rotate-90 text-creator-gold" : ""
+                          }`}
+                        />
+                      </button>
+
+                      {isExpanded && (
+                        <ul className="mt-2.5 max-h-40 overflow-y-auto space-y-1.5 rounded-lg bg-creator-bg/60 p-2.5 text-xs border border-creator-border/40 divide-y divide-creator-border/20">
+                          {combo.episodes.map((ep, idx) => (
+                            <li
+                              key={ep.episodeId}
+                              className="flex items-center justify-between gap-2 pt-1.5 first:pt-0 text-creator-muted"
+                            >
+                              <span className="truncate flex items-center gap-2">
+                                <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded bg-creator-gold/10 text-[10px] font-bold text-creator-gold">
+                                  {ep.episodeNumber ?? idx + 1}
+                                </span>
+                                <span className="truncate text-white/90">{ep.title}</span>
+                              </span>
+                              <span className="shrink-0 text-[11px] font-semibold text-creator-muted">
+                                {(ep.priceVnd || 0).toLocaleString("vi-VN")} ₫
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* 3. Card Actions Footer */}
+                <div className="flex items-center justify-end gap-2 border-t border-creator-border/60 bg-creator-bg/40 px-5 py-3 rounded-b-2xl">
                   <button
+                    type="button"
                     onClick={() => {
                       setEditingCombo(combo);
                       setView("edit");
                     }}
-                    className="flex h-10 w-10 items-center justify-center rounded-md bg-creator-bg border border-creator-border text-creator-muted hover:text-white transition-colors"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-creator-border bg-creator-bg px-3.5 py-1.5 text-xs font-bold text-creator-muted transition hover:border-creator-gold/50 hover:bg-creator-gold/10 hover:text-creator-gold cursor-pointer"
                   >
-                    <Edit3 className="h-4 w-4" />
+                    <Edit3 className="h-3.5 w-3.5" />
+                    <span>Chỉnh sửa</span>
                   </button>
                   <button
+                    type="button"
                     onClick={() => {
-                      if (confirm("Are you sure you want to delete this combo?")) {
+                      if (confirm(`Bạn có chắc chắn muốn xóa combo "${combo.title}"?`)) {
                         deleteMutation.mutate(combo.comboId);
                       }
                     }}
-                    className="flex h-10 w-10 items-center justify-center rounded-md bg-creator-bg border border-creator-border text-creator-muted hover:text-red-400 transition-colors"
+                    disabled={deleteMutation.isPending}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/20 bg-red-950/20 px-3.5 py-1.5 text-xs font-bold text-red-400 transition hover:bg-red-900/40 hover:text-red-300 disabled:opacity-50 cursor-pointer"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-3.5 w-3.5" />
+                    <span>Xóa</span>
                   </button>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
@@ -234,12 +345,24 @@ function ComboForm({
 
   const createMutation = useMutation({
     mutationFn: (payload: any) => createCombo(payload),
-    onSuccess: onSaved,
+    onSuccess: () => {
+      toast.success("Tạo combo thành công!");
+      onSaved();
+    },
+    onError: () => {
+      toast.error("Không thể tạo combo. Vui lòng kiểm tra lại thông tin.");
+    },
   });
 
   const updateMutation = useMutation({
     mutationFn: (payload: any) => updateCombo(combo!.comboId, payload),
-    onSuccess: onSaved,
+    onSuccess: () => {
+      toast.success("Cập nhật combo thành công!");
+      onSaved();
+    },
+    onError: () => {
+      toast.error("Không thể cập nhật combo. Vui lòng thử lại sau.");
+    },
   });
 
   const originalTotalPrice = selectedEpisodes.reduce((acc, ep) => acc + (ep.price || 0), 0);
@@ -286,27 +409,28 @@ function ComboForm({
   const isSaving = createMutation.isPending || updateMutation.isPending;
 
   return (
-    <div className="w-full p-6 text-creator-text space-y-8">
+    <div className="w-full py-6 text-creator-text space-y-8">
       <button
         onClick={onBack}
-        className="flex items-center gap-2 text-sm font-bold text-creator-muted hover:text-white transition-colors"
+        className="flex items-center gap-2 text-sm font-bold text-creator-muted hover:text-white transition-colors cursor-pointer"
       >
         <ArrowLeft className="h-4 w-4" />
-        Back to Combos
+        Quay lại danh sách Combo
       </button>
 
-      <form onSubmit={handleSubmit} className="bg-creator-sidebar border border-creator-border rounded-xl p-8 shadow-xl space-y-6">
-        <h2 className="text-2xl font-bold text-white mb-6">{combo ? "Edit Combo" : "Create New Combo"}</h2>
+      <form onSubmit={handleSubmit} className="bg-creator-sidebar border border-creator-border rounded-2xl p-8 shadow-xl space-y-6">
+        <h2 className="text-2xl font-bold text-white mb-6">{combo ? "Chỉnh Sửa Gói Combo" : "Tạo Gói Combo Mới"}</h2>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Tiêu đề</label>
+            <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Tiêu đề Combo</label>
             <input
               type="text"
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
+              placeholder="VD: Trọn bộ Arc Đại Chiến Phần 1..."
+              className="h-11 w-full rounded-xl border border-creator-border bg-creator-bg px-3.5 text-sm text-white outline-none focus:border-creator-gold transition"
             />
           </div>
 
@@ -315,18 +439,22 @@ function ComboForm({
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full min-h-[100px] rounded-md border border-creator-border bg-creator-bg p-3 text-sm text-white outline-none focus:border-creator-gold resize-none"
+              placeholder="Mô tả ưu đãi của gói combo này..."
+              className="w-full min-h-[100px] rounded-xl border border-creator-border bg-creator-bg p-3.5 text-sm text-white outline-none focus:border-creator-gold resize-none transition"
             />
           </div>
 
           <div className="border-t border-b border-creator-border py-6 my-6">
-            <h3 className="text-lg font-bold mb-4">Chọn tập</h3>
+            <h3 className="text-base font-bold text-white mb-4 flex items-center gap-2">
+              <Film className="h-4 w-4 text-creator-gold" />
+              Chọn các tập đưa vào Combo
+            </h3>
             
             <div className="grid gap-4 md:grid-cols-3 mb-4">
               <div>
                 <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Series</label>
                 <select
-                  className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold disabled:opacity-50"
+                  className="h-11 w-full rounded-xl border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold disabled:opacity-50 transition"
                   value={selectedSeriesId}
                   onChange={(e) => {
                     setSelectedSeriesId(e.target.value);
@@ -349,7 +477,7 @@ function ComboForm({
               <div>
                 <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Mùa</label>
                 <select
-                  className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
+                  className="h-11 w-full rounded-xl border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold transition"
                   value={selectedSeasonId}
                   onChange={(e) => setSelectedSeasonId(e.target.value)}
                   disabled={!selectedSeriesId}
@@ -364,7 +492,7 @@ function ComboForm({
               <div>
                 <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Tập</label>
                 <select
-                  className="h-10 w-full rounded-md border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold"
+                  className="h-11 w-full rounded-xl border border-creator-border bg-creator-bg px-3 text-sm text-white outline-none focus:border-creator-gold transition"
                   onChange={(e) => {
                     const ep = episodesQuery.data?.find((x: any) => x.episodeId === e.target.value);
                     if (ep) handleAddEpisode(ep);
@@ -375,27 +503,37 @@ function ComboForm({
                 >
                   <option value="">-- Chọn tập để thêm --</option>
                   {episodesQuery.data?.filter((ep: any) => ep.unlockType !== "FREE" && ep.status === "PUBLISHED").map((ep: any) => (
-                    <option key={ep.episodeId} value={ep.episodeId}>{ep.title} ({ep.priceVnd}đ)</option>
+                    <option key={ep.episodeId} value={ep.episodeId}>{ep.title} ({ep.priceVnd} ₫)</option>
                   ))}
                 </select>
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Các tập trong combo này:</label>
+              <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">
+                Các tập trong combo này ({selectedEpisodes.length}):
+              </label>
               {selectedEpisodes.length === 0 ? (
-                <p className="text-sm text-creator-muted italic">Chưa thêm tập nào.</p>
+                <p className="text-sm text-creator-muted italic bg-creator-bg/50 p-4 rounded-xl border border-creator-border/50 text-center">
+                  Chưa thêm tập nào vào gói.
+                </p>
               ) : (
                 <ul className="space-y-2">
-                  {selectedEpisodes.map((ep) => (
-                    <li key={ep.id} className="flex items-center justify-between rounded-md bg-creator-bg border border-creator-border p-3 text-sm">
-                      <span className="font-semibold">{ep.title}</span>
+                  {selectedEpisodes.map((ep, idx) => (
+                    <li key={ep.id} className="flex items-center justify-between rounded-xl bg-creator-bg border border-creator-border p-3 text-sm">
+                      <div className="flex items-center gap-2">
+                        <span className="flex h-5 w-5 items-center justify-center rounded bg-creator-gold/10 text-xs font-bold text-creator-gold">
+                          {idx + 1}
+                        </span>
+                        <span className="font-semibold text-white">{ep.title}</span>
+                      </div>
                       <div className="flex items-center gap-4">
-                        <span className="text-creator-muted">{(ep.price || 0).toLocaleString()} đ</span>
+                        <span className="text-creator-muted font-medium">{(ep.price || 0).toLocaleString()} ₫</span>
                         <button
                           type="button"
                           onClick={() => handleRemoveEpisode(ep.id)}
-                          className="text-red-500 hover:text-red-700"
+                          className="text-red-400 hover:text-red-300 p-1 cursor-pointer transition-colors"
+                          title="Xóa tập này khỏi combo"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -407,33 +545,40 @@ function ComboForm({
             </div>
           </div>
 
-          <div className="bg-creator-bg border border-creator-border p-4 rounded-xl space-y-3">
+          <div className="bg-creator-bg border border-creator-border p-5 rounded-2xl space-y-3">
             <div className="flex justify-between items-center text-sm">
-              <span className="text-creator-muted font-bold">Tổng giá gốc:</span>
-              <span className="line-through text-creator-muted text-base">{originalTotalPrice.toLocaleString()} đ</span>
+              <span className="text-creator-muted font-bold">Tổng giá gốc các tập:</span>
+              <span className="line-through text-creator-muted text-base font-semibold">{originalTotalPrice.toLocaleString()} ₫</span>
             </div>
             
             <div className="flex justify-between items-center pt-3 border-t border-creator-border">
-              <span className="text-creator-muted font-black">Giá Combo cuối cùng (VNĐ):</span>
+              <span className="text-white font-black">Giá Combo cuối cùng (VNĐ):</span>
               <input
                 type="number"
                 required
                 min="0"
                 value={priceVnd}
                 onChange={(e) => setPriceVnd(e.target.value)}
-                className="h-10 w-32 rounded-md border border-creator-gold bg-creator-bg px-3 text-right text-sm font-bold text-creator-gold outline-none focus:border-creator-gold"
+                className="h-11 w-36 rounded-xl border border-creator-gold bg-creator-bg px-3.5 text-right text-base font-black text-creator-gold outline-none focus:border-creator-gold transition"
               />
             </div>
           </div>
         </div>
 
-        <div className="flex justify-end pt-4">
+        <div className="flex justify-end gap-3 pt-4">
+          <button
+            type="button"
+            onClick={onBack}
+            className="rounded-xl border border-creator-border px-6 py-2.5 text-sm font-bold text-creator-muted hover:text-white transition cursor-pointer"
+          >
+            Hủy
+          </button>
           <button
             type="submit"
             disabled={isSaving || selectedEpisodes.length === 0}
-            className="inline-flex items-center justify-center rounded bg-creator-gold px-8 py-3 text-sm font-bold text-black hover:opacity-90 disabled:opacity-50 transition-colors"
+            className="inline-flex items-center justify-center rounded-xl bg-creator-gold px-8 py-2.5 text-sm font-bold text-black hover:opacity-90 disabled:opacity-50 transition-colors shadow-lg shadow-creator-gold/10 cursor-pointer"
           >
-            {isSaving ? "Saving..." : "Save Combo"}
+            {isSaving ? "Đang lưu..." : combo ? "Cập Nhật Combo" : "Lưu Combo Mới"}
           </button>
         </div>
       </form>

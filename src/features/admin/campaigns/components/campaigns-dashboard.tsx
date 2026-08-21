@@ -546,11 +546,11 @@ function StatCard({
 }) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
-      <div className="flex items-center gap-2 text-gray-500">
+      <div className="flex items-center gap-2 text-gray-500 backoffice-dark:text-zinc-400">
         <Icon className="h-5 w-5 text-violet-600 backoffice-dark:text-[var(--backoffice-primary)]" />
         <p className="text-xs font-bold uppercase tracking-wider">{label}</p>
       </div>
-      <p className="mt-4 text-3xl font-black text-gray-900">{value}</p>
+      <p className="mt-4 text-3xl font-black text-gray-900 backoffice-dark:text-white">{value}</p>
     </div>
   );
 }
