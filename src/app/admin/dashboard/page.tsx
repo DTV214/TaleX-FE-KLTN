@@ -11,6 +11,8 @@ import {
   RefreshCw,
   BarChart3,
   Filter,
+  Link,
+  ArrowRight,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -121,9 +123,6 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* 1.5. API Tax Summary Compact Widget */}
-      <AdminTaxSummaryWidget />
-
       {/* Loading state */}
       {statisticsQuery.isLoading && (
         <div className="flex min-h-72 items-center justify-center rounded-2xl border border-gray-100 bg-gray-50/50">
@@ -164,11 +163,11 @@ export default function AdminDashboardPage() {
                   <TrendingUp className="h-5 w-5 text-blue-600" />
                 </div>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-1 rounded-md">
-                  Tổng GMV
+                  GROSS REVENUE
                 </span>
               </div>
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
-                Tổng GMV
+                Tổng Doanh Thu Gộp
               </p>
               <h3 className="text-2xl font-bold text-gray-900 backoffice-dark:text-white">
                 {formatVND(overview?.gmv)}
@@ -182,11 +181,11 @@ export default function AdminDashboardPage() {
                   <DollarSign className="h-5 w-5 text-emerald-600" />
                 </div>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md">
-                  Doanh thu thuần
+                  NET REVENUE
                 </span>
               </div>
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
-                Doanh thu thuần
+                Doanh thu Thực Nhận
               </p>
               <h3 className="text-2xl font-bold text-gray-900 backoffice-dark:text-white">
                 {formatVND(overview?.totalNetRevenue)}
@@ -200,11 +199,11 @@ export default function AdminDashboardPage() {
                   <Receipt className="h-5 w-5 text-amber-600" />
                 </div>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 bg-amber-50 px-2 py-1 rounded-md">
-                  Thuế VAT
+                  VAT
                 </span>
               </div>
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
-                Tổng VAT
+                Tổng Thuế VAT
               </p>
               <h3 className="text-2xl font-bold text-gray-900 backoffice-dark:text-white">
                 {formatVND(overview?.totalVat)}
@@ -236,7 +235,7 @@ export default function AdminDashboardPage() {
               <div className="flex items-center gap-2">
                 <BarChart3 className="w-5 h-5 text-violet-600" />
                 <h3 className="text-lg font-bold text-gray-900 backoffice-dark:text-white">
-                  Biểu Đồ Xu Hướng Tài ChínhTheo Kỳ
+                  Biểu Đồ Xu Hướng Tài Chính Theo Kỳ
                 </h3>
               </div>
               <span className="text-xs font-medium text-gray-400">
@@ -258,9 +257,9 @@ export default function AdminDashboardPage() {
                           return [formatNumber(numValue) + " Coin", "Coin Sử Dụng"];
                         }
                         const labelMap: Record<string, string> = {
-                          gmv: "GMV",
-                          netRevenue: "Doanh Thu Thuần",
-                          vatAmount: "VAT",
+                          gmv: "Tổng Doanh Thu Gộp",
+                          netRevenue: "Doanh Thu Thực Nhận",
+                          vatAmount: "Tổng Thuế VAT",
                         };
                         return [formatVND(numValue), labelMap[name] || name];
                       }}
@@ -271,9 +270,9 @@ export default function AdminDashboardPage() {
                       }}
                     />
                     <Legend />
-                    <Bar dataKey="gmv" name="GMV" fill="#2563EB" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="netRevenue" name="Doanh Thu Thuần" fill="#10B981" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="vatAmount" name="VAT" fill="#F59E0B" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="gmv" name="Tổng Doanh Thu Gộp" fill="#2563EB" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="netRevenue" name="Doanh Thu Thực Nhận" fill="#10B981" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="vatAmount" name="Tổng Thuế VAT" fill="#F59E0B" radius={[4, 4, 0, 0]} />
                     <Bar dataKey="totalCoin" name="Coin Sử Dụng" fill="#8B5CF6" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -289,7 +288,7 @@ export default function AdminDashboardPage() {
           <div className="rounded-2xl border border-gray-100 bg-white overflow-hidden shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
             <div className="p-6 border-b border-gray-100 flex items-center justify-between">
               <h3 className="text-lg font-bold text-gray-900 backoffice-dark:text-white">
-                Chi Tiết Dữ Liệu Chi Tiết Theo Kỳ (Period)
+                Dữ Liệu Chi Tiết Theo Kỳ
               </h3>
             </div>
             <div className="overflow-x-auto">
@@ -297,9 +296,9 @@ export default function AdminDashboardPage() {
                 <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-500 border-b border-gray-100">
                   <tr>
                     <th className="px-6 py-4 font-semibold">Thời Gian / Kỳ</th>
-                    <th className="px-6 py-4 font-semibold text-right">GMV</th>
-                    <th className="px-6 py-4 font-semibold text-right">Doanh Thu Thuần</th>
-                    <th className="px-6 py-4 font-semibold text-right">Thuế VAT</th>
+                    <th className="px-6 py-4 font-semibold text-right">Tổng Doanh Thu Gộp</th>
+                    <th className="px-6 py-4 font-semibold text-right">Doanh Thu Thực Nhận</th>
+                    <th className="px-6 py-4 font-semibold text-right">Tổng Thuế VAT</th>
                     <th className="px-6 py-4 font-semibold text-right">Coin Sử Dụng</th>
                   </tr>
                 </thead>
