@@ -9,8 +9,7 @@ import {
   Loader2,
   RefreshCw,
   ReceiptText,
-  ShieldCheck,
-  WalletCards,
+  type LucideIcon,
 } from "lucide-react";
 import { useOwnCreatorSettlements } from "../hooks/use-creator-settlements";
 import type {
@@ -33,48 +32,17 @@ import {
 
 const PAGE_SIZE = 20;
 
-type CreatorRevenueTab = "overview" | "settlements" | "tax";
+type CreatorRevenueTab = "settlements" | "tax";
 type StatusFilter = SettlementStatus | "ALL";
 
 const tabs: Array<{
-  icon: typeof WalletCards;
+  icon: LucideIcon;
   label: string;
   value: CreatorRevenueTab;
 }> = [
-  { icon: WalletCards, label: "Tổng quan", value: "overview" },
   { icon: ReceiptText, label: "Quyết toán", value: "settlements" },
   { icon: FileText, label: "Thuế", value: "tax" },
 ];
-
-function CreatorMetricCard({
-  label,
-  value,
-  variant = "default",
-}: {
-  label: string;
-  value: string;
-  variant?: "default" | "gold" | "green" | "red";
-}) {
-  const valueClass =
-    variant === "gold"
-      ? "text-creator-gold"
-      : variant === "green"
-        ? "text-emerald-300"
-        : variant === "red"
-          ? "text-red-300"
-          : "text-white";
-
-  return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.045] p-5 shadow-[0_20px_70px_rgba(0,0,0,0.22)]">
-      <p className="text-xs font-black uppercase tracking-[0.16em] text-creator-muted">
-        {label}
-      </p>
-      <p className={`mt-3 text-2xl font-black tracking-tight ${valueClass}`}>
-        {value}
-      </p>
-    </div>
-  );
-}
 
 function CreatorSettlementRow({
   onOpen,
@@ -121,7 +89,7 @@ function CreatorSettlementRow({
 }
 
 export function CreatorSettlementsView() {
-  const [activeTab, setActiveTab] = useState<CreatorRevenueTab>("overview");
+  const [activeTab, setActiveTab] = useState<CreatorRevenueTab>("settlements");
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState<StatusFilter>("ALL");
   const [settlementMonth, setSettlementMonth] = useState("");
@@ -143,10 +111,6 @@ export function CreatorSettlementsView() {
 
   const settlementsQuery = useOwnCreatorSettlements(queryParams);
   const settlements = settlementsQuery.data?.content ?? [];
-  const totalNet = settlements.reduce((sum, item) => sum + item.netPayoutAmount, 0);
-  const totalGross = settlements.reduce((sum, item) => sum + item.grossAmount, 0);
-  const totalTax = settlements.reduce((sum, item) => sum + item.taxWithheldAmount, 0);
-  const latestSettlement = settlements[0];
 
   return (
     <div className="space-y-6">
@@ -154,15 +118,14 @@ export function CreatorSettlementsView() {
         <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-creator-gold/25 bg-creator-gold/10 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-creator-gold">
-              <WalletCards className="h-4 w-4" />
-              Creator revenue
+              <ReceiptText className="h-4 w-4" />
+              Creator settlement
             </div>
             <h1 className="mt-4 text-3xl font-black tracking-tight text-white md:text-5xl">
-              Doanh thu
+              Quyết toán
             </h1>
             <p className="mt-3 max-w-3xl text-sm font-semibold leading-relaxed text-creator-muted md:text-base">
-              Theo dõi các kỳ quyết toán doanh thu theo tháng, khoản khấu trừ, thuế PIT và trạng thái chi trả.
-              Dữ liệu được lấy từ API `creator-settlement/own` theo tài khoản creator hiện tại.
+              Theo dõi các kỳ chốt sổ doanh thu theo tháng, khoản khấu trừ, thuế PIT và trạng thái chi trả.
             </p>
           </div>
 
@@ -200,34 +163,6 @@ export function CreatorSettlementsView() {
           );
         })}
       </div>
-
-      {activeTab === "overview" && (
-        <div className="space-y-6">
-          <div className="grid gap-3 md:grid-cols-4">
-            <CreatorMetricCard label="Gross trang này" value={formatVND(totalGross)} />
-            <CreatorMetricCard label="Thuế PIT" value={formatVND(totalTax)} variant="gold" />
-            <CreatorMetricCard label="Net payout" value={formatVND(totalNet)} variant="green" />
-            <CreatorMetricCard
-              label="Settlement mới nhất"
-              value={latestSettlement ? labelForSettlementStatus(latestSettlement.status) : "-"}
-            />
-          </div>
-
-          <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
-            <div className="flex items-center gap-3">
-              <ShieldCheck className="h-5 w-5 text-creator-gold" />
-              <div>
-                <h2 className="text-lg font-black text-white">Cách hệ thống quyết toán</h2>
-                <p className="mt-1 text-sm font-semibold leading-relaxed text-creator-muted">
-                  BE gom các revenue transaction chưa quyết toán đến tháng target, trừ phạt,
-                  tính thuế PIT nếu đủ ngưỡng, rồi tạo kỳ settlement. Creator chỉ xem dữ liệu của
-                  chính mình từ danh sách `/own`.
-                </p>
-              </div>
-            </div>
-          </section>
-        </div>
-      )}
 
       {activeTab === "tax" && (
         <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-6">

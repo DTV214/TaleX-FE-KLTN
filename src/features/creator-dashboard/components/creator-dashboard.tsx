@@ -131,6 +131,7 @@ import { CreatorCampaignPurchaseView } from "@/features/creator-dashboard/compon
 import { CreatorCampaignsView } from "@/features/creator-dashboard/components/views/creator-campaigns-view";
 import { CreatorViolationsView } from "@/features/moderation-reports/components/creator-violations-view";
 import { CreatorSettlementsView } from "@/features/creator-settlements/components/creator-settlements-view";
+import { CreatorRevenueTransactionsView } from "@/features/creator-revenue-transactions/components/creator-revenue-transactions-view";
 import { AIPolicyAndCopyright } from "@/features/creator-dashboard/components/ai-policy-and-copyright";
 import { mediaSystemConfigApi } from "@/features/admin/api/media-system-config.api";
 import {
@@ -167,9 +168,10 @@ const dashboardViews: DashboardView[] = [
   "publish",
   "analytics",
   "revenue",
+  "settlements",
 ];
 
-const monetizationRequiredViews: DashboardView[] = ["revenue", "combos"];
+const monetizationRequiredViews: DashboardView[] = ["revenue", "settlements", "combos"];
 
 const defaultDashboardRouteState: DashboardRouteState = {
   view: "dashboard",
@@ -353,9 +355,13 @@ const viewMeta: Record<
     title: "Thống kê",
     description: "Phân tích chi tiết số lượt xem và tương tác của độc giả.",
   },
+  settlements: {
+    title: "Quyết toán",
+    description: "Theo dõi kỳ quyết toán, thuế PIT và trạng thái chi trả theo tháng.",
+  },
   revenue: {
     title: "Doanh thu",
-    description: "Theo dõi quyết toán doanh thu, thuế PIT và trạng thái chi trả theo tháng.",
+    description: "Theo dõi thống kê doanh thu, biểu đồ tăng trưởng và biến động lợi nhuận.",
   },
 };
 
@@ -2236,6 +2242,8 @@ function CreatorDashboardContent() {
                 }
               />
             ) : activeView === "revenue" ? (
+              <CreatorRevenueTransactionsView />
+            ) : activeView === "settlements" ? (
               <CreatorSettlementsView />
             ) : activeView === "analytics" ? (
               <CreatorAnalyticsLogsView />

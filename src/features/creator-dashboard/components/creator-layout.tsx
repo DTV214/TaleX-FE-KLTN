@@ -14,6 +14,7 @@ import {
   Tag,
   Zap,
   Megaphone,
+  ReceiptText,
   Rocket,
   Home,
   Tv,
@@ -56,6 +57,7 @@ export function CreatorLayout({
     { label: "Tác phẩm của tôi", view: "series", icon: Film },
     { label: "Thống kê", view: "analytics", icon: BarChart2 },
     { label: "Doanh thu", view: "revenue", icon: DollarSign },
+    { label: "Quyết toán", view: "settlements", icon: ReceiptText },
     { label: "Kiếm tiền", view: "monetization", icon: BadgeDollarSign },
     {
       label: "Tài khoản thanh toán",

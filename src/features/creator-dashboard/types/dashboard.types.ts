@@ -18,7 +18,8 @@ export type DashboardView =
   | "campaigns"
   | "publish"
   | "analytics"
-  | "revenue";
+  | "revenue"
+  | "settlements";
 
 
 export type DashboardRouteState = {

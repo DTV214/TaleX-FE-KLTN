@@ -8,6 +8,7 @@ import {
   Home,
   LayoutDashboard,
   Menu,
+  ReceiptText,
   Rocket,
   WalletCards,
   X,
@@ -53,6 +54,11 @@ const sidebarItems: SidebarItem[] = [
     label: "Doanh thu",
     view: "revenue",
     icon: WalletCards,
+  },
+  {
+    label: "Quyết toán",
+    view: "settlements",
+    icon: ReceiptText,
   },
   {
     label: "Kiếm tiền",
