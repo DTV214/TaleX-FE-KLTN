@@ -26,11 +26,8 @@ export function AdminTaxSummaryWidget() {
           </div>
           <div>
             <h3 className="text-base font-bold text-gray-900 backoffice-dark:text-white">
-              Tổng Quan Thuế Enterprise ({currentYear})
+              Tổng Quan Thuế Năm {currentYear}
             </h3>
-            <p className="text-xs font-medium text-gray-500 backoffice-dark:text-white/60 mt-0.5">
-              Tổng quan nghĩa vụ thuế và thực chi quyết toán năm {currentYear}
-            </p>
           </div>
         </div>
 
@@ -52,7 +49,7 @@ export function AdminTaxSummaryWidget() {
           Không thể tải dữ liệu thuế tổng quan.
         </div>
       ) : summary ? (
-        <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-6">
           {/* Total VAT */}
           <div className="rounded-2xl bg-white p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
             <div className="h-10 w-10 rounded-xl bg-purple-50 flex items-center justify-center mb-4 backoffice-dark:bg-purple-500/20">
@@ -76,19 +73,6 @@ export function AdminTaxSummaryWidget() {
             </p>
             <h3 className="text-2xl font-bold text-gray-900 backoffice-dark:text-white">
               {formatVND(summary.totalPitWithheld)}
-            </h3>
-          </div>
-
-          {/* Net Payout */}
-          <div className="rounded-2xl bg-white p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
-            <div className="h-10 w-10 rounded-xl bg-emerald-50 flex items-center justify-center mb-4 backoffice-dark:bg-emerald-500/20">
-              <DollarSign className="h-5 w-5 text-emerald-600 backoffice-dark:text-emerald-300" />
-            </div>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 backoffice-dark:text-white/60">
-              Thực Chi (Net Payout)
-            </p>
-            <h3 className="text-2xl font-bold text-gray-900 backoffice-dark:text-white">
-              {formatVND(summary.totalNetPayout)}
             </h3>
           </div>
         </div>
