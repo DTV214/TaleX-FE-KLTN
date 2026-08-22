@@ -385,28 +385,36 @@ function CreatorChannelContent() {
                   </CreatorTierHoverModal>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-semibold text-[#A1A1AA] mt-2.5">
-                  <span>@{profileUser?.username || "creator"}</span>
-                  <span className="text-zinc-700">&bull;</span>
-                  <span className="text-[#F5F5F5] font-bold">
-                    {followerCount.toLocaleString("vi-VN")}
-                  </span>{" "}
-                  <span>Người theo dõi</span>
-                  <span className="text-zinc-700">&bull;</span>
-                  <span className="text-[#F5F5F5] font-bold">
-                    {followedCount.toLocaleString("vi-VN")}
-                  </span>{" "}
-                  <span>Đang theo dõi</span>
-                  <span className="text-zinc-700">&bull;</span>
-                  <span className="text-[#F5F5F5] font-bold">
-                    {series.length.toLocaleString("vi-VN")}
-                  </span>{" "}
-                  <span>Tác phẩm</span>
-                  <span className="text-zinc-700">&bull;</span>
-                  <span className="text-[#F5F5F5] font-bold">
-                    {totalViews.toLocaleString("vi-VN")}
-                  </span>{" "}
-                  <span>Lượt xem</span>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs font-semibold text-[#A1A1AA] mt-2.5">
+                  <span className="whitespace-nowrap text-zinc-400">@{profileUser?.username || "creator"}</span>
+                  <span className="text-zinc-700 select-none">&bull;</span>
+                  <span className="whitespace-nowrap text-zinc-400">
+                    <strong className="text-[#F5F5F5] font-bold">
+                      {followerCount.toLocaleString("vi-VN")}
+                    </strong>{" "}
+                    Người theo dõi
+                  </span>
+                  <span className="text-zinc-700 select-none">&bull;</span>
+                  <span className="whitespace-nowrap text-zinc-400">
+                    <strong className="text-[#F5F5F5] font-bold">
+                      {followedCount.toLocaleString("vi-VN")}
+                    </strong>{" "}
+                    Đang theo dõi
+                  </span>
+                  <span className="text-zinc-700 select-none">&bull;</span>
+                  <span className="whitespace-nowrap text-zinc-400">
+                    <strong className="text-[#F5F5F5] font-bold">
+                      {series.length.toLocaleString("vi-VN")}
+                    </strong>{" "}
+                    Tác phẩm
+                  </span>
+                  <span className="text-zinc-700 select-none">&bull;</span>
+                  <span className="whitespace-nowrap text-zinc-400">
+                    <strong className="text-[#F5F5F5] font-bold">
+                      {totalViews.toLocaleString("vi-VN")}
+                    </strong>{" "}
+                    Lượt xem
+                  </span>
                 </div>
 
                 {/* Collapsible Bio */}
