@@ -166,16 +166,10 @@ export function AdminPayoutsDashboard() {
       <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-gray-100 pb-6 backoffice-dark:border-white/10">
         <div>
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-50 text-violet-600 backoffice-dark:bg-violet-500/20 backoffice-dark:text-violet-300">
-              <Banknote className="h-5 w-5" />
-            </div>
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 backoffice-dark:text-white">
-                Quản lý Yêu Cầu Rút Tiền
+                Quản Lý Yêu Cầu Rút Tiền
               </h1>
-              <p className="text-xs text-gray-500 backoffice-dark:text-zinc-400 mt-0.5">
-                Duyệt và thực thi giải ngân thanh toán số dư ví cho Creator qua PayOS
-              </p>
             </div>
           </div>
         </div>
@@ -204,11 +198,10 @@ export function AdminPayoutsDashboard() {
         {/* Pending Card */}
         <div
           onClick={() => setStatusFilter("PENDING")}
-          className={`cursor-pointer rounded-2xl border p-5 transition-all ${
-            statusFilter === "PENDING"
-              ? "border-amber-500 bg-amber-50/50 shadow-md backoffice-dark:bg-amber-500/10 backoffice-dark:border-amber-500"
-              : "border-gray-100 bg-white shadow-sm hover:border-gray-200 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]"
-          }`}
+          className={`cursor-pointer rounded-2xl border p-5 transition-all ${statusFilter === "PENDING"
+            ? "border-amber-500 bg-amber-50/50 shadow-md backoffice-dark:bg-amber-500/10 backoffice-dark:border-amber-500"
+            : "border-gray-100 bg-white shadow-sm hover:border-gray-200 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]"
+            }`}
         >
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-bold uppercase tracking-wider text-amber-600 backoffice-dark:text-amber-400 flex items-center gap-1.5">
@@ -227,11 +220,10 @@ export function AdminPayoutsDashboard() {
         {/* Approved Card */}
         <div
           onClick={() => setStatusFilter("APPROVED")}
-          className={`cursor-pointer rounded-2xl border p-5 transition-all ${
-            statusFilter === "APPROVED"
-              ? "border-blue-500 bg-blue-50/50 shadow-md backoffice-dark:bg-blue-500/10 backoffice-dark:border-blue-500"
-              : "border-gray-100 bg-white shadow-sm hover:border-gray-200 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]"
-          }`}
+          className={`cursor-pointer rounded-2xl border p-5 transition-all ${statusFilter === "APPROVED"
+            ? "border-blue-500 bg-blue-50/50 shadow-md backoffice-dark:bg-blue-500/10 backoffice-dark:border-blue-500"
+            : "border-gray-100 bg-white shadow-sm hover:border-gray-200 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]"
+            }`}
         >
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-bold uppercase tracking-wider text-blue-600 backoffice-dark:text-blue-400 flex items-center gap-1.5">
@@ -250,11 +242,10 @@ export function AdminPayoutsDashboard() {
         {/* Paid Card */}
         <div
           onClick={() => setStatusFilter("PAID")}
-          className={`cursor-pointer rounded-2xl border p-5 transition-all ${
-            statusFilter === "PAID"
-              ? "border-emerald-500 bg-emerald-50/50 shadow-md backoffice-dark:bg-emerald-500/10 backoffice-dark:border-emerald-500"
-              : "border-gray-100 bg-white shadow-sm hover:border-gray-200 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]"
-          }`}
+          className={`cursor-pointer rounded-2xl border p-5 transition-all ${statusFilter === "PAID"
+            ? "border-emerald-500 bg-emerald-50/50 shadow-md backoffice-dark:bg-emerald-500/10 backoffice-dark:border-emerald-500"
+            : "border-gray-100 bg-white shadow-sm hover:border-gray-200 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]"
+            }`}
         >
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-bold uppercase tracking-wider text-emerald-600 backoffice-dark:text-emerald-400 flex items-center gap-1.5">
@@ -273,11 +264,10 @@ export function AdminPayoutsDashboard() {
         {/* Rejected Card */}
         <div
           onClick={() => setStatusFilter("REJECTED")}
-          className={`cursor-pointer rounded-2xl border p-5 transition-all ${
-            statusFilter === "REJECTED"
-              ? "border-red-500 bg-red-50/50 shadow-md backoffice-dark:bg-red-500/10 backoffice-dark:border-red-500"
-              : "border-gray-100 bg-white shadow-sm hover:border-gray-200 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]"
-          }`}
+          className={`cursor-pointer rounded-2xl border p-5 transition-all ${statusFilter === "REJECTED"
+            ? "border-red-500 bg-red-50/50 shadow-md backoffice-dark:bg-red-500/10 backoffice-dark:border-red-500"
+            : "border-gray-100 bg-white shadow-sm hover:border-gray-200 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]"
+            }`}
         >
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-bold uppercase tracking-wider text-red-600 backoffice-dark:text-red-400 flex items-center gap-1.5">
@@ -626,11 +616,10 @@ export function AdminPayoutsDashboard() {
                 type="button"
                 disabled={processPayoutMutation.isPending}
                 onClick={handleProcessSubmit}
-                className={`flex-1 h-10 rounded-xl text-xs font-black text-white ${
-                  processingItem.action === "APPROVED"
-                    ? "bg-emerald-600 hover:bg-emerald-500"
-                    : "bg-red-600 hover:bg-red-500"
-                }`}
+                className={`flex-1 h-10 rounded-xl text-xs font-black text-white ${processingItem.action === "APPROVED"
+                  ? "bg-emerald-600 hover:bg-emerald-500"
+                  : "bg-red-600 hover:bg-red-500"
+                  }`}
               >
                 {processPayoutMutation.isPending ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
