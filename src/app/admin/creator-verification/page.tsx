@@ -74,8 +74,8 @@ export default function AdminCreatorVerificationPage() {
     requestedTab === "payment" ? "payment" : "tax";
   const pageTitle =
     tab === "payment"
-      ? "Hồ sơ Thanh toán"
-      : "Hồ sơ Thuế";
+      ? "Hồ Sơ Thanh toán"
+      : "Hồ Sơ Thuế";
   const [selectedIdentity, setSelectedIdentity] =
     useState<CreatorIdentityRecord | null>(null);
   const [selectedPaymentProfile, setSelectedPaymentProfile] =
@@ -174,6 +174,13 @@ export default function AdminCreatorVerificationPage() {
     lockIdentityMutation.mutate(record);
   };
 
+  const handleContinueIdentityVerification = (
+    record: CreatorIdentityRecord,
+  ) => {
+    setSelectedIdentity(record);
+    setIdentityVerifiedNote(record.verifiedNote ?? "");
+  };
+
   const handleSubmitIdentityVerification = (
     status: Extract<IdentityVerificationStatus, "APPROVED" | "REJECTED">,
   ) => {
@@ -258,6 +265,7 @@ export default function AdminCreatorVerificationPage() {
           <IdentityTable
             records={identitiesQuery.data ?? []}
             onStartVerification={handleStartIdentityVerification}
+            onContinueVerification={handleContinueIdentityVerification}
             isSubmitting={isIdentitySubmitting}
           />
         ) : null}
@@ -360,7 +368,7 @@ export default function AdminCreatorVerificationPage() {
                 onChange={() => setPaymentResultStatus("VERIFIED")}
                 className="h-4 w-4 accent-violet-600"
               />
-              VERIFIED - Đã duyệt
+              Phê duyệt
             </label>
             <label className="flex cursor-pointer items-center gap-3 text-sm font-medium text-gray-700">
               <input
@@ -370,7 +378,7 @@ export default function AdminCreatorVerificationPage() {
                 onChange={() => setPaymentResultStatus("REJECTED")}
                 className="h-4 w-4 accent-violet-600"
               />
-              REJECTED - Từ chối
+              Từ chối
             </label>
           </div>
 
@@ -397,10 +405,12 @@ export default function AdminCreatorVerificationPage() {
 function IdentityTable({
   records,
   onStartVerification,
+  onContinueVerification,
   isSubmitting,
 }: {
   records: CreatorIdentityRecord[];
   onStartVerification: (record: CreatorIdentityRecord) => void;
+  onContinueVerification: (record: CreatorIdentityRecord) => void;
   isSubmitting: boolean;
 }) {
   return (
@@ -443,6 +453,15 @@ function IdentityTable({
                         className="h-9 bg-violet-600 px-4 font-semibold text-white hover:bg-violet-700 backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black backoffice-dark:hover:bg-[var(--backoffice-primary-bright)]"
                       >
                         {isSubmitting ? "Đang xử lý..." : "Tiến hành xử lý"}
+                      </Button>
+                    ) : record.status === "IN_PROGRESS" ? (
+                      <Button
+                        type="button"
+                        disabled={isSubmitting}
+                        onClick={() => onContinueVerification(record)}
+                        className="h-9 bg-blue-600 px-4 font-semibold text-white hover:bg-blue-700 backoffice-dark:bg-blue-600 backoffice-dark:text-white backoffice-dark:hover:bg-blue-500"
+                      >
+                        Tiếp tục xử lý
                       </Button>
                     ) : (
                       <span className="text-xs font-medium text-gray-400">

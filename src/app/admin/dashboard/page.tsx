@@ -84,9 +84,6 @@ export default function AdminDashboardPage() {
           <h1 className="text-3xl font-bold tracking-tight text-slate-950 backoffice-dark:text-white">
             Thống Kê Tài Chính
           </h1>
-          <p className="text-xs text-gray-500 backoffice-dark:text-zinc-400 mt-1">
-            Tổng quan dòng tiền, doanh thu và phân tích chuyên sâu theo từng dịch vụ
-          </p>
         </div>
 
         {/* Date Filter Inputs */}
@@ -216,11 +213,10 @@ export default function AdminDashboardPage() {
         <button
           type="button"
           onClick={() => setActiveTab("all")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${
-            activeTab === "all"
-              ? "bg-violet-600 text-white shadow-md shadow-violet-500/20"
-              : "text-gray-600 hover:text-gray-900 bg-white hover:bg-gray-50 border border-gray-200 shadow-sm backoffice-dark:bg-white/[0.03] backoffice-dark:border-white/10 backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/10 backoffice-dark:hover:text-white"
-          }`}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${activeTab === "all"
+            ? "bg-violet-600 text-white shadow-md shadow-violet-500/20"
+            : "text-gray-600 hover:text-gray-900 bg-white hover:bg-gray-50 border border-gray-200 shadow-sm backoffice-dark:bg-white/[0.03] backoffice-dark:border-white/10 backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/10 backoffice-dark:hover:text-white"
+            }`}
         >
           <BarChart3 className="w-4 h-4" />
           <span>Tổng Hợp Tài Chính</span>
@@ -229,24 +225,22 @@ export default function AdminDashboardPage() {
         <button
           type="button"
           onClick={() => setActiveTab("campaign")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${
-            activeTab === "campaign"
-              ? "bg-violet-600 text-white shadow-md shadow-violet-500/20"
-              : "text-gray-600 hover:text-gray-900 bg-white hover:bg-gray-50 border border-gray-200 shadow-sm backoffice-dark:bg-white/[0.03] backoffice-dark:border-white/10 backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/10 backoffice-dark:hover:text-white"
-          }`}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${activeTab === "campaign"
+            ? "bg-violet-600 text-white shadow-md shadow-violet-500/20"
+            : "text-gray-600 hover:text-gray-900 bg-white hover:bg-gray-50 border border-gray-200 shadow-sm backoffice-dark:bg-white/[0.03] backoffice-dark:border-white/10 backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/10 backoffice-dark:hover:text-white"
+            }`}
         >
           <Megaphone className="w-4 h-4" />
-          <span>Chiến Dịch (Campaign)</span>
+          <span>Chiến Dịch</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab("subscription")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${
-            activeTab === "subscription"
-              ? "bg-amber-600 text-white shadow-md shadow-amber-500/20"
-              : "text-gray-600 hover:text-gray-900 bg-white hover:bg-gray-50 border border-gray-200 shadow-sm backoffice-dark:bg-white/[0.03] backoffice-dark:border-white/10 backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/10 backoffice-dark:hover:text-white"
-          }`}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${activeTab === "subscription"
+            ? "bg-amber-600 text-white shadow-md shadow-amber-500/20"
+            : "text-gray-600 hover:text-gray-900 bg-white hover:bg-gray-50 border border-gray-200 shadow-sm backoffice-dark:bg-white/[0.03] backoffice-dark:border-white/10 backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/10 backoffice-dark:hover:text-white"
+            }`}
         >
           <Crown className="w-4 h-4" />
           <span>Gói Premium</span>
@@ -255,14 +249,13 @@ export default function AdminDashboardPage() {
         <button
           type="button"
           onClick={() => setActiveTab("content")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${
-            activeTab === "content"
-              ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
-              : "text-gray-600 hover:text-gray-900 bg-white hover:bg-gray-50 border border-gray-200 shadow-sm backoffice-dark:bg-white/[0.03] backoffice-dark:border-white/10 backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/10 backoffice-dark:hover:text-white"
-          }`}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${activeTab === "content"
+            ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
+            : "text-gray-600 hover:text-gray-900 bg-white hover:bg-gray-50 border border-gray-200 shadow-sm backoffice-dark:bg-white/[0.03] backoffice-dark:border-white/10 backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/10 backoffice-dark:hover:text-white"
+            }`}
         >
           <Film className="w-4 h-4" />
-          <span>Nội Dung (Tập & Combo)</span>
+          <span>Nội Dung (Bán Lẻ & Combo)</span>
         </button>
       </div>
 

@@ -193,20 +193,20 @@ export function SettlementSummaryMetrics({
 }) {
   return (
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-      <SettlementMetricCard label="Tổng Gross" value={formatVND(settlement.grossAmount)} />
+      <SettlementMetricCard label="Doanh Thu" value={formatVND(settlement.grossAmount)} />
       <SettlementMetricCard
-        label="Khấu trừ phạt"
+        label="Khấu Trừ Phạt"
         tone={settlement.totalPenaltyAmount > 0 ? "danger" : "default"}
         value={formatVND(settlement.totalPenaltyAmount)}
       />
       <SettlementMetricCard
-        label="Thuế TNCN (PIT)"
+        label="Thuế TNCN"
         help={`Tỷ lệ ${formatPercent(settlement.taxRate)}`}
         tone={settlement.taxWithheldAmount > 0 ? "warn" : "default"}
         value={formatVND(settlement.taxWithheldAmount)}
       />
       <SettlementMetricCard
-        label="Thực nhận (Net)"
+        label="Thực Nhận"
         tone="good"
         value={formatVND(settlement.netPayoutAmount)}
       />
@@ -533,11 +533,6 @@ export function SettlementDetailDialog({
                       <p className="text-[11px] font-black uppercase tracking-[0.16em] text-amber-600">
                         {formatMonth(detail.settlementMonth)}
                       </p>
-                      <h3 className="mt-0.5 text-base sm:text-lg font-black text-slate-950 backoffice-dark:text-white">
-                        {detail.creatorName ||
-                          detail.creatorDetail?.username ||
-                          "Creator"}
-                      </h3>
                     </div>
                     <div className="text-right text-[11px] font-bold text-slate-500 backoffice-dark:text-white/45 leading-tight">
                       Ngày tạo: {formatDateTime(detail.createdAt)}
@@ -557,7 +552,7 @@ export function SettlementDetailDialog({
                   <div className="mb-2 flex items-center gap-2">
                     <FileText className="h-4 w-4 text-violet-500" />
                     <h3 className="text-xs sm:text-sm font-black text-slate-950 backoffice-dark:text-white">
-                      Hồ sơ creator
+                      Hồ sơ nhà sáng tạo
                     </h3>
                   </div>
                   <InfoRow

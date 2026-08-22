@@ -56,115 +56,112 @@ export function ViolationLabelTranslationFormModal({
 
   return (
     <>
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm animate-in fade-in duration-200">
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200"
-      >
-        <div className="mb-6 flex items-start justify-between gap-4">
-          <div>
-            <h2 className="text-xl font-bold text-slate-950">
-              {isEditing ? "Chỉnh sửa bản dịch" : "Thêm bản dịch"}
-            </h2>
-            <p className="mt-1 text-sm font-medium text-slate-500">
-              Nhãn vi phạm AWS Rekognition hiển thị cho Creator/Staff.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={isSaving}
-            className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50"
-            aria-label="Đóng"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        <div className="space-y-4">
-          <label className="block">
-            <span className="mb-2 block text-sm font-bold text-slate-700">
-              Nhãn AWS Rekognition
-            </span>
-            <input
-              name="awsLabel"
-              defaultValue={translation?.awsLabel ?? ""}
-              readOnly={isEditing}
-              required={!isEditing}
-              className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-violet-500 focus:ring-4 focus:ring-violet-100 read-only:bg-slate-100 read-only:text-slate-500"
-              placeholder="Ví dụ: Explicit Nudity"
-            />
-            {isEditing && (
-              <span className="mt-1 block text-xs text-slate-400">
-                Không thể sửa — đây là key tra cứu thật từ AWS Rekognition.
-              </span>
-            )}
-          </label>
-
-          <label className="block">
-            <span className="mb-2 block text-sm font-bold text-slate-700">
-              Bản dịch tiếng Việt
-            </span>
-            <input
-              name="vietnameseText"
-              defaultValue={translation?.vietnameseText ?? ""}
-              required
-              className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-violet-500 focus:ring-4 focus:ring-violet-100"
-              placeholder="Ví dụ: Nội dung khỏa thân lộ liễu"
-            />
-          </label>
-
-          <label className="block">
-            <div className="mb-2 flex items-center justify-between">
-              <span className="text-sm font-bold text-slate-700">Nhóm (tùy chọn)</span>
-              <button
-                type="button"
-                onClick={() => setIsCategoryManagerOpen(true)}
-                className="inline-flex items-center gap-1 text-xs font-bold text-violet-600 hover:text-violet-700"
-              >
-                <Settings2 className="h-3.5 w-3.5" />
-                Quản lý nhóm
-              </button>
+      <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm animate-in fade-in duration-200">
+        <form
+          onSubmit={handleSubmit}
+          className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200"
+        >
+          <div className="mb-6 flex items-start justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-bold text-slate-950">
+                {isEditing ? "Chỉnh sửa bản dịch" : "Thêm bản dịch"}
+              </h2>
             </div>
-            <select
-              name="categoryId"
-              defaultValue={translation?.categoryId ?? ""}
-              className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-900 outline-none transition focus:border-violet-500 focus:ring-4 focus:ring-violet-100"
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isSaving}
+              className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50"
+              aria-label="Đóng"
             >
-              <option value="">Không chọn nhóm</option>
-              {categories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
+              <X className="h-5 w-5" />
+            </button>
+          </div>
 
-        <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={isSaving}
-            className="inline-flex h-11 items-center justify-center rounded-lg border border-slate-200 bg-white px-5 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            Hủy
-          </button>
-          <button
-            type="submit"
-            disabled={isSaving}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-violet-600 px-5 text-sm font-bold text-white shadow-sm transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {isSaving && <Loader2 className="h-4 w-4 animate-spin" />}
-            Lưu
-          </button>
-        </div>
-      </form>
-    </div>
-    <ViolationLabelCategoryManagerModal
-      open={isCategoryManagerOpen}
-      onClose={() => setIsCategoryManagerOpen(false)}
-    />
+          <div className="space-y-4">
+            <label className="block">
+              <span className="mb-2 block text-sm font-bold text-slate-700">
+                Nhãn AWS Rekognition
+              </span>
+              <input
+                name="awsLabel"
+                defaultValue={translation?.awsLabel ?? ""}
+                readOnly={isEditing}
+                required={!isEditing}
+                className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-violet-500 focus:ring-4 focus:ring-violet-100 read-only:bg-slate-100 read-only:text-slate-500"
+                placeholder="Ví dụ: Explicit Nudity"
+              />
+              {isEditing && (
+                <span className="mt-1 block text-xs text-slate-400">
+                  Không thể sửa — đây là key tra cứu thật từ AWS Rekognition.
+                </span>
+              )}
+            </label>
+
+            <label className="block">
+              <span className="mb-2 block text-sm font-bold text-slate-700">
+                Bản dịch tiếng Việt
+              </span>
+              <input
+                name="vietnameseText"
+                defaultValue={translation?.vietnameseText ?? ""}
+                required
+                className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-violet-500 focus:ring-4 focus:ring-violet-100"
+                placeholder="Ví dụ: Nội dung khỏa thân lộ liễu"
+              />
+            </label>
+
+            <label className="block">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-sm font-bold text-slate-700">Nhóm (tùy chọn)</span>
+                <button
+                  type="button"
+                  onClick={() => setIsCategoryManagerOpen(true)}
+                  className="inline-flex items-center gap-1 text-xs font-bold text-violet-600 hover:text-violet-700"
+                >
+                  <Settings2 className="h-3.5 w-3.5" />
+                  Quản lý nhóm
+                </button>
+              </div>
+              <select
+                name="categoryId"
+                defaultValue={translation?.categoryId ?? ""}
+                className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-900 outline-none transition focus:border-violet-500 focus:ring-4 focus:ring-violet-100"
+              >
+                <option value="">Không chọn nhóm</option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isSaving}
+              className="inline-flex h-11 items-center justify-center rounded-lg border border-slate-200 bg-white px-5 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Hủy
+            </button>
+            <button
+              type="submit"
+              disabled={isSaving}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-violet-600 px-5 text-sm font-bold text-white shadow-sm transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isSaving && <Loader2 className="h-4 w-4 animate-spin" />}
+              Lưu
+            </button>
+          </div>
+        </form>
+      </div>
+      <ViolationLabelCategoryManagerModal
+        open={isCategoryManagerOpen}
+        onClose={() => setIsCategoryManagerOpen(false)}
+      />
     </>
   );
 }

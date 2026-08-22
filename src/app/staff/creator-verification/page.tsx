@@ -178,6 +178,13 @@ export default function StaffCreatorVerificationPage() {
     lockIdentityMutation.mutate(record);
   };
 
+  const handleContinueIdentityVerification = (
+    record: CreatorIdentityRecord,
+  ) => {
+    setSelectedIdentity(record);
+    setIdentityVerifiedNote(record.verifiedNote ?? "");
+  };
+
   const handleSubmitIdentityVerification = (
     status: Extract<IdentityVerificationStatus, "APPROVED" | "REJECTED">,
   ) => {
@@ -299,6 +306,7 @@ export default function StaffCreatorVerificationPage() {
           <IdentityTable
             records={identitiesQuery.data ?? []}
             onStartVerification={handleStartIdentityVerification}
+            onContinueVerification={handleContinueIdentityVerification}
             isSubmitting={isIdentitySubmitting}
           />
         ) : null}
@@ -440,10 +448,12 @@ export default function StaffCreatorVerificationPage() {
 function IdentityTable({
   records,
   onStartVerification,
+  onContinueVerification,
   isSubmitting,
 }: {
   records: CreatorIdentityRecord[];
   onStartVerification: (record: CreatorIdentityRecord) => void;
+  onContinueVerification: (record: CreatorIdentityRecord) => void;
   isSubmitting: boolean;
 }) {
   return (
@@ -486,6 +496,15 @@ function IdentityTable({
                         className="h-9 bg-[#10B981] px-4 font-bold text-white hover:bg-[#0D9668] rounded-lg text-xs"
                       >
                         {isSubmitting ? "Đang xử lý..." : "Tiến hành xử lý"}
+                      </Button>
+                    ) : record.status === "IN_PROGRESS" ? (
+                      <Button
+                        type="button"
+                        disabled={isSubmitting}
+                        onClick={() => onContinueVerification(record)}
+                        className="h-9 bg-blue-600 px-4 font-bold text-white hover:bg-blue-700 rounded-lg text-xs"
+                      >
+                        Tiếp tục xử lý
                       </Button>
                     ) : (
                       <span className="text-xs font-medium text-gray-400">

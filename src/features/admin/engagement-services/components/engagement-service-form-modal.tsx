@@ -149,12 +149,9 @@ export function EngagementServiceFormModal({
           <div>
             <h2 className="mt-1 text-2xl font-black text-slate-900">
               {mode === "create"
-                ? "Tạo mới dịch vụ"
-                : "Cập nhật dịch vụ"}
+                ? "Tạo Mới Dịch Vụ"
+                : "Cập Nhật Dịch Vụ"}
             </h2>
-            <p className="mt-2 text-sm font-medium text-slate-500">
-              Thiết lập mục tiêu, giá tiền và giới hạn số lượng.
-            </p>
           </div>
           <button
             type="button"

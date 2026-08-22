@@ -54,16 +54,9 @@ export default function SettingsPage() {
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-8">
       <div>
-        <p className="mb-3 inline-flex rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-cyan-700 backoffice-dark:border-[var(--backoffice-primary)]/35 backoffice-dark:bg-[var(--backoffice-primary)]/10 backoffice-dark:text-[var(--backoffice-primary)]">
-          Admin Settings
-        </p>
         <h1 className="text-3xl font-bold tracking-tight text-gray-900 backoffice-dark:text-white">
           Cài đặt hệ thống
         </h1>
-        <p className="mt-2 max-w-2xl text-sm font-medium leading-6 text-gray-500 backoffice-dark:text-white/55">
-          Hiện tại trang này chỉ mở cấu hình giao diện Admin/Staff. Các nhóm cấu
-          hình chưa có API thật sẽ được khóa để tránh thao tác nhầm.
-        </p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
@@ -132,9 +125,8 @@ export default function SettingsPage() {
                 className="backoffice-theme-switch relative inline-flex h-8 w-16 shrink-0 items-center rounded-full border transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37]/35"
               >
                 <span
-                  className={`backoffice-theme-switch-knob inline-flex h-6 w-6 items-center justify-center rounded-full transition-transform duration-200 ${
-                    isDark ? "translate-x-8" : "translate-x-1"
-                  }`}
+                  className={`backoffice-theme-switch-knob inline-flex h-6 w-6 items-center justify-center rounded-full transition-transform duration-200 ${isDark ? "translate-x-8" : "translate-x-1"
+                    }`}
                 >
                   {isDark ? (
                     <Moon className="h-3.5 w-3.5" />
@@ -151,10 +143,6 @@ export default function SettingsPage() {
               <h2 className="text-lg font-bold text-gray-900 backoffice-dark:text-white">
                 Cấu hình đang phát triển
               </h2>
-              <p className="mt-1 text-sm font-medium text-gray-500 backoffice-dark:text-white/55">
-                Các mục dưới đây được khóa tạm thời, không dùng dữ liệu hard
-                code và không gửi thao tác lên hệ thống.
-              </p>
             </div>
 
             <div className="grid gap-3 md:grid-cols-2">

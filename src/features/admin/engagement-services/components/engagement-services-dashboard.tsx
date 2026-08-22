@@ -65,7 +65,7 @@ export function EngagementServicesDashboard() {
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-8">
       <h1 className="text-3xl font-bold tracking-tight text-slate-900 backoffice-dark:text-white">
-        Quản lý Dịch vụ Tương tác
+        Quản Lý Dịch Vụ Tăng Tương Tác
       </h1>
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_180px_180px_auto] lg:items-end">

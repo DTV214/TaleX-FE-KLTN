@@ -195,12 +195,8 @@ export function CreatorManagement() {
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-slate-950 backoffice-dark:text-white">
-          Quản lý Người sáng tạo
+          Quản Lý Người Sáng Tạo
         </h1>
-        <p className="mt-2 max-w-3xl text-sm font-medium leading-6 text-slate-500 backoffice-dark:text-white/55">
-          Theo dõi creator trên hệ thống và kiểm tra hồ sơ vi phạm bản quyền,
-          kiểm duyệt nội dung trước khi đưa ra quyết định quản trị.
-        </p>
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
@@ -211,7 +207,7 @@ export function CreatorManagement() {
             </div>
             <div>
               <h2 className="text-base font-bold text-slate-950">
-                Danh sách Creator
+                Danh sách Nhà Sáng Tạo
               </h2>
               <p className="text-sm font-medium text-slate-500">
                 {creators.length} tài khoản

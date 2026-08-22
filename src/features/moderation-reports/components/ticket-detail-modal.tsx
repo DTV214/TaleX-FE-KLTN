@@ -61,9 +61,8 @@ function MaskedId({
   return (
     <span className="inline-flex max-w-full items-center gap-2">
       <span
-        className={`min-w-0 text-xs font-bold text-slate-500 backoffice-dark:text-white/55 ${
-          isVisible ? "break-all" : "truncate"
-        }`}
+        className={`min-w-0 text-xs font-bold text-slate-500 backoffice-dark:text-white/55 ${isVisible ? "break-all" : "truncate"
+          }`}
         title={isVisible ? value : `${label}: ${shortId(value)}`}
       >
         {isVisible ? value : shortId(value)}
@@ -242,18 +241,19 @@ export function TicketDetailModal({
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-lg font-black text-slate-950 backoffice-dark:text-white">
-                Chi tiết ticket báo cáo
+                Chi Tiết Báo Cáo
               </h2>
               {statusBadge(ticket.status)}
             </div>
             <p className="mt-1 text-xs font-semibold text-slate-500 backoffice-dark:text-white/50">
-              {labelForTargetType(ticket.targetType)} · tạo{" "}
-              {formatDateTime(ticket.createdAt)} · cập nhật{" "}
+              Report Id: <MaskedId label="Ticket ID" value={ticket.ticketId} />
+            </p>
+            <p className="mt-1 text-xs font-semibold text-slate-500 backoffice-dark:text-white/50">
+              {labelForTargetType(ticket.targetType)} · Tạo Lúc {" "}
+              {formatDateTime(ticket.createdAt)} · Cập Nhật{" "}
               {formatDateTime(ticket.updatedAt)}
             </p>
-            <div className="mt-2 max-w-sm">
-              <MaskedId label="Ticket ID" value={ticket.ticketId} />
-            </div>
+
           </div>
           <button
             type="button"
@@ -321,7 +321,7 @@ export function TicketDetailModal({
             <div className="space-y-4">
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
                 <h4 className="text-xs font-black uppercase tracking-wider text-slate-500">
-                  Lý do vi phạm nổi trội
+                  Lý do vi phạm
                 </h4>
                 <p className="mt-1 text-sm font-black text-slate-950 backoffice-dark:text-white">
                   {labelForReason(dominantReason)}
@@ -352,7 +352,7 @@ export function TicketDetailModal({
                       </p>
                     )}
                     {report.proofImages?.length ||
-                    report.proofVideos?.length ? (
+                      report.proofVideos?.length ? (
                       <div className="mt-3">
                         <ProofLinks
                           images={report.proofImages}
@@ -415,11 +415,10 @@ export function TicketDetailModal({
                     setDecision(option.key as "approve" | "dismiss")
                   }
                   disabled={!canProcess || processMutation.isPending}
-                  className={`h-10 rounded-lg border text-xs font-black transition disabled:opacity-50 ${
-                    decision === option.key
-                      ? "border-slate-950 bg-slate-950 text-white"
-                      : "border-slate-200 bg-white text-slate-600 hover:bg-slate-100"
-                  }`}
+                  className={`h-10 rounded-lg border text-xs font-black transition disabled:opacity-50 ${decision === option.key
+                    ? "border-slate-950 bg-slate-950 text-white"
+                    : "border-slate-200 bg-white text-slate-600 hover:bg-slate-100"
+                    }`}
                 >
                   {option.label}
                 </button>
@@ -445,7 +444,7 @@ export function TicketDetailModal({
                     </option>
                   ))}
                 </select>
-                
+
               </label>
             )}
 

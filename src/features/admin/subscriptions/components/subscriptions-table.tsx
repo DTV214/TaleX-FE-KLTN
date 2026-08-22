@@ -51,9 +51,8 @@ function formatDuration(subscription: Subscription) {
     YEAR: "năm",
   };
 
-  return `${subscription.duration} ${
-    unitMap[subscription.durationUnit] ?? subscription.durationUnit
-  }`;
+  return `${subscription.duration} ${unitMap[subscription.durationUnit] ?? subscription.durationUnit
+    }`;
 }
 
 function getApiErrorMessage(error: unknown) {
@@ -68,11 +67,10 @@ function BenefitIcon({ enabled, label }: { enabled: boolean; label: string }) {
   return (
     <span
       title={label}
-      className={`inline-flex h-8 w-8 items-center justify-center rounded-full border ${
-        enabled
-          ? "border-emerald-200 bg-emerald-50 text-emerald-700 backoffice-dark:border-emerald-500/30 backoffice-dark:bg-emerald-500/10 backoffice-dark:text-emerald-400"
-          : "border-slate-200 bg-slate-100 text-slate-400 backoffice-dark:border-white/10 backoffice-dark:bg-white/5 backoffice-dark:text-white/30"
-      }`}
+      className={`inline-flex h-8 w-8 items-center justify-center rounded-full border ${enabled
+        ? "border-emerald-200 bg-emerald-50 text-emerald-700 backoffice-dark:border-emerald-500/30 backoffice-dark:bg-emerald-500/10 backoffice-dark:text-emerald-400"
+        : "border-slate-200 bg-slate-100 text-slate-400 backoffice-dark:border-white/10 backoffice-dark:bg-white/5 backoffice-dark:text-white/30"
+        }`}
     >
       {enabled ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
     </span>
@@ -134,8 +132,6 @@ export function SubscriptionsTable({
               <th className="px-5 py-4">Gói</th>
               <th className="px-5 py-4">Giá</th>
               <th className="px-5 py-4">Thời hạn</th>
-              <th className="px-5 py-4">Quyền lợi</th>
-              <th className="px-5 py-4">Lượt mua</th>
               <th className="px-5 py-4">Cập nhật</th>
               <th className="px-5 py-4 text-right">Hành động</th>
             </tr>
@@ -184,25 +180,6 @@ export function SubscriptionsTable({
                   </td>
                   <td className="px-5 py-4 text-sm font-semibold text-gray-700 backoffice-dark:text-zinc-300">
                     {formatDuration(subscription)}
-                  </td>
-                  <td className="px-5 py-4">
-                    <div className="flex items-center gap-2">
-                      <BenefitIcon
-                        enabled={subscription.isAdBlocked}
-                        label="Chặn quảng cáo"
-                      />
-                      <BenefitIcon
-                        enabled={subscription.isMovieUnlocked}
-                        label="Mở khóa phim"
-                      />
-                      <BenefitIcon
-                        enabled={subscription.isStoryUnlocked}
-                        label="Mở khóa truyện"
-                      />
-                    </div>
-                  </td>
-                  <td className="px-5 py-4 text-sm font-bold text-gray-900 backoffice-dark:text-zinc-200">
-                    {(subscription.totalPurchases || 0).toLocaleString("vi-VN")}
                   </td>
                   <td className="px-5 py-4 text-xs font-semibold text-gray-500 backoffice-dark:text-zinc-400">
                     {formatDate(subscription.updatedAt)}

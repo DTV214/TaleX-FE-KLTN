@@ -180,7 +180,7 @@ export function AdminChannelsDashboard() {
                 title="Đồng bộ lại pool kênh"
               >
                 <RefreshCw className={`h-4 w-4 ${triggerPoolMutation.isPending ? "animate-spin" : ""}`} />
-                <span>Đồng bộ Pool</span>
+                <span>Khởi Tạo Lại</span>
               </button>
             </div>
           )}

@@ -222,16 +222,10 @@ function SettlementRow({
         <p className="font-black text-slate-950 backoffice-dark:text-white">
           {formatMonth(settlement.settlementMonth)}
         </p>
-        <p className="mt-1 text-xs font-semibold text-slate-500 backoffice-dark:text-white/40">
-          Cutoff {formatDateTime(settlement.cutoffDate)}
-        </p>
       </td>
       <td className="px-5 py-4">
         <p className="font-black text-slate-800 backoffice-dark:text-white/85">
           {settlement.creatorName || "Creator"}
-        </p>
-        <p className="mt-1 max-w-[240px] truncate text-xs font-semibold text-slate-500 backoffice-dark:text-white/40">
-          {settlement.creatorId || "-"}
         </p>
       </td>
       <td className="px-5 py-4 text-right font-black text-slate-950 backoffice-dark:text-white">
@@ -411,11 +405,11 @@ export function AdminSettlementsDashboard() {
               <thead className="border-b border-slate-200 bg-slate-50 text-xs font-black uppercase tracking-wide text-slate-500 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/45">
                 <tr>
                   <th className="px-5 py-4">Kỳ</th>
-                  <th className="px-5 py-4">Creator</th>
-                  <th className="px-5 py-4 text-right">Gross</th>
-                  <th className="px-5 py-4 text-right">Thuế PIT</th>
-                  <th className="px-5 py-4 text-right">Net payout</th>
-                  <th className="px-5 py-4">Status</th>
+                  <th className="px-5 py-4">Nhà Sáng Tạo</th>
+                  <th className="px-5 py-4 text-right">Tổng doanh thu</th>
+                  <th className="px-5 py-4 text-right">Thuế TNCN</th>
+                  <th className="px-5 py-4 text-right">Tổng thu</th>
+                  <th className="px-5 py-4">Trạng thái</th>
                   <th className="px-5 py-4 text-right">Thao tác</th>
                 </tr>
               </thead>

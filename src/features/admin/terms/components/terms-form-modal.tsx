@@ -92,11 +92,11 @@ export function TermsFormModal({
   const initialData: CreateTermsPayload =
     (isEditMode || isViewMode) && detailResponse?.data
       ? {
-          version: detailResponse.data.version,
-          type: detailResponse.data.type,
-          content: detailResponse.data.content,
-          isActive: detailResponse.data.isActive,
-        }
+        version: detailResponse.data.version,
+        type: detailResponse.data.type,
+        content: detailResponse.data.content,
+        isActive: detailResponse.data.isActive,
+      }
       : initialFormState;
 
   const formKey =
@@ -287,11 +287,6 @@ function TermsForm({
             <h4 className="text-sm font-semibold text-gray-900">
               {isViewMode ? "Trạng thái hoạt động" : "Đặt làm bản đang hoạt động"}
             </h4>
-            <p className="text-xs text-gray-500 mt-0.5">
-              {isViewMode
-                ? "Hiển thị xem phiên bản này có đang được kích hoạt hay không."
-                : "Kích hoạt phiên bản này sẽ áp dụng nó làm điều khoản chính thức hiện tại."}
-            </p>
           </div>
           <label
             className={`relative inline-flex items-center ${isViewMode ? "cursor-default opacity-80" : "cursor-pointer"}`}
@@ -316,10 +311,6 @@ function TermsForm({
                 Nội dung điều khoản{" "}
                 {!isViewMode && <span className="text-red-500">*</span>}
               </label>
-              <p className="mt-1 text-xs text-gray-500">
-                Admin chỉ cần nhập văn bản. FE sẽ tự căn heading, gạch đầu dòng
-                và điểm nhấn khi hiển thị cho người dùng.
-              </p>
             </div>
             {!isViewMode && (
               <button

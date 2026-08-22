@@ -54,21 +54,21 @@ export function AdminMissionForm({
     resolver: zodResolver(missionSchema),
     defaultValues: initialData
       ? {
-          code: initialData.code,
-          title: initialData.title,
-          description: initialData.description,
-          rewardAmount: initialData.rewardAmount,
-          targetValue: initialData.targetValue,
-          isActive: initialData.isActive,
-        }
+        code: initialData.code,
+        title: initialData.title,
+        description: initialData.description,
+        rewardAmount: initialData.rewardAmount,
+        targetValue: initialData.targetValue,
+        isActive: initialData.isActive,
+      }
       : {
-          code: "",
-          title: "",
-          description: "",
-          rewardAmount: undefined,
-          targetValue: 1,
-          isActive: true,
-        },
+        code: "",
+        title: "",
+        description: "",
+        rewardAmount: undefined,
+        targetValue: 1,
+        isActive: true,
+      },
   });
 
   // Keep both controlled selects in sync when the form switches records.
@@ -141,15 +141,9 @@ export function AdminMissionForm({
   return (
     <section className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm sm:p-8">
       <div className="border-b border-gray-100 pb-5">
-        <p className="text-xs font-bold uppercase tracking-widest text-[#007A8A]">
-          Mission System
-        </p>
         <h2 className="mt-2 font-heading text-2xl font-bold text-gray-900">
           {isEditing ? "Chỉnh Sửa Nhiệm Vụ" : "Thêm Nhiệm Vụ Mới"}
         </h2>
-        <p className="mt-2 text-sm text-gray-500">
-          Thiết lập nội dung, chỉ tiêu và phần thưởng Coin cho nhiệm vụ.
-        </p>
       </div>
 
       <form
@@ -158,11 +152,10 @@ export function AdminMissionForm({
         onSubmit={handleSubmit(onSubmit)}
       >
         <div
-          className={`grid gap-6 ${
-            questType === "ONLINE" || questType === "WATCH_AD"
-              ? "md:grid-cols-2"
-              : ""
-          }`}
+          className={`grid gap-6 ${questType === "ONLINE" || questType === "WATCH_AD"
+            ? "md:grid-cols-2"
+            : ""
+            }`}
         >
           <div className="space-y-2">
             <label
@@ -181,9 +174,6 @@ export function AdminMissionForm({
               <option value="WATCH_AD">Xem Quảng Cáo</option>
               <option value="COMPLETE_PROFILE">Hoàn thiện hồ sơ</option>
             </select>
-            <p className="mt-1 text-xs text-gray-500">
-              Mã nhiệm vụ sẽ được hệ thống tạo tự động theo lựa chọn của bạn.
-            </p>
           </div>
 
           {questType === "ONLINE" && (
@@ -206,9 +196,6 @@ export function AdminMissionForm({
                   </option>
                 ))}
               </select>
-              <p className="mt-1 text-xs text-gray-500">
-                Code được tạo khi lưu: ONLINE_{duration}M
-              </p>
             </div>
           )}
 
@@ -320,11 +307,10 @@ export function AdminMissionForm({
               readOnly={questType === "ONLINE"}
               aria-invalid={Boolean(errors.targetValue)}
               {...register("targetValue", { valueAsNumber: true })}
-              className={`${fieldClassName} ${
-                questType === "ONLINE"
-                  ? "cursor-not-allowed bg-gray-100 text-gray-500"
-                  : ""
-              }`}
+              className={`${fieldClassName} ${questType === "ONLINE"
+                ? "cursor-not-allowed bg-gray-100 text-gray-500"
+                : ""
+                }`}
             />
             {questType === "ONLINE" && (
               <p className="text-xs font-medium text-gray-500">

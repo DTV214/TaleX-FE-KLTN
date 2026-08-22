@@ -152,9 +152,8 @@ function ConfirmModerationActionModal({
             type="button"
             onClick={onConfirm}
             disabled={isLoading}
-            className={`inline-flex h-11 items-center justify-center gap-2 rounded-lg px-5 text-sm font-bold text-white shadow-sm transition disabled:cursor-not-allowed disabled:opacity-60 ${
-              isApprove ? "bg-emerald-600 hover:bg-emerald-700" : "bg-red-600 hover:bg-red-700"
-            }`}
+            className={`inline-flex h-11 items-center justify-center gap-2 rounded-lg px-5 text-sm font-bold text-white shadow-sm transition disabled:cursor-not-allowed disabled:opacity-60 ${isApprove ? "bg-emerald-600 hover:bg-emerald-700" : "bg-red-600 hover:bg-red-700"
+              }`}
           >
             {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
             {isApprove ? "Duyệt" : "Từ chối"}
@@ -540,11 +539,10 @@ function ModerationDetailModal({
                         return (
                           <div
                             key={item.mediaCopyrightId}
-                            className={`rounded-lg border p-3 text-xs ${
-                              item.isValid
-                                ? "border-emerald-200 bg-emerald-50"
-                                : "border-red-200 bg-red-50"
-                            }`}
+                            className={`rounded-lg border p-3 text-xs ${item.isValid
+                              ? "border-emerald-200 bg-emerald-50"
+                              : "border-red-200 bg-red-50"
+                              }`}
                           >
                             <div className="flex items-center justify-between font-bold">
                               <span className={item.isValid ? "text-emerald-700" : "text-red-700"}>
@@ -650,11 +648,10 @@ function ModerationDetailModal({
                       {violations.censorshipResults.map((item) => (
                         <div
                           key={item.censorshipId}
-                          className={`rounded-lg border p-3 text-xs ${
-                            item.status === "APPROVED"
-                              ? "border-emerald-200 bg-emerald-50"
-                              : "border-red-200 bg-red-50"
-                          }`}
+                          className={`rounded-lg border p-3 text-xs ${item.status === "APPROVED"
+                            ? "border-emerald-200 bg-emerald-50"
+                            : "border-red-200 bg-red-50"
+                            }`}
                         >
                           <div className="flex items-center justify-between font-bold">
                             <span className={item.status === "APPROVED" ? "text-emerald-700" : "text-red-700"}>
@@ -928,11 +925,10 @@ function ModerationCard({
 
         <div className="flex flex-wrap items-center gap-2">
           <span
-            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold ${
-              isVideo
-                ? "border-cyan-200 bg-cyan-50 text-cyan-700"
-                : "border-violet-200 bg-violet-50 text-violet-700"
-            }`}
+            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold ${isVideo
+              ? "border-cyan-200 bg-cyan-50 text-cyan-700"
+              : "border-violet-200 bg-violet-50 text-violet-700"
+              }`}
           >
             <PreviewIcon className="h-3.5 w-3.5" />
             {formatMediaType(media.mediaType)}
@@ -1065,21 +1061,19 @@ function ApprovedMediaCard({
 
         <div className="flex flex-wrap items-center gap-2">
           <span
-            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold ${
-              isVideo
-                ? "border-cyan-200 bg-cyan-50 text-cyan-700"
-                : "border-violet-200 bg-violet-50 text-violet-700"
-            }`}
+            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold ${isVideo
+              ? "border-cyan-200 bg-cyan-50 text-cyan-700"
+              : "border-violet-200 bg-violet-50 text-violet-700"
+              }`}
           >
             <PreviewIcon className="h-3.5 w-3.5" />
             {formatMediaType(media.mediaType)}
           </span>
           <span
-            className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-bold ${
-              isEpisodeForceHidden
-                ? "border-red-200 bg-red-50 text-red-700"
-                : "border-emerald-200 bg-emerald-50 text-emerald-700"
-            }`}
+            className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-bold ${isEpisodeForceHidden
+              ? "border-red-200 bg-red-50 text-red-700"
+              : "border-emerald-200 bg-emerald-50 text-emerald-700"
+              }`}
           >
             {isEpisodeForceHidden ? "Episode đang bị ẩn" : "Episode đang hiển thị"}
           </span>
@@ -1191,11 +1185,10 @@ function MediaTypeBadge({ media }: { media: ModerationMedia }) {
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold ${
-        isVideo
-          ? "border-cyan-200 bg-cyan-50 text-cyan-700 backoffice-dark:border-cyan-300/25 backoffice-dark:bg-cyan-300/10 backoffice-dark:text-cyan-100"
-          : "border-violet-200 bg-violet-50 text-violet-700 backoffice-dark:border-[var(--backoffice-primary)]/30 backoffice-dark:bg-[var(--backoffice-primary-soft)] backoffice-dark:text-[var(--backoffice-primary)]"
-      }`}
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold ${isVideo
+        ? "border-cyan-200 bg-cyan-50 text-cyan-700 backoffice-dark:border-cyan-300/25 backoffice-dark:bg-cyan-300/10 backoffice-dark:text-cyan-100"
+        : "border-violet-200 bg-violet-50 text-violet-700 backoffice-dark:border-[var(--backoffice-primary)]/30 backoffice-dark:bg-[var(--backoffice-primary-soft)] backoffice-dark:text-[var(--backoffice-primary)]"
+        }`}
     >
       <Icon className="h-3.5 w-3.5" />
       {formatMediaType(media.mediaType)}
@@ -1222,11 +1215,10 @@ function ModerationListItem({
     <button
       type="button"
       onClick={onSelect}
-      className={`group w-full rounded-2xl border p-3 text-left transition ${
-        isSelected
-          ? "border-violet-300 bg-violet-50 shadow-sm backoffice-dark:border-[var(--backoffice-primary)]/40 backoffice-dark:bg-[var(--backoffice-primary-soft)]"
-          : "border-slate-200 bg-white hover:border-violet-200 hover:bg-violet-50/60 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.035] backoffice-dark:hover:bg-white/[0.07]"
-      }`}
+      className={`group w-full rounded-2xl border p-3 text-left transition ${isSelected
+        ? "border-violet-300 bg-violet-50 shadow-sm backoffice-dark:border-[var(--backoffice-primary)]/40 backoffice-dark:bg-[var(--backoffice-primary-soft)]"
+        : "border-slate-200 bg-white hover:border-violet-200 hover:bg-violet-50/60 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.035] backoffice-dark:hover:bg-white/[0.07]"
+        }`}
     >
       <div className="flex gap-3">
         <div className="h-20 w-28 shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-100 backoffice-dark:border-white/10">
@@ -1243,15 +1235,14 @@ function ModerationListItem({
               </p>
             </div>
             <span
-              className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-black ${
-                mode === "pending"
-                  ? "bg-amber-50 text-amber-700 backoffice-dark:bg-amber-300/10 backoffice-dark:text-amber-100"
-                  : mode === "rejected"
+              className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-black ${mode === "pending"
+                ? "bg-amber-50 text-amber-700 backoffice-dark:bg-amber-300/10 backoffice-dark:text-amber-100"
+                : mode === "rejected"
+                  ? "bg-red-50 text-red-700 backoffice-dark:bg-red-400/10 backoffice-dark:text-red-200"
+                  : isEpisodeForceHidden
                     ? "bg-red-50 text-red-700 backoffice-dark:bg-red-400/10 backoffice-dark:text-red-200"
-                    : isEpisodeForceHidden
-                      ? "bg-red-50 text-red-700 backoffice-dark:bg-red-400/10 backoffice-dark:text-red-200"
-                      : "bg-emerald-50 text-emerald-700 backoffice-dark:bg-emerald-400/10 backoffice-dark:text-emerald-200"
-              }`}
+                    : "bg-emerald-50 text-emerald-700 backoffice-dark:bg-emerald-400/10 backoffice-dark:text-emerald-200"
+                }`}
             >
               {mode === "pending"
                 ? "Chờ duyệt"
@@ -1473,11 +1464,10 @@ function ApprovedDetailPanel({
           <div className="flex shrink-0 flex-wrap gap-2">
             <MediaTypeBadge media={media} />
             <span
-              className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-bold ${
-                isEpisodeForceHidden
-                  ? "border-red-200 bg-red-50 text-red-700 backoffice-dark:border-red-400/30 backoffice-dark:bg-red-400/10 backoffice-dark:text-red-200"
-                  : "border-emerald-200 bg-emerald-50 text-emerald-700 backoffice-dark:border-emerald-400/30 backoffice-dark:bg-emerald-400/10 backoffice-dark:text-emerald-200"
-              }`}
+              className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-bold ${isEpisodeForceHidden
+                ? "border-red-200 bg-red-50 text-red-700 backoffice-dark:border-red-400/30 backoffice-dark:bg-red-400/10 backoffice-dark:text-red-200"
+                : "border-emerald-200 bg-emerald-50 text-emerald-700 backoffice-dark:border-emerald-400/30 backoffice-dark:bg-emerald-400/10 backoffice-dark:text-emerald-200"
+                }`}
             >
               {isEpisodeForceHidden ? "Episode đang bị ẩn" : "Episode đang hiển thị"}
             </span>
@@ -1853,12 +1843,8 @@ export function ModerationManagement() {
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-slate-950 backoffice-dark:text-white">
-          Kiểm duyệt Nội dung
+          Kiểm Duyệt Nội Dung
         </h1>
-        <p className="mt-2 max-w-3xl text-sm font-medium leading-6 text-slate-500 backoffice-dark:text-white/55">
-          Xem trước video và trang truyện đang chờ kiểm duyệt, sau đó duyệt
-          hoặc từ chối kèm lý do rõ ràng.
-        </p>
       </div>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
@@ -1875,19 +1861,17 @@ export function ModerationManagement() {
                 key={option.key}
                 type="button"
                 onClick={() => setActiveTab(option.key)}
-                className={`inline-flex h-10 items-center gap-2 rounded-lg px-4 text-sm font-black transition ${
-                  activeTab === option.key
-                    ? "bg-white text-slate-950 shadow-sm backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black"
-                    : "text-slate-500 hover:text-slate-950 backoffice-dark:text-white/55 backoffice-dark:hover:text-white"
-                }`}
+                className={`inline-flex h-10 items-center gap-2 rounded-lg px-4 text-sm font-black transition ${activeTab === option.key
+                  ? "bg-white text-slate-950 shadow-sm backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black"
+                  : "text-slate-500 hover:text-slate-950 backoffice-dark:text-white/55 backoffice-dark:hover:text-white"
+                  }`}
               >
                 {option.label}
                 <span
-                  className={`rounded-full px-2 py-0.5 text-[11px] ${
-                    activeTab === option.key
-                      ? "bg-slate-100 text-slate-600 backoffice-dark:bg-black/15 backoffice-dark:text-black"
-                      : "bg-white text-slate-500 backoffice-dark:bg-white/10 backoffice-dark:text-white/60"
-                  }`}
+                  className={`rounded-full px-2 py-0.5 text-[11px] ${activeTab === option.key
+                    ? "bg-slate-100 text-slate-600 backoffice-dark:bg-black/15 backoffice-dark:text-black"
+                    : "bg-white text-slate-500 backoffice-dark:bg-white/10 backoffice-dark:text-white/60"
+                    }`}
                 >
                   {option.count}
                 </span>
@@ -1930,11 +1914,10 @@ export function ModerationManagement() {
                     setRejectedTypeFilter(option.key);
                     setRejectedPage(0);
                   }}
-                  className={`h-10 rounded-lg border px-4 text-xs font-black transition ${
-                    isActive
-                      ? "border-violet-500 bg-violet-600 text-white shadow-sm backoffice-dark:border-[var(--backoffice-primary)] backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black"
-                      : "border-slate-200 bg-white text-slate-600 hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/65 backoffice-dark:hover:bg-white/10 backoffice-dark:hover:text-white"
-                  }`}
+                  className={`h-10 rounded-lg border px-4 text-xs font-black transition ${isActive
+                    ? "border-violet-500 bg-violet-600 text-white shadow-sm backoffice-dark:border-[var(--backoffice-primary)] backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black"
+                    : "border-slate-200 bg-white text-slate-600 hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/65 backoffice-dark:hover:bg-white/10 backoffice-dark:hover:text-white"
+                    }`}
                 >
                   {option.label}
                 </button>
@@ -1954,11 +1937,10 @@ export function ModerationManagement() {
                     setApprovedFilter(option.key);
                     setApprovedPage(0);
                   }}
-                  className={`h-10 rounded-lg border px-4 text-xs font-black transition ${
-                    approvedFilter === option.key
-                      ? "border-slate-950 bg-slate-950 text-white backoffice-dark:border-[var(--backoffice-primary)] backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black"
-                      : "border-slate-200 bg-white text-slate-600 hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/65 backoffice-dark:hover:bg-white/10 backoffice-dark:hover:text-white"
-                  }`}
+                  className={`h-10 rounded-lg border px-4 text-xs font-black transition ${approvedFilter === option.key
+                    ? "border-slate-950 bg-slate-950 text-white backoffice-dark:border-[var(--backoffice-primary)] backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black"
+                    : "border-slate-200 bg-white text-slate-600 hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/65 backoffice-dark:hover:bg-white/10 backoffice-dark:hover:text-white"
+                    }`}
                 >
                   {option.label}
                 </button>
@@ -1998,22 +1980,20 @@ export function ModerationManagement() {
         <button
           type="button"
           onClick={() => setActiveTab("pending")}
-          className={`px-4 py-3 text-sm font-bold transition ${
-            activeTab === "pending"
-              ? "border-b-2 border-slate-950 text-slate-950"
-              : "text-slate-400 hover:text-slate-600"
-          }`}
+          className={`px-4 py-3 text-sm font-bold transition ${activeTab === "pending"
+            ? "border-b-2 border-slate-950 text-slate-950"
+            : "text-slate-400 hover:text-slate-600"
+            }`}
         >
           Chờ duyệt
         </button>
         <button
           type="button"
           onClick={() => setActiveTab("approved")}
-          className={`px-4 py-3 text-sm font-bold transition ${
-            activeTab === "approved"
-              ? "border-b-2 border-slate-950 text-slate-950"
-              : "text-slate-400 hover:text-slate-600"
-          }`}
+          className={`px-4 py-3 text-sm font-bold transition ${activeTab === "approved"
+            ? "border-b-2 border-slate-950 text-slate-950"
+            : "text-slate-400 hover:text-slate-600"
+            }`}
         >
           Đã duyệt
         </button>
@@ -2035,11 +2015,10 @@ export function ModerationManagement() {
                 setPendingTypeFilter(option.key);
                 setPage(0);
               }}
-              className={`rounded-full border px-4 py-1.5 text-xs font-bold transition ${
-                pendingTypeFilter === option.key
-                  ? "border-slate-950 bg-slate-950 text-white"
-                  : "border-slate-200 bg-white text-slate-500 hover:border-slate-300"
-              }`}
+              className={`rounded-full border px-4 py-1.5 text-xs font-bold transition ${pendingTypeFilter === option.key
+                ? "border-slate-950 bg-slate-950 text-white"
+                : "border-slate-200 bg-white text-slate-500 hover:border-slate-300"
+                }`}
             >
               {option.label}
             </button>
@@ -2168,11 +2147,10 @@ export function ModerationManagement() {
                 setApprovedFilter(option.key);
                 setApprovedPage(0);
               }}
-              className={`rounded-full border px-4 py-1.5 text-xs font-bold transition ${
-                approvedFilter === option.key
-                  ? "border-slate-950 bg-slate-950 text-white"
-                  : "border-slate-200 bg-white text-slate-500 hover:border-slate-300"
-              }`}
+              className={`rounded-full border px-4 py-1.5 text-xs font-bold transition ${approvedFilter === option.key
+                ? "border-slate-950 bg-slate-950 text-white"
+                : "border-slate-200 bg-white text-slate-500 hover:border-slate-300"
+                }`}
             >
               {option.label}
             </button>
@@ -2196,11 +2174,10 @@ export function ModerationManagement() {
                 setApprovedTypeFilter(option.key);
                 setApprovedPage(0);
               }}
-              className={`rounded-full border px-4 py-1.5 text-xs font-bold transition ${
-                approvedTypeFilter === option.key
-                  ? "border-slate-950 bg-slate-950 text-white"
-                  : "border-slate-200 bg-white text-slate-500 hover:border-slate-300"
-              }`}
+              className={`rounded-full border px-4 py-1.5 text-xs font-bold transition ${approvedTypeFilter === option.key
+                ? "border-slate-950 bg-slate-950 text-white"
+                : "border-slate-200 bg-white text-slate-500 hover:border-slate-300"
+                }`}
             >
               {option.label}
             </button>

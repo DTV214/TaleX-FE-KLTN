@@ -86,7 +86,7 @@ export function EngagementServicesTable({
               <tr className="text-xs font-black uppercase tracking-wider text-slate-500 backoffice-dark:text-white/45">
                 <th className="px-6 py-4">Tên gói</th>
                 <th className="px-6 py-4">Giá tiền</th>
-                <th className="px-6 py-4">Target Value</th>
+                <th className="px-6 py-4">Mục Tiêu Hiển Thị</th>
                 <th className="px-6 py-4">Trạng thái</th>
                 <th className="w-[240px] px-6 py-4 text-right">Hành động</th>
               </tr>

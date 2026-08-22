@@ -192,12 +192,8 @@ export function AdminSeriesManagement() {
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-slate-950 backoffice-dark:text-white">
-          Quản lý Tác phẩm (Series)
+          Quản Lý Tác Phẩm (Series)
         </h1>
-        <p className="mt-2 max-w-3xl text-sm font-medium leading-6 text-slate-500 backoffice-dark:text-white/55">
-          Theo dõi toàn bộ phim bộ và truyện tranh trên hệ thống, xử lý ép
-          ẩn/mở ẩn theo quyền đặc biệt của Admin khi có vi phạm.
-        </p>
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">

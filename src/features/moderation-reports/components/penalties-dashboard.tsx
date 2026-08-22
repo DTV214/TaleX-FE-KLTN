@@ -57,9 +57,8 @@ function MaskedId({
   return (
     <span className={`flex max-w-full items-start gap-2 ${className}`}>
       <span
-        className={`min-w-0 font-bold leading-relaxed text-slate-600 backoffice-dark:text-white/65 ${
-          isVisible ? "break-all" : "truncate"
-        }`}
+        className={`min-w-0 font-bold leading-relaxed text-slate-600 backoffice-dark:text-white/65 ${isVisible ? "break-all" : "truncate"
+          }`}
         title={isVisible ? value : `${label}: ${shortId(value)}`}
       >
         {isVisible ? value : shortId(value)}
@@ -167,21 +166,15 @@ export function PenaltiesDashboard() {
   const penalties = penaltiesQuery.data?.content ?? [];
 
   return (
-    <div className="w-full space-y-6">
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-black text-red-700">
-              <Ban className="h-3.5 w-3.5" />
-              Penalties
-            </div>
-            <h1 className="text-2xl font-black text-slate-950 backoffice-dark:text-white">Hình phạt vi phạm</h1>
-            <p className="mt-1 max-w-2xl text-sm font-semibold leading-relaxed text-slate-500 backoffice-dark:text-white/55">
-              Tra cứu các penalty tạo ra khi admin/staff xác nhận ticket vi phạm. Tác động ban/ẩn
-              thực tế còn phụ thuộc worker phía BE.
-            </p>
-          </div>
-          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+      <div className="mx-auto flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between flex w-full max-w-7xl flex-col gap-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-950 backoffice-dark:text-white">
+            Hình Phạt Vi Phạm
+          </h1>
+        </div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <select
               value={status}
               onChange={(event) => {
@@ -236,7 +229,7 @@ export function PenaltiesDashboard() {
             </button>
           </div>
         </div>
-      </section>
+      </div>
 
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
         {penaltiesQuery.isLoading ? (
@@ -257,7 +250,7 @@ export function PenaltiesDashboard() {
             <table className="w-full min-w-[1280px] table-fixed text-left text-sm">
               <thead className="border-b border-slate-200 bg-slate-50 text-xs font-black uppercase tracking-wide text-slate-500 backoffice-dark:border-white/10 backoffice-dark:bg-white/5 backoffice-dark:text-white/45">
                 <tr>
-                  <th className="w-[250px] px-5 py-4">Penalty</th>
+                  <th className="w-[250px] px-5 py-4">Hình Phạt</th>
                   <th className="w-[250px] px-5 py-4">Người bị phạt</th>
                   <th className="w-[300px] px-5 py-4">Đối tượng</th>
                   <th className="w-[180px] px-5 py-4">Mức phạt</th>

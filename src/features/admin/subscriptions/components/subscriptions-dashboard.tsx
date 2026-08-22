@@ -282,20 +282,10 @@ export function SubscriptionsDashboard() {
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-8">
       <header className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
         <div className="flex gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-600 backoffice-dark:bg-[var(--backoffice-primary-soft)] backoffice-dark:text-[var(--backoffice-primary)]">
-            <CreditCard className="h-6 w-6" />
-          </div>
           <div>
-            <p className="mb-1 text-sm font-medium text-gray-500 backoffice-dark:text-white/55">
-              Admin / Gói Premium
-            </p>
             <h1 className="text-3xl font-bold tracking-tight text-gray-900 backoffice-dark:text-white">
               Quản lý Gói Premium
             </h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-500 backoffice-dark:text-white/55">
-              Quản lý giá, thời hạn, lượt mua và quyền lợi của các gói Premium
-              trong hệ thống.
-            </p>
           </div>
         </div>
 
@@ -378,9 +368,8 @@ export function SubscriptionsDashboard() {
                 </span>
               )}
               <ChevronDown
-                className={`h-4 w-4 transition-transform ${
-                  isFilterPanelOpen ? "rotate-180" : ""
-                }`}
+                className={`h-4 w-4 transition-transform ${isFilterPanelOpen ? "rotate-180" : ""
+                  }`}
               />
             </Button>
             {activeFilterCount > 0 && (

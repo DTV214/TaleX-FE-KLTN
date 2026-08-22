@@ -223,7 +223,7 @@ export function AdminCampaignOverviewWidget({
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="text-base font-bold text-gray-900 backoffice-dark:text-white">
-                Thống Kê & Doanh Thu Campaign (Chiến Dịch)
+                Thống Kê & Doanh Thu Chiến Dịch
               </h3>
               <span className="inline-flex items-center gap-1 rounded-md bg-violet-50 px-2 py-0.5 text-[11px] font-semibold text-violet-700 backoffice-dark:bg-violet-950/50 backoffice-dark:text-violet-300 border border-violet-200 backoffice-dark:border-violet-800/40">
                 <Calendar className="w-3 h-3" />
@@ -238,9 +238,6 @@ export function AdminCampaignOverviewWidget({
                 </span>
               )}
             </div>
-            <p className="text-xs text-gray-500 backoffice-dark:text-white/60 mt-0.5">
-              Tổng hợp và biểu đồ xu hướng doanh thu từ các đơn hàng Campaign COMPLETED
-            </p>
           </div>
         </div>
 
@@ -312,7 +309,7 @@ export function AdminCampaignOverviewWidget({
                 {formatVND(stats?.totalGrossRevenue)}
               </h4>
               <p className="mt-1 text-[11px] text-gray-400">
-                Doanh thu trước thuế của đơn hàng
+                Tổng doanh thu trước thuế
               </p>
             </div>
 
@@ -354,7 +351,7 @@ export function AdminCampaignOverviewWidget({
                 {formatVND(stats?.totalNetRevenue)}
               </h4>
               <p className="mt-1 text-[11px] text-gray-400">
-                Doanh thu thuần (Tổng gộp - Thuế VAT)
+                Doanh thu thuần
               </p>
             </div>
           </div>
@@ -365,7 +362,7 @@ export function AdminCampaignOverviewWidget({
               <div className="flex items-center gap-2">
                 <BarChart3 className="w-4 h-4 text-violet-600" />
                 <h4 className="text-sm font-bold text-gray-900 backoffice-dark:text-white">
-                  Biểu Đồ & Chi Tiết Doanh Thu Campaign Theo Chuỗi Thời Gian
+                  Biểu Đồ & Chi Tiết Doanh Thu Theo Chuỗi Thời Gian
                 </h4>
               </div>
 
@@ -374,11 +371,10 @@ export function AdminCampaignOverviewWidget({
                 <button
                   type="button"
                   onClick={() => setViewMode("chart")}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition ${
-                    viewMode === "chart"
-                      ? "bg-white text-violet-700 shadow-sm backoffice-dark:bg-black/40 backoffice-dark:text-white"
-                      : "text-gray-500 hover:text-gray-900 backoffice-dark:text-white/60"
-                  }`}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition ${viewMode === "chart"
+                    ? "bg-white text-violet-700 shadow-sm backoffice-dark:bg-black/40 backoffice-dark:text-white"
+                    : "text-gray-500 hover:text-gray-900 backoffice-dark:text-white/60"
+                    }`}
                 >
                   <BarChart3 className="w-3.5 h-3.5" />
                   Biểu đồ
@@ -386,11 +382,10 @@ export function AdminCampaignOverviewWidget({
                 <button
                   type="button"
                   onClick={() => setViewMode("table")}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition ${
-                    viewMode === "table"
-                      ? "bg-white text-violet-700 shadow-sm backoffice-dark:bg-black/40 backoffice-dark:text-white"
-                      : "text-gray-500 hover:text-gray-900 backoffice-dark:text-white/60"
-                  }`}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition ${viewMode === "table"
+                    ? "bg-white text-violet-700 shadow-sm backoffice-dark:bg-black/40 backoffice-dark:text-white"
+                    : "text-gray-500 hover:text-gray-900 backoffice-dark:text-white/60"
+                    }`}
                 >
                   <TableIcon className="w-3.5 h-3.5" />
                   Bảng chi tiết

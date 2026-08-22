@@ -56,9 +56,8 @@ function MaskedId({
         </span>
       )}
       <span
-        className={`min-w-0 font-black text-slate-950 backoffice-dark:text-white ${
-          isVisible ? "break-all" : "truncate"
-        }`}
+        className={`min-w-0 font-black text-slate-950 backoffice-dark:text-white ${isVisible ? "break-all" : "truncate"
+          }`}
         title={isVisible ? value : shortId(value)}
       >
         {isVisible ? value : shortId(value)}
@@ -156,11 +155,10 @@ function AppealProcessModal({
               type="button"
               onClick={() => setIsApproved(option.key)}
               disabled={processMutation.isPending || appeal.status !== "PENDING"}
-              className={`h-10 rounded-lg border text-xs font-black transition disabled:opacity-50 ${
-                isApproved === option.key
-                  ? "border-slate-950 bg-slate-950 text-white"
-                  : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-              }`}
+              className={`h-10 rounded-lg border text-xs font-black transition disabled:opacity-50 ${isApproved === option.key
+                ? "border-slate-950 bg-slate-950 text-white"
+                : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                }`}
             >
               {option.label}
             </button>
@@ -221,45 +219,36 @@ export function AppealsDashboard() {
   const appeals = appealsQuery.data?.content ?? [];
 
   return (
-    <div className="w-full space-y-6">
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-black text-blue-700 backoffice-dark:border-[var(--backoffice-primary)]/35 backoffice-dark:bg-[var(--backoffice-primary)]/10 backoffice-dark:text-[var(--backoffice-primary)]">
-              <FileQuestion className="h-3.5 w-3.5" />
-              Appeals
-            </div>
-            <h1 className="text-2xl font-black text-slate-950 backoffice-dark:text-white">Khiếu nại hình phạt</h1>
-            <p className="mt-1 max-w-2xl text-sm font-semibold leading-relaxed text-slate-500 backoffice-dark:text-white/55">
-              Admin xem khiếu nại từ creator, ảnh minh chứng và quyết định gỡ hoặc giữ penalty.
-            </p>
-          </div>
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <select
-              value={status}
-              onChange={(event) => {
-                setStatus(event.target.value as AppealStatus | "ALL");
-                setPage(1);
-              }}
-              className="h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700 outline-none focus:border-blue-500 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white"
-            >
-              {appealStatusOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-            <button
-              type="button"
-              onClick={() => appealsQuery.refetch()}
-              className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-black text-slate-600 hover:bg-slate-50 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/10"
-            >
-              <RefreshCcw className="h-4 w-4" />
-              Tải lại
-            </button>
-          </div>
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+      <div className="mx-auto flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between flex w-full max-w-7xl flex-col gap-6">
+        <h1 className="text-3xl font-bold tracking-tight text-slate-950 backoffice-dark:text-white">
+          Khiếu Nại
+        </h1>
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <select
+            value={status}
+            onChange={(event) => {
+              setStatus(event.target.value as AppealStatus | "ALL");
+              setPage(1);
+            }}
+            className="h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700 outline-none focus:border-blue-500 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white"
+          >
+            {appealStatusOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            onClick={() => appealsQuery.refetch()}
+            className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-black text-slate-600 hover:bg-slate-50 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/10"
+          >
+            <RefreshCcw className="h-4 w-4" />
+            Tải lại
+          </button>
         </div>
-      </section>
+      </div>
 
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
         {appealsQuery.isLoading ? (
@@ -280,9 +269,9 @@ export function AppealsDashboard() {
             <table className="w-full min-w-[1120px] text-left text-sm">
               <thead className="border-b border-slate-200 bg-slate-50 text-xs font-black uppercase tracking-wide text-slate-500 backoffice-dark:border-white/10 backoffice-dark:bg-white/5 backoffice-dark:text-white/45">
                 <tr>
-                  <th className="px-5 py-4">Appeal</th>
-                  <th className="px-5 py-4">Creator</th>
-                  <th className="px-5 py-4">Penalty</th>
+                  <th className="px-5 py-4">Khiếu Nại</th>
+                  <th className="px-5 py-4">Người Gửi</th>
+                  <th className="px-5 py-4">Hình Phạt</th>
                   <th className="px-5 py-4">Lý do</th>
                   <th className="whitespace-nowrap px-5 py-4">Trạng thái</th>
                   <th className="whitespace-nowrap px-5 py-4 text-right">Thao tác</th>

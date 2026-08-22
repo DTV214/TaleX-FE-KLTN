@@ -202,11 +202,8 @@ export function CreatorTierFormModal({
       >
         <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-slate-100 bg-white px-6 py-5">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-violet-600 backoffice-dark:text-[var(--backoffice-primary)]">
-              Cấp Creator
-            </p>
             <h2 className="mt-1 text-2xl font-black text-slate-950">
-              {mode === "create" ? "Tạo mới cấp" : "Cập nhật cấp"}
+              {mode === "create" ? "Tạo Mới" : "Cập Nhật"}
             </h2>
           </div>
           <button

@@ -117,11 +117,8 @@ export function ViolationLabelTranslationManagement() {
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-slate-950 backoffice-dark:text-white">
-            Nhãn kiểm duyệt
+            Nhãn Kiểm Duyệt
           </h1>
-          <p className="mt-2 text-sm font-medium text-slate-500 backoffice-dark:text-white/55">
-            Quản lý bản dịch tiếng Việt cho nhãn vi phạm AWS Rekognition — hiển thị cho Creator/Staff khi có nội dung bị gắn cờ.
-          </p>
         </div>
 
         <div className="flex gap-3">

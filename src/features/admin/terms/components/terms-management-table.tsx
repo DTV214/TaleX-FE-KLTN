@@ -134,12 +134,8 @@ export function TermsManagementTable() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-gray-900 backoffice-dark:text-white">
-            Điều khoản & Điều kiện
+            Terms & Conditions
           </h2>
-          <p className="mt-2 text-sm font-medium text-gray-500 backoffice-dark:text-white/55">
-            Quản lý các điều khoản dịch vụ, điều khoản nhà sáng tạo và quy trình
-            bật kiếm tiền.
-          </p>
         </div>
         <button
           type="button"
@@ -257,22 +253,20 @@ export function TermsManagementTable() {
                     </td>
                     <td className="py-4 px-6">
                       <span
-                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
-                          term.type === "CREATOR"
-                            ? "bg-violet-50 text-violet-600 backoffice-dark:bg-[var(--backoffice-primary-soft)] backoffice-dark:text-[var(--backoffice-primary)]"
-                            : "bg-blue-50 text-blue-600"
-                        }`}
+                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${term.type === "CREATOR"
+                          ? "bg-violet-50 text-violet-600 backoffice-dark:bg-[var(--backoffice-primary-soft)] backoffice-dark:text-[var(--backoffice-primary)]"
+                          : "bg-blue-50 text-blue-600"
+                          }`}
                       >
                         {termsTypeLabels[term.type]}
                       </span>
                     </td>
                     <td className="py-4 px-6">
                       <span
-                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
-                          term.isActive
-                            ? "bg-green-50 text-[#00A389]"
-                            : "bg-red-50 text-[#E50914]"
-                        }`}
+                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${term.isActive
+                          ? "bg-green-50 text-[#00A389]"
+                          : "bg-red-50 text-[#E50914]"
+                          }`}
                       >
                         {term.isActive ? "Active" : "Inactive"}
                       </span>

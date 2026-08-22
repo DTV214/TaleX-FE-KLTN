@@ -55,33 +55,33 @@ const FIELDS: Array<{
   label: string;
   description: string;
 }> = [
-  {
-    name: "dailyCheckInBase",
-    label: "Thưởng điểm danh cơ bản",
-    description: "Số coin người dùng nhận được khi điểm danh hằng ngày.",
-  },
-  {
-    name: "milestone7Reward",
-    label: "Thưởng mốc 7 ngày",
-    description: "Phần thưởng bổ sung khi duy trì chuỗi điểm danh 7 ngày.",
-  },
-  {
-    name: "milestone14Reward",
-    label: "Thưởng mốc 14 ngày",
-    description: "Phần thưởng bổ sung khi duy trì chuỗi điểm danh 14 ngày.",
-  },
-  {
-    name: "milestone30Reward",
-    label: "Thưởng mốc 30 ngày",
-    description: "Phần thưởng cao nhất cho chuỗi điểm danh 30 ngày.",
-  },
-  {
-    name: "vndPerCoin",
-    label: "Tỉ giá quy đổi (VNĐ / 1 Coin)",
-    description:
-      "Số VNĐ tương ứng 1 Coin khi thanh toán nội dung, ví dụ 1 = 1 Coin ⇒ 1 VNĐ.",
-  },
-];
+    {
+      name: "dailyCheckInBase",
+      label: "Thưởng điểm danh cơ bản",
+      description: "Số xu người dùng nhận được khi điểm danh hằng ngày.",
+    },
+    {
+      name: "milestone7Reward",
+      label: "Thưởng mốc 7 ngày",
+      description: "Phần thưởng bổ sung khi duy trì chuỗi điểm danh 7 ngày.",
+    },
+    {
+      name: "milestone14Reward",
+      label: "Thưởng mốc 14 ngày",
+      description: "Phần thưởng bổ sung khi duy trì chuỗi điểm danh 14 ngày.",
+    },
+    {
+      name: "milestone30Reward",
+      label: "Thưởng mốc 30 ngày",
+      description: "Phần thưởng cao nhất cho chuỗi điểm danh 30 ngày.",
+    },
+    {
+      name: "vndPerCoin",
+      label: "Tỉ giá quy đổi (VNĐ / 1 Xu)",
+      description:
+        "Số VNĐ tương ứng 1 Xu khi thanh toán nội dung, ví dụ 1 = 1 Xu ⇒ 1 VNĐ.",
+    },
+  ];
 
 function formatDate(dateString: string) {
   const date = new Date(dateString);

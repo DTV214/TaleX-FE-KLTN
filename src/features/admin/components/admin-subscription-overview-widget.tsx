@@ -223,7 +223,7 @@ export function AdminSubscriptionOverviewWidget({
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="text-base font-bold text-gray-900 backoffice-dark:text-white">
-                Thống Kê Doanh Thu Gói Premium (Subscription)
+                Thống Kê Doanh Thu Gói Premium
               </h3>
               <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700 backoffice-dark:bg-amber-950/50 backoffice-dark:text-amber-300 border border-amber-200 backoffice-dark:border-amber-800/40">
                 <Calendar className="w-3 h-3" />
@@ -238,9 +238,6 @@ export function AdminSubscriptionOverviewWidget({
                 </span>
               )}
             </div>
-            <p className="text-xs text-gray-500 backoffice-dark:text-white/60 mt-0.5">
-              Doanh thu từ các đơn hàng đăng ký gói Premium COMPLETED (SUBSCRIPTION)
-            </p>
           </div>
         </div>
 
@@ -354,7 +351,7 @@ export function AdminSubscriptionOverviewWidget({
                 {formatVND(stats?.totalNetRevenue)}
               </h4>
               <p className="mt-1 text-[11px] text-gray-400">
-                Doanh thu thuần (Gross - Thuế VAT)
+                Doanh thu thuần
               </p>
             </div>
           </div>
@@ -374,11 +371,10 @@ export function AdminSubscriptionOverviewWidget({
                 <button
                   type="button"
                   onClick={() => setViewMode("chart")}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition ${
-                    viewMode === "chart"
-                      ? "bg-white text-amber-700 shadow-sm backoffice-dark:bg-black/40 backoffice-dark:text-white"
-                      : "text-gray-500 hover:text-gray-900 backoffice-dark:text-white/60"
-                  }`}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition ${viewMode === "chart"
+                    ? "bg-white text-amber-700 shadow-sm backoffice-dark:bg-black/40 backoffice-dark:text-white"
+                    : "text-gray-500 hover:text-gray-900 backoffice-dark:text-white/60"
+                    }`}
                 >
                   <BarChart3 className="w-3.5 h-3.5" />
                   Biểu đồ
@@ -386,11 +382,10 @@ export function AdminSubscriptionOverviewWidget({
                 <button
                   type="button"
                   onClick={() => setViewMode("table")}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition ${
-                    viewMode === "table"
-                      ? "bg-white text-amber-700 shadow-sm backoffice-dark:bg-black/40 backoffice-dark:text-white"
-                      : "text-gray-500 hover:text-gray-900 backoffice-dark:text-white/60"
-                  }`}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition ${viewMode === "table"
+                    ? "bg-white text-amber-700 shadow-sm backoffice-dark:bg-black/40 backoffice-dark:text-white"
+                    : "text-gray-500 hover:text-gray-900 backoffice-dark:text-white/60"
+                    }`}
                 >
                   <TableIcon className="w-3.5 h-3.5" />
                   Bảng chi tiết

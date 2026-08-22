@@ -45,7 +45,7 @@ const CONFIG_FIELDS: ChannelFieldConfig[] = [
   {
     key: "trendingPoolNumber",
     label: "Kênh Xu Hướng",
-    description: "Số lượng series tăng trưởng lượt xem & tương tác cao nhất",
+    description: "Số lượng series top trending",
     icon: Flame,
     colorClass: "text-amber-500",
     bgClass: "bg-amber-500/10 text-amber-600 border-amber-200/60 dark:border-amber-800/40",
@@ -55,7 +55,7 @@ const CONFIG_FIELDS: ChannelFieldConfig[] = [
   {
     key: "promotedPoolNumber",
     label: "Kênh Quảng Bá",
-    description: "Số lượng series được tài trợ và đẩy nổi bật trên trang chủ",
+    description: "Số lượng series được tài trợ và quảng bá trên trang chủ",
     icon: Sparkles,
     colorClass: "text-violet-500",
     bgClass: "bg-violet-500/10 text-violet-600 border-violet-200/60 dark:border-violet-800/40",
@@ -115,7 +115,7 @@ const CONFIG_FIELDS: ChannelFieldConfig[] = [
   {
     key: "subscribedPoolNumber",
     label: "Kênh Đang Theo Dõi",
-    description: "Số lượng series đề xuất từ các creator người dùng theo dõi",
+    description: "Số lượng series đề xuất từ các các kênh theo dõi",
     icon: Bell,
     colorClass: "text-sky-500",
     bgClass: "bg-sky-500/10 text-sky-600 border-sky-200/60 dark:border-sky-800/40",

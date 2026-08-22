@@ -78,9 +78,6 @@ function TagFormModal({
             <h2 className="text-xl font-bold text-slate-950">
               {isEditing ? "Chỉnh sửa Thẻ" : "Thêm Thẻ"}
             </h2>
-            <p className="mt-1 text-sm font-medium text-slate-500">
-              Quản lý nhãn nội dung để creator gắn cho series.
-            </p>
           </div>
           <button
             type="button"
@@ -298,11 +295,8 @@ export function TagManagement() {
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-slate-950 backoffice-dark:text-white">
-            Quản lý Thẻ
+            Quản Lý Thẻ
           </h1>
-          <p className="mt-2 text-sm font-medium text-slate-500 backoffice-dark:text-white/55">
-            Quản lý các nhãn nội dung dùng để mô tả và lọc series.
-          </p>
         </div>
 
         <button
@@ -372,9 +366,6 @@ export function TagManagement() {
                     <td className="px-6 py-4">
                       <div>
                         <p className="font-bold text-slate-950">{tag.name}</p>
-                        <p className="mt-0.5 text-xs text-slate-400">
-                          ID: {tag.id}
-                        </p>
                       </div>
                     </td>
                     <td className="max-w-md px-6 py-4 text-slate-600">

@@ -71,7 +71,6 @@ function DialogTitle({
       </div>
       <div className="min-w-0 text-left">
         <div className="mb-2 flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.28em] text-[#D4AF37]">
-          <Sparkles className="h-3.5 w-3.5" />
           {eyebrow}
         </div>
         <Dialog.Title className="font-heading text-2xl font-black leading-tight tracking-tight text-white sm:text-3xl">
@@ -137,7 +136,7 @@ export function TermsAcceptanceModal({
   const title =
     mode === "register"
       ? "Điều khoản Creator TaleX"
-      : "Điều khoản Creator đã cập nhật";
+      : "Điều khoản Creator mới Cập Nhật";
   const description =
     mode === "register"
       ? "Đọc kỹ các cam kết dành cho nhà sáng tạo trước khi bước vào Creator Studio."
@@ -160,16 +159,7 @@ export function TermsAcceptanceModal({
     <Dialog.Root open>
       <DialogContent>
         <div className="mb-6 shrink-0">
-          <DialogTitle eyebrow="TaleX Creator">{title}</DialogTitle>
-          <p className="mt-3 max-w-2xl text-left text-sm font-semibold leading-6 text-white/58">
-            {description}
-          </p>
-          {mode === "update" && (
-            <p className="mt-3 inline-flex items-center gap-2 rounded-full border border-[#D4AF37]/25 bg-[#D4AF37]/10 px-3 py-1 text-xs font-bold text-[#F2D76B]">
-              <ShieldCheck className="h-3.5 w-3.5" />
-              Phiên bản điều khoản mới cần xác nhận lại
-            </p>
-          )}
+          <DialogTitle eyebrow="">{title}</DialogTitle>
         </div>
 
         <div className="mb-5 flex min-h-0 w-full flex-1 flex-col overflow-hidden rounded-2xl border border-white/10 bg-black/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">

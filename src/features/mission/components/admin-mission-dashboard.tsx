@@ -47,9 +47,6 @@ export function AdminMissionDashboard() {
           <h2 className="font-heading text-xl font-bold text-gray-900">
             Danh Sách Nhiệm Vụ
           </h2>
-          <p className="mt-1 text-sm text-gray-500">
-            Quản lý nội dung, chỉ tiêu, phần thưởng và trạng thái hoạt động.
-          </p>
         </div>
 
         <button
@@ -140,9 +137,8 @@ export function AdminMissionDashboard() {
                           }
                         >
                           <span
-                            className={`h-1.5 w-1.5 rounded-full ${
-                              mission.isActive ? "bg-emerald-500" : "bg-gray-400"
-                            }`}
+                            className={`h-1.5 w-1.5 rounded-full ${mission.isActive ? "bg-emerald-500" : "bg-gray-400"
+                              }`}
                           />
                           {mission.isActive ? "Đang bật" : "Đang tắt"}
                         </span>

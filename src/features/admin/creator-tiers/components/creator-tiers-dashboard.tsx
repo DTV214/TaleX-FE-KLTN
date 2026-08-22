@@ -71,20 +71,10 @@ export function CreatorTiersDashboard() {
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-8">
       <header className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
         <div className="flex gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-600 backoffice-dark:bg-[var(--backoffice-primary-soft)] backoffice-dark:text-[var(--backoffice-primary)]">
-            <ShieldCheck className="h-6 w-6" />
-          </div>
           <div>
-            <p className="mb-1 text-sm font-medium text-gray-500 backoffice-dark:text-white/55">
-              Admin / Cấp Creator
-            </p>
             <h1 className="text-3xl font-bold tracking-tight text-gray-900 backoffice-dark:text-white">
               Quản lý cấp Creator
             </h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-500 backoffice-dark:text-white/55">
-              Cấu hình cấp creator, điều kiện đạt tier và tỷ lệ chia sẻ doanh
-              thu theo Premium Fund hoặc giao dịch mua trực tiếp.
-            </p>
           </div>
         </div>
 

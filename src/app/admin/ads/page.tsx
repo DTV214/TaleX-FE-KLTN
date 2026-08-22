@@ -154,11 +154,10 @@ function TabButton({
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-bold transition ${
-        isActive
+      className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-bold transition ${isActive
           ? "bg-white text-slate-950 shadow-sm backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black"
           : "text-slate-500 hover:text-slate-900 backoffice-dark:text-white/55 backoffice-dark:hover:text-white"
-      }`}
+        }`}
     >
       <Icon className="h-4 w-4" />
       {label}
@@ -407,9 +406,6 @@ export default function AdminAdsPage() {
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-8">
       <header className="flex flex-col gap-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="mb-2 text-sm font-medium text-gray-500 backoffice-dark:text-white/55">
-            Admin / Quảng cáo Direct
-          </p>
           <h1 className="text-3xl font-bold tracking-tight text-gray-900 backoffice-dark:text-white">
             Quản lý Hệ thống Quảng Cáo
           </h1>
@@ -646,11 +642,10 @@ export default function AdminAdsPage() {
                         toast.info(`${route} đã có trong danh sách`);
                       }
                     }}
-                    className={`rounded-full border px-3 py-1.5 font-mono text-xs font-bold transition ${
-                      selected
+                    className={`rounded-full border px-3 py-1.5 font-mono text-xs font-bold transition ${selected
                         ? "border-emerald-200 bg-emerald-50 text-emerald-700 backoffice-dark:border-emerald-400/30 backoffice-dark:bg-emerald-400/10 backoffice-dark:text-emerald-200"
                         : "border-slate-200 bg-white text-slate-600 hover:border-violet-300 hover:text-violet-600 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/60 backoffice-dark:hover:text-white"
-                    }`}
+                      }`}
                   >
                     {selected ? "Đã thêm " : "+ "}
                     {route}
@@ -854,9 +849,8 @@ export default function AdminAdsPage() {
           )}
 
           <div
-            className={`overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] ${
-              editingSlot ? "" : "xl:col-span-2"
-            }`}
+            className={`overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] ${editingSlot ? "" : "xl:col-span-2"
+              }`}
           >
             <div className="border-b border-slate-200 px-6 py-4 backoffice-dark:border-white/10">
               <h2 className="text-lg font-bold text-slate-950 backoffice-dark:text-white">
@@ -878,9 +872,8 @@ export default function AdminAdsPage() {
                   {slots?.map((slot) => (
                     <tr
                       key={slot.slotId}
-                      className={`transition hover:bg-slate-50/80 backoffice-dark:hover:bg-white/[0.05] ${
-                        !slot.isActive ? "opacity-60" : ""
-                      }`}
+                      className={`transition hover:bg-slate-50/80 backoffice-dark:hover:bg-white/[0.05] ${!slot.isActive ? "opacity-60" : ""
+                        }`}
                     >
                       <td className="px-6 py-4">
                         <p className="font-bold text-slate-950 backoffice-dark:text-white">
@@ -898,11 +891,10 @@ export default function AdminAdsPage() {
                       </td>
                       <td className="px-6 py-4">
                         <span
-                          className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-bold ${
-                            slot.isActive
+                          className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-bold ${slot.isActive
                               ? getStatusClassName("ACTIVE")
                               : getStatusClassName("PAUSED")
-                          }`}
+                            }`}
                         >
                           {slot.isActive ? "Đang bật" : "Đang ẩn"}
                         </span>
@@ -1104,9 +1096,9 @@ export default function AdminAdsPage() {
                             setPreviewMedia(
                               campaign.creatives && campaign.creatives.length > 0
                                 ? {
-                                    url: campaign.creatives[0].mediaUrl,
-                                    type: campaign.creatives[0].mediaType,
-                                  }
+                                  url: campaign.creatives[0].mediaUrl,
+                                  type: campaign.creatives[0].mediaType,
+                                }
                                 : null,
                             )
                           }
@@ -1116,35 +1108,35 @@ export default function AdminAdsPage() {
                         </ActionButton>
                         {(campaign.status === "ACTIVE" ||
                           campaign.status === "PAUSED") && (
-                          <ActionButton
-                            onClick={() =>
-                              patchCampaignStatusMutation.mutate({
-                                id: campaign.campaignId,
-                                status:
-                                  campaign.status === "ACTIVE"
-                                    ? "PAUSED"
-                                    : "ACTIVE",
-                              })
-                            }
-                            disabled={patchCampaignStatusMutation.isPending}
-                            className={
-                              campaign.status === "ACTIVE"
-                                ? "hover:bg-amber-50 hover:text-amber-600"
-                                : "hover:bg-emerald-50 hover:text-emerald-600"
-                            }
-                            title={
-                              campaign.status === "ACTIVE"
-                                ? "Tạm dừng quảng cáo"
-                                : "Tiếp tục quảng cáo"
-                            }
-                          >
-                            {campaign.status === "ACTIVE" ? (
-                              <PauseCircle className="h-5 w-5" />
-                            ) : (
-                              <PlayCircle className="h-5 w-5" />
-                            )}
-                          </ActionButton>
-                        )}
+                            <ActionButton
+                              onClick={() =>
+                                patchCampaignStatusMutation.mutate({
+                                  id: campaign.campaignId,
+                                  status:
+                                    campaign.status === "ACTIVE"
+                                      ? "PAUSED"
+                                      : "ACTIVE",
+                                })
+                              }
+                              disabled={patchCampaignStatusMutation.isPending}
+                              className={
+                                campaign.status === "ACTIVE"
+                                  ? "hover:bg-amber-50 hover:text-amber-600"
+                                  : "hover:bg-emerald-50 hover:text-emerald-600"
+                              }
+                              title={
+                                campaign.status === "ACTIVE"
+                                  ? "Tạm dừng quảng cáo"
+                                  : "Tiếp tục quảng cáo"
+                              }
+                            >
+                              {campaign.status === "ACTIVE" ? (
+                                <PauseCircle className="h-5 w-5" />
+                              ) : (
+                                <PlayCircle className="h-5 w-5" />
+                              )}
+                            </ActionButton>
+                          )}
                       </div>
                     </td>
                   </tr>

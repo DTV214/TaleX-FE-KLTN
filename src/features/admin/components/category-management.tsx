@@ -78,9 +78,6 @@ function CategoryFormModal({
             <h2 className="text-xl font-bold text-slate-950">
               {isEditing ? "Chỉnh sửa Thể loại" : "Thêm Thể loại"}
             </h2>
-            <p className="mt-1 text-sm font-medium text-slate-500">
-              Cập nhật thông tin phân loại nội dung hiển thị trong hệ thống.
-            </p>
           </div>
           <button
             type="button"
@@ -302,11 +299,8 @@ export function CategoryManagement() {
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-slate-950 backoffice-dark:text-white">
-            Quản lý Thể loại
+            Quản Lý Thể Loại
           </h1>
-          <p className="mt-2 text-sm font-medium text-slate-500 backoffice-dark:text-white/55">
-            Theo dõi, tạo mới và điều chỉnh các nhóm thể loại nội dung.
-          </p>
         </div>
 
         <button
@@ -380,9 +374,6 @@ export function CategoryManagement() {
                       <div>
                         <p className="font-bold text-slate-950">
                           {category.name}
-                        </p>
-                        <p className="mt-0.5 text-xs text-slate-400">
-                          ID: {category.id}
                         </p>
                       </div>
                     </td>
