@@ -6,14 +6,14 @@ import {
   Film,
   BarChart2,
   BadgeDollarSign,
+  ChevronRight,
   CreditCard,
   DollarSign,
   Search,
   User,
+  IdCard,
   LogOut,
   Tag,
-  Zap,
-  Megaphone,
   ReceiptText,
   Rocket,
   Home,
@@ -35,6 +35,15 @@ interface CreatorLayoutProps {
   onStartMonetization?: () => void;
 }
 
+type CreatorNavIcon = typeof LayoutDashboard;
+
+type CreatorNavItem = {
+  label: string;
+  view: string;
+  icon: CreatorNavIcon;
+  aliases?: string[];
+};
+
 export function CreatorLayout({
   children,
   activeView,
@@ -51,23 +60,44 @@ export function CreatorLayout({
   const user = useAuthStore((state) => state.user);
   const profileUser = isFullProfile(user) ? user : null;
   const displayName = profileUser?.username || user?.accountId || "Creator";
+  const [isMonetizationMenuOpen, setIsMonetizationMenuOpen] =
+    React.useState(true);
 
-  const navItems = [
+  const navItems: CreatorNavItem[] = [
     { label: "Tổng quan", view: "dashboard", icon: LayoutDashboard },
-    { label: "Tác phẩm của tôi", view: "series", icon: Film },
+    {
+      label: "Tác phẩm của tôi",
+      view: "series",
+      icon: Film,
+      aliases: ["create"],
+    },
     { label: "Thống kê", view: "analytics", icon: BarChart2 },
-    { label: "Doanh thu", view: "revenue", icon: DollarSign },
-    { label: "Quyết toán", view: "settlements", icon: ReceiptText },
-    { label: "Kiếm tiền", view: "monetization", icon: BadgeDollarSign },
+    { label: "Hồ sơ", view: "profile", icon: IdCard },
     {
       label: "Tài khoản thanh toán",
       view: "payment-profiles",
       icon: CreditCard,
     },
-    { label: "Quản lý Combo", view: "combos", icon: Tag },
-    { label: "Chiến dịch", view: "campaign", icon: Rocket },
+    {
+      label: "Chiến dịch",
+      view: "campaign",
+      icon: Rocket,
+      aliases: ["campaigns"],
+    },
     { label: "Vi phạm & Khiếu nại", view: "violations", icon: ShieldAlert },
   ];
+  const monetizationNavItems: CreatorNavItem[] = [
+    { label: "Bật kiếm tiền", view: "monetization", icon: BadgeDollarSign },
+    { label: "Doanh thu", view: "revenue", icon: DollarSign },
+    { label: "Quyết toán", view: "settlements", icon: ReceiptText },
+    { label: "Quản lý Combo", view: "combos", icon: Tag },
+  ];
+  const isMonetizationGroupActive = monetizationNavItems.some(
+    (item) =>
+      activeView === item.view || item.aliases?.includes(activeView ?? ""),
+  );
+  const shouldShowMonetizationChildren =
+    isMonetizationMenuOpen || isMonetizationGroupActive;
 
   const handleLogout = async () => {
     await logoutAction();
@@ -75,6 +105,67 @@ export function CreatorLayout({
     router.push("/login");
     router.refresh();
   };
+
+  function handleNavItemClick(item: CreatorNavItem) {
+    const isLocked = lockedViews.includes(item.view);
+
+    if (isLocked) {
+      setLockedNavItem({
+        label: item.label,
+        view: item.view,
+      });
+      return;
+    }
+
+    if (item.view && onNavigate) {
+      onNavigate(item.view);
+    }
+  }
+
+  function renderNavButton(item: CreatorNavItem, isNested = false) {
+    const isLocked = lockedViews.includes(item.view);
+    const isActive =
+      !isLocked &&
+      (activeView === item.view || item.aliases?.includes(activeView ?? ""));
+
+    return (
+      <button
+        key={item.label}
+        type="button"
+        aria-disabled={isLocked}
+        onClick={() => handleNavItemClick(item)}
+        className={`group flex w-full items-center gap-3 rounded-xl text-left transition-colors ${
+          isNested ? "px-3 py-2.5 pl-11" : "px-4 py-3"
+        } ${
+          isLocked
+            ? "cursor-not-allowed border border-white/5 bg-white/[0.025] text-creator-muted/45"
+            : isActive
+            ? "border border-creator-gold/20 bg-creator-gold/15 text-creator-gold shadow-[0_10px_30px_rgba(226,177,60,0.08)]"
+            : "text-creator-muted hover:bg-white/[0.055] hover:text-white"
+        }`}
+      >
+        <item.icon
+          size={isNested ? 16 : 18}
+          className={
+            isLocked
+              ? "text-creator-muted/45"
+              : isActive
+              ? "text-creator-gold"
+              : "text-creator-muted transition-colors group-hover:text-creator-gold"
+          }
+        />
+        <span className="min-w-0 flex-1 text-sm font-semibold">
+          {item.label}
+        </span>
+        {isLocked && (
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-creator-gold/20 bg-creator-gold/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-creator-gold/80">
+            <Lock className="h-3 w-3" />
+            Khóa
+          </span>
+        )}
+      </button>
+    );
+  }
 
   return (
     <div className="creator-studio-shell flex h-screen overflow-hidden font-sans text-creator-text">
@@ -88,63 +179,57 @@ export function CreatorLayout({
 
         <div className="creator-soft-scrollbar flex-1 overflow-y-auto p-4 pr-3">
           <div className="space-y-1">
-            {navItems.map((item) => {
-              // Basic active state logic
-              const isLocked = lockedViews.includes(item.view);
-              const isActive =
-                !isLocked &&
-                (activeView === item.view ||
-                  (item.view === "series" && activeView === "create") ||
-                  (item.view === "campaign" && activeView === "campaigns"));
+            {navItems.slice(0, 4).map((item) => renderNavButton(item))}
 
-              return (
-                <button
-                  key={item.label}
-                  type="button"
-                  aria-disabled={isLocked}
-                  onClick={() => {
-                    if (isLocked) {
-                      setLockedNavItem({
-                        label: item.label,
-                        view: item.view,
-                      });
-                      return;
-                    }
-
-                    if (item.view && onNavigate) {
-                      onNavigate(item.view);
-                    }
-                  }}
-                  className={`group flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left transition-colors ${
-                    isLocked
-                      ? "cursor-not-allowed border border-white/5 bg-white/[0.025] text-creator-muted/45"
-                      : isActive
-                      ? "border border-creator-gold/20 bg-creator-gold/15 text-creator-gold shadow-[0_10px_30px_rgba(226,177,60,0.08)]"
-                      : "text-creator-muted hover:bg-white/[0.055] hover:text-white"
+            <div>
+              <button
+                type="button"
+                aria-expanded={shouldShowMonetizationChildren}
+                onClick={() =>
+                  setIsMonetizationMenuOpen((current) => !current)
+                }
+                className={`group flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left transition-colors ${
+                  isMonetizationGroupActive
+                    ? "border border-creator-gold/20 bg-creator-gold/15 text-creator-gold shadow-[0_10px_30px_rgba(226,177,60,0.08)]"
+                    : "text-creator-muted hover:bg-white/[0.055] hover:text-white"
+                }`}
+              >
+                <BadgeDollarSign
+                  size={18}
+                  className={
+                    isMonetizationGroupActive
+                      ? "text-creator-gold"
+                      : "text-creator-muted transition-colors group-hover:text-creator-gold"
+                  }
+                />
+                <span className="min-w-0 flex-1 text-sm font-semibold">
+                  Kiếm tiền
+                </span>
+                <ChevronRight
+                  className={`h-4 w-4 shrink-0 transition-transform duration-300 ${
+                    shouldShowMonetizationChildren ? "rotate-90" : ""
                   }`}
-                >
-                  <item.icon
-                    size={18}
-                    className={
-                      isLocked
-                        ? "text-creator-muted/45"
-                        : isActive
-                        ? "text-creator-gold"
-                        : "text-creator-muted transition-colors group-hover:text-creator-gold"
-                    }
-                  />
-                  <span className="min-w-0 flex-1 text-sm font-semibold">
-                    {item.label}
-                  </span>
-                  {isLocked && (
-                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-creator-gold/20 bg-creator-gold/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-creator-gold/80">
-                      <Lock className="h-3 w-3" />
-                      Khóa
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+                />
+              </button>
+
+              <div
+                className={`grid transition-all duration-300 ease-in-out ${
+                  shouldShowMonetizationChildren
+                    ? "grid-rows-[1fr] opacity-100"
+                    : "grid-rows-[0fr] opacity-0"
+                }`}
+              >
+                <div className="overflow-hidden">
+                  <div className="mt-1 space-y-1">
+                    {monetizationNavItems.map((item) =>
+                      renderNavButton(item, true),
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {navItems.slice(4).map((item) => renderNavButton(item))}
           </div>
         </div>
 

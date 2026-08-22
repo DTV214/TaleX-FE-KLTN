@@ -11,6 +11,7 @@ export type DashboardView =
   | "comic"
   | "video"
   | "combos"
+  | "profile"
   | "monetization"
   | "payment-profiles"
   | "violations"

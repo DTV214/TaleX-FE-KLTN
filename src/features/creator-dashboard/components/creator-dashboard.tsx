@@ -127,6 +127,7 @@ import {
   getCreatorVerificationStatus,
 } from "@/features/creator-dashboard/api/creator-monetization-api";
 import { CreatorPaymentProfilesView } from "@/features/creator-dashboard/components/views/creator-payment-profiles-view";
+import { CreatorProfileView } from "@/features/creator-dashboard/components/views/creator-profile-view";
 import { CreatorCampaignPurchaseView } from "@/features/creator-dashboard/components/views/creator-campaign-purchase-view";
 import { CreatorCampaignsView } from "@/features/creator-dashboard/components/views/creator-campaigns-view";
 import { CreatorViolationsView } from "@/features/moderation-reports/components/creator-violations-view";
@@ -160,6 +161,7 @@ const dashboardViews: DashboardView[] = [
   "comic",
   "video",
   "combos",
+  "profile",
   "monetization",
   "payment-profiles",
   "violations",
@@ -318,6 +320,10 @@ const viewMeta: Record<
   combos: {
     title: "Quản lý Combo",
     description: "Gom nhiều tập thành một combo với giá ưu đãi riêng.",
+  },
+  profile: {
+    title: "Hồ sơ",
+    description: "Quản lý thông tin định danh và hồ sơ thuế của Creator.",
   },
   monetization: {
     title: "Kiếm tiền",
@@ -2249,6 +2255,8 @@ function CreatorDashboardContent() {
               <CreatorAnalyticsLogsView />
             ) : activeView === "combos" ? (
               <ComboManagementView />
+            ) : activeView === "profile" ? (
+              <CreatorProfileView />
             ) : activeView === "monetization" ? (
               <CreatorMonetizationView
                 onBack={() =>
