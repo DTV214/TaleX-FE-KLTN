@@ -206,16 +206,9 @@ export default function StaffSeriesManagementPage() {
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
       <div>
-        <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#10B981]">
-          Staff Workspace
-        </p>
         <h1 className="mt-2 text-3xl font-bold tracking-tight text-gray-900">
-          Danh sách Series (Quản lý Tác phẩm)
+          Quản Lý Series
         </h1>
-        <p className="mt-2 max-w-3xl text-sm font-medium leading-6 text-gray-500">
-          Theo dõi toàn bộ phim bộ và truyện tranh trên hệ thống, xử lý ép
-          ẩn/mở ẩn khi có vi phạm.
-        </p>
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
@@ -252,22 +245,20 @@ export default function StaffSeriesManagementPage() {
               <button
                 type="button"
                 onClick={() => setFilterType("ALL")}
-                className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
-                  filterType === "ALL"
-                    ? "bg-white text-[#10B981] shadow-sm"
-                    : "text-gray-500 hover:text-gray-900"
-                }`}
+                className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${filterType === "ALL"
+                  ? "bg-white text-[#10B981] shadow-sm"
+                  : "text-gray-500 hover:text-gray-900"
+                  }`}
               >
                 Tất cả
               </button>
               <button
                 type="button"
                 onClick={() => setFilterType("VIDEO")}
-                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
-                  filterType === "VIDEO"
-                    ? "bg-white text-[#10B981] shadow-sm"
-                    : "text-gray-500 hover:text-gray-900"
-                }`}
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${filterType === "VIDEO"
+                  ? "bg-white text-[#10B981] shadow-sm"
+                  : "text-gray-500 hover:text-gray-900"
+                  }`}
               >
                 <Film className="h-3.5 w-3.5" />
                 Phim Video
@@ -275,11 +266,10 @@ export default function StaffSeriesManagementPage() {
               <button
                 type="button"
                 onClick={() => setFilterType("COMIC")}
-                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
-                  filterType === "COMIC"
-                    ? "bg-white text-[#10B981] shadow-sm"
-                    : "text-gray-500 hover:text-gray-900"
-                }`}
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${filterType === "COMIC"
+                  ? "bg-white text-[#10B981] shadow-sm"
+                  : "text-gray-500 hover:text-gray-900"
+                  }`}
               >
                 <BookOpen className="h-3.5 w-3.5" />
                 Truyện Comic

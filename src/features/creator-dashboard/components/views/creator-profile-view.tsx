@@ -149,8 +149,8 @@ function getValidationMessage(formState: ProfileFormState) {
     return "Vui lòng chọn ngày hết hạn giấy tờ.";
   }
 
-  if (!/^\d{10}(\d{3})?$/.test(payload.taxId)) {
-    return "Mã số thuế cần gồm 10 hoặc 13 chữ số.";
+  if (!/^\d{10}(\d{2})?$/.test(payload.taxId)) {
+    return "Mã số thuế cần gồm 10 hoặc 12 chữ số.";
   }
 
   return "";
@@ -387,13 +387,9 @@ export function CreatorProfileView() {
         <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-creator-gold/70 to-transparent" />
         <div className="relative z-10 flex flex-col gap-7 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl">
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-creator-gold/25 bg-creator-gold/10 px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-creator-gold">
-              <ShieldCheck className="h-3.5 w-3.5" />
-              Creator Identity
-            </div>
             <div className="flex flex-wrap items-center gap-3">
               <h1 className="font-heading text-3xl font-black tracking-tight text-white sm:text-4xl">
-                Hồ sơ
+                Hồ Sơ
               </h1>
               <span
                 className={cn(
@@ -404,11 +400,6 @@ export function CreatorProfileView() {
                 {statusMeta.label}
               </span>
             </div>
-            <p className="mt-4 max-w-2xl text-sm font-semibold leading-6 text-white/58">
-              Quản lý thông tin định danh và mã số thuế của Creator Studio.
-              Những thông tin này được dùng cho quy trình xác thực và đối soát
-              doanh thu.
-            </p>
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row">
@@ -442,29 +433,6 @@ export function CreatorProfileView() {
           </div>
         </div>
       </section>
-
-      <div className="grid gap-4 lg:grid-cols-4">
-        <InfoPill
-          icon={UserRound}
-          label="Tài khoản"
-          value={profile?.accountName ?? "-"}
-        />
-        <InfoPill
-          icon={BadgeCheck}
-          label="Creator ID"
-          value={profile?.creatorId ?? "-"}
-        />
-        <InfoPill
-          icon={IdCard}
-          label="Hồ sơ ID"
-          value={profile?.creatorIdentityId ?? "-"}
-        />
-        <InfoPill
-          icon={CalendarDays}
-          label="Cập nhật"
-          value={formatDateTime(profile?.updatedAt)}
-        />
-      </div>
 
       <section className="creator-shine-card rounded-[2rem] border border-white/10 bg-white/[0.04] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.28)] backdrop-blur-xl md:p-6">
         <div className="mb-6 flex flex-col gap-2 border-b border-white/10 pb-5">
@@ -550,24 +518,6 @@ export function CreatorProfileView() {
             Hồ sơ đang đồng bộ với dữ liệu mới nhất.
           </div>
         )}
-      </section>
-
-      <section className="grid gap-4 lg:grid-cols-3">
-        <InfoPill
-          icon={FileText}
-          label="Mã số thuế"
-          value={profile?.taxId ?? "Chưa cập nhật"}
-        />
-        <InfoPill
-          icon={MapPin}
-          label="Địa chỉ"
-          value={profile?.address ?? "Chưa cập nhật"}
-        />
-        <InfoPill
-          icon={CalendarDays}
-          label="Ngày tạo"
-          value={formatDateTime(profile?.createdAt)}
-        />
       </section>
     </div>
   );

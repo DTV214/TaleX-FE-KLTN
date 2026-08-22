@@ -217,9 +217,8 @@ function TransactionRow({ transaction }: { transaction: RevenueTransaction }) {
       </td>
       <td className="px-5 py-4">
         <span
-          className={`inline-flex rounded-full border px-3 py-1 text-xs font-black ${
-            transactionTypeClasses[transaction.revenueTransactionType]
-          }`}
+          className={`inline-flex rounded-full border px-3 py-1 text-xs font-black ${transactionTypeClasses[transaction.revenueTransactionType]
+            }`}
         >
           {transactionTypeLabels[transaction.revenueTransactionType] ??
             transaction.revenueTransactionType}
@@ -334,16 +333,9 @@ export function CreatorRevenueTransactionsView() {
       <section className="overflow-hidden rounded-[1.75rem] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.08),rgba(255,255,255,0.025))] p-6 shadow-[0_28px_90px_rgba(0,0,0,0.35)]">
         <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-creator-gold/25 bg-creator-gold/10 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-creator-gold">
-              <WalletCards className="h-4 w-4" />
-              Revenue transactions
-            </div>
             <h1 className="mt-4 text-3xl font-black tracking-tight text-white md:text-5xl">
-              Doanh thu
+              Doanh Thu
             </h1>
-            <p className="mt-3 max-w-3xl text-sm font-semibold leading-relaxed text-creator-muted md:text-base">
-              Theo dõi doanh thu phát sinh, biểu đồ tăng trưởng và từng biến động lợi nhuận của tài khoản creator.
-            </p>
           </div>
 
           <button
@@ -377,11 +369,10 @@ export function CreatorRevenueTransactionsView() {
                   key={option}
                   type="button"
                   onClick={() => handlePreset(option)}
-                  className={`inline-flex h-10 cursor-pointer items-center justify-center rounded-xl px-4 text-sm font-black transition ${
-                    preset === option
-                      ? "bg-creator-gold text-black shadow-[0_12px_36px_rgba(226,177,60,0.18)]"
-                      : "border border-white/10 bg-white/[0.04] text-creator-muted hover:border-creator-gold/35 hover:text-white"
-                  }`}
+                  className={`inline-flex h-10 cursor-pointer items-center justify-center rounded-xl px-4 text-sm font-black transition ${preset === option
+                    ? "bg-creator-gold text-black shadow-[0_12px_36px_rgba(226,177,60,0.18)]"
+                    : "border border-white/10 bg-white/[0.04] text-creator-muted hover:border-creator-gold/35 hover:text-white"
+                    }`}
                 >
                   {presetLabels[option]}
                 </button>
@@ -477,9 +468,6 @@ export function CreatorRevenueTransactionsView() {
                   <TrendingUp className="h-5 w-5 text-creator-gold" />
                   <h2 className="text-xl font-black text-white">Biểu đồ doanh thu</h2>
                 </div>
-                <p className="mt-2 text-sm font-semibold text-creator-muted">
-                  Dữ liệu được gom nhóm tự động theo khoảng thời gian BE trả về.
-                </p>
               </div>
               {timeSeriesQuery.data?.[0]?.groupUnit && (
                 <span className="inline-flex h-9 items-center gap-2 rounded-full border border-white/10 bg-black/30 px-3 text-xs font-black uppercase tracking-wide text-creator-muted">
@@ -583,9 +571,6 @@ export function CreatorRevenueTransactionsView() {
               <ListOrdered className="h-5 w-5 text-creator-gold" />
               <h2 className="text-xl font-black text-white">Biến động lợi nhuận</h2>
             </div>
-            <p className="mt-2 text-sm font-semibold text-creator-muted">
-              Danh sách giao dịch được BE phân trang và sắp xếp mới nhất trước.
-            </p>
           </div>
 
           <button

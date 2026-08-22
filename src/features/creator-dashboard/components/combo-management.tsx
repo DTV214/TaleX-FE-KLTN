@@ -81,9 +81,6 @@ export function ComboManagementView() {
             </div>
             <h2 className="text-2xl sm:text-3xl font-bold text-white">Quản lý Gói Combo</h2>
           </div>
-          <p className="text-creator-muted text-xs sm:text-sm mt-1.5">
-            Gộp nhiều tập thành một gói combo với mức giá ưu đãi để kích thích mua hàng.
-          </p>
         </div>
         <button
           onClick={() => setView("create")}
@@ -143,20 +140,19 @@ export function ComboManagementView() {
                     <div className="flex items-center gap-2 flex-wrap">
                       {/* Status Badge */}
                       <span
-                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
-                          combo.status === "PUBLISHED"
+                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${combo.status === "PUBLISHED"
                             ? "border border-emerald-500/30 bg-emerald-950/80 text-emerald-400"
                             : combo.status === "DRAFT"
-                            ? "border border-zinc-500/30 bg-zinc-900/80 text-zinc-300"
-                            : "border border-creator-gold/30 bg-creator-gold/10 text-creator-gold"
-                        }`}
+                              ? "border border-zinc-500/30 bg-zinc-900/80 text-zinc-300"
+                              : "border border-creator-gold/30 bg-creator-gold/10 text-creator-gold"
+                          }`}
                       >
                         <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
                         {combo.status === "PUBLISHED"
                           ? "Đang bán"
                           : combo.status === "DRAFT"
-                          ? "Bản nháp"
-                          : combo.status || "PUBLISHED"}
+                            ? "Bản nháp"
+                            : combo.status || "PUBLISHED"}
                       </span>
 
                       {/* Episode Count Badge */}
@@ -241,9 +237,8 @@ export function ComboManagementView() {
                           Danh sách {episodeCount} tập trong combo
                         </span>
                         <ChevronRight
-                          className={`h-3.5 w-3.5 transition-transform duration-200 ${
-                            isExpanded ? "rotate-90 text-creator-gold" : ""
-                          }`}
+                          className={`h-3.5 w-3.5 transition-transform duration-200 ${isExpanded ? "rotate-90 text-creator-gold" : ""
+                            }`}
                         />
                       </button>
 
@@ -319,7 +314,7 @@ function ComboForm({
   const [title, setTitle] = useState(combo?.title || "");
   const [description, setDescription] = useState(combo?.description || "");
   const [priceVnd, setPriceVnd] = useState(combo?.priceVnd?.toString() || "0");
-  const [selectedEpisodes, setSelectedEpisodes] = useState<{id: string, title: string, price: number, seriesId?: string}[]>(
+  const [selectedEpisodes, setSelectedEpisodes] = useState<{ id: string, title: string, price: number, seriesId?: string }[]>(
     combo?.episodes?.map((e) => ({ id: e.episodeId, title: e.title, price: e.priceVnd, seriesId: e.seriesId })) || []
   );
 
@@ -370,7 +365,7 @@ function ComboForm({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const comboPriceNum = parseInt(priceVnd) || 0;
-    
+
     if (comboPriceNum > originalTotalPrice) {
       toast.error("Lỗi giá tiền", {
         description: "Tổng tiền của combo phải bé hơn hoặc bằng với tổng các tập có trong đó"
@@ -449,7 +444,7 @@ function ComboForm({
               <Film className="h-4 w-4 text-creator-gold" />
               Chọn các tập đưa vào Combo
             </h3>
-            
+
             <div className="grid gap-4 md:grid-cols-3 mb-4">
               <div>
                 <label className="block text-xs font-bold text-creator-muted uppercase tracking-wider mb-2">Series</label>
@@ -550,7 +545,7 @@ function ComboForm({
               <span className="text-creator-muted font-bold">Tổng giá gốc các tập:</span>
               <span className="line-through text-creator-muted text-base font-semibold">{originalTotalPrice.toLocaleString()} ₫</span>
             </div>
-            
+
             <div className="flex justify-between items-center pt-3 border-t border-creator-border">
               <span className="text-white font-black">Giá Combo cuối cùng (VNĐ):</span>
               <input

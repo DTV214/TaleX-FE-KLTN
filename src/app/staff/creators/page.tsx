@@ -176,16 +176,9 @@ export default function StaffCreatorsPage() {
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
       <div>
-        <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#10B981]">
-          Staff Workspace
-        </p>
         <h1 className="mt-2 text-3xl font-bold tracking-tight text-gray-900">
-          Quản lý Người sáng tạo
+          Quản Lý Người Sáng Tạo
         </h1>
-        <p className="mt-2 max-w-3xl text-sm font-medium leading-6 text-gray-500">
-          Theo dõi creator trên hệ thống và kiểm tra hồ sơ vi phạm bản quyền,
-          kiểm duyệt nội dung trước khi đưa ra quyết định quản trị.
-        </p>
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">

@@ -40,9 +40,9 @@ const tabs: Array<{
   label: string;
   value: CreatorRevenueTab;
 }> = [
-  { icon: ReceiptText, label: "Quyết toán", value: "settlements" },
-  { icon: FileText, label: "Thuế", value: "tax" },
-];
+    { icon: ReceiptText, label: "Quyết toán", value: "settlements" },
+    { icon: FileText, label: "Thuế", value: "tax" },
+  ];
 
 function CreatorSettlementRow({
   onOpen,
@@ -117,16 +117,9 @@ export function CreatorSettlementsView() {
       <section className="overflow-hidden rounded-[1.75rem] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.08),rgba(255,255,255,0.025))] p-6 shadow-[0_28px_90px_rgba(0,0,0,0.35)]">
         <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-creator-gold/25 bg-creator-gold/10 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-creator-gold">
-              <ReceiptText className="h-4 w-4" />
-              Creator settlement
-            </div>
             <h1 className="mt-4 text-3xl font-black tracking-tight text-white md:text-5xl">
               Quyết toán
             </h1>
-            <p className="mt-3 max-w-3xl text-sm font-semibold leading-relaxed text-creator-muted md:text-base">
-              Theo dõi các kỳ chốt sổ doanh thu theo tháng, khoản khấu trừ, thuế PIT và trạng thái chi trả.
-            </p>
           </div>
 
           <button
@@ -151,11 +144,10 @@ export function CreatorSettlementsView() {
               key={tab.value}
               type="button"
               onClick={() => setActiveTab(tab.value)}
-              className={`inline-flex h-11 items-center gap-2 rounded-xl px-4 text-sm font-black transition ${
-                active
-                  ? "bg-creator-gold text-black shadow-[0_12px_40px_rgba(226,177,60,0.18)]"
-                  : "text-creator-muted hover:bg-white/[0.05] hover:text-white"
-              }`}
+              className={`inline-flex h-11 items-center gap-2 rounded-xl px-4 text-sm font-black transition ${active
+                ? "bg-creator-gold text-black shadow-[0_12px_40px_rgba(226,177,60,0.18)]"
+                : "text-creator-muted hover:bg-white/[0.05] hover:text-white"
+                }`}
             >
               <Icon className="h-4 w-4" />
               {tab.label}
@@ -215,7 +207,7 @@ export function CreatorSettlementsView() {
               >
                 <option value="settlementMonth">Theo tháng</option>
                 <option value="createdAt">Theo ngày tạo</option>
-                <option value="grossAmount">Theo gross</option>
+                <option value="grossAmount">Theo doanh thu</option>
                 <option value="netPayoutAmount">Theo net payout</option>
                 <option value="status">Theo trạng thái</option>
               </select>
@@ -262,7 +254,7 @@ export function CreatorSettlementsView() {
                   <thead className="border-b border-white/10 bg-white/[0.035] text-xs font-black uppercase tracking-wide text-creator-muted">
                     <tr>
                       <th className="px-5 py-4">Kỳ</th>
-                      <th className="px-5 py-4 text-right">Gross</th>
+                      <th className="px-5 py-4 text-right">Doanh Thu</th>
                       <th className="px-5 py-4 text-right">Phạt</th>
                       <th className="px-5 py-4 text-right">Thuế</th>
                       <th className="px-5 py-4 text-right">Net payout</th>

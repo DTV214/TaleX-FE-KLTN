@@ -164,14 +164,7 @@ export function CreatorViolationsView() {
       <section className="rounded-3xl border border-white/10 bg-white/[0.035] p-6 shadow-[0_22px_70px_rgba(0,0,0,0.22)]">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-creator-gold/20 bg-creator-gold/10 px-3 py-1 text-xs font-black text-creator-gold">
-              <ShieldAlert className="h-3.5 w-3.5" />
-              Vi phạm & Khiếu nại
-            </div>
-            <h1 className="text-2xl font-black text-white">Lịch sử hình phạt</h1>
-            <p className="mt-1 max-w-2xl text-sm font-semibold leading-relaxed text-creator-muted">
-              Theo dõi penalty đang hiệu lực, lý do xử lý và gửi khiếu nại nếu bạn cần admin xem lại.
-            </p>
+            <h1 className="text-2xl font-black text-white">Vi Phạm & Khiếu Nại</h1>
           </div>
         </div>
       </section>
@@ -179,7 +172,7 @@ export function CreatorViolationsView() {
       <section className="rounded-3xl border border-white/10 bg-white/[0.035] p-5">
         <h2 className="mb-4 flex items-center gap-2 text-lg font-black text-white">
           <AlertTriangle className="h-5 w-5 text-creator-gold" />
-          Hình phạt của tôi
+          Vi Phạm
         </h2>
         {penaltiesQuery.isLoading ? (
           <div className="py-12 text-center text-sm font-semibold text-creator-muted">
@@ -243,7 +236,7 @@ export function CreatorViolationsView() {
       <section className="rounded-3xl border border-white/10 bg-white/[0.035] p-5">
         <h2 className="mb-4 flex items-center gap-2 text-lg font-black text-white">
           <FileQuestion className="h-5 w-5 text-creator-gold" />
-          Khiếu nại đã gửi
+          Khiếu Nại Đã Gửi
         </h2>
         {appealsQuery.isLoading ? (
           <div className="py-10 text-center text-sm font-semibold text-creator-muted">
@@ -263,9 +256,9 @@ export function CreatorViolationsView() {
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
-                    <p className="font-black text-white">Appeal {appeal.appealId}</p>
+                    <p className="font-black text-white">Khiếu Nại: {appeal.appealId}</p>
                     <p className="mt-1 text-xs font-semibold text-creator-muted">
-                      Penalty {appeal.penaltyId} · {formatDateTime(appeal.createdAt)}
+                      Vi Phạm: {appeal.penaltyId} · {formatDateTime(appeal.createdAt)}
                     </p>
                   </div>
                   <span className={`rounded-full border px-2.5 py-1 text-[11px] font-black ${statusTone(appeal.status)}`}>

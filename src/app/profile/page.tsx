@@ -24,9 +24,6 @@ export default function ProfilePage() {
           <h1 className="text-2xl font-semibold tracking-normal text-white/90 md:text-3xl">
             Hồ sơ cá nhân
           </h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
-            Quản lý thông tin tài khoản, bảo mật và số dư coin trong một không gian gọn gàng hơn.
-          </p>
         </div>
 
         <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[340px_minmax(0,1fr)]">

@@ -573,12 +573,8 @@ export function CreatorAnalyticsLogsView({
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-white/10 bg-black/40 p-4">
         <div>
           <h2 className="creator-spotlight-text text-xl font-black tracking-wide text-white flex items-center gap-2">
-            <Activity className="h-5 w-5 text-[#D4AF37]" />
-            Thống kê Hoạt động & Tương tác (Creator Logs)
+            Thống Kê Hoạt Động & Tương Tác
           </h2>
-          <p className="mt-0.5 text-xs text-zinc-400">
-            Dữ liệu phân tích theo từng mốc thời gian thực từ hệ thống TaleX
-          </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">

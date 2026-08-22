@@ -6,6 +6,7 @@ import {
   ArrowLeft,
   Building2,
   CheckCircle2,
+  ChevronDown,
   ReceiptText,
   ScrollText,
   ShieldCheck,
@@ -20,6 +21,7 @@ import {
   deletePaymentProfile,
   getActiveCreatorMonetizationTerm,
   getCreatorVerificationStatus,
+  getPaymentBankBins,
   submitCreatorVerification,
   updateCreatorTaxIdentity,
   updatePaymentProfile,
@@ -149,8 +151,7 @@ function toPaymentProfileRequest(
 }
 
 const ERROR_MESSAGE = "Đã có lỗi xảy ra. Vui lòng thử lại sau.";
-const TAX_ID_PATTERN = /^\d{10}(\d{3})?$/;
-const BANK_CODE_PATTERN = /^[A-Z0-9]{2,20}$/;
+const TAX_ID_PATTERN = /^\d{10}(\d{2})?$/;
 const ACCOUNT_NUMBER_PATTERN = /^\d{6,20}$/;
 const ACCOUNT_NAME_PATTERN = /^[A-ZÀ-Ỹ\s'.-]{3,80}$/i;
 
@@ -171,8 +172,8 @@ function validateTaxId(taxId: string) {
 function validatePaymentProfile(formData: PaymentFormData) {
   const payload = toPaymentProfileRequest(formData);
 
-  if (!BANK_CODE_PATTERN.test(payload.bankCode.toUpperCase())) {
-    return "Mã ngân hàng cần gồm 2-20 ký tự chữ hoặc số. Ví dụ: VCB, TCB, MB.";
+  if (!payload.bankCode) {
+    return "Vui lòng chọn ngân hàng nhận thanh toán.";
   }
 
   if (!ACCOUNT_NUMBER_PATTERN.test(payload.accountNumber)) {
@@ -205,6 +206,19 @@ export function CreatorMonetizationView({ onBack }: CreatorMonetizationViewProps
     queryFn: getCreatorVerificationStatus,
     retry: false,
   });
+
+  const bankBinsQuery = useQuery({
+    queryKey: creatorMonetizationKeys.bankBins(),
+    queryFn: getPaymentBankBins,
+    staleTime: 30 * 60 * 1000,
+  });
+
+  const bankCodes = useMemo(() => {
+    const currentBankCodes = [step3FormData.bankCode].filter(Boolean);
+    return Array.from(
+      new Set([...(bankBinsQuery.data ?? []), ...currentBankCodes].filter(Boolean)),
+    ).sort((a, b) => a.localeCompare(b));
+  }, [bankBinsQuery.data, step3FormData.bankCode]);
 
   const verificationStatus = verificationStatusQuery.data;
   const isCreatorVerified = Boolean(verificationStatus?.isCreatorVerified);
@@ -516,13 +530,9 @@ export function CreatorMonetizationView({ onBack }: CreatorMonetizationViewProps
               <div className="relative z-10 flex flex-col gap-7">
                 <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
                   <div className="max-w-3xl">
-                    <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-primary">
-                      <Sparkles className="h-3.5 w-3.5" />
-                      TaleX Partner Program
-                    </div>
                     <div className="flex flex-wrap items-center gap-3">
                       <h1 className="font-heading text-3xl font-black tracking-tight text-white sm:text-5xl">
-                        Kiếm tiền trên TaleX
+                        Kiếm Tiền Trên TaleX
                       </h1>
                       {isStatusRefreshing ? (
                         <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-semibold text-white/55">
@@ -532,8 +542,7 @@ export function CreatorMonetizationView({ onBack }: CreatorMonetizationViewProps
                     </div>
                     <p className="mt-4 max-w-2xl text-sm leading-6 text-white/68 md:text-base">
                       Hoàn thiện hồ sơ đối tác, xác nhận điều khoản và thiết lập
-                      thanh toán để mở khóa doanh thu Creator với trải nghiệm
-                      cao cấp của TaleX.
+                      thanh toán để mở khóa doanh thu.
                     </p>
                   </div>
 
@@ -785,7 +794,7 @@ export function CreatorMonetizationView({ onBack }: CreatorMonetizationViewProps
                   ) : null}
 
                   {paymentStatus === "VERIFIED" ||
-                  paymentStatus === "REJECTED" ? (
+                    paymentStatus === "REJECTED" ? (
                     <Button
                       type="button"
                       variant="outline"
@@ -812,9 +821,9 @@ export function CreatorMonetizationView({ onBack }: CreatorMonetizationViewProps
         ) : null}
 
         {!isCheckingStatus &&
-        !verificationStatusQuery.isError &&
-        !shouldShowGateway &&
-        !shouldShowDashboard ? (
+          !verificationStatusQuery.isError &&
+          !shouldShowGateway &&
+          !shouldShowDashboard ? (
           <div className="flex flex-1 items-center justify-center">
             <div className="w-full max-w-3xl rounded-lg border border-primary/25 bg-card p-5 text-sm text-white/75">
               <h2 className="font-heading text-xl font-bold text-white">
@@ -1069,30 +1078,34 @@ export function CreatorMonetizationView({ onBack }: CreatorMonetizationViewProps
 
           <div className="grid gap-4">
             <label className="grid gap-2 rounded-2xl border border-white/10 bg-black/30 p-4 text-sm font-medium text-white/82 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
-              <div className="flex items-center justify-between gap-3">
-                <span className="font-bold text-white">Ngân hàng</span>
-                <span className="text-xs font-bold text-white/40">
-                  {step3FormData.bankCode.trim().length}/20
-                </span>
+              <span className="font-bold text-white">Ngân hàng</span>
+              <div className="relative">
+                <select
+                  value={step3FormData.bankCode}
+                  onChange={(event) =>
+                    updateStep3FormData("bankCode", event.target.value)
+                  }
+                  className="creator-format-select h-12 w-full appearance-none rounded-xl border border-white/12 bg-black/35 px-4 pr-11 text-sm font-bold uppercase text-white outline-none transition focus:border-primary/70 focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-55"
+                  disabled={bankBinsQuery.isLoading || bankBinsQuery.isError}
+                >
+                  <option value="">
+                    {bankBinsQuery.isLoading
+                      ? "Đang tải danh sách ngân hàng..."
+                      : "Chọn ngân hàng"}
+                  </option>
+                  {bankCodes.map((bankCode) => (
+                    <option key={bankCode} value={bankCode}>
+                      {bankCode}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white/45" />
               </div>
-              <input
-                type="text"
-                maxLength={20}
-                autoComplete="organization"
-                value={step3FormData.bankCode}
-                onChange={(event) =>
-                  updateStep3FormData(
-                    "bankCode",
-                    event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""),
-                  )
-                }
-                placeholder="Ví dụ: VCB, TCB, MB"
-                className="h-12 rounded-xl border border-white/12 bg-black/35 px-4 text-sm font-bold uppercase text-white outline-none transition placeholder:normal-case placeholder:text-white/32 focus:border-primary/70 focus:ring-2 focus:ring-primary/20"
-              />
-              <p className="text-xs leading-5 text-white/48">
-                Nhập mã ngân hàng ngắn để hệ thống đối soát nhanh hơn. Ví dụ:
-                VCB, ACB, TCB, MB.
-              </p>
+              {bankBinsQuery.isError ? (
+                <p className="text-xs font-bold text-red-300">
+                  Không thể tải danh sách ngân hàng. Hãy thử làm mới lại trang.
+                </p>
+              ) : null}
             </label>
 
             <label className="grid gap-2 rounded-2xl border border-white/10 bg-black/30 p-4 text-sm font-medium text-white/82 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
@@ -1168,7 +1181,12 @@ export function CreatorMonetizationView({ onBack }: CreatorMonetizationViewProps
           <div className="flex justify-end">
             <Button
               type="button"
-              disabled={savePaymentProfileMutation.isPending || !canSubmitStep3}
+              disabled={
+                savePaymentProfileMutation.isPending ||
+                !canSubmitStep3 ||
+                bankBinsQuery.isLoading ||
+                bankBinsQuery.isError
+              }
               onClick={handleSubmitStep3PaymentProfile}
               className="h-11 min-w-36 rounded-xl bg-primary px-6 font-black text-black shadow-[0_0_24px_rgba(212,175,55,0.18)] transition hover:bg-[#F0D36B] hover:shadow-[0_0_34px_rgba(212,175,55,0.28)] disabled:opacity-45"
             >

@@ -231,20 +231,13 @@ export default function StaffCreatorVerificationPage() {
   const isPaymentSubmitting = submitPaymentMutation.isPending;
 
   return (
-    <section className="w-full max-w-7xl mx-auto rounded-2xl border border-gray-100 bg-white p-6 text-gray-900 shadow-sm">
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
       <div className="flex flex-col gap-6">
         <div className="flex flex-col gap-4 border-b border-gray-100 pb-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#10B981]">
-              Staff Workspace
-            </p>
             <h1 className="mt-2 text-3xl font-bold tracking-tight text-gray-900">
-              Kiểm duyệt Hồ sơ Creator
+              Kiểm Duyệt Hồ Sơ
             </h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-500 font-medium">
-              Xử lý hồ sơ thuế và tài khoản thanh toán trước khi Creator được
-              bật kiếm tiền trên TaleX.
-            </p>
           </div>
 
           {/* Sub-tab navigation */}
@@ -441,7 +434,7 @@ export default function StaffCreatorVerificationPage() {
           </div>
         </DialogContent>
       </Dialog>
-    </section>
+    </div>
   );
 }
 

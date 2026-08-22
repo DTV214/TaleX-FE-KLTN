@@ -72,7 +72,6 @@ export function CreatorLayout({
       aliases: ["create"],
     },
     { label: "Thống kê", view: "analytics", icon: BarChart2 },
-    { label: "Hồ sơ", view: "profile", icon: IdCard },
     {
       label: "Tài khoản thanh toán",
       view: "payment-profiles",
@@ -88,6 +87,7 @@ export function CreatorLayout({
   ];
   const monetizationNavItems: CreatorNavItem[] = [
     { label: "Bật kiếm tiền", view: "monetization", icon: BadgeDollarSign },
+    { label: "Hồ sơ", view: "profile", icon: IdCard },
     { label: "Doanh thu", view: "revenue", icon: DollarSign },
     { label: "Quyết toán", view: "settlements", icon: ReceiptText },
     { label: "Quản lý Combo", view: "combos", icon: Tag },
@@ -134,15 +134,13 @@ export function CreatorLayout({
         type="button"
         aria-disabled={isLocked}
         onClick={() => handleNavItemClick(item)}
-        className={`group flex w-full items-center gap-3 rounded-xl text-left transition-colors ${
-          isNested ? "px-3 py-2.5 pl-11" : "px-4 py-3"
-        } ${
-          isLocked
+        className={`group flex w-full items-center gap-3 rounded-xl text-left transition-colors ${isNested ? "px-3 py-2.5 pl-11" : "px-4 py-3"
+          } ${isLocked
             ? "cursor-not-allowed border border-white/5 bg-white/[0.025] text-creator-muted/45"
             : isActive
-            ? "border border-creator-gold/20 bg-creator-gold/15 text-creator-gold shadow-[0_10px_30px_rgba(226,177,60,0.08)]"
-            : "text-creator-muted hover:bg-white/[0.055] hover:text-white"
-        }`}
+              ? "border border-creator-gold/20 bg-creator-gold/15 text-creator-gold shadow-[0_10px_30px_rgba(226,177,60,0.08)]"
+              : "text-creator-muted hover:bg-white/[0.055] hover:text-white"
+          }`}
       >
         <item.icon
           size={isNested ? 16 : 18}
@@ -150,8 +148,8 @@ export function CreatorLayout({
             isLocked
               ? "text-creator-muted/45"
               : isActive
-              ? "text-creator-gold"
-              : "text-creator-muted transition-colors group-hover:text-creator-gold"
+                ? "text-creator-gold"
+                : "text-creator-muted transition-colors group-hover:text-creator-gold"
           }
         />
         <span className="min-w-0 flex-1 text-sm font-semibold">
@@ -188,11 +186,10 @@ export function CreatorLayout({
                 onClick={() =>
                   setIsMonetizationMenuOpen((current) => !current)
                 }
-                className={`group flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left transition-colors ${
-                  isMonetizationGroupActive
+                className={`group flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left transition-colors ${isMonetizationGroupActive
                     ? "border border-creator-gold/20 bg-creator-gold/15 text-creator-gold shadow-[0_10px_30px_rgba(226,177,60,0.08)]"
                     : "text-creator-muted hover:bg-white/[0.055] hover:text-white"
-                }`}
+                  }`}
               >
                 <BadgeDollarSign
                   size={18}
@@ -206,18 +203,16 @@ export function CreatorLayout({
                   Kiếm tiền
                 </span>
                 <ChevronRight
-                  className={`h-4 w-4 shrink-0 transition-transform duration-300 ${
-                    shouldShowMonetizationChildren ? "rotate-90" : ""
-                  }`}
+                  className={`h-4 w-4 shrink-0 transition-transform duration-300 ${shouldShowMonetizationChildren ? "rotate-90" : ""
+                    }`}
                 />
               </button>
 
               <div
-                className={`grid transition-all duration-300 ease-in-out ${
-                  shouldShowMonetizationChildren
+                className={`grid transition-all duration-300 ease-in-out ${shouldShowMonetizationChildren
                     ? "grid-rows-[1fr] opacity-100"
                     : "grid-rows-[0fr] opacity-0"
-                }`}
+                  }`}
               >
                 <div className="overflow-hidden">
                   <div className="mt-1 space-y-1">

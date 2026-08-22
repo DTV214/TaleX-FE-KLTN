@@ -140,7 +140,7 @@ export function ModerationTicketsDashboard({ scope = "staff" }: Props) {
   const assignMutation = useAssignTicket();
 
   const tickets = ticketsQuery.data?.content ?? [];
-  const title = scope === "admin" ? "Báo Cáo Vi Phạm" : "Report Tickets";
+  const title = scope === "admin" ? "Báo Cáo Vi Phạm" : "Báo Cáo Vi Phạm";
 
   async function handleAssign(ticket: ModerationTicket) {
     await assignMutation.mutateAsync(ticket.ticketId);
