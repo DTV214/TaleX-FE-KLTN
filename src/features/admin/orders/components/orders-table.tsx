@@ -158,6 +158,7 @@ export function OrdersTable({
                         type="button"
                         variant="outline"
                         size="sm"
+                        className="border-gray-200 bg-white text-gray-700 shadow-sm hover:bg-gray-50 hover:text-gray-900 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-zinc-200 backoffice-dark:hover:bg-white/10"
                         onClick={() => onViewDetail(order)}
                         aria-label="Xem chi tiết"
                       >
