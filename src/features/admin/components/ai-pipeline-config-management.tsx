@@ -145,7 +145,6 @@ export function AiPipelineConfigManagement() {
           iconClass="border-amber-200 bg-amber-50 text-amber-700 backoffice-dark:border-amber-500/30 backoffice-dark:bg-amber-500/10 backoffice-dark:text-amber-400"
           title="Giới hạn xử lý (Kỹ thuật)"
           description="Tham số hiệu năng — mỗi field đã có trần an toàn để tránh làm tràn RAM/quá tải AI-Python. Chỉ đổi khi hiểu rõ ảnh hưởng."
-          warning="Chỉnh sai (đặc biệt Top-K video và Số frame fingerprint tối đa) từng gây lỗi hệ thống thật."
           columns={2}
         >
           <Field
