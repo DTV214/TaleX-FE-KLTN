@@ -1,12 +1,11 @@
 "use client";
 
-import { Ban, CheckCircle2, Eye, Loader2 } from "lucide-react";
+import { Eye, Loader2 } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import type { AdminOrderListItem, OrderStatus } from "../types/orders.types";
 import {
   STATUS_BADGE_CLASS,
   STATUS_LABELS,
-  canInterveneOrder,
   getItemTypeLabel,
 } from "../utils/order-labels";
 
@@ -19,8 +18,6 @@ type OrdersTableProps = {
   isLoading?: boolean;
   onPageChange: (page: number) => void;
   onViewDetail: (order: AdminOrderListItem) => void;
-  onCancel: (order: AdminOrderListItem) => void;
-  onForceComplete: (order: AdminOrderListItem) => void;
 };
 
 function formatCurrency(value: number | null | undefined) {
@@ -65,8 +62,6 @@ export function OrdersTable({
   isLoading = false,
   onPageChange,
   onViewDetail,
-  onCancel,
-  onForceComplete,
 }: OrdersTableProps) {
   const firstItem = totalElements === 0 ? 0 : (page - 1) * pageSize + 1;
   const lastItem = Math.min(page * pageSize, totalElements);
@@ -74,7 +69,7 @@ export function OrdersTable({
   return (
     <section className="relative overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[1200px] text-left text-sm">
+        <table className="w-full min-w-[1100px] text-left text-sm">
           <thead className="border-b border-gray-100 bg-gray-50/80 text-xs font-bold uppercase tracking-wider text-gray-500 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.03] backoffice-dark:text-zinc-400">
             <tr>
               <th className="px-5 py-4">Mã đơn</th>
@@ -82,7 +77,6 @@ export function OrdersTable({
               <th className="px-5 py-4">Loại</th>
               <th className="px-5 py-4">Tổng tiền</th>
               <th className="px-5 py-4">Trạng thái</th>
-              <th className="px-5 py-4">Tiền thừa</th>
               <th className="px-5 py-4">Ngày tạo</th>
               <th className="px-5 py-4 text-right">Hành động</th>
             </tr>
@@ -90,7 +84,7 @@ export function OrdersTable({
           <tbody className="divide-y divide-gray-50 backoffice-dark:divide-white/5">
             {isLoading && (
               <tr>
-                <td colSpan={8} className="px-5 py-12 text-center">
+                <td colSpan={7} className="px-5 py-12 text-center">
                   <span className="inline-flex items-center gap-2 text-sm font-bold text-gray-500 backoffice-dark:text-zinc-400">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     Đang tải đơn hàng...
@@ -102,7 +96,7 @@ export function OrdersTable({
             {!isLoading && orders.length === 0 && (
               <tr>
                 <td
-                  colSpan={8}
+                  colSpan={7}
                   className="px-5 py-12 text-center text-sm font-bold text-gray-500 backoffice-dark:text-zinc-400"
                 >
                   Không có đơn hàng nào khớp bộ lọc.
@@ -137,15 +131,6 @@ export function OrdersTable({
                   <td className="px-5 py-4">
                     <StatusBadge status={order.status} />
                   </td>
-                  <td className="px-5 py-4 text-sm font-bold">
-                    {order.overpaidAmount && order.overpaidAmount > 0 ? (
-                      <span className="text-orange-600 backoffice-dark:text-orange-400">
-                        {formatCurrency(order.overpaidAmount)}
-                      </span>
-                    ) : (
-                      <span className="text-gray-400">-</span>
-                    )}
-                  </td>
                   <td className="px-5 py-4 text-xs font-semibold text-gray-500 backoffice-dark:text-zinc-400">
                     {formatDate(order.createdAt)}
                   </td>
@@ -158,34 +143,12 @@ export function OrdersTable({
                         type="button"
                         variant="outline"
                         size="sm"
+                        className="border-gray-200 bg-white text-gray-700 shadow-sm hover:bg-gray-50 hover:text-gray-900 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-zinc-200 backoffice-dark:hover:bg-white/10"
                         onClick={() => onViewDetail(order)}
                         aria-label="Xem chi tiết"
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
-                      {canInterveneOrder(order.status) && (
-                        <>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="border-emerald-200 text-emerald-700 hover:border-emerald-300 hover:bg-emerald-50"
-                            onClick={() => onForceComplete(order)}
-                          >
-                            <CheckCircle2 className="h-4 w-4" />
-                            Hoàn tất
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => onCancel(order)}
-                          >
-                            <Ban className="h-4 w-4" />
-                            Hủy
-                          </Button>
-                        </>
-                      )}
                     </div>
                   </td>
                 </tr>

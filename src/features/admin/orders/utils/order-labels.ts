@@ -28,7 +28,3 @@ export const ITEM_TYPE_LABELS: Record<string, string> = {
 export function getItemTypeLabel(itemType: string): string {
   return ITEM_TYPE_LABELS[itemType] ?? itemType;
 }
-
-export function canInterveneOrder(status: OrderStatus): boolean {
-  return status === "AWAITING_PAYMENT" || status === "OUT_OF_TIME";
-}

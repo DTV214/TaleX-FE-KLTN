@@ -1,53 +1,32 @@
 "use client";
 
-import axios from "axios";
 import { ChevronDown, Filter, RefreshCw, RotateCcw, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
 import { Button } from "@/shared/ui/button";
-import type { BaseResponse } from "@/shared/api/http-client";
 import type {
-  AdminOrderDetail,
   AdminOrderListItem,
   OrderItemType,
   OrderSearchParams,
   OrderStatus,
 } from "../types/orders.types";
-import {
-  useCancelOrder,
-  useForceCompleteOrder,
-  useOrderDetail,
-  useSearchOrders,
-} from "../hooks/use-orders";
-import type { OrderActionMode } from "./order-action-modal";
-import { OrderActionModal } from "./order-action-modal";
+import { useOrderDetail, useSearchOrders } from "../hooks/use-orders";
 import { OrderDetailModal } from "./order-detail-modal";
 import { OrderStatsWidget } from "./order-stats-widget";
 import { OrdersTable } from "./orders-table";
-import { OverpaidOrdersTable } from "./overpaid-orders-table";
 
 const DEFAULT_PAGE_SIZE = 20;
 
 type StatusFilter = "ALL" | OrderStatus;
 type ItemTypeFilter = "ALL" | OrderItemType;
-type DashboardTab = "all" | "overpaid" | "stats";
+type DashboardTab = "all" | "stats";
 
 const TABS: Array<{ key: DashboardTab; label: string }> = [
   { key: "all", label: "Tất cả đơn" },
-  { key: "overpaid", label: "Tiền thừa" },
   { key: "stats", label: "Thống kê" },
 ];
 
 function toOptionalDateTime(value: string) {
   return value.trim() || undefined;
-}
-
-function getApiErrorMessage(error: unknown, fallback: string) {
-  if (axios.isAxiosError<BaseResponse<unknown>>(error)) {
-    return error.response?.data?.message || error.message || fallback;
-  }
-
-  return error instanceof Error ? error.message : fallback;
 }
 
 export function OrdersDashboard() {
@@ -62,11 +41,6 @@ export function OrdersDashboard() {
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
 
   const [detailOrderId, setDetailOrderId] = useState<string | null>(null);
-  const [actionState, setActionState] = useState<{
-    mode: OrderActionMode;
-    order: AdminOrderListItem;
-  } | null>(null);
-  const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -107,12 +81,7 @@ export function OrdersDashboard() {
   const orders = pageData?.content ?? [];
 
   const detailQuery = useOrderDetail(detailOrderId ?? "");
-  const detail: AdminOrderDetail | null = detailQuery.data?.data ?? null;
-
-  const cancelMutation = useCancelOrder();
-  const forceCompleteMutation = useForceCompleteOrder();
-  const isActionLoading =
-    cancelMutation.isPending || forceCompleteMutation.isPending;
+  const detail = detailQuery.data?.data ?? null;
 
   function resetFilters() {
     setPage(1);
@@ -137,48 +106,6 @@ export function OrdersDashboard() {
     setDetailOrderId(null);
   }
 
-  function openAction(mode: OrderActionMode, order: AdminOrderListItem) {
-    setActionError(null);
-    setActionState({ mode, order });
-  }
-
-  function closeAction() {
-    setActionState(null);
-    setActionError(null);
-  }
-
-  async function handleConfirmAction(reason: string) {
-    if (!actionState) {
-      return;
-    }
-
-    const { mode, order } = actionState;
-    setActionError(null);
-
-    try {
-      if (mode === "cancel") {
-        await cancelMutation.mutateAsync({
-          orderId: order.orderId,
-          payload: { reason },
-        });
-        toast.success(`Đã hủy đơn ${order.paymentCode}.`, { duration: 3000 });
-      } else {
-        await forceCompleteMutation.mutateAsync({
-          orderId: order.orderId,
-          payload: { reason },
-        });
-        toast.success(`Đã đánh dấu hoàn tất đơn ${order.paymentCode}.`, {
-          duration: 3000,
-        });
-      }
-      setActionState(null);
-    } catch (error) {
-      setActionError(
-        getApiErrorMessage(error, "Có lỗi xảy ra, vui lòng thử lại."),
-      );
-    }
-  }
-
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-8">
       <header className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
@@ -187,7 +114,7 @@ export function OrdersDashboard() {
             Quản lý Đơn hàng
           </h1>
           <p className="mt-1 text-sm font-semibold text-gray-500 backoffice-dark:text-zinc-400">
-            Tra cứu, đối soát và can thiệp thủ công (hủy / hoàn tất) đơn hàng của toàn hệ thống.
+            Tra cứu đơn hàng của toàn hệ thống.
           </p>
         </div>
 
@@ -227,8 +154,6 @@ export function OrdersDashboard() {
         ))}
       </div>
 
-      {activeTab === "overpaid" && <OverpaidOrdersTable />}
-
       {activeTab === "stats" && <OrderStatsWidget />}
 
       {activeTab === "all" && (
@@ -244,7 +169,7 @@ export function OrdersDashboard() {
               type="search"
               value={searchDraft}
               onChange={(event) => setSearchDraft(event.target.value)}
-              placeholder="Mã đơn, mã giao dịch, username hoặc email..."
+              placeholder="Mã đơn, mã giao dịch, username, email hoặc họ tên..."
               className="h-11 w-full rounded-lg border border-slate-200 bg-white pl-10 pr-3 text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-violet-500 focus:ring-4 focus:ring-violet-100 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white backoffice-dark:focus:ring-[rgba(212,175,55,0.16)]"
             />
           </label>
@@ -346,8 +271,6 @@ export function OrdersDashboard() {
         isLoading={ordersQuery.isLoading}
         onPageChange={setPage}
         onViewDetail={openDetail}
-        onCancel={(order) => openAction("cancel", order)}
-        onForceComplete={(order) => openAction("forceComplete", order)}
       />
         </>
       )}
@@ -356,16 +279,6 @@ export function OrdersDashboard() {
         order={detail}
         open={Boolean(detailOrderId)}
         onClose={closeDetail}
-      />
-
-      <OrderActionModal
-        mode={actionState?.mode ?? "cancel"}
-        order={actionState?.order ?? null}
-        open={Boolean(actionState)}
-        isLoading={isActionLoading}
-        errorMessage={actionError}
-        onClose={closeAction}
-        onConfirm={handleConfirmAction}
       />
     </div>
   );
