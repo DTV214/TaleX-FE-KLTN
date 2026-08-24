@@ -169,7 +169,7 @@ export function OrdersDashboard() {
               type="search"
               value={searchDraft}
               onChange={(event) => setSearchDraft(event.target.value)}
-              placeholder="Mã đơn, mã giao dịch, username hoặc email..."
+              placeholder="Mã đơn, mã giao dịch, username, email hoặc họ tên..."
               className="h-11 w-full rounded-lg border border-slate-200 bg-white pl-10 pr-3 text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-violet-500 focus:ring-4 focus:ring-violet-100 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white backoffice-dark:focus:ring-[rgba(212,175,55,0.16)]"
             />
           </label>
