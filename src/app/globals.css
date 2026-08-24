@@ -10,44 +10,44 @@
 */
 :root,
 .dark {
-  --background: #0A0A0A;
+  --background: #0a0a0a;
   /* Đen Cinematic */
-  --foreground: #FFFFFF;
+  --foreground: #ffffff;
 
-  --primary: #D4AF37;
+  --primary: #d4af37;
   /* Vàng Gold */
   --primary-foreground: #000000;
 
-  --secondary: #A52A2A;
+  --secondary: #a52a2a;
   /* Đỏ Nâu */
-  --secondary-foreground: #FFFFFF;
+  --secondary-foreground: #ffffff;
 
-  --accent: #97B0FF;
+  --accent: #97b0ff;
   /* Xanh Nhạt */
   --accent-foreground: #000000;
 
-  --muted: #7C766B;
+  --muted: #7c766b;
   /* Xám Ấm */
-  --muted-foreground: #D1D1D1;
+  --muted-foreground: #d1d1d1;
 
   --card: #121212;
   /* Sáng hơn nền để tạo khối */
-  --card-foreground: #FFFFFF;
+  --card-foreground: #ffffff;
 
-  --border: #2A2A2A;
-  --ring: #D4AF37;
+  --border: #2a2a2a;
+  --ring: #d4af37;
 
   --radius: 0.625rem;
 
   /* Creator Dashboard Specific Colors */
-  --creator-gold: #E2B13C;
+  --creator-gold: #e2b13c;
   --creator-gold-hover: #f3c75c;
-  --creator-bg: #13110F;
+  --creator-bg: #13110f;
   --creator-sidebar: #090807;
   --creator-card: #181614;
-  --creator-card-hover: #1E1B18;
-  --creator-border: #2A2622;
-  --creator-text: #F3F4F6;
+  --creator-card-hover: #1e1b18;
+  --creator-border: #2a2622;
+  --creator-text: #f3f4f6;
   --creator-muted: #858079;
 }
 
@@ -126,8 +126,16 @@
     position: relative;
     isolation: isolate;
     background:
-      radial-gradient(circle at 16% 10%, rgba(226, 177, 60, 0.18), transparent 32%),
-      radial-gradient(circle at 82% 14%, rgba(91, 119, 255, 0.12), transparent 30%),
+      radial-gradient(
+        circle at 16% 10%,
+        rgba(226, 177, 60, 0.18),
+        transparent 32%
+      ),
+      radial-gradient(
+        circle at 82% 14%,
+        rgba(91, 119, 255, 0.12),
+        transparent 30%
+      ),
       linear-gradient(135deg, #070706 0%, #14110e 48%, #080b0f 100%);
   }
 
@@ -147,14 +155,32 @@
     background-position: center;
     background-size: cover;
     opacity: 0.13;
-    mask-image: linear-gradient(to bottom, black 0%, black 55%, transparent 100%);
+    mask-image: linear-gradient(
+      to bottom,
+      black 0%,
+      black 55%,
+      transparent 100%
+    );
   }
 
   .creator-studio-shell::after {
     background:
-      radial-gradient(70% 45% at 18% 0%, rgba(226, 177, 60, 0.09), transparent 64%),
-      radial-gradient(70% 50% at 92% 4%, rgba(120, 165, 255, 0.08), transparent 68%),
-      repeating-radial-gradient(ellipse at 80% 16%, transparent 0 92px, rgba(226, 177, 60, 0.08) 93px 94px, transparent 95px 190px);
+      radial-gradient(
+        70% 45% at 18% 0%,
+        rgba(226, 177, 60, 0.09),
+        transparent 64%
+      ),
+      radial-gradient(
+        70% 50% at 92% 4%,
+        rgba(120, 165, 255, 0.08),
+        transparent 68%
+      ),
+      repeating-radial-gradient(
+        ellipse at 80% 16%,
+        transparent 0 92px,
+        rgba(226, 177, 60, 0.08) 93px 94px,
+        transparent 95px 190px
+      );
     opacity: 0.72;
   }
 
@@ -205,7 +231,11 @@
     inset: -0.2em -0.45em;
     z-index: -1;
     border-radius: 999px;
-    background: radial-gradient(circle at 50% 50%, rgba(226, 177, 60, 0.32), transparent 62%);
+    background: radial-gradient(
+      circle at 50% 50%,
+      rgba(226, 177, 60, 0.32),
+      transparent 62%
+    );
     filter: blur(16px);
     opacity: 0;
     transition: opacity 180ms ease;
@@ -229,7 +259,12 @@
     height: 190%;
     pointer-events: none;
     transform: rotate(18deg);
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.16), transparent);
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.16),
+      transparent
+    );
     opacity: 0;
     transition:
       transform 720ms ease,
@@ -317,8 +352,16 @@
     --backoffice-danger: #f87171;
     --backoffice-success: #34d399;
     background:
-      radial-gradient(circle at 16% 0%, rgba(212, 175, 55, 0.16), transparent 34%),
-      radial-gradient(circle at 85% 8%, rgba(151, 176, 255, 0.12), transparent 32%),
+      radial-gradient(
+        circle at 16% 0%,
+        rgba(212, 175, 55, 0.16),
+        transparent 34%
+      ),
+      radial-gradient(
+        circle at 85% 8%,
+        rgba(151, 176, 255, 0.12),
+        transparent 32%
+      ),
       linear-gradient(135deg, #070706 0%, #12110f 48%, #080b10 100%);
   }
 
@@ -342,9 +385,22 @@
 
   .backoffice-theme-dark::after {
     background:
-      radial-gradient(65% 36% at 15% 0%, rgba(212, 175, 55, 0.1), transparent 70%),
-      radial-gradient(60% 42% at 94% 8%, rgba(151, 176, 255, 0.08), transparent 70%),
-      repeating-radial-gradient(ellipse at 82% 10%, transparent 0 100px, rgba(212, 175, 55, 0.055) 101px 102px, transparent 103px 210px);
+      radial-gradient(
+        65% 36% at 15% 0%,
+        rgba(212, 175, 55, 0.1),
+        transparent 70%
+      ),
+      radial-gradient(
+        60% 42% at 94% 8%,
+        rgba(151, 176, 255, 0.08),
+        transparent 70%
+      ),
+      repeating-radial-gradient(
+        ellipse at 82% 10%,
+        transparent 0 100px,
+        rgba(212, 175, 55, 0.055) 101px 102px,
+        transparent 103px 210px
+      );
     opacity: 0.72;
   }
 
@@ -468,8 +524,11 @@
   .backoffice-theme-dark [class*="hover:bg-blue-50"]:hover,
   .backoffice-theme-dark [class*="hover:bg-purple-50"]:hover,
   .backoffice-theme-dark [class*="hover:bg-emerald-50"]:hover {
-    background:
-      linear-gradient(90deg, rgba(212, 175, 55, 0.16), rgba(255, 255, 255, 0.055)) !important;
+    background: linear-gradient(
+      90deg,
+      rgba(212, 175, 55, 0.16),
+      rgba(255, 255, 255, 0.055)
+    ) !important;
     color: var(--backoffice-text) !important;
   }
 
@@ -481,8 +540,11 @@
   }
 
   .backoffice-theme-dark table tbody tr:hover {
-    background:
-      linear-gradient(90deg, rgba(212, 175, 55, 0.14), rgba(255, 255, 255, 0.045)) !important;
+    background: linear-gradient(
+      90deg,
+      rgba(212, 175, 55, 0.14),
+      rgba(255, 255, 255, 0.045)
+    ) !important;
     color: var(--backoffice-text) !important;
   }
 

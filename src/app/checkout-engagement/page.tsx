@@ -16,7 +16,10 @@ import {
 import { CopyableField } from "@/features/checkout/components/CopyableField";
 import { PaymentWarningBanner } from "@/features/checkout/components/PaymentWarningBanner";
 import { QRCodeDisplay } from "@/features/checkout/components/QRCodeDisplay";
-import { useCancelOrder, useOrderStatus } from "@/features/payment/api/payment.api";
+import {
+  useCancelOrder,
+  useOrderStatus,
+} from "@/features/payment/api/payment.api";
 import { Button } from "@/shared/ui/button";
 import { Progress } from "@/shared/ui/progress";
 import { getApiErrorMessage } from "@/shared/api/http-client";
@@ -67,7 +70,9 @@ function CheckoutEngagementContent() {
   const orderQuery = useOrderStatus(orderId);
   const cancelOrder = useCancelOrder();
   const order = orderQuery.data;
-  const [timeLeft, setTimeLeft] = useState(() => getTimeLeftSeconds(order?.expiresAt));
+  const [timeLeft, setTimeLeft] = useState(() =>
+    getTimeLeftSeconds(order?.expiresAt),
+  );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -157,7 +162,13 @@ function CheckoutEngagementContent() {
       : order.status === "OUT_OF_TIME"
         ? "OUT_OF_TIME"
         : "PENDING";
-  const progress = order.status === "COMPLETED" ? 100 : Math.max(12, Math.min(88, 100 - Math.floor((timeLeft / (30 * 60)) * 100)));
+  const progress =
+    order.status === "COMPLETED"
+      ? 100
+      : Math.max(
+          12,
+          Math.min(88, 100 - Math.floor((timeLeft / (30 * 60)) * 100)),
+        );
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#070708] px-4 py-8 text-white md:px-8">
@@ -187,7 +198,6 @@ function CheckoutEngagementContent() {
                 </h1>
               </div>
             </div>
-
           </div>
 
           <PaymentWarningBanner message="Vui lòng chuyển khoản đúng nội dung để hệ thống tự động xử lý trong vài giây." />
@@ -195,7 +205,9 @@ function CheckoutEngagementContent() {
           <PaymentFrame className="border-[#D4AF37]/20">
             <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_320px] md:items-center">
               <div>
-                <p className="text-sm font-bold text-zinc-500">Số tiền thanh toán</p>
+                <p className="text-sm font-bold text-zinc-500">
+                  Số tiền thanh toán
+                </p>
                 <div className="mt-4 flex flex-wrap items-center gap-3">
                   <span className="text-4xl font-black text-[#F3DF85] md:text-5xl">
                     {formatCurrency(order.fiatAmount)}
@@ -225,14 +237,24 @@ function CheckoutEngagementContent() {
               </h2>
             </div>
             <div className="grid gap-3 md:grid-cols-2">
-              <CopyableField label="Tên tài khoản" value={SEPAY_ACCOUNT_HOLDER} />
+              <CopyableField
+                label="Tên tài khoản"
+                value={SEPAY_ACCOUNT_HOLDER}
+              />
               <CopyableField
                 label="Tên ngân hàng"
                 value={SEPAY_BANK_NAME}
                 logoUrl={SEPAY_BANK_LOGO_URL}
               />
-              <CopyableField label="Số tài khoản" value={SEPAY_ACCOUNT_NUMBER} />
-              <CopyableField label="Nội dung" value={order.paymentCode} isHighlight />
+              <CopyableField
+                label="Số tài khoản"
+                value={SEPAY_ACCOUNT_NUMBER}
+              />
+              <CopyableField
+                label="Nội dung"
+                value={order.paymentCode}
+                isHighlight
+              />
             </div>
           </PaymentFrame>
         </div>
@@ -259,7 +281,9 @@ function CheckoutEngagementContent() {
             </div>
             <div className="flex justify-between text-lg font-black">
               <span>Tổng</span>
-              <span className="text-[#F3DF85]">{formatCurrency(order.fiatAmount)}</span>
+              <span className="text-[#F3DF85]">
+                {formatCurrency(order.fiatAmount)}
+              </span>
             </div>
           </div>
 
@@ -308,7 +332,6 @@ function CheckoutEngagementContent() {
               {errorMessage}
             </div>
           ) : null}
-
         </PaymentFrame>
       </div>
     </main>

@@ -112,4 +112,43 @@ export const creatorSettlementsApi = {
       ),
     );
   },
+
+  async exportTaxCertificate(params?: {
+    taxYear?: number;
+    year?: number;
+    settlementMonth?: string;
+    settlementId?: string;
+  }): Promise<Blob> {
+    const queryParams: Record<string, string | number> = {};
+    if (params?.taxYear !== undefined) queryParams.taxYear = params.taxYear;
+    if (params?.year !== undefined) queryParams.year = params.year;
+    if (params?.settlementMonth) queryParams.settlementMonth = params.settlementMonth;
+    if (params?.settlementId) queryParams.settlementId = params.settlementId;
+
+    const response = await httpClient.get("/api/v1/creator/tax/export-certificate", {
+      params: queryParams,
+      responseType: "blob",
+    });
+    return response.data;
+  },
 };
+
+export async function exportCreatorTaxCertificate(params?: {
+  taxYear?: number;
+  year?: number;
+  settlementMonth?: string;
+  settlementId?: string;
+}): Promise<Blob> {
+  return creatorSettlementsApi.exportTaxCertificate(params);
+}
+
+export function triggerFileDownload(blob: Blob, filename: string) {
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  window.URL.revokeObjectURL(url);
+  document.body.removeChild(link);
+}

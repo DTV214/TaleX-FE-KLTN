@@ -18,7 +18,10 @@ export default function ProfilePage() {
 
       <div className="relative z-10 mx-auto w-full max-w-6xl px-4 py-8 lg:py-10">
         <div className="mb-6 rounded-2xl border border-white/10 bg-[#121214]/78 p-5 shadow-[0_18px_54px_rgba(0,0,0,0.26)]">
-          <Badge variant="premium" className="mb-3 px-3 py-1 text-xs font-medium">
+          <Badge
+            variant="premium"
+            className="mb-3 px-3 py-1 text-xs font-medium"
+          >
             TaleX Account
           </Badge>
           <h1 className="text-2xl font-semibold tracking-normal text-white/90 md:text-3xl">

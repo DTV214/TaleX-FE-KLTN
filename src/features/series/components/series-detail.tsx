@@ -227,7 +227,10 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
       (acc, ep) => acc + (ep.analyticData?.views ?? ep.views ?? 0),
       0,
     );
-    return Math.max(series?.analyticData?.views ?? series?.totalViews ?? 0, epViews);
+    return Math.max(
+      series?.analyticData?.views ?? series?.totalViews ?? 0,
+      epViews,
+    );
   }, [series, allEpisodesInSeries]);
 
   const totalSeriesLikes = useMemo(() => {
@@ -403,7 +406,6 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
 
             {/* Metadata grid */}
             <div className="mb-6 grid max-w-3xl grid-cols-[120px_1fr] gap-y-3 text-sm">
-
               {series.categories.length > 0 && (
                 <>
                   <div className="flex items-center gap-2 font-medium text-slate-400">
@@ -487,9 +489,9 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
                 {totalSeriesViews.toLocaleString("vi-VN")} lượt xem
               </div>
 
-
               <div className="flex items-center gap-2 font-medium text-slate-400">
-                <Heart className="h-4 w-4 text-rose-500 fill-rose-500/20" /> Lượt thích
+                <Heart className="h-4 w-4 text-rose-500 fill-rose-500/20" />{" "}
+                Lượt thích
               </div>
               <div className="text-white">
                 {totalSeriesLikes.toLocaleString("vi-VN")} lượt thích
@@ -558,8 +560,6 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
                 )}
               </div>
             )}
-
-
 
             {/* Mô tả dài */}
             <div className="mb-8 flex flex-wrap items-center gap-3">
@@ -813,7 +813,8 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
                   >
                     <Menu className="w-4 h-4 text-[#D4AF37]" />
                     <span>
-                      {seasons.find((s) => s.seasonId === activeSeasonId)?.title || "Phần 1"}
+                      {seasons.find((s) => s.seasonId === activeSeasonId)
+                        ?.title || "Phần 1"}
                     </span>
                     <ChevronDown
                       className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-200 ${
@@ -945,51 +946,54 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
               <div className="py-12 text-center max-w-sm mx-auto text-gray-500 relative z-10">
                 <AlertCircle className="w-10 h-10 text-gray-600 mx-auto mb-4" />
                 <p className="text-sm font-medium">
-                  Không tìm thấy {isComic ? "chương" : "tập phim"} nào trong phần này.
+                  Không tìm thấy {isComic ? "chương" : "tập phim"} nào trong
+                  phần này.
                 </p>
               </div>
             )}
 
           {/* ================= DANH SÁCH TẬP PHIM / CHƯƠNG (COMPACT PILL BUTTONS) ================= */}
-          {!isEpisodesLoading && !isEpisodesError && sortedEpisodes.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.2 }}
-              className={`grid gap-2.5 relative z-10 mt-5 ${
-                isComic
-                  ? "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7"
-                  : "grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10"
-              }`}
-            >
-              {sortedEpisodes.map((episode) => {
-                const isPaid = episode.unlockType === "PAID";
-                const isUnlocked = isEpisodeUnlocked(episode);
-                const showLock = isPaid && !isUnlocked;
-                return (
-                  <Link
-                    key={episode.episodeId}
-                    href={`/${isComic ? "read" : "watch"}/${episode.episodeId}`}
-                    className="group relative flex items-center justify-center gap-1.5 px-3 py-3 rounded-xl bg-[#1e1e24] hover:bg-[#D4AF37] border border-white/5 hover:border-[#D4AF37] text-white hover:text-black font-extrabold text-xs md:text-sm transition-all duration-200 shadow-md active:scale-95 text-center min-w-0"
-                  >
-                    {isComic ? (
-                      <BookOpen className="w-3.5 h-3.5 text-gray-400 group-hover:text-black shrink-0" />
-                    ) : (
-                      <Play className="w-3.5 h-3.5 fill-current text-gray-400 group-hover:text-black shrink-0" />
-                    )}
-                    <span className="whitespace-nowrap">
-                      {isComic
-                        ? `Chương ${episode.episodeNumber}`
-                        : `Tập ${episode.episodeNumber}`}
-                    </span>
-                    {showLock && (
-                      <Lock className="w-3 h-3 text-amber-400 group-hover:text-black shrink-0 ml-0.5" />
-                    )}
-                  </Link>
-                );
-              })}
-            </motion.div>
-          )}
+          {!isEpisodesLoading &&
+            !isEpisodesError &&
+            sortedEpisodes.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2 }}
+                className={`grid gap-2.5 relative z-10 mt-5 ${
+                  isComic
+                    ? "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7"
+                    : "grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10"
+                }`}
+              >
+                {sortedEpisodes.map((episode) => {
+                  const isPaid = episode.unlockType === "PAID";
+                  const isUnlocked = isEpisodeUnlocked(episode);
+                  const showLock = isPaid && !isUnlocked;
+                  return (
+                    <Link
+                      key={episode.episodeId}
+                      href={`/${isComic ? "read" : "watch"}/${episode.episodeId}`}
+                      className="group relative flex items-center justify-center gap-1.5 px-3 py-3 rounded-xl bg-[#1e1e24] hover:bg-[#D4AF37] border border-white/5 hover:border-[#D4AF37] text-white hover:text-black font-extrabold text-xs md:text-sm transition-all duration-200 shadow-md active:scale-95 text-center min-w-0"
+                    >
+                      {isComic ? (
+                        <BookOpen className="w-3.5 h-3.5 text-gray-400 group-hover:text-black shrink-0" />
+                      ) : (
+                        <Play className="w-3.5 h-3.5 fill-current text-gray-400 group-hover:text-black shrink-0" />
+                      )}
+                      <span className="whitespace-nowrap">
+                        {isComic
+                          ? `Chương ${episode.episodeNumber}`
+                          : `Tập ${episode.episodeNumber}`}
+                      </span>
+                      {showLock && (
+                        <Lock className="w-3 h-3 text-amber-400 group-hover:text-black shrink-0 ml-0.5" />
+                      )}
+                    </Link>
+                  );
+                })}
+              </motion.div>
+            )}
         </section>
 
         {/* 4. Section: Bình luận dành riêng cho Series Truyện tranh */}
@@ -1004,7 +1008,8 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
                     Bình luận truyện
                   </h2>
                   <p className="text-xs text-gray-400 mt-1">
-                    Cùng thảo luận và để lại cảm nghĩ về bộ truyện tranh này nhé!
+                    Cùng thảo luận và để lại cảm nghĩ về bộ truyện tranh này
+                    nhé!
                   </p>
                 </div>
               </div>

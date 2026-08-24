@@ -117,7 +117,8 @@ function getDurationProgress(subscription: Subscription) {
   const normalizedUnit = subscription.durationUnit.toLowerCase();
 
   if (normalizedUnit.includes("year")) return 100;
-  if (normalizedUnit.includes("month")) return Math.min(92, 45 + subscription.duration * 8);
+  if (normalizedUnit.includes("month"))
+    return Math.min(92, 45 + subscription.duration * 8);
   return Math.min(78, 24 + subscription.duration * 4);
 }
 
@@ -165,9 +166,7 @@ function SectionHeading({
   return (
     <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
       <div className="max-w-3xl">
-        <p className="text-sm font-medium text-[#D4AF37]">
-          {eyebrow}
-        </p>
+        <p className="text-sm font-medium text-[#D4AF37]">{eyebrow}</p>
         <h2 className="mt-2 text-xl font-semibold tracking-normal text-white/90 sm:text-2xl">
           {title}
         </h2>
@@ -219,7 +218,10 @@ function PremiumHero() {
                 <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(0,0,0,0.58),rgba(0,0,0,0.22),rgba(0,0,0,0.58))]" />
                 <div className="relative z-10 mx-auto flex min-h-[240px] w-full max-w-6xl items-center justify-center px-4 py-8 text-center md:min-h-[280px]">
                   <div className="mx-auto max-w-3xl">
-                    <Badge variant="premium" className="px-3 py-1 text-xs font-medium">
+                    <Badge
+                      variant="premium"
+                      className="px-3 py-1 text-xs font-medium"
+                    >
                       {slide.eyebrow}
                     </Badge>
                     <h1 className="mt-4 text-2xl font-semibold tracking-normal text-white/90 sm:text-3xl">
@@ -362,13 +364,18 @@ function PricingCard({
 
       <div className="relative z-10 flex flex-1 flex-col">
         <div className="flex items-center justify-between gap-3">
-          <Badge variant="outline" className="border-white/10 bg-white/[0.04] text-slate-300">
+          <Badge
+            variant="outline"
+            className="border-white/10 bg-white/[0.04] text-slate-300"
+          >
             Top {rank}
           </Badge>
           <Crown
             className={cn(
               "h-5 w-5 transition-colors",
-              isPopular ? "text-[#D4AF37]" : "text-slate-500 group-hover:text-[#D4AF37]",
+              isPopular
+                ? "text-[#D4AF37]"
+                : "text-slate-500 group-hover:text-[#D4AF37]",
             )}
           />
         </div>
@@ -377,8 +384,7 @@ function PricingCard({
           {subscription.tier}
         </h3>
         <p className="mt-2 line-clamp-2 text-sm font-normal leading-6 text-slate-400">
-          {subscription.description ||
-            "Trải nghiệm TaleX trọn vẹn hơn."}
+          {subscription.description || "Trải nghiệm TaleX trọn vẹn hơn."}
         </p>
 
         <div className="mt-4">
@@ -480,40 +486,45 @@ function PricingSection() {
           />
         )}
 
-        {!packagesQuery.isLoading && !packagesQuery.isError && packages.length === 0 && (
-          <EmptyState
-            title="Chưa có gói Premium nào"
-            description="Gói sẽ xuất hiện khi admin cấu hình."
-          />
-        )}
+        {!packagesQuery.isLoading &&
+          !packagesQuery.isError &&
+          packages.length === 0 && (
+            <EmptyState
+              title="Chưa có gói Premium nào"
+              description="Gói sẽ xuất hiện khi admin cấu hình."
+            />
+          )}
 
-        {!packagesQuery.isLoading && !packagesQuery.isError && displayedPackages.length > 0 && (
-          <div
-            className={cn(
-              "grid gap-4 pt-2",
-              displayedPackages.length === 1
-                ? "mx-auto max-w-md"
-                : "lg:grid-cols-3 lg:items-center",
-            )}
-          >
-            {displayedPackages.map((subscription) => {
-              const rankIndex =
-                rankedPackages.findIndex(
-                  (item) => item.subscriptionId === subscription.subscriptionId,
-                ) + 1;
+        {!packagesQuery.isLoading &&
+          !packagesQuery.isError &&
+          displayedPackages.length > 0 && (
+            <div
+              className={cn(
+                "grid gap-4 pt-2",
+                displayedPackages.length === 1
+                  ? "mx-auto max-w-md"
+                  : "lg:grid-cols-3 lg:items-center",
+              )}
+            >
+              {displayedPackages.map((subscription) => {
+                const rankIndex =
+                  rankedPackages.findIndex(
+                    (item) =>
+                      item.subscriptionId === subscription.subscriptionId,
+                  ) + 1;
 
-              return (
-                <PricingCard
-                  key={subscription.subscriptionId}
-                  subscription={subscription}
-                  rank={rankIndex}
-                  isPopular={subscription.subscriptionId === popularPackageId}
-                  onSelect={handleSelectSubscription}
-                />
-              );
-            })}
-          </div>
-        )}
+                return (
+                  <PricingCard
+                    key={subscription.subscriptionId}
+                    subscription={subscription}
+                    rank={rankIndex}
+                    isPopular={subscription.subscriptionId === popularPackageId}
+                    onSelect={handleSelectSubscription}
+                  />
+                );
+              })}
+            </div>
+          )}
       </div>
     </section>
   );
@@ -527,7 +538,10 @@ function AudienceTrendBanner() {
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_10%,rgba(212,175,55,0.13),transparent_32%),radial-gradient(circle_at_88%_16%,rgba(151,176,255,0.10),transparent_28%)]" />
           <div className="relative z-10 grid gap-5 lg:grid-cols-[1.05fr_1.3fr] lg:items-center">
             <div>
-              <Badge variant="premium" className="mb-3 px-3 py-1 text-xs font-medium">
+              <Badge
+                variant="premium"
+                className="mb-3 px-3 py-1 text-xs font-medium"
+              >
                 Xu hướng
               </Badge>
               <h2 className="text-xl font-semibold tracking-normal text-white/90 sm:text-2xl">

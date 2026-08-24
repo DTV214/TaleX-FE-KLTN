@@ -151,9 +151,9 @@ function CheckoutPageContent() {
   const isPreparing = !order || subscriptionQuery.isLoading;
   const canCancel = Boolean(
     order &&
-      order.status !== "COMPLETED" &&
-      order.status !== "OUT_OF_TIME" &&
-      order.status !== "CANCELLED",
+    order.status !== "COMPLETED" &&
+    order.status !== "OUT_OF_TIME" &&
+    order.status !== "CANCELLED",
   );
 
   function handleCancelOrder() {
@@ -205,7 +205,8 @@ function CheckoutPageContent() {
                           : "Đang tải thông tin gói..."}
                       </p>
                       <p className="mt-1 text-sm font-normal leading-6 text-slate-400">
-                        Đơn hàng Premium sẽ được kích hoạt sau khi hệ thống xác nhận giao dịch thành công.
+                        Đơn hàng Premium sẽ được kích hoạt sau khi hệ thống xác
+                        nhận giao dịch thành công.
                       </p>
                     </div>
                   </div>
@@ -226,7 +227,10 @@ function CheckoutPageContent() {
               </PaymentFrame>
 
               {activeSubscriptionQuery.data && (
-                <motion.div {...motionProps} transition={{ ...motionProps.transition, delay: 0.08 }}>
+                <motion.div
+                  {...motionProps}
+                  transition={{ ...motionProps.transition, delay: 0.08 }}
+                >
                   <SubscriptionStackingWarning
                     activeSubscription={activeSubscriptionQuery.data}
                     newDuration={subscription?.duration}
@@ -263,7 +267,10 @@ function CheckoutPageContent() {
                       <p className="text-2xl font-semibold tracking-tight text-[#F5D46E] sm:text-3xl">
                         {order ? formatCurrency(order.totalAmount) : "—"}
                       </p>
-                      <Badge variant="premium" className="h-8 px-3 text-xs font-medium">
+                      <Badge
+                        variant="premium"
+                        className="h-8 px-3 text-xs font-medium"
+                      >
                         <ShieldCheck className="mr-1.5 h-3.5 w-3.5" />
                         SePay bảo vệ
                       </Badge>
@@ -297,7 +304,8 @@ function CheckoutPageContent() {
                         Copy chính xác từng trường
                       </h2>
                       <p className="mt-1 text-sm font-normal leading-6 text-slate-400">
-                        Nội dung chuyển khoản là khóa đối soát tự động, vui lòng không sửa.
+                        Nội dung chuyển khoản là khóa đối soát tự động, vui lòng
+                        không sửa.
                       </p>
                     </div>
 
@@ -323,13 +331,19 @@ function CheckoutPageContent() {
                   </div>
 
                   <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                    <CopyableField label="Tên tài khoản" value={SEPAY_ACCOUNT_HOLDER} />
+                    <CopyableField
+                      label="Tên tài khoản"
+                      value={SEPAY_ACCOUNT_HOLDER}
+                    />
                     <CopyableField
                       label="Tên ngân hàng"
                       value={SEPAY_BANK_NAME}
                       logoUrl={SEPAY_BANK_LOGO_URL}
                     />
-                    <CopyableField label="Số tài khoản" value={SEPAY_ACCOUNT_NUMBER} />
+                    <CopyableField
+                      label="Số tài khoản"
+                      value={SEPAY_ACCOUNT_NUMBER}
+                    />
                     <div>
                       <CopyableField
                         label="Nội dung"
@@ -344,7 +358,6 @@ function CheckoutPageContent() {
                   </div>
                 </div>
               </PaymentFrame>
-
             </motion.div>
 
             <motion.aside
@@ -363,7 +376,9 @@ function CheckoutPageContent() {
                         TaleX Order
                       </p>
                       <p className="mt-1 truncate text-sm font-semibold text-white/86">
-                        {subscription ? `Premium ${subscription.tier}` : "Đang tải gói..."}
+                        {subscription
+                          ? `Premium ${subscription.tier}`
+                          : "Đang tải gói..."}
                       </p>
                     </div>
                   </div>
@@ -385,16 +400,18 @@ function CheckoutPageContent() {
                     </div>
                     <div className="flex items-center justify-between gap-4 text-sm">
                       <span className="text-slate-400">Phương thức</span>
-                      <span className="font-semibold text-white/82">VietQR</span>
+                      <span className="font-semibold text-white/82">
+                        VietQR
+                      </span>
                     </div>
                   </div>
 
                   <div className="flex items-end justify-between gap-4 border-b border-white/10 py-4">
-                    <span className="text-base font-semibold text-white/82">Total</span>
+                    <span className="text-base font-semibold text-white/82">
+                      Total
+                    </span>
                     <div className="text-right">
-                      <p className="text-xs font-medium text-slate-500">
-                        VND
-                      </p>
+                      <p className="text-xs font-medium text-slate-500">VND</p>
                       <p className="text-xl font-semibold text-[#F5D46E]">
                         {order ? formatCurrency(order.totalAmount) : "—"}
                       </p>
@@ -402,7 +419,10 @@ function CheckoutPageContent() {
                   </div>
 
                   <div className="my-4 text-center">
-                    <Badge variant="premium" className="mb-2 px-3 py-1 text-xs font-medium">
+                    <Badge
+                      variant="premium"
+                      className="mb-2 px-3 py-1 text-xs font-medium"
+                    >
                       SePay VietQR
                     </Badge>
                     <h2 className="text-base font-medium tracking-normal text-white/88">
@@ -427,7 +447,9 @@ function CheckoutPageContent() {
                   ) : isPreparing || !order.qrUrl ? (
                     <div className="mx-auto flex aspect-square w-full max-w-[200px] flex-col items-center justify-center gap-3 rounded-2xl border border-white/10 bg-black/25 p-4 text-slate-400">
                       <Loader2 className="h-8 w-8 animate-spin text-[#D4AF37]" />
-                      <span className="text-sm font-medium">Đang tạo đơn hàng...</span>
+                      <span className="text-sm font-medium">
+                        Đang tạo đơn hàng...
+                      </span>
                     </div>
                   ) : (
                     <QRCodeDisplay

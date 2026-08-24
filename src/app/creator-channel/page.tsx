@@ -386,7 +386,9 @@ function CreatorChannelContent() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs font-semibold text-[#A1A1AA] mt-2.5">
-                  <span className="whitespace-nowrap text-zinc-400">@{profileUser?.username || "creator"}</span>
+                  <span className="whitespace-nowrap text-zinc-400">
+                    @{profileUser?.username || "creator"}
+                  </span>
                   <span className="text-zinc-700 select-none">&bull;</span>
                   <span className="whitespace-nowrap text-zinc-400">
                     <strong className="text-[#F5F5F5] font-bold">
@@ -493,10 +495,11 @@ function CreatorChannelContent() {
                       key={tab.id}
                       type="button"
                       onClick={() => setActiveTab(tab.id)}
-                      className={`py-3.5 px-2 text-sm font-black relative transition-colors cursor-pointer outline-none focus:outline-none flex items-center gap-1.5 ${isActive
+                      className={`py-3.5 px-2 text-sm font-black relative transition-colors cursor-pointer outline-none focus:outline-none flex items-center gap-1.5 ${
+                        isActive
                           ? "text-red-500"
                           : "text-red-500/70 hover:text-red-400"
-                        }`}
+                      }`}
                     >
                       <Flame
                         className={`h-4 w-4 ${isActive ? "animate-pulse" : ""}`}
@@ -528,10 +531,11 @@ function CreatorChannelContent() {
                     key={tab.id}
                     type="button"
                     onClick={() => setActiveTab(tab.id)}
-                    className={`py-3.5 px-2 text-sm font-black relative transition-colors cursor-pointer outline-none focus:outline-none ${isActive
+                    className={`py-3.5 px-2 text-sm font-black relative transition-colors cursor-pointer outline-none focus:outline-none ${
+                      isActive
                         ? "text-[#FACC15]"
                         : "text-[#A1A1AA] hover:text-white"
-                      }`}
+                    }`}
                   >
                     {tab.label}
                     {isActive && (
@@ -568,10 +572,11 @@ function CreatorChannelContent() {
                         key={status}
                         type="button"
                         onClick={() => setFilterStatus(status)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${isActive
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                          isActive
                             ? "bg-white text-black"
                             : "bg-white/[0.04] text-zinc-400 hover:bg-white/[0.08]"
-                          }`}
+                        }`}
                       >
                         {label}
                       </button>
@@ -615,10 +620,11 @@ function CreatorChannelContent() {
                                 setSortBy(option);
                                 setShowSortMenu(false);
                               }}
-                              className={`w-full text-left px-4 py-2 text-xs font-semibold hover:bg-white/5 transition-colors cursor-pointer ${isOptionActive
+                              className={`w-full text-left px-4 py-2 text-xs font-semibold hover:bg-white/5 transition-colors cursor-pointer ${
+                                isOptionActive
                                   ? "text-[#FACC15] font-bold"
                                   : "text-zinc-400"
-                                }`}
+                              }`}
                             >
                               {optionLabel}
                             </button>
@@ -656,10 +662,11 @@ function CreatorChannelContent() {
                         onClick={() =>
                           handleItemPress(spotlightSeries.seriesId)
                         }
-                        className={`cursor-pointer overflow-hidden rounded-2xl bg-zinc-900 border border-white/5 shadow-xl shrink-0 w-full group relative ${spotlightSeries.contentType === "VIDEO"
+                        className={`cursor-pointer overflow-hidden rounded-2xl bg-zinc-900 border border-white/5 shadow-xl shrink-0 w-full group relative ${
+                          spotlightSeries.contentType === "VIDEO"
                             ? "aspect-video lg:w-[420px]"
                             : "aspect-[3/4] lg:w-[280px]"
-                          }`}
+                        }`}
                       >
                         {spotlightSeries.coverUrl ? (
                           // eslint-disable-next-line @next/next/no-img-element
@@ -859,8 +866,8 @@ function CreatorChannelContent() {
                           <p className="text-xs font-bold text-zinc-200 mt-0.5">
                             {creator?.createdAt
                               ? new Date(creator.createdAt).toLocaleDateString(
-                                "vi-VN",
-                              )
+                                  "vi-VN",
+                                )
                               : "không xác định"}
                           </p>
                         </div>
@@ -1065,8 +1072,9 @@ function SeriesGrid({
           >
             {/* Cover Image container */}
             <div
-              className={`relative w-full bg-[#17171C] rounded-2xl overflow-hidden border border-white/[0.04] shadow-md group-hover:shadow-2xl transition-all duration-300 ${isVideo ? "aspect-video" : "aspect-[3/4]"
-                }`}
+              className={`relative w-full bg-[#17171C] rounded-2xl overflow-hidden border border-white/[0.04] shadow-md group-hover:shadow-2xl transition-all duration-300 ${
+                isVideo ? "aspect-video" : "aspect-[3/4]"
+              }`}
             >
               {item.coverUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -1110,7 +1118,6 @@ function SeriesGrid({
                     {item.description}
                   </p>
                 )}
-
               </div>
             </div>
           </motion.button>

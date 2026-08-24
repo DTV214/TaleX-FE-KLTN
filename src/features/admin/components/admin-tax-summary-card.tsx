@@ -4,14 +4,17 @@ import { useState } from "react";
 import {
   Building2,
   ChevronDown,
+  Download,
   FileCheck2,
   MapPin,
   Receipt,
+  RefreshCw,
   Scale,
   PieChart as PieIcon,
   DollarSign,
   TrendingUp,
 } from "lucide-react";
+import { toast } from "sonner";
 import {
   Cell,
   Pie,
@@ -21,6 +24,11 @@ import {
 } from "recharts";
 
 import { useAdminTaxSummary } from "@/features/admin/hooks/use-admin-tax-summary";
+import {
+  exportBk052Excel,
+  exportVatExcel,
+  triggerFileDownload,
+} from "@/features/admin/api/admin-tax.api";
 
 function formatVND(value: number = 0): string {
   return new Intl.NumberFormat("vi-VN", {
@@ -42,6 +50,8 @@ const VAT_DONUT_COLORS = ["#8b5cf6", "#3b82f6"]; // Creator VAT (violet-500), Pl
 export function AdminTaxSummaryCard() {
   const [selectedYear, setSelectedYear] = useState<number>(CURRENT_YEAR);
   const [selectedQuarter, setSelectedQuarter] = useState<number | undefined>(undefined);
+  const [isExportingVat, setIsExportingVat] = useState<boolean>(false);
+  const [isExportingPit, setIsExportingPit] = useState<boolean>(false);
 
   const query = useAdminTaxSummary({
     year: selectedYear,
@@ -49,6 +59,38 @@ export function AdminTaxSummaryCard() {
   });
 
   const summary = query.data;
+
+  const handleExportVat = async () => {
+    try {
+      setIsExportingVat(true);
+      const blob = await exportVatExcel();
+      triggerFileDownload(
+        blob,
+        `Bang_Ke_Thue_VAT_Ban_Ra_${new Date().toISOString().slice(0, 10)}.xlsx`
+      );
+      toast.success("Đã tải file Excel Bảng kê Thuế VAT Bán ra!");
+    } catch {
+      toast.error("Không thể xuất file Excel VAT.");
+    } finally {
+      setIsExportingVat(false);
+    }
+  };
+
+  const handleExportPit = async () => {
+    try {
+      setIsExportingPit(true);
+      const blob = await exportBk052Excel(selectedYear);
+      triggerFileDownload(
+        blob,
+        `Bang_Ke_05_2_BK_TNCN_Nam_${selectedYear}.xlsx`
+      );
+      toast.success(`Đã tải Bảng kê 05-2/BK-TNCN năm ${selectedYear}!`);
+    } catch {
+      toast.error("Không thể xuất file Excel Bảng kê 05-2/BK-TNCN.");
+    } finally {
+      setIsExportingPit(false);
+    }
+  };
 
   // Donut chart data
   const creatorVat = summary?.creatorVatAmount ?? 0;
@@ -60,18 +102,21 @@ export function AdminTaxSummaryCard() {
 
   return (
     <div className="w-full space-y-6 max-w-7xl mx-auto font-sans">
-      {/* 1. Header Card: Tổng Quan Thuế */}
+      {/* 1. Header Card with Year/Quarter Selectors & Quick Download Buttons */}
       <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
-        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-gray-100 backoffice-dark:border-white/10">
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 border-gray-100 backoffice-dark:border-white/10">
           <div>
             <h2 className="text-xl font-bold text-gray-900 backoffice-dark:text-white tracking-tight flex items-center gap-2">
               <Receipt className="w-5 h-5 text-violet-600" />
-              Tổng Quan
+              Tổng Quan Nghĩa Vụ Thuế
             </h2>
+            <p className="mt-1 text-xs text-gray-500 backoffice-dark:text-white/60">
+              Tổng hợp số liệu thuế VAT và PIT khấu trừ năm {selectedYear}
+            </p>
           </div>
 
-          {/* Year & Quarter Selector */}
-          <div className="flex items-center gap-3">
+          {/* Controls & Export Buttons */}
+          <div className="flex flex-wrap items-center gap-3">
             <div className="relative inline-flex items-center">
               <select
                 value={selectedYear}
@@ -105,6 +150,36 @@ export function AdminTaxSummaryCard() {
               </select>
               <ChevronDown className="w-3.5 h-3.5 text-gray-500 absolute right-2.5 pointer-events-none" />
             </div>
+
+            {/* Quick Export VAT Excel */}
+            <button
+              type="button"
+              onClick={handleExportVat}
+              disabled={isExportingVat}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50 cursor-pointer"
+            >
+              {isExportingVat ? (
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Download className="w-3.5 h-3.5" />
+              )}
+              Xuất Excel VAT
+            </button>
+
+            {/* Quick Export PIT 05-2 Excel */}
+            <button
+              type="button"
+              onClick={handleExportPit}
+              disabled={isExportingPit}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-amber-600 px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-amber-700 disabled:opacity-50 cursor-pointer"
+            >
+              {isExportingPit ? (
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Download className="w-3.5 h-3.5" />
+              )}
+              Xuất Bảng Kê PIT
+            </button>
           </div>
         </div>
       </div>

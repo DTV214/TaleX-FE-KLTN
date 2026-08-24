@@ -55,10 +55,14 @@ function PublicChannelContent() {
   const profileUser = isFullProfile(user) ? user : null;
 
   const [activeTab, setActiveTab] = useState<TabType>("home");
-  const [sortBy, setSortBy] = useState<"latest" | "popular" | "oldest">("latest");
+  const [sortBy, setSortBy] = useState<"latest" | "popular" | "oldest">(
+    "latest",
+  );
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [isBioExpanded, setIsBioExpanded] = useState(false);
-  const [localFollowState, setLocalFollowState] = useState<boolean | null>(null);
+  const [localFollowState, setLocalFollowState] = useState<boolean | null>(
+    null,
+  );
 
   // Authentication Guard
   useEffect(() => {
@@ -76,17 +80,19 @@ function PublicChannelContent() {
   });
 
   // 1. Fetch Public Series List
-  const { data: publicSeriesData, isLoading: isPublicSeriesLoading } = useQuery({
-    queryKey: ["public-series-all"],
-    queryFn: () => getPublicSeriesList(1, 100),
-    enabled: isAuthenticated && !!paramCreatorId,
-    staleTime: 30 * 1000,
-  });
+  const { data: publicSeriesData, isLoading: isPublicSeriesLoading } = useQuery(
+    {
+      queryKey: ["public-series-all"],
+      queryFn: () => getPublicSeriesList(1, 100),
+      enabled: isAuthenticated && !!paramCreatorId,
+      staleTime: 30 * 1000,
+    },
+  );
 
   const effectiveCreatorId =
     paramCreatorId ||
     publicSeriesData?.content?.find(
-      (s) => s.creatorId || s.accountId || s.seriesId === paramCreatorId
+      (s) => s.creatorId || s.accountId || s.seriesId === paramCreatorId,
     )?.creatorId ||
     paramCreatorId;
 
@@ -105,7 +111,8 @@ function PublicChannelContent() {
   // Filter public series belonging to this creator
   const series = useMemo(() => {
     const allPublic = publicSeriesData?.content || [];
-    if (!paramCreatorId) return allPublic.filter((s) => s.status === "PUBLISHED");
+    if (!paramCreatorId)
+      return allPublic.filter((s) => s.status === "PUBLISHED");
     const target = paramCreatorId.toLowerCase();
 
     return allPublic.filter((item) => {
@@ -121,10 +128,12 @@ function PublicChannelContent() {
         item.seriesId && item.seriesId.toLowerCase() === target;
       const matchPublicDisplayName =
         publicCreator?.displayName &&
-        item.creatorName?.toLowerCase() === publicCreator.displayName.toLowerCase();
+        item.creatorName?.toLowerCase() ===
+          publicCreator.displayName.toLowerCase();
       const matchPublicUsername =
         publicCreator?.username &&
-        item.creatorName?.toLowerCase() === publicCreator.username.toLowerCase();
+        item.creatorName?.toLowerCase() ===
+          publicCreator.username.toLowerCase();
 
       return (
         matchCreatorId ||
@@ -162,17 +171,17 @@ function PublicChannelContent() {
     const target = paramCreatorId.toLowerCase();
 
     const isMatchMyAccountId = Boolean(
-      myAccountId && myAccountId.toLowerCase() === target
+      myAccountId && myAccountId.toLowerCase() === target,
     );
     const isMatchMyCreatorId = Boolean(
-      myCreatorId && myCreatorId.toLowerCase() === target
+      myCreatorId && myCreatorId.toLowerCase() === target,
     );
     const isMatchMySeries = Boolean(
       series[0] &&
-        ((series[0].accountId &&
-          series[0].accountId.toLowerCase() === myAccountId?.toLowerCase()) ||
-          (series[0].creatorId &&
-            series[0].creatorId.toLowerCase() === myCreatorId?.toLowerCase()))
+      ((series[0].accountId &&
+        series[0].accountId.toLowerCase() === myAccountId?.toLowerCase()) ||
+        (series[0].creatorId &&
+          series[0].creatorId.toLowerCase() === myCreatorId?.toLowerCase())),
     );
 
     return isMatchMyAccountId || isMatchMyCreatorId || isMatchMySeries;
@@ -195,15 +204,15 @@ function PublicChannelContent() {
     "Tác giả TaleX";
 
   const displayCreatorAvatar =
-    creator?.avatarUrl ||
-    series[0]?.creatorAvatar ||
-    undefined;
+    creator?.avatarUrl || series[0]?.creatorAvatar || undefined;
 
   const targetAccountId =
     series[0]?.accountId ||
     publicCreator?.accountId ||
     creator?.accountId ||
-    (paramCreatorId && !paramCreatorId.startsWith("CR-") ? paramCreatorId : undefined);
+    (paramCreatorId && !paramCreatorId.startsWith("CR-")
+      ? paramCreatorId
+      : undefined);
 
   const candidateIds = useMemo(() => {
     return [
@@ -249,14 +258,9 @@ function PublicChannelContent() {
   };
 
   const baseFollowerCount =
-    creator?.followerCount ||
-    series[0]?.totalCreatorFollowers ||
-    0;
+    creator?.followerCount || series[0]?.totalCreatorFollowers || 0;
 
-  const followerCount = Math.max(
-    baseFollowerCount,
-    isFollowing ? 1 : 0
-  );
+  const followerCount = Math.max(baseFollowerCount, isFollowing ? 1 : 0);
 
   // Public Combos
   const combosQuery = useGetPublicCombos();
@@ -264,12 +268,12 @@ function PublicChannelContent() {
     (combo) =>
       combo.creatorId === creator?.creatorId ||
       combo.creatorId === targetAccountId ||
-      combo.creatorId === paramCreatorId
+      combo.creatorId === paramCreatorId,
   );
 
   const totalViews = series.reduce(
     (acc, item) => acc + (item.totalViews || 0),
-    0
+    0,
   );
 
   const handleItemPress = (seriesId: string) => {
@@ -301,10 +305,10 @@ function PublicChannelContent() {
   };
 
   const comicsList = getSortedList(
-    series.filter((item) => item.contentType?.toUpperCase() === "COMIC")
+    series.filter((item) => item.contentType?.toUpperCase() === "COMIC"),
   );
   const moviesList = getSortedList(
-    series.filter((item) => item.contentType?.toUpperCase() === "VIDEO")
+    series.filter((item) => item.contentType?.toUpperCase() === "VIDEO"),
   );
 
   const spotlightSeries = series[0];
@@ -418,7 +422,8 @@ function PublicChannelContent() {
                     <p
                       className={`text-xs text-[#A1A1AA] leading-relaxed ${isBioExpanded ? "" : "line-clamp-2"}`}
                     >
-                      {creator?.bio || "Nhà sáng tạo nội dung độc quyền trên TaleX."}
+                      {creator?.bio ||
+                        "Nhà sáng tạo nội dung độc quyền trên TaleX."}
                     </p>
                     {creator?.bio && creator.bio.length > 100 && (
                       <button
@@ -567,7 +572,7 @@ function PublicChannelContent() {
                               {optionLabel}
                             </button>
                           );
-                        }
+                        },
                       )}
                     </div>
                   )}

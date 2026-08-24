@@ -35,13 +35,16 @@ function EngagementCheckoutSuccessContent() {
             Thanh toán thành công
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-base font-semibold leading-7 text-zinc-400 md:text-lg">
-            Chiến dịch tăng tương tác của bạn đã được ghi nhận. Bạn có thể quay lại
-            Creator Studio để theo dõi trạng thái chiến dịch.
+            Chiến dịch tăng tương tác của bạn đã được ghi nhận. Bạn có thể quay
+            lại Creator Studio để theo dõi trạng thái chiến dịch.
           </p>
 
           <div className="mx-auto mt-8 grid max-w-2xl gap-4 text-left md:grid-cols-1">
             <div className="flex items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] p-5">
-              <p className="text-lg font-bold text-zinc-500">Mã đơn hàng: <span className="text-[#D4AF37]">{orderId || "--"}</span></p>
+              <p className="text-lg font-bold text-zinc-500">
+                Mã đơn hàng:{" "}
+                <span className="text-[#D4AF37]">{orderId || "--"}</span>
+              </p>
             </div>
           </div>
 

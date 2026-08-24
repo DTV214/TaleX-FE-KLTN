@@ -11,7 +11,9 @@ import { useCreatorFollow } from "@/features/series/hooks/use-creator-follow";
 
 // Component con quản lý trạng thái follow của từng Creator riêng biệt
 function FollowedCreatorCard({ creator }: { creator: any }) {
-  const { isFollowing, toggleFollow, isMutating } = useCreatorFollow(creator.accountId);
+  const { isFollowing, toggleFollow, isMutating } = useCreatorFollow(
+    creator.accountId,
+  );
 
   return (
     <div className="group flex items-center justify-between p-4.5 rounded-2xl bg-white/[0.01] hover:bg-white/[0.03] border border-white/5 transition-all duration-300">
@@ -37,7 +39,10 @@ function FollowedCreatorCard({ creator }: { creator: any }) {
           </h3>
           <div className="flex items-center gap-2 text-xs text-gray-500 font-semibold mt-1">
             <Calendar className="w-3.5 h-3.5 text-gray-600" />
-            <span>Theo dõi từ {new Date(creator.followedAt).toLocaleDateString("vi-VN")}</span>
+            <span>
+              Theo dõi từ{" "}
+              {new Date(creator.followedAt).toLocaleDateString("vi-VN")}
+            </span>
           </div>
         </div>
       </Link>
@@ -87,7 +92,7 @@ export default function SubscriptionsPage() {
           void fetchNextPage();
         }
       },
-      { threshold: 0.1 }
+      { threshold: 0.1 },
     );
 
     observer.observe(triggerEl);
@@ -105,7 +110,8 @@ export default function SubscriptionsPage() {
           </div>
           <h1 className="text-2xl font-bold mb-3">Kênh đăng ký</h1>
           <p className="text-sm text-gray-400 mb-8">
-            Vui lòng đăng nhập tài khoản TaleX để quản lý và xem danh sách các nhà sáng tạo bạn đã theo dõi.
+            Vui lòng đăng nhập tài khoản TaleX để quản lý và xem danh sách các
+            nhà sáng tạo bạn đã theo dõi.
           </p>
           <Link
             href="/login"
@@ -124,7 +130,6 @@ export default function SubscriptionsPage() {
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_10%,rgba(212,175,55,0.06),transparent_35%),radial-gradient(circle_at_85%_15%,rgba(125,211,252,0.03),transparent_30%),linear-gradient(180deg,#080808_0%,#0e0e11_60%,#080808_100%)]" />
 
       <div className="relative z-10 mx-auto w-full max-w-[1600px] px-4 py-8 md:px-8">
-        
         {/* Banner tiêu đề */}
         <div className="mb-8 pb-6 border-b border-white/5 flex items-center justify-between">
           <div className="space-y-1">
@@ -151,8 +156,12 @@ export default function SubscriptionsPage() {
         {/* LỖI TẢI TRANG */}
         {isError && (
           <div className="min-h-[300px] flex flex-col items-center justify-center text-center">
-            <h2 className="text-sm font-bold text-red-400 mb-1">Tải dữ liệu thất bại</h2>
-            <p className="text-xs text-gray-500 mb-4">Vui lòng tải lại trang web.</p>
+            <h2 className="text-sm font-bold text-red-400 mb-1">
+              Tải dữ liệu thất bại
+            </h2>
+            <p className="text-xs text-gray-500 mb-4">
+              Vui lòng tải lại trang web.
+            </p>
             <button
               onClick={() => window.location.reload()}
               className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs font-bold"
@@ -166,7 +175,9 @@ export default function SubscriptionsPage() {
         {!isLoading && !isError && followedCreators.length === 0 && (
           <div className="min-h-[300px] rounded-2xl border border-dashed border-white/5 bg-white/[0.01] flex flex-col items-center justify-center text-center p-8">
             <Users className="w-8 h-8 text-gray-600 mb-3 stroke-[1.5]" />
-            <h2 className="text-sm font-bold text-gray-400">Chưa đăng ký kênh nào</h2>
+            <h2 className="text-sm font-bold text-gray-400">
+              Chưa đăng ký kênh nào
+            </h2>
             <p className="text-xs text-gray-600 mt-1 max-w-xs">
               Các nhà sáng tạo bạn theo dõi sẽ xuất hiện tại đây.
             </p>
@@ -183,12 +194,14 @@ export default function SubscriptionsPage() {
         )}
 
         {/* Trọng điểm cuộn vô hạn */}
-        <div ref={observerRef} className="h-10 w-full flex items-center justify-center mt-6">
+        <div
+          ref={observerRef}
+          className="h-10 w-full flex items-center justify-center mt-6"
+        >
           {isFetchingNextPage && (
             <Loader2 className="w-5 h-5 animate-spin text-[#D4AF37]" />
           )}
         </div>
-
       </div>
     </div>
   );

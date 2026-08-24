@@ -40,7 +40,8 @@ const COIN_DEBOUNCE_MS = 400;
 const CONTENT_ALREADY_OWNED_CODE = 4003;
 // Khớp PaymentErrorCode.ORDER_NOT_FULLY_COVERED_BY_COIN ở BE
 const ORDER_NOT_FULLY_COVERED_BY_COIN_CODE = 4006;
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const backgroundImageUrl =
   "https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=2025&auto=format&fit=crop";
@@ -68,10 +69,15 @@ function CheckoutContentPageBody() {
   const searchParams = useSearchParams();
   const itemId = searchParams.get("itemId") ?? "";
   const rawItemType = searchParams.get("itemType");
-  const itemType: ContentOrderItemType = isValidItemType(rawItemType) ? rawItemType : "EPISODE";
+  const itemType: ContentOrderItemType = isValidItemType(rawItemType)
+    ? rawItemType
+    : "EPISODE";
   const title = searchParams.get("title") ?? "Nội dung TaleX";
   const returnTo = searchParams.get("returnTo") || "/";
-  const isInvalidLink = !isValidItemType(rawItemType) || itemId.length === 0 || !isValidUuid(itemId);
+  const isInvalidLink =
+    !isValidItemType(rawItemType) ||
+    itemId.length === 0 ||
+    !isValidUuid(itemId);
 
   const [useCoin, setUseCoin] = useState(false);
   const [debouncedCoin, setDebouncedCoin] = useState(0);
@@ -99,7 +105,10 @@ function CheckoutContentPageBody() {
 
   useEffect(() => {
     const targetCoin = useCoin ? maxUsableCoin : 0;
-    const timerId = window.setTimeout(() => setDebouncedCoin(targetCoin), COIN_DEBOUNCE_MS);
+    const timerId = window.setTimeout(
+      () => setDebouncedCoin(targetCoin),
+      COIN_DEBOUNCE_MS,
+    );
     return () => window.clearTimeout(timerId);
   }, [useCoin, maxUsableCoin]);
 
@@ -121,16 +130,21 @@ function CheckoutContentPageBody() {
   const isPreparing = !order;
   const isSyncingCoin = createOrderQuery.isFetching && Boolean(order);
   const isCompleted = order?.status === "COMPLETED";
-  const isExpired = order?.status === "OUT_OF_TIME" || order?.status === "CANCELLED";
-  const needsOnlinePayment = Boolean(order?.qrUrl) && !isCompleted && !isExpired;
+  const isExpired =
+    order?.status === "OUT_OF_TIME" || order?.status === "CANCELLED";
+  const needsOnlinePayment =
+    Boolean(order?.qrUrl) && !isCompleted && !isExpired;
   const canCancel = Boolean(order) && !isCompleted && !isExpired;
   const isContentAlreadyOwnedError =
-    createOrderQuery.isError && getApiErrorCode(createOrderQuery.error) === CONTENT_ALREADY_OWNED_CODE;
+    createOrderQuery.isError &&
+    getApiErrorCode(createOrderQuery.error) === CONTENT_ALREADY_OWNED_CODE;
   const isFullyCoveredByCoin =
     order != null && !isCompleted && !isExpired && order.fiatAmount === 0;
-  const isAnyActionPending = confirmCoinPaymentMutation.isPending || cancelOrderMutation.isPending;
+  const isAnyActionPending =
+    confirmCoinPaymentMutation.isPending || cancelOrderMutation.isPending;
   const isCoinNotFullyCoveredError =
-    getApiErrorCode(confirmCoinPaymentMutation.error) === ORDER_NOT_FULLY_COVERED_BY_COIN_CODE;
+    getApiErrorCode(confirmCoinPaymentMutation.error) ===
+    ORDER_NOT_FULLY_COVERED_BY_COIN_CODE;
 
   function handleConfirmCoinPayment() {
     if (!orderId) {
@@ -164,9 +178,12 @@ function CheckoutContentPageBody() {
             <X className="h-7 w-7" />
           </span>
           <div className="space-y-1.5">
-            <p className="text-base font-bold text-white">Liên kết không hợp lệ</p>
+            <p className="text-base font-bold text-white">
+              Liên kết không hợp lệ
+            </p>
             <p className="text-sm font-medium text-white/50">
-              Đường dẫn thanh toán này bị thiếu hoặc sai thông tin. Vui lòng quay lại và thử lại.
+              Đường dẫn thanh toán này bị thiếu hoặc sai thông tin. Vui lòng
+              quay lại và thử lại.
             </p>
           </div>
           <button
@@ -194,7 +211,9 @@ function CheckoutContentPageBody() {
         <div className="mx-auto mb-4 w-full max-w-6xl">
           <button
             type="button"
-            onClick={canCancel ? handleCancelOrder : () => router.replace(returnTo)}
+            onClick={
+              canCancel ? handleCancelOrder : () => router.replace(returnTo)
+            }
             disabled={isAnyActionPending}
             className="inline-flex h-11 cursor-pointer items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-4 text-sm font-bold text-white/78 shadow-[0_0_24px_rgba(212,175,55,0.08)] transition hover:border-[#D4AF37]/45 hover:bg-[#D4AF37]/12 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
           >
@@ -269,7 +288,8 @@ function CheckoutContentPageBody() {
                     )}
                   </p>
 
-                  {(Boolean(order.comboOwnedEpisodeCount) || order.coinAmountUsed > 0) && (
+                  {(Boolean(order.comboOwnedEpisodeCount) ||
+                    order.coinAmountUsed > 0) && (
                     <div className="mt-4 space-y-2 border-b border-white/8 pb-4 text-sm">
                       {Boolean(order.comboOwnedEpisodeCount) && (
                         <>
@@ -289,7 +309,8 @@ function CheckoutContentPageBody() {
                             <span className="font-semibold text-emerald-300">
                               −
                               {formatCurrency(
-                                (order.comboOriginalPrice ?? 0) - order.totalAmount,
+                                (order.comboOriginalPrice ?? 0) -
+                                  order.totalAmount,
                               )}
                             </span>
                           </div>
@@ -308,7 +329,10 @@ function CheckoutContentPageBody() {
                             Giảm giá Coin ({order.coinAmountUsed} Coin)
                           </span>
                           <span className="font-semibold text-emerald-300">
-                            −{formatCurrency(order.totalAmount - order.fiatAmount)}
+                            −
+                            {formatCurrency(
+                              order.totalAmount - order.fiatAmount,
+                            )}
                           </span>
                         </div>
                       )}
@@ -325,13 +349,19 @@ function CheckoutContentPageBody() {
                 <>
                   <PaymentWarningBanner message="Vui lòng chuyển khoản đúng nội dung để hệ thống tự động xử lý trong vài giây." />
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <CopyableField label="Tên tài khoản" value={SEPAY_ACCOUNT_HOLDER} />
+                    <CopyableField
+                      label="Tên tài khoản"
+                      value={SEPAY_ACCOUNT_HOLDER}
+                    />
                     <CopyableField
                       label="Tên ngân hàng"
                       value={SEPAY_BANK_NAME}
                       logoUrl={SEPAY_BANK_LOGO_URL}
                     />
-                    <CopyableField label="Số tài khoản" value={SEPAY_ACCOUNT_NUMBER} />
+                    <CopyableField
+                      label="Số tài khoản"
+                      value={SEPAY_ACCOUNT_NUMBER}
+                    />
                     <CopyableField
                       label="Nội dung"
                       value={order?.paymentCode ?? "—"}
@@ -398,7 +428,9 @@ function CheckoutContentPageBody() {
                 ) : isPreparing ? (
                   <div className="flex aspect-square w-full max-w-[280px] mx-auto flex-col items-center justify-center gap-3 rounded-[28px] bg-[#121214] p-4 text-white/60">
                     <Loader2 className="h-8 w-8 animate-spin text-[#D4AF37]" />
-                    <span className="text-sm font-medium">Đang tạo đơn hàng...</span>
+                    <span className="text-sm font-medium">
+                      Đang tạo đơn hàng...
+                    </span>
                   </div>
                 ) : isFullyCoveredByCoin ? (
                   <div className="flex aspect-square w-full max-w-[280px] mx-auto flex-col items-center justify-center gap-5 rounded-[28px] border border-[#D4AF37]/20 bg-gradient-to-b from-[#D4AF37]/[0.07] to-transparent p-6 text-center">
@@ -419,7 +451,9 @@ function CheckoutContentPageBody() {
                         message={
                           isCoinNotFullyCoveredError
                             ? "Coin chưa đủ trả hết đơn này, vui lòng chuyển khoản phần còn lại."
-                            : getApiErrorMessage(confirmCoinPaymentMutation.error)
+                            : getApiErrorMessage(
+                                confirmCoinPaymentMutation.error,
+                              )
                         }
                       />
                     )}
