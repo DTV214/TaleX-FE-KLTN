@@ -17,3 +17,5 @@ export type TaxConfigRequest = {
 
 export type TaxConfigResponse = BaseResponse<TaxConfig | null>;
 export type TaxConfigMutationResponse = BaseResponse<TaxConfig>;
+
+
