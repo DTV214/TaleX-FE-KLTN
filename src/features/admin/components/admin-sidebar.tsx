@@ -30,6 +30,7 @@ import {
   Receipt,
   Scan,
   Settings,
+  Share2,
   ShieldAlert,
   ShieldCheck,
   SlidersHorizontal,
@@ -100,6 +101,7 @@ const creatorVerificationNavItems: NavItem[] = [
 
 const financialNavItems: NavItem[] = [
   { name: "Quyết toán Creator", href: "/admin/financials", icon: CircleDollarSign },
+  { name: "Chia tiền Creator", href: "/admin/subscription-revenue-sharing", icon: Share2 },
   { name: "Yêu cầu rút tiền", href: "/admin/payouts", icon: Banknote },
   { name: "Báo Cáo Thuế", href: "/admin/tax-summary", icon: Receipt },
   { name: "Cấu hình Thuế & Quyết toán", href: "/admin/tax-config", icon: Percent },
