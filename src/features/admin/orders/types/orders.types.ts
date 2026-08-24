@@ -18,7 +18,6 @@ export type AdminOrderListItem = {
   coinAmount: number;
   fiatAmount: number;
   campaignWalletAmount: number;
-  overpaidAmount: number | null;
   vatAmount: number | null;
   createdAt: string;
   expiresAt: string | null;
@@ -27,6 +26,7 @@ export type AdminOrderListItem = {
 };
 
 export type AdminOrderDetail = AdminOrderListItem & {
+  overpaidAmount: number | null;
   vatRate: number | null;
   metadata: string | null;
   updatedAt: string;
@@ -57,18 +57,9 @@ export type OrderSearchParams = {
   pageSize: number;
 };
 
-export type OrderPageParams = {
-  page: number;
-  pageSize: number;
-};
-
 export type OrderStatsParams = {
   from: string;
   to: string;
-};
-
-export type OrderInterventionRequest = {
-  reason: string;
 };
 
 export type AdminOrderListResponse = BaseResponse<

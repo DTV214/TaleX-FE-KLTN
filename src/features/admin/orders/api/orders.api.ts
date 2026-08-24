@@ -3,8 +3,6 @@ import type {
   AdminOrderDetailResponse,
   AdminOrderListResponse,
   AdminOrderStatsResponse,
-  OrderInterventionRequest,
-  OrderPageParams,
   OrderSearchParams,
   OrderStatsParams,
 } from "../types/orders.types";
@@ -36,45 +34,10 @@ export const ordersApi = {
     return response.data;
   },
 
-  async listOverpaid(
-    params: OrderPageParams,
-  ): Promise<AdminOrderListResponse> {
-    const response = await httpClient.get<AdminOrderListResponse>(
-      `${ADMIN_ORDERS_ENDPOINT}/overpaid`,
-      { params },
-    );
-
-    return response.data;
-  },
-
   async getStats(params: OrderStatsParams): Promise<AdminOrderStatsResponse> {
     const response = await httpClient.get<AdminOrderStatsResponse>(
       `${ADMIN_ORDERS_ENDPOINT}/stats`,
       { params },
-    );
-
-    return response.data;
-  },
-
-  async cancelOrder(
-    orderId: string,
-    payload: OrderInterventionRequest,
-  ): Promise<AdminOrderDetailResponse> {
-    const response = await httpClient.post<AdminOrderDetailResponse>(
-      `${ADMIN_ORDERS_ENDPOINT}/${orderId}/cancel`,
-      payload,
-    );
-
-    return response.data;
-  },
-
-  async forceCompleteOrder(
-    orderId: string,
-    payload: OrderInterventionRequest,
-  ): Promise<AdminOrderDetailResponse> {
-    const response = await httpClient.post<AdminOrderDetailResponse>(
-      `${ADMIN_ORDERS_ENDPOINT}/${orderId}/force-complete`,
-      payload,
     );
 
     return response.data;
