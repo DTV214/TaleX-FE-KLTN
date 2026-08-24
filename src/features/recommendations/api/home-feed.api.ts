@@ -7,14 +7,14 @@ import type {
 } from "../types/home-feed.types";
 
 export const DEFAULT_HOME_FEED_LIMITS: Required<HomeFeedRequest> = {
-  promotedLimit: 6,
-  trendingLimit: 10,
-  newReleasesLimit: 10,
-  recentlyUpdatedLimit: 10,
-  latestCommunityChoiceLimit: 10,
-  communityChoiceLimit: 10,
-  randomCategoryLimit: 10,
-  subscriptionLimit: 10,
+  promotedLimit: 4,
+  trendingLimit: 4,
+  newReleasesLimit: 4,
+  recentlyUpdatedLimit: 4,
+  latestCommunityChoiceLimit: 4,
+  communityChoiceLimit: 4,
+  randomCategoryLimit: 5,
+  subscriptionLimit: 4,
 };
 
 export async function getHomeFeed(params: HomeFeedRequest = DEFAULT_HOME_FEED_LIMITS) {

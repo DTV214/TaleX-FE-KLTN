@@ -102,7 +102,7 @@ const financialNavItems: NavItem[] = [
   { name: "Quyết toán Creator", href: "/admin/financials", icon: CircleDollarSign },
   { name: "Yêu cầu rút tiền", href: "/admin/payouts", icon: Banknote },
   { name: "Báo Cáo Thuế", href: "/admin/tax-summary", icon: Receipt },
-  { name: "Cấu hình Thuế", href: "/admin/tax-config", icon: Percent },
+  { name: "Cấu hình Thuế & Quyết toán", href: "/admin/tax-config", icon: Percent },
 ];
 
 const interactionNavItems: NavItem[] = [
