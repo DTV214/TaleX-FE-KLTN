@@ -23,6 +23,7 @@ import {
   Image as ImageIcon,
   Languages,
   LayoutDashboard,
+  ListOrdered,
   LogOut,
   Megaphone,
   Percent,
@@ -120,6 +121,11 @@ const navItems: NavItem[] = [
     name: "Gói Premium",
     href: "/admin/subscriptions",
     icon: CreditCard,
+  },
+  {
+    name: "Đơn hàng",
+    href: "/admin/orders",
+    icon: ListOrdered,
   },
   {
     name: "Kinh Tế Coin",
