@@ -486,7 +486,11 @@ function ComicRecommendationSection() {
   });
 
   const comics = useMemo(() => {
-    return feedData?.pages.flatMap((page) => page.items) ?? [];
+    return (
+      feedData?.pages
+        .flatMap((page) => page.items)
+        .filter((item) => String(item.contentType || "").toUpperCase() === "COMIC") ?? []
+    );
   }, [feedData]);
 
   useEffect(() => {

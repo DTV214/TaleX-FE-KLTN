@@ -484,7 +484,11 @@ function MovieRecommendationSection() {
   });
 
   const movies = useMemo(() => {
-    return feedData?.pages.flatMap((page) => page.items) ?? [];
+    return (
+      feedData?.pages
+        .flatMap((page) => page.items)
+        .filter((item) => String(item.contentType || "").toUpperCase() === "VIDEO") ?? []
+    );
   }, [feedData]);
 
   useEffect(() => {
