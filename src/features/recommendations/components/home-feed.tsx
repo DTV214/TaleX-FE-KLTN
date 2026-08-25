@@ -58,6 +58,8 @@ const CHANNEL_POOL_ORDER: HomeFeedPoolKey[] = [
   "recentlyUpdated",
   "randomCategory",
   "accountSubscription",
+  "latestCommunityChoice",
+  "communityChoice",
 ];
 
 const RECOMMENDATION_POOLS: HomeFeedPoolKey[] = [
@@ -66,7 +68,6 @@ const RECOMMENDATION_POOLS: HomeFeedPoolKey[] = [
 ];
 
 const MIXED_RECOMMENDATION_LIMIT = 10;
-const MIN_RECOMMENDATION_AFTER_DEDUPE = 8;
 
 const poolCopy: Record<
   HomeFeedPoolKey,
@@ -215,18 +216,7 @@ function buildMixedRecommendations(
   );
   const fresh = raw.filter((series) => !channelIds.has(series.seriesId));
 
-  if (
-    fresh.length >= MIN_RECOMMENDATION_AFTER_DEDUPE ||
-    fresh.length === raw.length
-  ) {
-    return fresh;
-  }
-
-  const duplicateFallback = raw.filter((series) =>
-    channelIds.has(series.seriesId),
-  );
-
-  return uniqueSeries([...fresh, ...duplicateFallback]);
+  return fresh;
 }
 
 function formatViews(value?: number, analyticViews?: number) {
