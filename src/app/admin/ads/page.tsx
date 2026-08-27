@@ -253,7 +253,17 @@ export default function AdminAdsPage() {
       adminAdsApi.patchSlotStatus(id, isActive),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-ad-slots"] });
-      toast.success("Đã thay đổi trạng thái.");
+      toast.success("Đã thay đổi trạng thái mở bán.");
+    },
+    onError: (error) => toast.error(getErrorMessage(error)),
+  });
+
+  const patchSlotServingMutation = useMutation({
+    mutationFn: ({ id, isServingEnabled }: { id: string; isServingEnabled: boolean }) =>
+      adminAdsApi.patchSlotServingStatus(id, isServingEnabled),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-ad-slots"] });
+      toast.success("Đã thay đổi trạng thái phát quảng cáo trên trang.");
     },
     onError: (error) => toast.error(getErrorMessage(error)),
   });
@@ -814,14 +824,24 @@ export default function AdminAdsPage() {
                     className={inputClassName}
                   />
                 </SlotField>
-                <SlotField label="Trạng thái">
+                <SlotField label="Mở bán cho Advertiser">
                   <select
                     name="isActive"
                     defaultValue={editingSlot.isActive ? "true" : "false"}
                     className={inputClassName}
                   >
-                    <option value="true">Đang kích hoạt</option>
-                    <option value="false">Tạm ẩn</option>
+                    <option value="true">Đang mở bán (Hiển thị trong Dashboard)</option>
+                    <option value="false">Tạm ẩn (Không cho đặt mua mới)</option>
+                  </select>
+                </SlotField>
+                <SlotField label="Phát quảng cáo trên Web">
+                  <select
+                    name="isServingEnabled"
+                    defaultValue={editingSlot.isServingEnabled !== false ? "true" : "false"}
+                    className={inputClassName}
+                  >
+                    <option value="true">Đang phát (Hiển thị cho người xem)</option>
+                    <option value="false">Tắt phát (Ngừng toàn bộ hiển thị trên trang)</option>
                   </select>
                 </SlotField>
 
@@ -858,13 +878,14 @@ export default function AdminAdsPage() {
               </h2>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[760px] text-left text-sm">
+              <table className="w-full min-w-[860px] text-left text-sm">
                 <thead className="border-b border-slate-200 bg-slate-50 text-xs font-bold uppercase tracking-wider text-slate-500 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/45">
                   <tr>
                     <th className="px-6 py-4">Code / Tên</th>
                     <th className="px-6 py-4">Loại</th>
                     <th className="px-6 py-4">Giá / Views</th>
-                    <th className="px-6 py-4">Trạng thái</th>
+                    <th className="px-6 py-4">Mở bán (Advertiser)</th>
+                    <th className="px-6 py-4">Phát quảng cáo (Web)</th>
                     <th className="px-6 py-4 text-right">Hành động</th>
                   </tr>
                 </thead>
@@ -872,7 +893,7 @@ export default function AdminAdsPage() {
                   {slots?.map((slot) => (
                     <tr
                       key={slot.slotId}
-                      className={`transition hover:bg-slate-50/80 backoffice-dark:hover:bg-white/[0.05] ${!slot.isActive ? "opacity-60" : ""
+                      className={`transition hover:bg-slate-50/80 backoffice-dark:hover:bg-white/[0.05] ${!slot.isActive ? "opacity-75" : ""
                         }`}
                     >
                       <td className="px-6 py-4">
@@ -896,14 +917,30 @@ export default function AdminAdsPage() {
                               : getStatusClassName("PAUSED")
                             }`}
                         >
-                          {slot.isActive ? "Đang bật" : "Đang ẩn"}
+                          {slot.isActive ? "Đang mở bán" : "Tạm ẩn"}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span
+                          className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold ${
+                            slot.isServingEnabled !== false
+                              ? "border-emerald-200 bg-emerald-50 text-emerald-700 backoffice-dark:border-emerald-400/30 backoffice-dark:bg-emerald-400/10 backoffice-dark:text-emerald-200"
+                              : "border-red-200 bg-red-50 text-red-700 backoffice-dark:border-red-400/30 backoffice-dark:bg-red-400/10 backoffice-dark:text-red-200"
+                          }`}
+                        >
+                          <span
+                            className={`h-1.5 w-1.5 rounded-full ${
+                              slot.isServingEnabled !== false ? "bg-emerald-500 animate-pulse" : "bg-red-500"
+                            }`}
+                          />
+                          {slot.isServingEnabled !== false ? "Đang phát" : "Đã tắt phát"}
                         </span>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center justify-end gap-2">
                           <ActionButton
                             onClick={() => setEditingSlot(slot)}
-                            title="Sửa"
+                            title="Sửa thông tin Slot"
                           >
                             <Edit className="h-4 w-4" />
                           </ActionButton>
@@ -914,11 +951,16 @@ export default function AdminAdsPage() {
                                 isActive: !slot.isActive,
                               })
                             }
-                            title={slot.isActive ? "Tắt" : "Bật"}
+                            disabled={patchSlotStatusMutation.isPending}
+                            title={
+                              slot.isActive
+                                ? "Tạm ẩn mở bán (Advertiser không thấy slot này khi tạo quảng cáo)"
+                                : "Bật mở bán (Cho phép Advertiser chọn slot này)"
+                            }
                             className={
                               slot.isActive
-                                ? "hover:bg-amber-50 hover:text-amber-600"
-                                : "hover:bg-emerald-50 hover:text-emerald-600"
+                                ? "hover:bg-amber-50 hover:text-amber-600 backoffice-dark:hover:bg-amber-400/10 backoffice-dark:hover:text-amber-400"
+                                : "hover:bg-emerald-50 hover:text-emerald-600 backoffice-dark:hover:bg-emerald-400/10 backoffice-dark:hover:text-emerald-400"
                             }
                           >
                             {slot.isActive ? (
@@ -927,6 +969,27 @@ export default function AdminAdsPage() {
                               <Eye className="h-4 w-4" />
                             )}
                           </ActionButton>
+                          <ActionButton
+                            onClick={() =>
+                              patchSlotServingMutation.mutate({
+                                id: slot.slotId,
+                                isServingEnabled: slot.isServingEnabled === false,
+                              })
+                            }
+                            disabled={patchSlotServingMutation.isPending}
+                            title={
+                              slot.isServingEnabled !== false
+                                ? "Tắt phát quảng cáo trên trang (Ngừng hiển thị với người xem)"
+                                : "Bật phát quảng cáo trên trang (Hiển thị cho người xem)"
+                            }
+                            className={
+                              slot.isServingEnabled !== false
+                                ? "text-emerald-600 hover:bg-red-50 hover:text-red-600 backoffice-dark:text-emerald-400 backoffice-dark:hover:bg-red-400/10 backoffice-dark:hover:text-red-400"
+                                : "text-red-500 hover:bg-emerald-50 hover:text-emerald-600 backoffice-dark:text-red-400 backoffice-dark:hover:bg-emerald-400/10 backoffice-dark:hover:text-emerald-400"
+                            }
+                          >
+                            <Power className="h-4 w-4" />
+                          </ActionButton>
                         </div>
                       </td>
                     </tr>
@@ -934,7 +997,7 @@ export default function AdminAdsPage() {
                   {(!slots || slots.length === 0) && (
                     <tr>
                       <td
-                        colSpan={5}
+                        colSpan={6}
                         className="px-6 py-14 text-center text-sm font-medium text-slate-500"
                       >
                         Không có slot quảng cáo.
