@@ -30,11 +30,17 @@ export const subscriptionRevenueSharingKeys = {
       "monthly-subscriptions",
       params,
     ] as const,
-  accountSubscriptionStats: (accountSubscriptionId: string) =>
+  accountSubscriptionStats: (
+    accountSubscriptionId: string,
+    page: number,
+    pageSize: number,
+  ) =>
     [
       ...subscriptionRevenueSharingKeys.all,
       "account-subscription-stats",
       accountSubscriptionId,
+      page,
+      pageSize,
     ] as const,
 };
 
@@ -90,17 +96,25 @@ export function useMonthlyAccountSubscriptions(params: PagedMonthYearParams) {
 
 export function useAccountSubscriptionStats(
   accountSubscriptionId: string | null,
+  page = 1,
+  pageSize = 20,
 ) {
   return useQuery({
     queryKey: subscriptionRevenueSharingKeys.accountSubscriptionStats(
       accountSubscriptionId ?? "",
+      page,
+      pageSize,
     ),
     queryFn: () =>
       subscriptionRevenueSharingApi.getAccountSubscriptionStats(
         accountSubscriptionId!,
+        page,
+        pageSize,
       ),
     enabled: Boolean(accountSubscriptionId),
-    staleTime: 30 * 1000,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: false,
   });
 }
 
