@@ -1,5 +1,6 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import {
   Activity,
@@ -20,6 +21,7 @@ import { toast } from "sonner";
 import { getApiErrorMessage } from "@/shared/api/http-client";
 import { cn } from "@/shared/utils/utils";
 import {
+  subscriptionRevenueSharingKeys,
   useAccountSubscriptionStats,
   useCalculateSubscriptionRevenueSharing,
   useMonthlyAccountSubscriptions,
@@ -28,6 +30,7 @@ import {
   useSubscriptionRevenueLogs,
   useSubscriptionSyncMetadata,
 } from "../hooks/use-subscription-revenue-sharing";
+import { subscriptionRevenueSharingApi } from "../api/subscription-revenue-sharing.api";
 import type {
   MonthlyAccountSubscription,
   MonthYearParams,
@@ -571,15 +574,25 @@ function StatsModal({
   accountSubscription,
   onClose,
 }: {
-  accountSubscription: MonthlyAccountSubscription | null;
+  accountSubscription: MonthlyAccountSubscription;
   onClose: () => void;
 }) {
   const statsQuery = useAccountSubscriptionStats(
-    accountSubscription?.accountSubscriptionId ?? null,
+    accountSubscription.accountSubscriptionId,
+    1,
+    PAGE_SIZE,
   );
   const rows = statRows(statsQuery.data);
-
-  if (!accountSubscription) return null;
+  const detailTotalViews = rows.reduce((sum, row) => {
+    const record = asRecord(row);
+    return sum + getNumberValue(record, [
+      "totalViews",
+      "total_views",
+      "views",
+      "watchCount",
+      "watch_count",
+    ]);
+  }, 0);
 
   return (
     <div
@@ -587,11 +600,11 @@ function StatsModal({
       onClick={onClose}
     >
       <div
-        className="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl backoffice-dark:border-white/10 backoffice-dark:bg-[#111113]"
+        className="flex max-h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl backoffice-dark:border-white/10 backoffice-dark:bg-[#111113]"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="flex items-start justify-between gap-4 border-b border-slate-200 p-5 backoffice-dark:border-white/10">
-          <div>
+        <div className="flex items-start justify-between gap-4 border-b border-slate-200 bg-slate-50/70 p-6 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.02]">
+          <div className="min-w-0">
             <h2 className="text-xl font-black text-slate-950 backoffice-dark:text-white">
               Chi tiết lượt xem subscription
             </h2>
@@ -609,8 +622,8 @@ function StatsModal({
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto p-5">
-          <div className="mb-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        <div className="min-h-0 flex-1 overflow-y-auto p-6">
+          <div className="mb-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             <MetricCard
               icon={Users}
               label="Người dùng"
@@ -620,7 +633,7 @@ function StatsModal({
               icon={Activity}
               label="Tổng views"
               tone="warn"
-              value={formatNumber(accountSubscription.totalViews)}
+              value={formatNumber(detailTotalViews || accountSubscription.totalViews)}
             />
             <MetricCard
               icon={ReceiptText}
@@ -630,29 +643,44 @@ function StatsModal({
             />
           </div>
 
-          <div className="overflow-hidden rounded-2xl border border-slate-200 backoffice-dark:border-white/10">
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.03]">
+            <div className="flex flex-col gap-2 border-b border-slate-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between backoffice-dark:border-white/10">
+              <div>
+                <p className="text-sm font-black text-slate-950 backoffice-dark:text-white">
+                  Chi tiết lượt xem
+                </p>
+                <p className="mt-0.5 text-xs font-semibold text-slate-500 backoffice-dark:text-white/45">
+                  {formatNumber(rows.length)} dòng dữ liệu
+                </p>
+              </div>
+              {statsQuery.isFetching && (
+                <span className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-black text-amber-700 backoffice-dark:border-amber-400/20 backoffice-dark:bg-amber-400/10 backoffice-dark:text-amber-200">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  Đang tải
+                </span>
+              )}
+            </div>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[840px] text-left text-sm">
+              <table className="w-full min-w-[720px] text-left text-sm">
                 <thead className="border-b border-slate-200 bg-slate-50 text-xs font-black uppercase tracking-wide text-slate-500 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/45">
                   <tr>
                     <th className="px-4 py-3">Creator</th>
                     <th className="px-4 py-3">Series / Episode</th>
                     <th className="px-4 py-3 text-right">Views</th>
-                    <th className="px-4 py-3 text-right">Duration</th>
-                    <th className="px-4 py-3">Ngày tạo</th>
+                    <th className="px-4 py-3">{"K\u1ef3"}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 backoffice-dark:divide-white/10">
                   {statsQuery.isLoading ? (
                     <tr>
-                      <td colSpan={5} className="px-4 py-12 text-center text-sm font-semibold text-slate-400">
+                      <td colSpan={4} className="px-4 py-12 text-center text-sm font-semibold text-slate-400">
                         <Loader2 className="mx-auto mb-2 h-5 w-5 animate-spin" />
                         Đang tải stats...
                       </td>
                     </tr>
                   ) : rows.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="px-4 py-12 text-center text-sm font-semibold text-slate-400">
+                      <td colSpan={4} className="px-4 py-12 text-center text-sm font-semibold text-slate-400">
                         Chưa có lượt xem chi tiết.
                       </td>
                     </tr>
@@ -661,9 +689,12 @@ function StatsModal({
                       const record = asRecord(row);
                       const id = getStringValue(record, [
                         "subscriptionStatId",
+                        "subscription_stat_id",
                         "id",
                         "episodeId",
+                        "episode_id",
                         "mediaId",
+                        "media_id",
                       ], `${index}`);
 
                       return (
@@ -671,43 +702,55 @@ function StatsModal({
                           <td className="break-all px-4 py-3 font-bold text-slate-800 backoffice-dark:text-white/80">
                             {getStringValue(record, [
                               "creatorEmail",
+                              "creator_email",
                               "email",
                               "creatorUsername",
+                              "creator_username",
                               "creatorName",
+                              "creator_name",
                               "creatorId",
+                              "creator_id",
                             ])}
                           </td>
                           <td className="px-4 py-3">
                             <p className="break-words font-black text-slate-950 backoffice-dark:text-white">
                               {getStringValue(record, [
                                 "seriesTitle",
+                                "series_title",
                                 "seriesName",
+                                "series_name",
                                 "mediaTitle",
+                                "media_title",
                               ])}
                             </p>
                             <p className="mt-1 break-all text-xs font-semibold text-slate-500 backoffice-dark:text-white/45">
                               {getStringValue(record, [
                                 "episodeTitle",
+                                "episode_title",
                                 "episodeName",
+                                "episode_name",
+                                "episodeNumber",
+                                "episode_number",
                                 "episodeId",
+                                "episode_id",
                               ])}
                             </p>
                           </td>
-                          <td className="px-4 py-3 text-right font-black">
-                            {formatNumber(getNumberValue(record, [
-                              "totalViews",
-                              "views",
-                              "watchCount",
-                            ]))}
-                          </td>
-                          <td className="px-4 py-3 text-right font-black text-violet-600 backoffice-dark:text-violet-300">
-                            {formatNumber(getNumberValue(record, [
-                              "watchSeconds",
-                              "durationSeconds",
-                            ]))}
+                          <td className="px-4 py-3 text-right">
+                            <span className="inline-flex min-w-10 justify-center rounded-full bg-violet-50 px-3 py-1 text-sm font-black text-violet-700 backoffice-dark:bg-violet-400/10 backoffice-dark:text-violet-200">
+                              {formatNumber(getNumberValue(record, [
+                                "totalViews",
+                                "total_views",
+                                "views",
+                                "watchCount",
+                                "watch_count",
+                              ]))}
+                            </span>
                           </td>
                           <td className="px-4 py-3 text-xs font-semibold text-slate-500 backoffice-dark:text-white/45">
-                            {formatDateTime(getStringValue(record, ["createdAt"], ""))}
+                            <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-black text-slate-600 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/65">
+                              {getStringValue(record, ["monthYear", "month_year"])}
+                            </span>
                           </td>
                         </tr>
                       );
@@ -724,6 +767,7 @@ function StatsModal({
 }
 
 export function SubscriptionRevenueSharingDashboard() {
+  const queryClient = useQueryClient();
   const [monthValue, setMonthValue] = useState(previousMonthValue);
   const [subscriptionPage, setSubscriptionPage] = useState(1);
   const [logPage, setLogPage] = useState(1);
@@ -803,6 +847,28 @@ export function SubscriptionRevenueSharingDashboard() {
     } catch (error) {
       toast.error(getApiErrorMessage(error));
     }
+  }
+
+  function handleOpenStats(item: MonthlyAccountSubscription) {
+    setSelectedAccountSubscription(item);
+    void queryClient
+      .fetchQuery({
+        queryKey: subscriptionRevenueSharingKeys.accountSubscriptionStats(
+          item.accountSubscriptionId,
+          1,
+          PAGE_SIZE,
+        ),
+        queryFn: () =>
+          subscriptionRevenueSharingApi.getAccountSubscriptionStats(
+            item.accountSubscriptionId,
+            1,
+            PAGE_SIZE,
+          ),
+        staleTime: 0,
+      })
+      .catch((error) => {
+        toast.error(getApiErrorMessage(error));
+      });
   }
 
   return (
@@ -984,7 +1050,7 @@ export function SubscriptionRevenueSharingDashboard() {
         <AccountSubscriptionsTable
           isFetching={subscriptionsQuery.isFetching}
           items={subscriptions}
-          onOpenStats={setSelectedAccountSubscription}
+          onOpenStats={handleOpenStats}
         />
         {subscriptionsQuery.data && (
           <div className="flex justify-end gap-2">
@@ -1049,10 +1115,13 @@ export function SubscriptionRevenueSharingDashboard() {
         )}
       </section>
 
-      <StatsModal
-        accountSubscription={selectedAccountSubscription}
-        onClose={() => setSelectedAccountSubscription(null)}
-      />
+      {selectedAccountSubscription && (
+        <StatsModal
+          key={selectedAccountSubscription.accountSubscriptionId}
+          accountSubscription={selectedAccountSubscription}
+          onClose={() => setSelectedAccountSubscription(null)}
+        />
+      )}
 
       {isRevenueLogsModalOpen && (
         <RevenueLogsModal

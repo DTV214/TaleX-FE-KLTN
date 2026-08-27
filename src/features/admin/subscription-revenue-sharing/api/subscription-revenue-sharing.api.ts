@@ -24,7 +24,6 @@ const SUBSCRIPTION_RESULTS_ENDPOINT = "/api/v1/subscription-results";
 const SUBSCRIPTION_CALCULATION_ENDPOINT =
   "/api/v1/subscription-calculation-demo";
 const ACCOUNT_SUBSCRIPTIONS_ENDPOINT = "/api/v1/account-subscriptions";
-const SUBSCRIPTION_STATS_ENDPOINT = "/api/v1/subscription-stats";
 const SUBSCRIPTION_STAT_SYNC_TYPE = "SUBSCRIPTION_STAT";
 
 function monthYearQuery(params: MonthYearParams) {
@@ -40,6 +39,10 @@ function pagedMonthYearQuery(params: PagedMonthYearParams) {
     page: params.page,
     pageSize: params.pageSize,
   };
+}
+
+function formatMonthYear(params: MonthYearParams) {
+  return `${params.year}-${String(params.month).padStart(2, "0")}`;
 }
 
 export const subscriptionRevenueSharingApi = {
@@ -88,10 +91,15 @@ export const subscriptionRevenueSharingApi = {
     );
   },
 
-  getAccountSubscriptionStats(accountSubscriptionId: string) {
+  getAccountSubscriptionStats(
+    accountSubscriptionId: string,
+    page = 1,
+    pageSize = 20,
+  ) {
     return unwrapBaseResponse<SubscriptionStatsData>(
       httpClient.get<SubscriptionStatsResponse>(
-        `${SUBSCRIPTION_STATS_ENDPOINT}/account-subscription/${accountSubscriptionId}/stats`,
+        `${ACCOUNT_SUBSCRIPTIONS_ENDPOINT}/${accountSubscriptionId}/stats`,
+        { params: { page, pageSize } },
       ),
     );
   },
@@ -103,7 +111,7 @@ export const subscriptionRevenueSharingApi = {
         null,
         {
           params: {
-            ...monthYearQuery(params),
+            monthYear: formatMonthYear(params),
             isDemo: true,
           },
         },
