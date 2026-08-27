@@ -42,6 +42,7 @@ export interface AdvertiseProfile {
   phone: string;
   website: string;
   isSetupCompleted: boolean;
+  isLocked?: boolean;
 }
 
 export interface AdProfileSetup {

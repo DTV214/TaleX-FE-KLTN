@@ -9,7 +9,27 @@ export interface AdCampaignAdmin {
   totalBudget: number;
   createdAt: string;
   profileId: string;
+  companyName?: string;
+  advertiserEmail?: string;
+  advertiserUsername?: string;
   creatives: any[];
+}
+
+export interface AdvertiseProfileAdmin {
+  profileId: string;
+  accountId: string;
+  username?: string;
+  email?: string;
+  companyName?: string;
+  phone?: string;
+  website?: string;
+  walletBalance: number;
+  billingInfo?: string;
+  isSetupCompleted: boolean;
+  isLocked: boolean;
+  campaignsCount: number;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 export const adminAdsApi = {
@@ -39,4 +59,11 @@ export const adminAdsApi = {
 
   patchSlotServingStatus: (slotId: string, isServingEnabled: boolean) =>
     api.patch(`/api/v1/ads/admin/slots/${slotId}/serving-status?isServingEnabled=${isServingEnabled}`).then((res) => res.data.data),
+
+  getAllProfiles: () =>
+    api.get<{ data: AdvertiseProfileAdmin[] }>("/api/v1/ads/admin/profiles").then((res) => res.data.data),
+
+  toggleLockProfile: (profileId: string, isLocked: boolean) =>
+    api.patch(`/api/v1/ads/admin/profiles/${profileId}/lock?isLocked=${isLocked}`).then((res) => res.data.data),
 };
+

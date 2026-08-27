@@ -12,7 +12,7 @@ import { createPortal } from "react-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { adsApi, AdSlot } from "@/features/ads/api/ads-api";
 import { toast } from "sonner";
-import { Loader2, Plus, Search, Calendar, ChevronDown, Columns, RefreshCw, MoreVertical, X, Check, Tag, Megaphone, PlusCircle, Coins, HelpCircle, BarChart2, Trash2, Download, Edit2 } from "lucide-react";
+import { Loader2, Plus, Search, Calendar, ChevronDown, Columns, RefreshCw, MoreVertical, X, Check, Tag, Megaphone, PlusCircle, Coins, HelpCircle, BarChart2, Trash2, Download, Edit2, ShieldAlert } from "lucide-react";
 import { useAuthStore } from "@/features/auth/store/auth.store";
 import { useLabels, AdLabel } from "@/features/ads/hooks/use-labels";
 import * as XLSX from "xlsx";
@@ -263,6 +263,17 @@ function CampaignManagementView({ profile }: { profile: any }) {
 
   return (
     <div className="h-full flex flex-col bg-white border border-slate-200 rounded-sm shadow-sm animate-in fade-in slide-in-from-bottom-4 relative">
+      {profile?.isLocked && (
+        <div className="flex items-center gap-3 border-b border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <ShieldAlert className="h-5 w-5 shrink-0 text-red-600" />
+          <div>
+            <p className="font-bold text-red-800">Tài khoản quảng cáo của bạn đang bị khóa</p>
+            <p className="text-xs text-red-600">
+              Quản trị viên đã tạm khóa quyền đăng quảng cáo của bạn. Bạn không thể tạo mới hoặc nhân bản chiến dịch.
+            </p>
+          </div>
+        </div>
+      )}
       
       {/* Top Header Action Bar */}
       <div className="flex items-center gap-4 p-3 border-b border-slate-200 bg-[#F4F5F6]">
@@ -920,10 +931,19 @@ function CloneCampaignModal({ campaign, onClose }: { campaign: any, onClose: () 
       toast.success("Đã clone chiến dịch thành công!");
       onClose();
     },
-    onError: (err: any) => toast.error(err.response?.data?.message || err.message)
+    onError: (err: any) => {
+      const errorMsg =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Clone chiến dịch thất bại";
+      toast.error(errorMsg);
+    }
   });
 
   const handleSubmit = () => {
+    if (profile?.isLocked) {
+      return toast.error("Tài khoản của bạn đã bị quản trị viên khóa quyền đăng quảng cáo.");
+    }
     if (!profile || profile.walletBalance < budget) {
       return toast.error("Số dư Ví tổng không đủ để cấp ngân sách cho chiến dịch này.");
     }
@@ -1007,8 +1027,8 @@ function CloneCampaignModal({ campaign, onClose }: { campaign: any, onClose: () 
           </button>
           <button 
             onClick={handleSubmit} 
-            disabled={cloneMutation.isPending || !currentSlot}
-            className="px-4 py-1.5 text-sm font-medium rounded-sm bg-slate-1000 text-white hover:bg-[#161823] transition-colors disabled:opacity-70 flex items-center gap-2"
+            disabled={cloneMutation.isPending || !currentSlot || profile?.isLocked}
+            className="px-4 py-1.5 text-sm font-medium rounded-sm bg-slate-1000 text-white hover:bg-[#161823] transition-colors disabled:opacity-50 flex items-center gap-2"
           >
             {cloneMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
             Xác nhận tạo lại
@@ -1102,15 +1122,22 @@ function CreateCampaignPanel({ onClose }: { onClose: () => void }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ad-wallet-balance"] });
       queryClient.invalidateQueries({ queryKey: ["my-campaigns"] });
-      toast.success("Campaign created successfully!");
+      toast.success("Tạo chiến dịch thành công!");
       onClose();
     },
     onError: (err: any) => {
-      toast.error("Error: " + (err.response?.data?.message || err.message));
+      const errorMsg =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Tạo chiến dịch thất bại";
+      toast.error(errorMsg);
     }
   });
 
   const handleNext = () => {
+    if (profile?.isLocked) {
+      return toast.error("Tài khoản của bạn đã bị quản trị viên khóa quyền đăng quảng cáo.");
+    }
     if (step === 1 && !formData.slotId) return toast.error("Please select an objective/placement");
     if (step === 2) {
       if (formData.campaignBudget < 10000) return toast.error("Minimum budget is 10,000 VND");
@@ -1123,18 +1150,21 @@ function CreateCampaignPanel({ onClose }: { onClose: () => void }) {
   };
 
   const handleSubmit = async () => {
+    if (profile?.isLocked) {
+      return toast.error("Tài khoản của bạn đã bị quản trị viên khóa quyền đăng quảng cáo.");
+    }
     if (!formData.name) return toast.error("Please enter a campaign name");
     if (!selectedFile) return toast.error("Please upload your media file!");
 
     setIsUploading(true);
-    const toastId = toast.loading("Uploading media to S3...");
+    const toastId = toast.loading("Đang tải media lên...");
     let uploadedUrl = "";
     
     try {
       uploadedUrl = await adsApi.uploadMedia(selectedFile);
-      toast.success("Upload complete, initializing campaign...", { id: toastId });
+      toast.dismiss(toastId);
     } catch (err: any) {
-      toast.error("Upload failed: " + err.message, { id: toastId });
+      toast.error("Tải file thất bại: " + err.message, { id: toastId });
       setIsUploading(false);
       return;
     }
@@ -1157,6 +1187,18 @@ function CreateCampaignPanel({ onClose }: { onClose: () => void }) {
       </div>
       
       <div className="flex-1 overflow-y-auto p-6">
+        {profile?.isLocked && (
+          <div className="mb-6 flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            <ShieldAlert className="h-5 w-5 shrink-0 text-red-600 mt-0.5" />
+            <div>
+              <p className="font-bold text-red-800">Tài khoản đã bị khóa quyền đăng quảng cáo</p>
+              <p className="mt-0.5 text-xs text-red-600">
+                Quản trị viên đã khóa tài khoản của bạn. Bạn không thể tạo hoặc khởi chạy chiến dịch quảng cáo mới.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Step Indicator */}
         <div className="flex gap-2 mb-8">
           <div className={`h-1 flex-1 rounded-full ${step >= 1 ? 'bg-[#161823]' : 'bg-slate-200'}`} />
@@ -1384,7 +1426,7 @@ function CreateCampaignPanel({ onClose }: { onClose: () => void }) {
         {step < 3 ? (
           <button onClick={handleNext} className="px-6 py-2 bg-[#161823] text-white rounded-sm text-sm font-semibold hover:bg-black transition-colors">Next</button>
         ) : (
-          <button onClick={handleSubmit} disabled={isUploading || createCampaignMutation.isPending} className="px-6 py-2 bg-[#161823] text-white rounded-sm text-sm font-semibold hover:bg-black disabled:opacity-50 transition-colors">
+          <button onClick={handleSubmit} disabled={isUploading || createCampaignMutation.isPending || profile?.isLocked} className="px-6 py-2 bg-[#161823] text-white rounded-sm text-sm font-semibold hover:bg-black disabled:opacity-50 transition-colors">
             {isUploading || createCampaignMutation.isPending ? "Submitting..." : "Submit"}
           </button>
         )}
@@ -1500,6 +1542,17 @@ function OverviewView({ profile }: { profile: any }) {
 
   return (
     <div className="h-full flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4">
+      {profile?.isLocked && (
+        <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          <ShieldAlert className="h-5 w-5 shrink-0 text-red-600 mt-0.5" />
+          <div>
+            <p className="font-bold text-red-800">Tài khoản quảng cáo đang bị khóa</p>
+            <p className="mt-0.5 text-xs text-red-600">
+              Quản trị viên đã khóa quyền tạo và chạy quảng cáo của bạn. Vui lòng liên hệ ban quản trị để biết thêm chi tiết.
+            </p>
+          </div>
+        </div>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white p-6 rounded-md shadow-sm border border-slate-200">
           <div className="text-sm text-slate-500 mb-2">Số dư ví (VND)</div>
