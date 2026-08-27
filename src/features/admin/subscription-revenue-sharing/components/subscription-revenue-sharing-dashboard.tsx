@@ -219,7 +219,7 @@ function ResultTable({
                   className={cn(
                     "transition hover:bg-slate-50 backoffice-dark:hover:bg-white/[0.035]",
                     isActive &&
-                      "bg-violet-50/70 backoffice-dark:bg-[var(--backoffice-primary)]/10",
+                    "bg-violet-50/70 backoffice-dark:bg-[var(--backoffice-primary)]/10",
                   )}
                 >
                   <td className="px-5 py-4">
@@ -809,17 +809,9 @@ export function SubscriptionRevenueSharingDashboard() {
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-7">
       <header className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3.5 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-amber-700 backoffice-dark:border-[var(--backoffice-primary)]/35 backoffice-dark:bg-[var(--backoffice-primary)]/10 backoffice-dark:text-[var(--backoffice-primary)]">
-            <Calculator className="h-3.5 w-3.5" />
-            Subscription Rule X
-          </div>
           <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-950 backoffice-dark:text-white">
-            Quản lý chia tiền Creator
+            Chi Tiết Doanh Thu Premium
           </h1>
-          <p className="mt-1 max-w-3xl text-sm font-medium text-slate-500 backoffice-dark:text-white/55">
-            Theo dõi kết quả chia doanh thu Premium theo tháng, gom watch
-            session và tính thử Rule X cho creator.
-          </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
@@ -841,7 +833,7 @@ export function SubscriptionRevenueSharingDashboard() {
                   resultsQuery.isFetching ||
                   subscriptionsQuery.isFetching ||
                   logsQuery.isFetching) &&
-                  "animate-spin",
+                "animate-spin",
               )}
             />
             Làm mới
@@ -888,11 +880,6 @@ export function SubscriptionRevenueSharingDashboard() {
               className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-800 outline-none transition focus:border-amber-500 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white"
             />
           </label>
-
-          <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-600 backoffice-dark:border-white/10 backoffice-dark:bg-black/25 backoffice-dark:text-white/55">
-            API tính toán đang chạy ở chế độ demo cố định (`isDemo=true`) để
-            không vô tình ghi/chốt dữ liệu thật ngoài ý muốn.
-          </div>
         </div>
       </section>
 
@@ -938,16 +925,16 @@ export function SubscriptionRevenueSharingDashboard() {
       {(resultsQuery.isError ||
         subscriptionsQuery.isError ||
         syncMetadataQuery.isError) && (
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-bold text-red-700 backoffice-dark:border-red-400/20 backoffice-dark:bg-red-400/10 backoffice-dark:text-red-200">
-          Không thể tải một phần dữ liệu chia tiền. Hãy kiểm tra API tháng đã
-          chọn hoặc quyền admin.
-        </div>
-      )}
+          <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-bold text-red-700 backoffice-dark:border-red-400/20 backoffice-dark:bg-red-400/10 backoffice-dark:text-red-200">
+            Không thể tải một phần dữ liệu chia tiền. Hãy kiểm tra API tháng đã
+            chọn hoặc quyền admin.
+          </div>
+        )}
 
       <section className="space-y-3">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-xl font-black text-slate-950 backoffice-dark:text-white">
-            SubscriptionResult theo tháng
+            Kết Quả Chia Doanh Thu Theo Tháng
           </h2>
         </div>
         {resultsQuery.isLoading ? (
