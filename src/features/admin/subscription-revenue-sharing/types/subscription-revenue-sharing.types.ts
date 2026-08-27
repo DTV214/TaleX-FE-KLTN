@@ -11,7 +11,7 @@ export type PagedMonthYearParams = MonthYearParams & {
 };
 
 export type SubscriptionResult = {
-  id: string;
+  id: string | null;
   alpha: number;
   gamma: number;
   subscriptionFee: number;
@@ -19,12 +19,13 @@ export type SubscriptionResult = {
   targetBudget: number;
   calculatedBudget: number;
   monthYear: string;
+  revenueLogs?: SubscriptionRevenueLog[];
 };
 
 export type MonthlyAccountSubscription = {
   accountSubscriptionId: string;
   subscriptionId: string;
-  orderId: string;
+  orderId: string | null;
   totalAmount: number;
   vatAmount: number;
   amount: number;
@@ -34,6 +35,7 @@ export type MonthlyAccountSubscription = {
   startTime: string;
   endTime: string;
   totalViews: number;
+  isHasStat: boolean;
 };
 
 export type SyncMetadata = {

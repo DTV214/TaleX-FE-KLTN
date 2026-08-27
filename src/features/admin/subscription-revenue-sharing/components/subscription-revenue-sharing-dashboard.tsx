@@ -1,11 +1,10 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Activity,
   BarChart3,
-  Calculator,
   ChevronLeft,
   ChevronRight,
   Clock3,
@@ -36,12 +35,11 @@ import type {
   MonthYearParams,
   SubscriptionRevenueLog,
   SubscriptionResult,
-  SubscriptionStatItem,
   SubscriptionStatsData,
   SyncMetadata,
 } from "../types/subscription-revenue-sharing.types";
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 100;
 
 function previousMonthValue() {
   const date = new Date();
@@ -137,6 +135,17 @@ function statRows(data?: SubscriptionStatsData) {
   return Array.isArray(data) ? data : data.content;
 }
 
+function resultKey(result: SubscriptionResult, index: number) {
+  return result.id ?? `temporary-${result.monthYear}-${index}`;
+}
+
+function calculationResults(
+  data: SubscriptionResult[] | SubscriptionResult | string | null,
+) {
+  if (Array.isArray(data)) return data;
+  return data && typeof data === "object" ? [data] : [];
+}
+
 function MetricCard({
   icon: Icon,
   label,
@@ -182,16 +191,18 @@ function MetricCard({
 function ResultTable({
   activeResultId,
   onSelect,
+  onViewDetails,
   results,
 }: {
   activeResultId: string | null;
   onSelect: (id: string) => void;
+  onViewDetails: (id: string) => void;
   results: SubscriptionResult[];
 }) {
   if (results.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-6 py-12 text-center text-sm font-semibold text-slate-500 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.035] backoffice-dark:text-white/45">
-        Chưa có SubscriptionResult cho tháng đã chọn.
+        Chưa có kết quả chia sẻ doanh thu cho tháng đã chọn.
       </div>
     );
   }
@@ -203,24 +214,32 @@ function ResultTable({
           <thead className="border-b border-slate-200 bg-slate-50 text-xs font-black uppercase tracking-wide text-slate-500 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/45">
             <tr>
               <th className="px-5 py-4">Kỳ</th>
-              <th className="px-5 py-4 text-right">Subscription fee</th>
-              <th className="px-5 py-4 text-right">Alpha</th>
-              <th className="px-5 py-4 text-right">Gamma</th>
-              <th className="px-5 py-4 text-right">Total budget</th>
-              <th className="px-5 py-4 text-right">Target</th>
-              <th className="px-5 py-4 text-right">Calculated</th>
-              <th className="px-5 py-4 text-right">Logs</th>
+              <th className="px-5 py-4 text-right">Tổng Doanh Thu (Đã Trừ VAT)</th>
+              <th className="px-5 py-4 text-right">Số Tiền Mỗi Gói</th>
+              <th className="px-5 py-4 text-right">Phí Nền Tảng Cơ Bản (%)</th>
+              <th className="px-5 py-4 text-right">Số Tiền Chia</th>
+              <th className="px-5 py-4 text-right">Số Tiền Ứng Mỗi Lượt Xem Cơ Bản</th>
+              <th className="px-5 py-4 text-right">Chi Tiết</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 backoffice-dark:divide-white/10">
-            {results.map((result) => {
-              const isActive = result.id === activeResultId;
+            {results.map((result, index) => {
+              const isActive = resultKey(result, index) === activeResultId;
 
               return (
                 <tr
-                  key={result.id}
+                  key={resultKey(result, index)}
+                  onClick={() => onSelect(resultKey(result, index))}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      onSelect(resultKey(result, index));
+                    }
+                  }}
                   className={cn(
-                    "transition hover:bg-slate-50 backoffice-dark:hover:bg-white/[0.035]",
+                    "cursor-pointer transition hover:bg-slate-50 backoffice-dark:hover:bg-white/[0.035]",
                     isActive &&
                     "bg-violet-50/70 backoffice-dark:bg-[var(--backoffice-primary)]/10",
                   )}
@@ -229,9 +248,9 @@ function ResultTable({
                     <p className="font-black text-slate-950 backoffice-dark:text-white">
                       {result.monthYear}
                     </p>
-                    <p className="mt-1 break-all text-xs font-semibold text-slate-400">
-                      {result.id}
-                    </p>
+                  </td>
+                  <td className="px-5 py-4 text-right font-black">
+                    {formatVND(result.totalBudget)}
                   </td>
                   <td className="px-5 py-4 text-right font-black">
                     {formatVND(result.subscriptionFee)}
@@ -239,26 +258,23 @@ function ResultTable({
                   <td className="px-5 py-4 text-right font-bold">
                     {formatPercent(result.alpha)}
                   </td>
-                  <td className="px-5 py-4 text-right font-bold">
-                    {formatPercent(result.gamma)}
-                  </td>
-                  <td className="px-5 py-4 text-right font-black">
-                    {formatVND(result.totalBudget)}
-                  </td>
                   <td className="px-5 py-4 text-right font-black text-violet-600 backoffice-dark:text-violet-300">
                     {formatVND(result.targetBudget)}
                   </td>
-                  <td className="px-5 py-4 text-right font-black text-emerald-600">
-                    {formatVND(result.calculatedBudget)}
+                  <td className="px-5 py-4 text-right font-bold">
+                    {formatVND(result.gamma * result.subscriptionFee)} - {formatPercent((result.gamma))}
                   </td>
+
                   <td className="px-5 py-4 text-right">
                     <button
                       type="button"
-                      onClick={() => onSelect(result.id)}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onViewDetails(resultKey(result, index));
+                      }}
                       className="inline-flex h-9 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-xs font-black text-slate-700 transition hover:bg-slate-50 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/10"
                     >
                       <ReceiptText className="h-4 w-4" />
-                      Xem log
                     </button>
                   </td>
                 </tr>
@@ -286,14 +302,13 @@ function AccountSubscriptionsTable({
         <table className="w-full min-w-[1040px] text-left text-sm">
           <thead className="border-b border-slate-200 bg-slate-50 text-xs font-black uppercase tracking-wide text-slate-500 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/45">
             <tr>
-              <th className="px-5 py-4">Người dùng</th>
-              <th className="px-5 py-4">Account subscription</th>
-              <th className="px-5 py-4 text-right">Amount</th>
+              <th className="px-5 py-4">Người Mua</th>
+              <th className="px-5 py-4">Mã Order</th>
+              <th className="px-5 py-4 text-right">Tổng Tiền</th>
               <th className="px-5 py-4 text-right">VAT</th>
-              <th className="px-5 py-4 text-right">Total</th>
-              <th className="px-5 py-4 text-right">Views</th>
+              <th className="px-5 py-4 text-right">Thực Nhận</th>
               <th className="px-5 py-4">Thời hạn</th>
-              <th className="px-5 py-4 text-right">Stats</th>
+              <th className="px-5 py-4 text-right">Chi Tiết</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 backoffice-dark:divide-white/10">
@@ -326,28 +341,22 @@ function AccountSubscriptionsTable({
                   </td>
                   <td className="px-5 py-4">
                     <p className="break-all font-mono text-xs font-bold text-slate-700 backoffice-dark:text-white/75">
-                      {item.accountSubscriptionId}
+                      {item.orderId}
                     </p>
-                    <p className="mt-1 break-all text-xs font-semibold text-slate-400">
-                      Order: {item.orderId}
-                    </p>
-                  </td>
-                  <td className="px-5 py-4 text-right font-black">
-                    {formatVND(item.amount)}
-                  </td>
-                  <td className="px-5 py-4 text-right font-black text-amber-600">
-                    {formatVND(item.vatAmount)}
                   </td>
                   <td className="px-5 py-4 text-right font-black text-slate-950 backoffice-dark:text-white">
                     {formatVND(item.totalAmount)}
                   </td>
-                  <td className="px-5 py-4 text-right font-black text-violet-600 backoffice-dark:text-violet-300">
-                    {formatNumber(item.totalViews)}
+                  <td className="px-5 py-4 text-right font-black text-amber-600">
+                    {formatVND(item.vatAmount)}
+                  </td>
+                  <td className="px-5 py-4 text-right font-black">
+                    {formatVND(item.amount)}
                   </td>
                   <td className="px-5 py-4 text-xs font-semibold text-slate-500 backoffice-dark:text-white/50">
-                    {formatDateTime(item.startTime)}
+                    Từ: {formatDateTime(item.startTime)}
                     <br />
-                    {formatDateTime(item.endTime)}
+                    Đến: {formatDateTime(item.endTime)}
                   </td>
                   <td className="px-5 py-4 text-right">
                     <button
@@ -356,7 +365,6 @@ function AccountSubscriptionsTable({
                       className="inline-flex h-9 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-xs font-black text-slate-700 transition hover:bg-slate-50 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/10"
                     >
                       <Eye className="h-4 w-4" />
-                      Chi tiết
                     </button>
                   </td>
                 </tr>
@@ -382,12 +390,9 @@ function RevenueLogsTable({
         <table className="w-full min-w-[920px] text-left text-sm">
           <thead className="border-b border-slate-200 bg-slate-50 text-xs font-black uppercase tracking-wide text-slate-500 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/45">
             <tr>
-              <th className="px-5 py-4">Creator</th>
-              <th className="px-5 py-4">Nội dung</th>
-              <th className="px-5 py-4 text-right">Views</th>
-              <th className="px-5 py-4 text-right">Weight</th>
+              <th className="px-5 py-4">Nhà Sáng Tạo</th>
+              <th className="px-5 py-4">Tập Được Nhận</th>
               <th className="px-5 py-4 text-right">Doanh thu chia</th>
-              <th className="px-5 py-4">Ngày tạo</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 backoffice-dark:divide-white/10">
@@ -395,13 +400,13 @@ function RevenueLogsTable({
               <tr>
                 <td colSpan={6} className="px-5 py-12 text-center text-sm font-semibold text-slate-400">
                   <Loader2 className="mx-auto mb-2 h-5 w-5 animate-spin" />
-                  Đang tải revenue logs...
+                  Đang tải chi tiết kết quả tính toán...
                 </td>
               </tr>
             ) : logs.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-5 py-12 text-center text-sm font-semibold text-slate-400">
-                  Chưa có revenue log cho SubscriptionResult này.
+                  Chưa có kết quả tính toán cho phần doanh thu này.
                 </td>
               </tr>
             ) : (
@@ -418,7 +423,7 @@ function RevenueLogsTable({
                       <p className="font-black text-slate-950 backoffice-dark:text-white">
                         {getStringValue(record, [
                           "creatorName",
-                          "creatorUsername",
+                          "username",
                           "creatorEmail",
                           "email",
                           "creatorId",
@@ -434,29 +439,12 @@ function RevenueLogsTable({
                         "episodeId",
                       ])}
                     </td>
-                    <td className="px-5 py-4 text-right font-black">
-                      {formatNumber(getNumberValue(record, [
-                        "totalViews",
-                        "views",
-                        "watchCount",
-                      ]))}
-                    </td>
-                    <td className="px-5 py-4 text-right font-black text-violet-600 backoffice-dark:text-violet-300">
-                      {formatNumber(getNumberValue(record, [
-                        "weight",
-                        "score",
-                        "shareRatio",
-                      ]))}
-                    </td>
                     <td className="px-5 py-4 text-right font-black text-emerald-600">
                       {formatVND(getNumberValue(record, [
-                        "creatorShareAmount",
+                        "revenue",
                         "revenueAmount",
                         "amount",
                       ]))}
-                    </td>
-                    <td className="px-5 py-4 text-xs font-semibold text-slate-500 backoffice-dark:text-white/50">
-                      {formatDateTime(getStringValue(record, ["createdAt"], ""))}
                     </td>
                   </tr>
                 );
@@ -508,13 +496,10 @@ function RevenueLogsModal({
         <div className="flex items-start justify-between gap-4 border-b border-slate-200 p-5 backoffice-dark:border-white/10">
           <div className="min-w-0">
             <h2 className="text-xl font-black text-slate-950 backoffice-dark:text-white">
-              Revenue logs
+              Chi Tiết Kết Quả Tính Toán
             </h2>
             <p className="mt-1 text-xs font-black uppercase tracking-[0.14em] text-violet-600 backoffice-dark:text-[var(--backoffice-primary)]">
-              {result.monthYear} · Calculated {formatVND(result.calculatedBudget)}
-            </p>
-            <p className="mt-1 break-all text-xs font-semibold text-slate-500 backoffice-dark:text-white/45">
-              {result.id}
+              {result.monthYear} · {formatVND(result.calculatedBudget)}
             </p>
           </div>
           <button
@@ -541,7 +526,7 @@ function RevenueLogsModal({
           <div className="flex flex-col gap-3 border-t border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between backoffice-dark:border-white/10">
             <p className="text-sm font-semibold text-slate-500 backoffice-dark:text-white/45">
               Trang {pageInfo.pageNumber} / {pageInfo.totalPages || 1} ·{" "}
-              {pageInfo.totalElements} log
+              {pageInfo.totalElements}
             </p>
             <div className="flex gap-2">
               <button
@@ -606,11 +591,8 @@ function StatsModal({
         <div className="flex items-start justify-between gap-4 border-b border-slate-200 bg-slate-50/70 p-6 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.02]">
           <div className="min-w-0">
             <h2 className="text-xl font-black text-slate-950 backoffice-dark:text-white">
-              Chi tiết lượt xem subscription
+              Chi Tiết Lượt Xem Trong Giai Đoạn Premium
             </h2>
-            <p className="mt-1 break-all text-xs font-semibold text-slate-500 backoffice-dark:text-white/45">
-              {accountSubscription.accountSubscriptionId}
-            </p>
           </div>
           <button
             type="button"
@@ -626,48 +608,38 @@ function StatsModal({
           <div className="mb-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             <MetricCard
               icon={Users}
-              label="Người dùng"
+              label="Người Mua"
               value={accountSubscription.username || accountSubscription.email}
             />
             <MetricCard
               icon={Activity}
-              label="Tổng views"
+              label="Tổng Lượt Xem"
               tone="warn"
               value={formatNumber(detailTotalViews || accountSubscription.totalViews)}
             />
             <MetricCard
               icon={ReceiptText}
-              label="Subscription amount"
+              label="Thành Tiền"
               tone="good"
               value={formatVND(accountSubscription.amount)}
             />
           </div>
 
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.03]">
-            <div className="flex flex-col gap-2 border-b border-slate-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between backoffice-dark:border-white/10">
-              <div>
-                <p className="text-sm font-black text-slate-950 backoffice-dark:text-white">
-                  Chi tiết lượt xem
-                </p>
-                <p className="mt-0.5 text-xs font-semibold text-slate-500 backoffice-dark:text-white/45">
-                  {formatNumber(rows.length)} dòng dữ liệu
-                </p>
-              </div>
-              {statsQuery.isFetching && (
-                <span className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-black text-amber-700 backoffice-dark:border-amber-400/20 backoffice-dark:bg-amber-400/10 backoffice-dark:text-amber-200">
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  Đang tải
-                </span>
-              )}
-            </div>
+            {statsQuery.isFetching && (
+              <span className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-black text-amber-700 backoffice-dark:border-amber-400/20 backoffice-dark:bg-amber-400/10 backoffice-dark:text-amber-200">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Đang tải
+              </span>
+            )}
             <div className="overflow-x-auto">
               <table className="w-full min-w-[720px] text-left text-sm">
                 <thead className="border-b border-slate-200 bg-slate-50 text-xs font-black uppercase tracking-wide text-slate-500 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/45">
                   <tr>
-                    <th className="px-4 py-3">Creator</th>
-                    <th className="px-4 py-3">Series / Episode</th>
-                    <th className="px-4 py-3 text-right">Views</th>
-                    <th className="px-4 py-3">{"K\u1ef3"}</th>
+                    <th className="px-4 py-3">Nhà Sáng Tạo</th>
+                    <th className="px-4 py-3">Series</th>
+                    <th className="px-4 py-3">Tập Được Xem</th>
+                    <th className="px-4 py-3 text-right">Số Lượt Xem</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 backoffice-dark:divide-white/10">
@@ -675,7 +647,7 @@ function StatsModal({
                     <tr>
                       <td colSpan={4} className="px-4 py-12 text-center text-sm font-semibold text-slate-400">
                         <Loader2 className="mx-auto mb-2 h-5 w-5 animate-spin" />
-                        Đang tải stats...
+                        Đang tải chi tiết...
                       </td>
                     </tr>
                   ) : rows.length === 0 ? (
@@ -723,8 +695,10 @@ function StatsModal({
                                 "media_title",
                               ])}
                             </p>
+                          </td>
+                          <td className="px-4 py-3 text-xs font-semibold text-slate-500 backoffice-dark:text-white/45">
                             <p className="mt-1 break-all text-xs font-semibold text-slate-500 backoffice-dark:text-white/45">
-                              {getStringValue(record, [
+                              Tập {getStringValue(record, [
                                 "episodeTitle",
                                 "episode_title",
                                 "episodeName",
@@ -745,11 +719,6 @@ function StatsModal({
                                 "watchCount",
                                 "watch_count",
                               ]))}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-xs font-semibold text-slate-500 backoffice-dark:text-white/45">
-                            <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-black text-slate-600 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/65">
-                              {getStringValue(record, ["monthYear", "month_year"])}
                             </span>
                           </td>
                         </tr>
@@ -775,6 +744,9 @@ export function SubscriptionRevenueSharingDashboard() {
   const [isRevenueLogsModalOpen, setIsRevenueLogsModalOpen] = useState(false);
   const [selectedAccountSubscription, setSelectedAccountSubscription] =
     useState<MonthlyAccountSubscription | null>(null);
+  const [temporaryResultsByMonth, setTemporaryResultsByMonth] = useState<
+    Record<string, SubscriptionResult[]>
+  >({});
 
   const monthParams = useMemo(() => parseMonthValue(monthValue), [monthValue]);
   const syncMetadataQuery = useSubscriptionSyncMetadata();
@@ -785,34 +757,91 @@ export function SubscriptionRevenueSharingDashboard() {
     pageSize: PAGE_SIZE,
   });
   const processStatsMutation = useProcessSubscriptionStats();
-  const calculateMutation = useCalculateSubscriptionRevenueSharing();
+  const {
+    isPending: isCalculatePending,
+    mutateAsync: calculateRevenueSharing,
+  } = useCalculateSubscriptionRevenueSharing();
 
-  const results = resultsQuery.data ?? [];
+  const serverResults = (resultsQuery.data ?? []).filter(
+    (result) => result.monthYear === monthValue,
+  );
+  const temporaryResults = temporaryResultsByMonth[monthValue] ?? [];
+  const isTemporaryResults =
+    serverResults.length === 0 && temporaryResults.length > 0;
+  const results = isTemporaryResults ? temporaryResults : serverResults;
   const activeResultId =
-    selectedResultId && results.some((result) => result.id === selectedResultId)
+    selectedResultId &&
+      results.some((result, index) => resultKey(result, index) === selectedResultId)
       ? selectedResultId
-      : results[0]?.id ?? null;
+      : results.length > 0
+        ? resultKey(results[0], 0)
+        : null;
+  const activeResultIndex = results.findIndex(
+    (result, index) => resultKey(result, index) === activeResultId,
+  );
   const logsQuery = useSubscriptionRevenueLogs(
-    activeResultId,
+    isTemporaryResults ? null : activeResultId,
     logPage,
     PAGE_SIZE,
   );
   const activeResult =
-    results.find((result) => result.id === activeResultId) ?? null;
+    (activeResultIndex >= 0 ? results[activeResultIndex] : null) ?? null;
   const subscriptions = subscriptionsQuery.data?.content ?? [];
   const logs = logsQuery.data?.content ?? [];
-  const totalSubscriptionAmount = subscriptions.reduce(
-    (sum, item) => sum + item.amount,
-    0,
-  );
-  const totalViews = subscriptions.reduce(
-    (sum, item) => sum + item.totalViews,
-    0,
-  );
   const totalCalculatedBudget = results.reduce(
     (sum, item) => sum + item.calculatedBudget,
     0,
   );
+  const selectedResult = selectedResultId
+    ? (activeResultIndex >= 0 ? results[activeResultIndex] : null)
+    : null;
+  const filteredSubscriptions = selectedResult
+    ? subscriptions.filter(
+      (item) => item.amount === selectedResult.subscriptionFee,
+    )
+    : subscriptions;
+  const hasStatSubscriptions = filteredSubscriptions.filter(
+    (item) => item.isHasStat !== false,
+  );
+  const missingStatSubscriptions = filteredSubscriptions.filter(
+    (item) => item.isHasStat === false,
+  );
+  const autoCalculatedMonthRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (
+      !resultsQuery.isSuccess ||
+      resultsQuery.isFetching ||
+      serverResults.length > 0 ||
+      isCalculatePending ||
+      autoCalculatedMonthRef.current === monthValue
+    ) {
+      return;
+    }
+
+    autoCalculatedMonthRef.current = monthValue;
+    void calculateRevenueSharing(monthParams)
+      .then((data) => {
+        const calculatedResults = calculationResults(data);
+        if (calculatedResults.length > 0) {
+          setTemporaryResultsByMonth((current) => ({
+            ...current,
+            [monthValue]: calculatedResults,
+          }));
+        }
+      })
+      .catch((error) => {
+        toast.error(getApiErrorMessage(error));
+      });
+  }, [
+    calculateRevenueSharing,
+    isCalculatePending,
+    monthParams,
+    monthValue,
+    serverResults.length,
+    resultsQuery.isFetching,
+    resultsQuery.isSuccess,
+  ]);
 
   function updateMonth(value: string) {
     setMonthValue(value);
@@ -842,7 +871,12 @@ export function SubscriptionRevenueSharingDashboard() {
 
   async function handleCalculate() {
     try {
-      await calculateMutation.mutateAsync(monthParams);
+      const data = await calculateRevenueSharing(monthParams);
+      const calculatedResults = calculationResults(data);
+      setTemporaryResultsByMonth((current) => ({
+        ...current,
+        [monthValue]: calculatedResults,
+      }));
       toast.success("Đã tính Rule X ở chế độ demo.");
     } catch (error) {
       toast.error(getApiErrorMessage(error));
@@ -915,20 +949,7 @@ export function SubscriptionRevenueSharingDashboard() {
             ) : (
               <Activity className="h-4 w-4" />
             )}
-            Gom watch session
-          </button>
-          <button
-            type="button"
-            onClick={handleCalculate}
-            disabled={calculateMutation.isPending}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 text-sm font-black text-white transition hover:bg-slate-800 disabled:opacity-60 backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black backoffice-dark:hover:bg-[var(--backoffice-primary-bright)]"
-          >
-            {calculateMutation.isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Play className="h-4 w-4" />
-            )}
-            Tính Rule X demo
+            Gom Dữ Liệu Người Dùng
           </button>
         </div>
       </header>
@@ -957,34 +978,19 @@ export function SubscriptionRevenueSharingDashboard() {
         />
         <MetricCard
           icon={ReceiptText}
-          label="SubscriptionResult"
+          label="Kết Quả Chia Sẻ"
           value={formatNumber(results.length)}
         />
         <MetricCard
           icon={Users}
-          label="Subscription trên trang"
+          label="Số Gói Trong Doanh Thu"
           value={formatNumber(subscriptions.length)}
         />
         <MetricCard
           icon={BarChart3}
-          label="Calculated budget"
+          label="Tổng Tiền Chia"
           tone="good"
           value={formatVND(totalCalculatedBudget)}
-        />
-      </div>
-
-      <div className="grid gap-3 md:grid-cols-2">
-        <MetricCard
-          icon={ReceiptText}
-          label="Amount trên trang"
-          tone="good"
-          value={formatVND(totalSubscriptionAmount)}
-        />
-        <MetricCard
-          icon={Activity}
-          label="Total views trên trang"
-          tone="warn"
-          value={formatNumber(totalViews)}
         />
       </div>
 
@@ -1003,6 +1009,12 @@ export function SubscriptionRevenueSharingDashboard() {
             Kết Quả Chia Doanh Thu Theo Tháng
           </h2>
         </div>
+        {isTemporaryResults && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800 backoffice-dark:border-amber-400/20 backoffice-dark:bg-amber-400/10 backoffice-dark:text-amber-200">
+            Đây là kết quả tính toán tạm thời từ dữ liệu người dùng đã thu thập,
+            chưa được ghi nhận vào cơ sở dữ liệu.
+          </div>
+        )}
         {resultsQuery.isLoading ? (
           <div className="rounded-2xl border border-slate-200 bg-white px-6 py-12 text-center text-sm font-semibold text-slate-500 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
             <Loader2 className="mx-auto mb-2 h-5 w-5 animate-spin" />
@@ -1014,6 +1026,10 @@ export function SubscriptionRevenueSharingDashboard() {
             results={results}
             onSelect={(id) => {
               setSelectedResultId(id);
+              setIsRevenueLogsModalOpen(false);
+            }}
+            onViewDetails={(id) => {
+              setSelectedResultId(id);
               setLogPage(1);
               setIsRevenueLogsModalOpen(true);
             }}
@@ -1024,82 +1040,57 @@ export function SubscriptionRevenueSharingDashboard() {
       <section className="space-y-3">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <h2 className="text-xl font-black text-slate-950 backoffice-dark:text-white">
-            Subscription kết thúc trong tháng
+            Các Gói Nằm Trong Doanh Thu
           </h2>
+        </div>
+        <AccountSubscriptionsTable
+          isFetching={subscriptionsQuery.isFetching}
+          items={hasStatSubscriptions}
+          onOpenStats={handleOpenStats}
+        />
+        <div className="pt-4">
+          <h2 className="text-xl font-black text-slate-950 backoffice-dark:text-white">
+            Các Gói Chưa Có Lượt Xem
+          </h2>
+        </div>
+        <AccountSubscriptionsTable
+          isFetching={subscriptionsQuery.isFetching}
+          items={missingStatSubscriptions}
+          onOpenStats={handleOpenStats}
+        />
+        <div className="flex items-center justify-between gap-3">
           {subscriptionsQuery.data && (
             <p className="text-sm font-semibold text-slate-500 backoffice-dark:text-white/45">
               Trang {subscriptionsQuery.data.pageNumber} /{" "}
               {subscriptionsQuery.data.totalPages || 1} ·{" "}
-              {subscriptionsQuery.data.totalElements} subscription
+              {subscriptionsQuery.data.totalElements}
             </p>
           )}
-        </div>
-        <AccountSubscriptionsTable
-          isFetching={subscriptionsQuery.isFetching}
-          items={subscriptions}
-          onOpenStats={handleOpenStats}
-        />
-        {subscriptionsQuery.data && (
-          <div className="flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={() =>
-                setSubscriptionPage((current) => Math.max(1, current - 1))
-              }
-              disabled={subscriptionsQuery.data.isFirst || subscriptionsQuery.isFetching}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-500 transition hover:bg-slate-50 disabled:opacity-40 backoffice-dark:border-white/10 backoffice-dark:hover:bg-white/10"
-              aria-label="Trang trước"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setSubscriptionPage((current) => current + 1)}
-              disabled={subscriptionsQuery.data.isLast || subscriptionsQuery.isFetching}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-500 transition hover:bg-slate-50 disabled:opacity-40 backoffice-dark:border-white/10 backoffice-dark:hover:bg-white/10"
-              aria-label="Trang sau"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
-        )}
-      </section>
-
-      <section className="space-y-3">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <h2 className="text-xl font-black text-slate-950 backoffice-dark:text-white">
-            Revenue logs
-          </h2>
-          {logsQuery.data && (
-            <p className="text-sm font-semibold text-slate-500 backoffice-dark:text-white/45">
-              Trang {logsQuery.data.pageNumber} / {logsQuery.data.totalPages || 1} ·{" "}
-              {logsQuery.data.totalElements} log
-            </p>
+          {subscriptionsQuery.data && (
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() =>
+                  setSubscriptionPage((current) => Math.max(1, current - 1))
+                }
+                disabled={subscriptionsQuery.data.isFirst || subscriptionsQuery.isFetching}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-500 transition hover:bg-slate-50 disabled:opacity-40 backoffice-dark:border-white/10 backoffice-dark:hover:bg-white/10"
+                aria-label="Trang trước"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setSubscriptionPage((current) => current + 1)}
+                disabled={subscriptionsQuery.data.isLast || subscriptionsQuery.isFetching}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-500 transition hover:bg-slate-50 disabled:opacity-40 backoffice-dark:border-white/10 backoffice-dark:hover:bg-white/10"
+                aria-label="Trang sau"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
           )}
         </div>
-        <RevenueLogsTable isFetching={logsQuery.isFetching} logs={logs} />
-        {logsQuery.data && (
-          <div className="flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => setLogPage((current) => Math.max(1, current - 1))}
-              disabled={logsQuery.data.isFirst || logsQuery.isFetching}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-500 transition hover:bg-slate-50 disabled:opacity-40 backoffice-dark:border-white/10 backoffice-dark:hover:bg-white/10"
-              aria-label="Trang log trước"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setLogPage((current) => current + 1)}
-              disabled={logsQuery.data.isLast || logsQuery.isFetching}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-500 transition hover:bg-slate-50 disabled:opacity-40 backoffice-dark:border-white/10 backoffice-dark:hover:bg-white/10"
-              aria-label="Trang log sau"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
-        )}
       </section>
 
       {selectedAccountSubscription && (
@@ -1114,7 +1105,7 @@ export function SubscriptionRevenueSharingDashboard() {
         <RevenueLogsModal
           isError={logsQuery.isError}
           isFetching={logsQuery.isFetching}
-          logs={logs}
+          logs={isTemporaryResults ? activeResult?.revenueLogs ?? [] : logs}
           pageInfo={logsQuery.data}
           result={activeResult}
           onClose={() => setIsRevenueLogsModalOpen(false)}
