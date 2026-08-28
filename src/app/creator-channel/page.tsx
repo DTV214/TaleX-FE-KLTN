@@ -418,7 +418,7 @@ function CreatorChannelContent() {
                   </CreatorTierHoverModal>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs font-semibold text-[#A1A1AA] mt-2.5">
+                <div className="flex flex-nowrap items-center gap-x-2.5 sm:gap-x-3 text-xs font-semibold text-[#A1A1AA] mt-2.5 overflow-x-auto scrollbar-none whitespace-nowrap">
                   <span className="whitespace-nowrap text-zinc-400">
                     @{profileUser?.username || "creator"}
                   </span>
@@ -489,14 +489,14 @@ function CreatorChannelContent() {
                       <Sparkles className="h-3.5 w-3.5" />
                       Tùy chỉnh kênh (Studio)
                     </button>
-                    <button
+                    {/* <button
                       type="button"
                       onClick={() => router.push("/profile")}
                       className="inline-flex items-center gap-2 bg-white/[0.03] hover:bg-white/[0.08] text-white border border-white/10 hover:border-yellow-400/30 text-xs font-black rounded-full px-6 py-3 transition-all hover:-translate-y-0.5 active:translate-y-0 active:scale-95 duration-200 cursor-pointer shadow-lg"
                     >
                       <User className="h-3.5 w-3.5 text-zinc-400" />
                       Chỉnh sửa hồ sơ
-                    </button>
+                    </button> */}
                   </>
                 ) : (
                   <FollowButton
