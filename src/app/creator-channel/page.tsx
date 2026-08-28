@@ -15,6 +15,7 @@ import {
   Eye,
   Sparkles,
   Play,
+  Star,
   ChevronDown,
   ChevronUp,
   User,
@@ -195,9 +196,12 @@ function CreatorChannelContent() {
   const followedCount =
     (followedData as any)?.numberOfElements ||
     followedData?.content?.length ||
+    creator?.followToCount ||
+    ownCreator?.followToCount ||
     0;
   const followerCount = Math.max(
     creator?.followerCount || 0,
+    ownCreator?.followerCount || 0,
     (followersData as any)?.numberOfElements || followersList.length || 0,
   );
   const logsQuery = useQuery({
@@ -208,17 +212,52 @@ function CreatorChannelContent() {
   });
 
   const totalWatchTime = useMemo(() => {
+    if (creator?.analyticData?.watchTime != null) {
+      return creator.analyticData.watchTime;
+    }
+    if (ownCreator?.analyticData?.watchTime != null) {
+      return ownCreator.analyticData.watchTime;
+    }
     const logs = logsQuery.data || [];
     return logs.reduce(
       (acc, item) => acc + (item.analyticData?.watchTime || 0),
       0,
     );
-  }, [logsQuery.data]);
+  }, [creator?.analyticData?.watchTime, ownCreator?.analyticData?.watchTime, logsQuery.data]);
 
-  const totalViews = series.reduce(
-    (acc, item) => acc + (item.totalViews || 0),
-    0,
-  );
+  const totalViews = useMemo(() => {
+    if (creator?.analyticData?.views != null) {
+      return creator.analyticData.views;
+    }
+    if (ownCreator?.analyticData?.views != null) {
+      return ownCreator.analyticData.views;
+    }
+    const seriesSum = series.reduce((acc, item) => {
+      const v =
+        item.totalViews ??
+        (item as any).views ??
+        (item as any).analyticData?.views ??
+        0;
+      return acc + v;
+    }, 0);
+    if (seriesSum > 0) return seriesSum;
+
+    const logs = logsQuery.data || [];
+    return logs.reduce(
+      (acc, item) => acc + (item.analyticData?.views || 0),
+      0,
+    );
+  }, [creator?.analyticData?.views, ownCreator?.analyticData?.views, series, logsQuery.data]);
+
+  const currentTierLevel = useMemo(() => {
+    return (
+      creator?.creatorTier?.tierLevel ??
+      ownCreator?.creatorTier?.tierLevel ??
+      (creator as any)?.tierLevel ??
+      (ownCreator as any)?.tierLevel ??
+      0
+    );
+  }, [creator, ownCreator]);
 
   const handleItemPress = (seriesId: string) => {
     router.push(`/series/${seriesId}`);
@@ -244,8 +283,10 @@ function CreatorChannelContent() {
       } else if (sortBy === "oldest") {
         return dateA - dateB;
       } else if (sortBy === "popular") {
-        const viewsB = b.totalViews || 0;
-        const viewsA = a.totalViews || 0;
+        const viewsB =
+          b.totalViews ?? (b as any).views ?? (b as any).analyticData?.views ?? 0;
+        const viewsA =
+          a.totalViews ?? (a as any).views ?? (a as any).analyticData?.views ?? 0;
         if (viewsB !== viewsA) {
           return viewsB - viewsA;
         }
@@ -360,11 +401,7 @@ function CreatorChannelContent() {
                       "Kênh sáng tạo"}
                   </h1>
                   <CreatorTierHoverModal
-                    currentTierLevel={
-                      (creator as any)?.tierLevel ||
-                      (ownCreator as any)?.tierLevel ||
-                      0
-                    }
+                    currentTierLevel={currentTierLevel}
                     currentFollowers={followerCount}
                     currentViews={totalViews}
                     currentWatchTime={totalWatchTime}
@@ -376,16 +413,13 @@ function CreatorChannelContent() {
                         &bull;
                       </span>
                       <span className="text-white font-black tracking-normal bg-yellow-400/20 px-1.5 py-0.5 rounded-md text-[9px]">
-                        LVL{" "}
-                        {(creator as any)?.tierLevel ||
-                          (ownCreator as any)?.tierLevel ||
-                          0}
+                        LVL {currentTierLevel}
                       </span>
                     </span>
                   </CreatorTierHoverModal>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs font-semibold text-[#A1A1AA] mt-2.5">
+                <div className="flex flex-nowrap items-center gap-x-2.5 sm:gap-x-3 text-xs font-semibold text-[#A1A1AA] mt-2.5 overflow-x-auto scrollbar-none whitespace-nowrap">
                   <span className="whitespace-nowrap text-zinc-400">
                     @{profileUser?.username || "creator"}
                   </span>
@@ -456,14 +490,14 @@ function CreatorChannelContent() {
                       <Sparkles className="h-3.5 w-3.5" />
                       Tùy chỉnh kênh (Studio)
                     </button>
-                    <button
+                    {/* <button
                       type="button"
                       onClick={() => router.push("/profile")}
                       className="inline-flex items-center gap-2 bg-white/[0.03] hover:bg-white/[0.08] text-white border border-white/10 hover:border-yellow-400/30 text-xs font-black rounded-full px-6 py-3 transition-all hover:-translate-y-0.5 active:translate-y-0 active:scale-95 duration-200 cursor-pointer shadow-lg"
                     >
                       <User className="h-3.5 w-3.5 text-zinc-400" />
                       Chỉnh sửa hồ sơ
-                    </button>
+                    </button> */}
                   </>
                 ) : (
                   <FollowButton
@@ -705,7 +739,13 @@ function CreatorChannelContent() {
                             </span>
                             <span className="text-[9px] font-black uppercase tracking-widest text-zinc-400 flex items-center gap-1">
                               <Eye size={12} className="text-[#FACC15]" />{" "}
-                              {spotlightSeries.totalViews || 0} lượt xem
+                              {(
+                                spotlightSeries.totalViews ??
+                                (spotlightSeries as any).views ??
+                                (spotlightSeries as any).analyticData?.views ??
+                                0
+                              ).toLocaleString("vi-VN")}{" "}
+                              lượt xem
                             </span>
                           </div>
 
@@ -1058,6 +1098,17 @@ function SeriesGrid({
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-5 gap-y-8">
       {list.map((item, idx) => {
         const isVideo = item.contentType?.toUpperCase() === "VIDEO";
+        const views =
+          item.totalViews ??
+          (item as any).views ??
+          (item as any).analyticData?.views ??
+          0;
+        const rating = (
+          item.averageRating ??
+          (item as any).rating ??
+          0
+        ).toFixed(1);
+        const ageLabel = item.ageRating || "EVERYONE";
 
         return (
           <motion.button
@@ -1066,55 +1117,72 @@ function SeriesGrid({
             onClick={() => onItemPress(item.seriesId)}
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: idx * 0.05, duration: 0.4 }}
-            whileHover={{ y: -6, scale: 1.04, filter: "brightness(1.05)" }}
-            className="group flex flex-col text-left bg-transparent rounded-2xl overflow-hidden transition-all duration-300 outline-none focus:outline-none"
+            transition={{ delay: idx * 0.04, duration: 0.4 }}
+            whileHover={{ y: -6, scale: 1.02 }}
+            className="group flex flex-col text-left bg-transparent rounded-2xl overflow-hidden transition-all duration-300 outline-none focus:outline-none cursor-pointer"
           >
-            {/* Cover Image container */}
-            <div
-              className={`relative w-full bg-[#17171C] rounded-2xl overflow-hidden border border-white/[0.04] shadow-md group-hover:shadow-2xl transition-all duration-300 ${
-                isVideo ? "aspect-video" : "aspect-[3/4]"
-              }`}
-            >
-              {item.coverUrl ? (
+            {/* Cover Image container - Exact 4:5 frame as screenshot */}
+            <div className="relative aspect-[4/5] w-full overflow-hidden rounded-[1.2rem] border border-white/[0.08] bg-[#121214] shadow-[0_16px_42px_rgba(0,0,0,0.3)] transition-all duration-500 group-hover:border-[#FACC15]/50 group-hover:shadow-[0_0_25px_rgba(250,204,21,0.15)]">
+              {item.coverUrl || item.bannerUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={item.coverUrl}
+                  src={item.coverUrl || item.bannerUrl}
                   alt={item.title}
-                  className="h-full w-full object-cover transition-transform duration-700"
+                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-108"
                 />
               ) : (
-                <div className="h-full w-full flex items-center justify-center text-zinc-600 bg-zinc-800">
+                <div className="h-full w-full flex flex-col items-center justify-center text-zinc-600 bg-gradient-to-br from-white/[0.02] to-white/[0.06]">
                   {isVideo ? (
-                    <Video className="h-8 w-8" />
+                    <Film className="h-9 w-9 text-white/25 mb-1" />
                   ) : (
-                    <BookOpen className="h-8 w-8" />
+                    <BookOpen className="h-9 w-9 text-white/25 mb-1" />
+                  )}
+                  <span className="text-[10px] text-white/30">Chưa có ảnh</span>
+                </div>
+              )}
+
+              {/* Gradient overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
+
+              {/* Age rating badge - Top Left */}
+              <div className="absolute left-2.5 top-2.5 rounded-md bg-black/80 px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wider text-[#FACC15] backdrop-blur-md border border-white/10 shadow-md">
+                {ageLabel}
+              </div>
+
+              {/* Rating badge - Top Right */}
+              <div className="absolute right-2.5 top-2.5 flex h-6 items-center gap-1 rounded-full border border-yellow-500/30 bg-black/80 px-2 text-[#FACC15] backdrop-blur-md shadow-md">
+                <Star className="h-3 w-3 fill-current" />
+                <span className="text-[11px] font-black text-white">{rating}</span>
+              </div>
+
+              {/* Views badge - Bottom Right */}
+              <div className="absolute bottom-2.5 right-2.5 flex items-center">
+                <span className="flex items-center gap-1 rounded-lg bg-black/80 px-2 py-0.5 text-[10.5px] font-black text-white backdrop-blur-md border border-white/10 shadow-md">
+                  <Eye className="h-3 w-3 text-[#38bdf8]" />
+                  {views.toLocaleString("vi-VN")}
+                </span>
+              </div>
+
+              {/* Center hover play overlay */}
+              <div className="absolute inset-0 flex scale-75 items-center justify-center opacity-0 transition-all duration-300 group-hover:scale-100 group-hover:opacity-100">
+                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#FACC15] text-black shadow-[0_0_30px_rgba(250,204,21,0.6)]">
+                  {isVideo ? (
+                    <Play className="ml-0.5 h-5 w-5 fill-black" />
+                  ) : (
+                    <BookOpen className="h-5 w-5 text-black" />
                   )}
                 </div>
-              )}
-
-              {/* Hover play overlay for video */}
-              {isVideo && (
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-300">
-                  <div className="h-10 w-10 rounded-full bg-white flex items-center justify-center text-black shadow-xl transform scale-90 group-hover:scale-100 transition-transform duration-300">
-                    <Play className="h-4.5 w-4.5 fill-black ml-0.5" />
-                  </div>
-                </div>
-              )}
-
-              <div className="absolute top-2 right-2 z-10 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded text-[8px] font-black uppercase text-zinc-300 tracking-wider border border-white/[0.06]">
-                {isVideo ? "Video" : "Manga"}
               </div>
             </div>
 
-            {/* Title & Metadata directly below card (YouTube style) */}
-            <div className="pt-3 px-1 flex-1 flex flex-col justify-between">
+            {/* Title & Description below card */}
+            <div className="pt-2.5 px-0.5 flex-1 flex flex-col justify-between">
               <div>
-                <h4 className="text-md font-bold leading-snug text-[#F5F5F5] group-hover:text-[#FACC15] line-clamp-1 transition-colors">
+                <h4 className="text-sm sm:text-base font-black leading-snug text-[#F5F5F5] group-hover:text-[#FACC15] line-clamp-1 transition-colors">
                   {item.title}
                 </h4>
                 {item.description && (
-                  <p className="text-[11px] font-medium text-zinc-500 mt-1 line-clamp-2 leading-relaxed">
+                  <p className="text-xs font-semibold text-[#A1A1AA]/80 mt-1 line-clamp-2 leading-relaxed">
                     {item.description}
                   </p>
                 )}
