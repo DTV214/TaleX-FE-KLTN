@@ -271,10 +271,20 @@ function PublicChannelContent() {
       combo.creatorId === paramCreatorId,
   );
 
-  const totalViews = series.reduce(
-    (acc, item) => acc + (item.totalViews || 0),
-    0,
-  );
+  const totalViews = useMemo(() => {
+    if (creator?.analyticData?.views != null) {
+      return creator.analyticData.views;
+    }
+    return series.reduce(
+      (acc, item) =>
+        acc +
+        (item.totalViews ??
+          (item as any).views ??
+          (item as any).analyticData?.views ??
+          0),
+      0,
+    );
+  }, [creator?.analyticData?.views, series]);
 
   const handleItemPress = (seriesId: string) => {
     router.push(`/series/${seriesId}`);
@@ -291,8 +301,10 @@ function PublicChannelContent() {
       } else if (sortBy === "oldest") {
         return dateA - dateB;
       } else if (sortBy === "popular") {
-        const viewsB = b.totalViews || 0;
-        const viewsA = a.totalViews || 0;
+        const viewsB =
+          b.totalViews ?? (b as any).views ?? (b as any).analyticData?.views ?? 0;
+        const viewsA =
+          a.totalViews ?? (a as any).views ?? (a as any).analyticData?.views ?? 0;
         if (viewsB !== viewsA) {
           return viewsB - viewsA;
         }

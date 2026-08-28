@@ -195,9 +195,12 @@ function CreatorChannelContent() {
   const followedCount =
     (followedData as any)?.numberOfElements ||
     followedData?.content?.length ||
+    creator?.followToCount ||
+    ownCreator?.followToCount ||
     0;
   const followerCount = Math.max(
     creator?.followerCount || 0,
+    ownCreator?.followerCount || 0,
     (followersData as any)?.numberOfElements || followersList.length || 0,
   );
   const logsQuery = useQuery({
@@ -208,17 +211,52 @@ function CreatorChannelContent() {
   });
 
   const totalWatchTime = useMemo(() => {
+    if (creator?.analyticData?.watchTime != null) {
+      return creator.analyticData.watchTime;
+    }
+    if (ownCreator?.analyticData?.watchTime != null) {
+      return ownCreator.analyticData.watchTime;
+    }
     const logs = logsQuery.data || [];
     return logs.reduce(
       (acc, item) => acc + (item.analyticData?.watchTime || 0),
       0,
     );
-  }, [logsQuery.data]);
+  }, [creator?.analyticData?.watchTime, ownCreator?.analyticData?.watchTime, logsQuery.data]);
 
-  const totalViews = series.reduce(
-    (acc, item) => acc + (item.totalViews || 0),
-    0,
-  );
+  const totalViews = useMemo(() => {
+    if (creator?.analyticData?.views != null) {
+      return creator.analyticData.views;
+    }
+    if (ownCreator?.analyticData?.views != null) {
+      return ownCreator.analyticData.views;
+    }
+    const seriesSum = series.reduce((acc, item) => {
+      const v =
+        item.totalViews ??
+        (item as any).views ??
+        (item as any).analyticData?.views ??
+        0;
+      return acc + v;
+    }, 0);
+    if (seriesSum > 0) return seriesSum;
+
+    const logs = logsQuery.data || [];
+    return logs.reduce(
+      (acc, item) => acc + (item.analyticData?.views || 0),
+      0,
+    );
+  }, [creator?.analyticData?.views, ownCreator?.analyticData?.views, series, logsQuery.data]);
+
+  const currentTierLevel = useMemo(() => {
+    return (
+      creator?.creatorTier?.tierLevel ??
+      ownCreator?.creatorTier?.tierLevel ??
+      (creator as any)?.tierLevel ??
+      (ownCreator as any)?.tierLevel ??
+      0
+    );
+  }, [creator, ownCreator]);
 
   const handleItemPress = (seriesId: string) => {
     router.push(`/series/${seriesId}`);
@@ -244,8 +282,10 @@ function CreatorChannelContent() {
       } else if (sortBy === "oldest") {
         return dateA - dateB;
       } else if (sortBy === "popular") {
-        const viewsB = b.totalViews || 0;
-        const viewsA = a.totalViews || 0;
+        const viewsB =
+          b.totalViews ?? (b as any).views ?? (b as any).analyticData?.views ?? 0;
+        const viewsA =
+          a.totalViews ?? (a as any).views ?? (a as any).analyticData?.views ?? 0;
         if (viewsB !== viewsA) {
           return viewsB - viewsA;
         }
@@ -360,11 +400,7 @@ function CreatorChannelContent() {
                       "Kênh sáng tạo"}
                   </h1>
                   <CreatorTierHoverModal
-                    currentTierLevel={
-                      (creator as any)?.tierLevel ||
-                      (ownCreator as any)?.tierLevel ||
-                      0
-                    }
+                    currentTierLevel={currentTierLevel}
                     currentFollowers={followerCount}
                     currentViews={totalViews}
                     currentWatchTime={totalWatchTime}
@@ -376,10 +412,7 @@ function CreatorChannelContent() {
                         &bull;
                       </span>
                       <span className="text-white font-black tracking-normal bg-yellow-400/20 px-1.5 py-0.5 rounded-md text-[9px]">
-                        LVL{" "}
-                        {(creator as any)?.tierLevel ||
-                          (ownCreator as any)?.tierLevel ||
-                          0}
+                        LVL {currentTierLevel}
                       </span>
                     </span>
                   </CreatorTierHoverModal>
@@ -705,7 +738,13 @@ function CreatorChannelContent() {
                             </span>
                             <span className="text-[9px] font-black uppercase tracking-widest text-zinc-400 flex items-center gap-1">
                               <Eye size={12} className="text-[#FACC15]" />{" "}
-                              {spotlightSeries.totalViews || 0} lượt xem
+                              {(
+                                spotlightSeries.totalViews ??
+                                (spotlightSeries as any).views ??
+                                (spotlightSeries as any).analyticData?.views ??
+                                0
+                              ).toLocaleString("vi-VN")}{" "}
+                              lượt xem
                             </span>
                           </div>
 
