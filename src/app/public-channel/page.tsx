@@ -16,6 +16,7 @@ import {
   ChevronUp,
   Film,
   Flame,
+  Star,
   ChevronRight,
 } from "lucide-react";
 import { isFullProfile, useAuthStore } from "@/features/auth/store/auth.store";
@@ -901,53 +902,97 @@ function PublicSeriesGrid({
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-6">
-      {list.map((item) => (
-        <div
-          key={item.seriesId}
-          onClick={() => onItemPress(item.seriesId)}
-          className="group cursor-pointer flex flex-col bg-[#111114] border border-white/[0.06] rounded-2xl overflow-hidden hover:border-yellow-400/30 transition-all duration-300 shadow-lg hover:shadow-yellow-500/5 hover:-translate-y-1"
-        >
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-5 gap-y-8">
+      {list.map((item) => {
+        const isVideo = item.contentType?.toUpperCase() === "VIDEO";
+        const views =
+          item.totalViews ??
+          (item as any).views ??
+          (item as any).analyticData?.views ??
+          0;
+        const rating = (
+          item.averageRating ??
+          (item as any).rating ??
+          0
+        ).toFixed(1);
+        const ageLabel = item.ageRating || "EVERYONE";
+
+        return (
           <div
-            className={`relative w-full overflow-hidden bg-zinc-900 ${
-              item.contentType === "VIDEO" ? "aspect-video" : "aspect-[3/4]"
-            }`}
+            key={item.seriesId}
+            onClick={() => onItemPress(item.seriesId)}
+            className="group cursor-pointer flex flex-col bg-transparent rounded-2xl overflow-hidden transition-all duration-300 outline-none"
           >
-            {item.coverUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={item.coverUrl}
-                alt={item.title}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-zinc-600">
-                {item.contentType === "VIDEO" ? (
-                  <Film size={36} />
-                ) : (
-                  <BookOpen size={36} />
+            {/* Cover Image container - 4:5 frame */}
+            <div className="relative aspect-[4/5] w-full overflow-hidden rounded-[1.2rem] border border-white/[0.08] bg-[#121214] shadow-[0_16px_42px_rgba(0,0,0,0.3)] transition-all duration-500 group-hover:border-[#FACC15]/50 group-hover:shadow-[0_0_25px_rgba(250,204,21,0.15)] group-hover:-translate-y-1">
+              {item.coverUrl || item.bannerUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={item.coverUrl || item.bannerUrl}
+                  alt={item.title}
+                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-108"
+                />
+              ) : (
+                <div className="h-full w-full flex flex-col items-center justify-center text-zinc-600 bg-gradient-to-br from-white/[0.02] to-white/[0.06]">
+                  {isVideo ? (
+                    <Film className="h-9 w-9 text-white/25 mb-1" />
+                  ) : (
+                    <BookOpen className="h-9 w-9 text-white/25 mb-1" />
+                  )}
+                  <span className="text-[10px] text-white/30">Chưa có ảnh</span>
+                </div>
+              )}
+
+              {/* Gradient overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
+
+              {/* Age rating badge - Top Left */}
+              <div className="absolute left-2.5 top-2.5 rounded-md bg-black/80 px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wider text-[#FACC15] backdrop-blur-md border border-white/10 shadow-md">
+                {ageLabel}
+              </div>
+
+              {/* Rating badge - Top Right */}
+              <div className="absolute right-2.5 top-2.5 flex h-6 items-center gap-1 rounded-full border border-yellow-500/30 bg-black/80 px-2 text-[#FACC15] backdrop-blur-md shadow-md">
+                <Star className="h-3 w-3 fill-current" />
+                <span className="text-[11px] font-black text-white">{rating}</span>
+              </div>
+
+              {/* Views badge - Bottom Right */}
+              <div className="absolute bottom-2.5 right-2.5 flex items-center">
+                <span className="flex items-center gap-1 rounded-lg bg-black/80 px-2 py-0.5 text-[10.5px] font-black text-white backdrop-blur-md border border-white/10 shadow-md">
+                  <Eye className="h-3 w-3 text-[#38bdf8]" />
+                  {views.toLocaleString("vi-VN")}
+                </span>
+              </div>
+
+              {/* Center hover play overlay */}
+              <div className="absolute inset-0 flex scale-75 items-center justify-center opacity-0 transition-all duration-300 group-hover:scale-100 group-hover:opacity-100">
+                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#FACC15] text-black shadow-[0_0_30px_rgba(250,204,21,0.6)]">
+                  {isVideo ? (
+                    <Play className="ml-0.5 h-5 w-5 fill-black" />
+                  ) : (
+                    <BookOpen className="h-5 w-5 text-black" />
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Title & Description below card */}
+            <div className="pt-2.5 px-0.5 flex-1 flex flex-col justify-between">
+              <div>
+                <h4 className="text-sm sm:text-base font-black leading-snug text-[#F5F5F5] group-hover:text-[#FACC15] line-clamp-1 transition-colors">
+                  {item.title}
+                </h4>
+                {item.description && (
+                  <p className="text-xs font-semibold text-[#A1A1AA]/80 mt-1 line-clamp-2 leading-relaxed">
+                    {item.description}
+                  </p>
                 )}
               </div>
-            )}
-          </div>
-
-          <div className="p-3.5 flex flex-col flex-1">
-            <h4 className="text-sm font-bold text-[#F5F5F5] group-hover:text-[#FACC15] line-clamp-1 transition-colors">
-              {item.title}
-            </h4>
-            <p className="text-[11px] text-[#A1A1AA] line-clamp-2 mt-1 flex-1 font-medium">
-              {item.description || "Chưa có mô tả"}
-            </p>
-            <div className="flex items-center justify-between text-[10px] font-bold text-zinc-500 mt-3 pt-2 border-t border-white/[0.04]">
-              <span className="flex items-center gap-1">
-                <Eye size={12} className="text-[#FACC15]" />{" "}
-                {(item.totalViews || 0).toLocaleString("vi-VN")}
-              </span>
-              <span>{item.contentType === "VIDEO" ? "Phim" : "Truyện"}</span>
             </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
