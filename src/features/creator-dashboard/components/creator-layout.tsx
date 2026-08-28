@@ -187,8 +187,8 @@ export function CreatorLayout({
                   setIsMonetizationMenuOpen((current) => !current)
                 }
                 className={`group flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left transition-colors ${isMonetizationGroupActive
-                    ? "border border-creator-gold/20 bg-creator-gold/15 text-creator-gold shadow-[0_10px_30px_rgba(226,177,60,0.08)]"
-                    : "text-creator-muted hover:bg-white/[0.055] hover:text-white"
+                  ? "border border-creator-gold/20 bg-creator-gold/15 text-creator-gold shadow-[0_10px_30px_rgba(226,177,60,0.08)]"
+                  : "text-creator-muted hover:bg-white/[0.055] hover:text-white"
                   }`}
               >
                 <BadgeDollarSign
@@ -210,8 +210,8 @@ export function CreatorLayout({
 
               <div
                 className={`grid transition-all duration-300 ease-in-out ${shouldShowMonetizationChildren
-                    ? "grid-rows-[1fr] opacity-100"
-                    : "grid-rows-[0fr] opacity-0"
+                  ? "grid-rows-[1fr] opacity-100"
+                  : "grid-rows-[0fr] opacity-0"
                   }`}
               >
                 <div className="overflow-hidden">
@@ -252,12 +252,7 @@ export function CreatorLayout({
         {/* Topbar */}
         <header className="sticky top-0 z-10 flex h-16 flex-shrink-0 items-center justify-between border-b border-white/10 bg-black/45 px-8 backdrop-blur-2xl">
           <div className="relative flex w-full max-w-md items-center">
-            <Search className="absolute left-3 text-creator-muted" size={18} />
-            <input
-              type="text"
-              placeholder="Tìm kiếm trong studio..."
-              className="w-full rounded-full border border-white/10 bg-white/[0.045] py-2 pl-10 pr-4 text-sm text-white outline-none transition-colors placeholder:text-creator-muted focus:border-creator-gold/70 focus:bg-black/35"
-            />
+
           </div>
 
           <div className="flex items-center gap-6">

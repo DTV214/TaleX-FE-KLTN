@@ -64,15 +64,15 @@ type AccountListPayload =
   | AccountApiItem[]
   | BasePageResponse<AccountApiItem>
   | {
-      content?: AccountApiItem[];
-      data?: AccountApiItem[] | BasePageResponse<AccountApiItem>;
-      pageNumber?: number;
-      pageSize?: number;
-      totalElements?: number;
-      totalPages?: number;
-      isFirst?: boolean;
-      isLast?: boolean;
-    };
+    content?: AccountApiItem[];
+    data?: AccountApiItem[] | BasePageResponse<AccountApiItem>;
+    pageNumber?: number;
+    pageSize?: number;
+    totalElements?: number;
+    totalPages?: number;
+    isFirst?: boolean;
+    isLast?: boolean;
+  };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -143,7 +143,7 @@ function normalizePage(
   const unwrappedPayload = unwrapPayload<unknown>(payload);
   const nestedPayload =
     isRecord(unwrappedPayload) &&
-    (Array.isArray(unwrappedPayload.data) || isRecord(unwrappedPayload.data))
+      (Array.isArray(unwrappedPayload.data) || isRecord(unwrappedPayload.data))
       ? unwrappedPayload.data
       : unwrappedPayload;
   const pageRecord = isRecord(nestedPayload) ? nestedPayload : {};
@@ -212,6 +212,14 @@ export async function getAdminAccounts(params: GetAdminAccountsParams = {}) {
   );
 
   return normalizePage(payload, page, size);
+}
+
+export async function getAccountByCreatorId(creatorId: string) {
+  const data = await unwrapBaseResponse<AccountApiItem>(
+    httpClient.get(`${ADMIN_ACCOUNTS_ENDPOINT}/creator/${creatorId}`),
+  );
+
+  return normalizeAccount(data);
 }
 
 export async function createStaff(payload: CreateStaffPayload) {

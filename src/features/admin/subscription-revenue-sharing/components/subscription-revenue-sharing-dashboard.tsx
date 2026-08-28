@@ -1,6 +1,6 @@
 "use client";
 
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueries, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Activity,
@@ -17,6 +17,8 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { getAccountByCreatorId } from "@/features/admin/api/account.api";
+import { getEpisodeById } from "@/features/creator-dashboard/api/creator-content-api";
 import { getApiErrorMessage } from "@/shared/api/http-client";
 import { cn } from "@/shared/utils/utils";
 import {
@@ -384,6 +386,49 @@ function RevenueLogsTable({
   isFetching: boolean;
   logs: SubscriptionRevenueLog[];
 }) {
+  const creatorIds = [
+    ...new Set(
+      logs
+        .map((log) => getStringValue(asRecord(log), ["creatorId"], ""))
+        .filter(Boolean),
+    ),
+  ];
+  const episodeIds = [
+    ...new Set(
+      logs
+        .map((log) => getStringValue(asRecord(log), ["episodeId"], ""))
+        .filter(Boolean),
+    ),
+  ];
+  const creatorQueries = useQueries({
+    queries: creatorIds.map((creatorId) => ({
+      queryKey: ["admin", "subscription-revenue-sharing", "creator", creatorId],
+      queryFn: () => getAccountByCreatorId(creatorId),
+      staleTime: 5 * 60 * 1000,
+    })),
+  });
+  const episodeQueries = useQueries({
+    queries: episodeIds.map((episodeId) => ({
+      queryKey: ["admin", "subscription-revenue-sharing", "episode", episodeId],
+      queryFn: () => getEpisodeById(episodeId),
+      staleTime: 5 * 60 * 1000,
+    })),
+  });
+  const creatorNames = Object.fromEntries(
+    creatorIds.flatMap((creatorId, index) => {
+      const fullName = creatorQueries[index]?.data?.fullName;
+      return fullName ? [[creatorId, fullName]] : [];
+    }),
+  );
+  const episodeDetails = Object.fromEntries(
+    episodeIds.flatMap((episodeId, index) => {
+      const episode = episodeQueries[index]?.data;
+      return episode
+        ? [[episodeId, { episodeNumber: episode.episodeNumber, seriesTitle: episode.seriesTitle }]]
+        : [];
+    }),
+  );
+
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
       <div className="overflow-x-auto">
@@ -416,12 +461,15 @@ function RevenueLogsTable({
                   "subscriptionRevenueLogId",
                   "id",
                 ], `${index}`);
+                const creatorId = getStringValue(record, ["creatorId"], "");
+                const episodeId = getStringValue(record, ["episodeId"], "");
+                const episode = episodeDetails[episodeId];
 
                 return (
                   <tr key={id} className="transition hover:bg-slate-50 backoffice-dark:hover:bg-white/[0.035]">
                     <td className="px-5 py-4">
                       <p className="font-black text-slate-950 backoffice-dark:text-white">
-                        {getStringValue(record, [
+                        {creatorNames[creatorId] || getStringValue(record, [
                           "creatorName",
                           "username",
                           "creatorEmail",
@@ -431,13 +479,22 @@ function RevenueLogsTable({
                       </p>
                     </td>
                     <td className="px-5 py-4 text-sm font-semibold text-slate-600 backoffice-dark:text-white/60">
-                      {getStringValue(record, [
-                        "episodeTitle",
-                        "mediaTitle",
-                        "contentTitle",
-                        "seriesTitle",
-                        "episodeId",
-                      ])}
+                      {episode ? (
+                        <>
+                          <p>{episode.seriesTitle || "Series chưa có tên"}</p>
+                          <p className="mt-1 text-xs text-slate-400">
+                            Tập {episode.episodeNumber ?? "-"}
+                          </p>
+                        </>
+                      ) : (
+                        getStringValue(record, [
+                          "episodeTitle",
+                          "mediaTitle",
+                          "contentTitle",
+                          "seriesTitle",
+                          "episodeId",
+                        ])
+                      )}
                     </td>
                     <td className="px-5 py-4 text-right font-black text-emerald-600">
                       {formatVND(getNumberValue(record, [

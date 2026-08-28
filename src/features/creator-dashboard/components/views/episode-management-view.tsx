@@ -48,16 +48,28 @@ export function EpisodeManagementView({
   return (
     <div className="w-full space-y-6 py-6 text-creator-text">
       {/* Header */}
-      <div className="mb-2 flex flex-col justify-between gap-4 rounded-[28px] border border-white/10 bg-white/[0.035] p-6 shadow-[0_24px_70px_rgba(0,0,0,0.22)] md:flex-row md:items-end">
+      <CreatorBackButton onClick={onBack} className="mb-6" />
+      <div className="mb-8 flex flex-col justify-between gap-4 rounded-[28px] border border-white/10 bg-white/[0.035] p-6 shadow-[0_24px_70px_rgba(0,0,0,0.22)] md:flex-row md:items-end">
         <div>
-          <CreatorBackButton onClick={onBack} className="mb-4" />
-          <h2 className="creator-spotlight-text mb-2 text-3xl font-bold text-white">
-            {selectedSeason.title}
-          </h2>
+          <div>
+            <h2 className="creator-spotlight-text mb-2 text-3xl font-bold text-white">
+              {selectedSeason.title}
+            </h2>
+          </div>
+
           <p className="text-creator-muted">
             {selectedSeries.title} . Mùa {selectedSeason.seasonNumber}
           </p>
         </div>
+        <button
+          type="button"
+          onClick={onCreateEpisode}
+          disabled={isCreatingEpisode}
+          className="creator-shine-card inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-creator-gold px-5 text-sm font-black text-black shadow-[0_16px_40px_rgba(212,175,55,0.16)] transition-all hover:-translate-y-0.5 hover:bg-creator-gold-hover disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <Plus className="h-4 w-4" />
+          {isCreatingEpisode ? "Đang Tạo..." : "Thêm Tập Mới"}
+        </button>
       </div>
 
       <ApiStateNote isLoading={isLoading} />
@@ -65,33 +77,6 @@ export function EpisodeManagementView({
       {/* Season Card matching Mockup */}
 
       <div className="overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.035] shadow-[0_24px_70px_rgba(0,0,0,0.22)]">
-        <div className="flex flex-col items-start justify-between gap-4 border-b border-white/10 bg-black/25 p-6 sm:flex-row sm:items-center">
-          <div>
-            <div className="flex items-center gap-3 mb-1">
-              <span className="text-xs font-bold px-2.5 py-1 bg-creator-gold/10 text-creator-gold rounded border border-creator-gold/20">
-                SEASON{" "}
-                {selectedSeason.seasonNumber < 10
-                  ? `0${selectedSeason.seasonNumber}`
-                  : selectedSeason.seasonNumber}
-              </span>
-              <h3 className="text-xl font-bold text-white">
-                {selectedSeason.title}
-              </h3>
-            </div>
-            <p className="text-sm text-creator-muted mt-2 max-w-2xl">
-              {selectedSeason.description}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onCreateEpisode}
-            disabled={isCreatingEpisode}
-            className="creator-shine-card inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-creator-gold px-5 text-sm font-black text-black shadow-[0_16px_40px_rgba(212,175,55,0.16)] transition-all hover:-translate-y-0.5 hover:bg-creator-gold-hover disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <Plus className="h-4 w-4" />
-            {isCreatingEpisode ? "Đang Tạo..." : "Thêm Tập Mới"}
-          </button>
-        </div>
 
         <div className="p-0">
           {!isLoading && episodes.length === 0 ? (

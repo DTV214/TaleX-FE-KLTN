@@ -79,7 +79,7 @@ export default function AdminDashboardPage() {
   return (
     <div className="flex flex-col gap-8 max-w-7xl mx-auto w-full">
       {/* 1. Header & Date Filters */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-gray-100 pb-6 backoffice-dark:border-white/10">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-slate-950 backoffice-dark:text-white">
             Thống Kê Tài Chính
@@ -142,7 +142,7 @@ export default function AdminDashboardPage() {
               <TrendingUp className="h-5 w-5 text-blue-600 backoffice-dark:text-blue-300" />
             </div>
             <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-1 rounded-md backoffice-dark:bg-blue-900/30 backoffice-dark:text-blue-300">
-              GROSS GMV
+              GROSS Revenue
             </span>
           </div>
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 backoffice-dark:text-white/60">
@@ -289,7 +289,7 @@ export default function AdminDashboardPage() {
             <div className="flex min-h-72 items-center justify-center rounded-2xl border border-red-200 bg-red-50 p-6 text-center">
               <div>
                 <p className="text-sm font-semibold text-red-700">
-                  Không thể tải dữ liệu thống kê tài chính.
+                  {statisticsQuery.error.message}
                 </p>
                 <Button
                   type="button"

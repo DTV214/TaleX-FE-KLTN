@@ -21,13 +21,11 @@ export function CreatorSeasonsList({
 }: CreatorSeasonsListProps) {
   return (
     <div className="w-full py-6 text-creator-text">
+      <CreatorBackButton onClick={onBack} className="mb-6" />
+
       <div className="mb-8 flex flex-col justify-between gap-4 rounded-[28px] border border-white/10 bg-white/[0.035] p-6 shadow-[0_24px_70px_rgba(0,0,0,0.22)] md:flex-row md:items-end">
         <div>
-          <CreatorBackButton onClick={onBack} className="mb-6" />
-          <h2 className="creator-spotlight-text mb-2 text-3xl font-bold text-white">Mùa</h2>
-          <p className="text-creator-muted">
-            Chọn một mùa để quản lý các tập, hoặc tạo mùa mới.
-          </p>
+          <h2 className="creator-spotlight-text mb-2  text-3xl font-bold text-white">Quản Lý Các Mùa Của Series</h2>
         </div>
         <button
           onClick={onCreate}
@@ -73,13 +71,12 @@ export function CreatorSeasonsList({
                   <div className="flex items-center gap-3 mb-1">
                     <h3 className="text-xl font-bold text-white">{season.title}</h3>
                     <span
-                      className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
-                        season.status === "PUBLISHED"
-                          ? "bg-green-500/20 text-green-500 border border-green-500/20"
-                          : season.status === "DRAFT"
-                            ? "bg-creator-muted/20 text-creator-muted border border-creator-muted/20"
-                            : "bg-creator-gold/20 text-creator-gold border border-creator-gold/20"
-                      }`}
+                      className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${season.status === "PUBLISHED"
+                        ? "bg-green-500/20 text-green-500 border border-green-500/20"
+                        : season.status === "DRAFT"
+                          ? "bg-creator-muted/20 text-creator-muted border border-creator-muted/20"
+                          : "bg-creator-gold/20 text-creator-gold border border-creator-gold/20"
+                        }`}
                     >
                       {season.status}
                     </span>

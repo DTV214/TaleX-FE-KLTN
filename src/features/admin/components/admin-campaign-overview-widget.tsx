@@ -225,12 +225,6 @@ export function AdminCampaignOverviewWidget({
               <h3 className="text-base font-bold text-gray-900 backoffice-dark:text-white">
                 Thống Kê & Doanh Thu Chiến Dịch
               </h3>
-              <span className="inline-flex items-center gap-1 rounded-md bg-violet-50 px-2 py-0.5 text-[11px] font-semibold text-violet-700 backoffice-dark:bg-violet-950/50 backoffice-dark:text-violet-300 border border-violet-200 backoffice-dark:border-violet-800/40">
-                <Calendar className="w-3 h-3" />
-                {isDefaultRange
-                  ? (defaultMonthLabel || "Tháng hiện tại")
-                  : `${formatDateDisplay(finalStartTime)} - ${formatDateDisplay(finalEndTime)}`}
-              </span>
               {currentGroupUnit && (
                 <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700 backoffice-dark:bg-emerald-950/50 backoffice-dark:text-emerald-300 border border-emerald-200 backoffice-dark:border-emerald-800/40">
                   <Layers className="w-3 h-3" />
@@ -308,9 +302,6 @@ export function AdminCampaignOverviewWidget({
               <h4 className="text-xl font-bold text-gray-900 backoffice-dark:text-white">
                 {formatVND(stats?.totalGrossRevenue)}
               </h4>
-              <p className="mt-1 text-[11px] text-gray-400">
-                Tổng doanh thu trước thuế
-              </p>
             </div>
 
             {/* Total VAT */}
@@ -329,9 +320,6 @@ export function AdminCampaignOverviewWidget({
               <h4 className="text-xl font-bold text-gray-900 backoffice-dark:text-white">
                 {formatVND(stats?.totalVatAmount)}
               </h4>
-              <p className="mt-1 text-[11px] text-gray-400">
-                Thuế giá trị gia tăng phát sinh
-              </p>
             </div>
 
             {/* Total Net Revenue */}
@@ -350,9 +338,6 @@ export function AdminCampaignOverviewWidget({
               <h4 className="text-xl font-bold text-gray-900 backoffice-dark:text-white">
                 {formatVND(stats?.totalNetRevenue)}
               </h4>
-              <p className="mt-1 text-[11px] text-gray-400">
-                Doanh thu thuần
-              </p>
             </div>
           </div>
 

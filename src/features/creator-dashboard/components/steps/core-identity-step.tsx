@@ -357,7 +357,7 @@ export function CoreIdentityStep({ initialData, onSave, onCancel, categories, ta
             type="submit"
             className="px-5 py-2.5 rounded-md text-sm font-medium bg-creator-gold text-black hover:bg-creator-gold-hover transition-colors flex items-center gap-2"
           >
-            {isUpdate ? "Lưu Thay Đổi" : "Tiếp Tục Cấu Trúc"}
+            {isUpdate ? "Lưu Thay Đổi" : "Tiếp Tục"}
             <Check size={16} />
           </button>
         </div>

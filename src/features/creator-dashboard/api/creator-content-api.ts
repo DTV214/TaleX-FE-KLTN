@@ -120,6 +120,7 @@ export type EpisodeResponse = {
   episodeId: string;
   seasonId: string;
   seriesId?: string;
+  seriesTitle?: string;
   creatorId?: string;
   episodeNumber?: number;
   title: string;

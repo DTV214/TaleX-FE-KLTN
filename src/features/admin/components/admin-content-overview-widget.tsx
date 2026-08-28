@@ -227,12 +227,6 @@ export function AdminContentOverviewWidget({
               <h3 className="text-base font-bold text-gray-900 backoffice-dark:text-white">
                 Thống Kê Doanh Thu Nội Dung
               </h3>
-              <span className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-700 backoffice-dark:bg-blue-950/50 backoffice-dark:text-blue-300 border border-blue-200 backoffice-dark:border-blue-800/40">
-                <Calendar className="w-3 h-3" />
-                {isDefaultRange
-                  ? (defaultMonthLabel || "Tháng hiện tại")
-                  : `${formatDateDisplay(finalStartTime)} - ${formatDateDisplay(finalEndTime)}`}
-              </span>
               {currentGroupUnit && (
                 <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700 backoffice-dark:bg-emerald-950/50 backoffice-dark:text-emerald-300 border border-emerald-200 backoffice-dark:border-emerald-800/40">
                   <Layers className="w-3 h-3" />
