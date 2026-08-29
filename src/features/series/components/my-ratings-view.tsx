@@ -23,11 +23,8 @@ export function MyRatingsView() {
           </div>
           <div>
             <h1 className="text-2xl font-extrabold tracking-tight text-white md:text-3xl">
-              Tác phẩm tôi đã đánh giá
+              Danh Sách Tác Phẩm Đã Đánh Giá
             </h1>
-            <p className="mt-0.5 text-xs text-gray-400 md:text-sm">
-              Danh sách các bộ truyện tranh và phim ngắn bạn đã để lại điểm đánh giá trên TaleX
-            </p>
           </div>
         </div>
 

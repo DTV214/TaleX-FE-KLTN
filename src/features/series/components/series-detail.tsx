@@ -366,11 +366,10 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
             {/* Nhãn loại nội dung ở góc ảnh */}
             <div className="absolute top-4 left-4">
               <span
-                className={`inline-flex items-center gap-1 px-3 py-1 rounded-md text-[10px] font-bold tracking-wide uppercase backdrop-blur-md border ${
-                  !isComic
-                    ? "bg-red-500/10 text-red-400 border-red-500/20"
-                    : "bg-blue-500/10 text-blue-400 border-blue-500/20"
-                }`}
+                className={`inline-flex items-center gap-1 px-3 py-1 rounded-md text-[10px] font-bold tracking-wide uppercase backdrop-blur-md border ${!isComic
+                  ? "bg-red-500/10 text-red-400 border-red-500/20"
+                  : "bg-blue-500/10 text-blue-400 border-blue-500/20"
+                  }`}
               >
                 {!isComic ? "Phim bộ" : "Truyện tranh"}
               </span>
@@ -580,11 +579,10 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
               </h3>
               <div className="relative">
                 <p
-                  className={`whitespace-pre-line break-words text-sm leading-relaxed text-gray-300 [overflow-wrap:anywhere] sm:text-base ${
-                    !isDescriptionExpanded && canToggleDescription
-                      ? "max-h-[5.8rem] overflow-hidden"
-                      : ""
-                  }`}
+                  className={`whitespace-pre-line break-words text-sm leading-relaxed text-gray-300 [overflow-wrap:anywhere] sm:text-base ${!isDescriptionExpanded && canToggleDescription
+                    ? "max-h-[5.8rem] overflow-hidden"
+                    : ""
+                    }`}
                 >
                   {descriptionText}
                 </p>
@@ -604,9 +602,8 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
                 >
                   {isDescriptionExpanded ? "Thu gọn" : "Xem thêm"}
                   <ChevronRight
-                    className={`h-4 w-4 transition-transform ${
-                      isDescriptionExpanded ? "-rotate-90" : "rotate-90"
-                    }`}
+                    className={`h-4 w-4 transition-transform ${isDescriptionExpanded ? "-rotate-90" : "rotate-90"
+                      }`}
                   />
                 </button>
               )}
@@ -669,9 +666,9 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
                   const discountPercentage =
                     originalPrice > combo.priceVnd
                       ? Math.round(
-                          ((originalPrice - combo.priceVnd) / originalPrice) *
-                            100,
-                        )
+                        ((originalPrice - combo.priceVnd) / originalPrice) *
+                        100,
+                      )
                       : 0;
                   const isPurchasable = combo.priceVnd > 0;
                   const episodeCount = combo.episodes?.length ?? 0;
@@ -816,9 +813,8 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
                         ?.title || "Phần 1"}
                     </span>
                     <ChevronDown
-                      className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-200 ${
-                        isSeasonDropdownOpen ? "rotate-180 text-white" : ""
-                      }`}
+                      className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-200 ${isSeasonDropdownOpen ? "rotate-180 text-white" : ""
+                        }`}
                     />
                   </button>
 
@@ -840,11 +836,10 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
                                 setSelectedSeasonId(season.seasonId);
                                 setIsSeasonDropdownOpen(false);
                               }}
-                              className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between cursor-pointer ${
-                                activeSeasonId === season.seasonId
-                                  ? "bg-[#D4AF37] text-black shadow-md"
-                                  : "text-gray-300 hover:bg-white/10 hover:text-white"
-                              }`}
+                              className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between cursor-pointer ${activeSeasonId === season.seasonId
+                                ? "bg-[#D4AF37] text-black shadow-md"
+                                : "text-gray-300 hover:bg-white/10 hover:text-white"
+                                }`}
                             >
                               <span>{season.title}</span>
                               {activeSeasonId === season.seasonId && (
@@ -881,11 +876,10 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
                   ? "Đang sắp xếp: Tăng dần (Tập 1 -> N)"
                   : "Đang sắp xếp: Giảm dần (Tập N -> 1)"
               }
-              className={`self-end sm:self-auto px-3 py-1.5 rounded-xl border transition-all cursor-pointer flex items-center gap-1.5 text-xs font-bold ${
-                !isAscending
-                  ? "bg-[#D4AF37] text-black border-[#D4AF37]"
-                  : "bg-white/[0.05] hover:bg-white/10 border-white/10 text-gray-300 hover:text-white"
-              }`}
+              className={`self-end sm:self-auto px-3 py-1.5 rounded-xl border transition-all cursor-pointer flex items-center gap-1.5 text-xs font-bold ${!isAscending
+                ? "bg-[#D4AF37] text-black border-[#D4AF37]"
+                : "bg-white/[0.05] hover:bg-white/10 border-white/10 text-gray-300 hover:text-white"
+                }`}
             >
               <ArrowUpDown className="w-3.5 h-3.5" />
               <span>Sắp xếp</span>
@@ -905,11 +899,10 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
           {/* TRẠNG THÁI LOADING EPISODES */}
           {isEpisodesLoading && (
             <div
-              className={`grid gap-2.5 relative z-10 mt-5 ${
-                isComic
-                  ? "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7"
-                  : "grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10"
-              }`}
+              className={`grid gap-2.5 relative z-10 mt-5 ${isComic
+                ? "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7"
+                : "grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10"
+                }`}
             >
               {Array.from({ length: 10 }).map((_, idx) => (
                 <div
@@ -959,11 +952,10 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.2 }}
-                className={`grid gap-2.5 relative z-10 mt-5 ${
-                  isComic
-                    ? "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7"
-                    : "grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10"
-                }`}
+                className={`grid gap-2.5 relative z-10 mt-5 ${isComic
+                  ? "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7"
+                  : "grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10"
+                  }`}
               >
                 {sortedEpisodes.map((episode) => {
                   const isPaid = episode.unlockType === "PAID";

@@ -234,7 +234,7 @@ export default function BookmarksPage() {
       <PageAtmosphere />
 
       <main className="relative z-10 mx-auto w-full max-w-[1680px] px-4 pt-8 md:px-8">
-        
+
         {/* Banner tiêu đề & Tab Filters */}
         <div className="mb-10 flex flex-col justify-between gap-6 border-b border-white/10 pb-6 md:flex-row md:items-center">
           <div className="flex items-center gap-3">
@@ -243,11 +243,8 @@ export default function BookmarksPage() {
             </div>
             <div>
               <h1 className="text-2xl font-extrabold tracking-tight text-white md:text-3xl flex items-center gap-2">
-                Video & Truyện đã lưu (Bookmarks)
+                Nội Dung Được Lưu
               </h1>
-              <p className="mt-0.5 text-xs text-gray-400 md:text-sm">
-                Tổng số lượng: <strong className="text-[#D4AF37]">{bookmarkedEpisodes.length}</strong> tập phim/truyện đã lưu
-              </p>
             </div>
           </div>
 
@@ -370,10 +367,9 @@ export default function BookmarksPage() {
                       <div
                         className="w-full h-full bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
                         style={{
-                          backgroundImage: `url(${
-                            item.seriesCoverUrl ||
+                          backgroundImage: `url(${item.seriesCoverUrl ||
                             "https://images.unsplash.com/photo-1478760329108-5c3ed9d495a0?q=80&w=500&auto=format&fit=crop"
-                          })`,
+                            })`,
                         }}
                       />
                     </div>
@@ -386,12 +382,12 @@ export default function BookmarksPage() {
                       <h3 className="text-white font-bold text-sm sm:text-base leading-snug line-clamp-1 group-hover:text-[#D4AF37] transition-colors duration-200">
                         {item.episodeTitle}
                       </h3>
-                      
+
                       <div className="space-y-1 text-xs text-gray-400 font-medium">
                         <p className="text-[#D4AF37] font-bold truncate">
                           {item.seriesTitle} {item.episodeNumber != null && `• Tập ${item.episodeNumber}`}
                         </p>
-                        
+
                         <p className="flex items-center gap-1.5 text-gray-500 text-[11px]">
                           <Calendar className="w-3.5 h-3.5 text-gray-500" />
                           Đã lưu: {new Date(item.bookmarkedAt).toLocaleString("vi-VN", {
@@ -435,7 +431,7 @@ export default function BookmarksPage() {
                             <ExternalLink className="w-3.5 h-3.5 text-gray-400" />
                             Xem nội dung
                           </button>
-                          
+
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
