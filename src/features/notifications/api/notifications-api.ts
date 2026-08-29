@@ -47,3 +47,10 @@ export async function markAllNotificationsAsRead() {
     httpClient.put(`${NOTIFICATIONS_ENDPOINT}/read-all`),
   );
 }
+
+// Xoá vĩnh viễn các thông báo đã đọc khỏi DB, trả về số lượng đã xoá.
+export async function deleteReadNotifications() {
+  return unwrapBaseResponse<number>(
+    httpClient.delete(`${NOTIFICATIONS_ENDPOINT}/read`),
+  );
+}

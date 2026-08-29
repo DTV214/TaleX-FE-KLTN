@@ -137,6 +137,9 @@ export function FinalReviewStep({
 
   const isPublished = selectedEpisode?.status === "PUBLISHED";
   const isScheduled = selectedEpisode?.status === "SCHEDULED";
+  // Episode đã bị Admin ép ẩn — chỉ Admin mới gỡ được (forceUnhide), Creator không được
+  // tự "Xuất bản Ngay" hay "Ẩn Tập" nữa (xem guard tương ứng ở EpisodeServiceImpl.publish()).
+  const isForceHidden = selectedEpisode?.status === "FORCE_HIDDEN";
 
   const violationsQuery = useQuery({
     queryKey: ["creator-dashboard", "media-violations", mediaId],
@@ -166,9 +169,9 @@ export function FinalReviewStep({
       {/* Left - Video Preview & Episode Details */}
       <div className="flex flex-1 flex-col gap-6">
         <div>
-          <h2 className="text-2xl font-bold text-white mb-1">{isPublished ? "Tập đã xuất bản" : "Kiểm duyệt cuối cùng & Quyết định xuất bản"}</h2>
+          <h2 className="text-2xl font-bold text-white mb-1">{isForceHidden ? "Tập đang bị tạm ẩn" : isPublished ? "Tập đã xuất bản" : "Kiểm duyệt cuối cùng & Quyết định xuất bản"}</h2>
           <p className="text-sm text-creator-muted">
-            {isPublished ? "Tập này hiện đang hoạt động trên TaleX." : "Xem lại nội dung của bạn trước khi đưa nó lên công khai trên TaleX."}
+            {isForceHidden ? "Đội ngũ quản trị đang tạm ngừng hiển thị tập này." : isPublished ? "Tập này hiện đang hoạt động trên TaleX." : "Xem lại nội dung của bạn trước khi đưa nó lên công khai trên TaleX."}
           </p>
         </div>
 
@@ -396,7 +399,7 @@ export function FinalReviewStep({
           hasWatermark={hasWatermark}
         />
 
-        {!isPublished && (
+        {!isPublished && !isForceHidden && (
           <div className="bg-creator-sidebar border border-creator-border rounded-xl p-5">
             <h3 className="font-semibold text-white mb-3 text-sm flex items-center gap-2">
               <MessageSquare size={16} /> Ghi chú cho người kiểm duyệt (Không bắt buộc)
@@ -411,7 +414,11 @@ export function FinalReviewStep({
         )}
 
         <div className="flex flex-col gap-3 pt-2">
-          {isScheduled ? (
+          {isForceHidden ? (
+            // Không lặp lại cảnh báo — AIPolicyAndCopyright (phía trên) đã hiện đủ
+            // thông tin "tạm ẩn bởi quản trị viên", ở đây chỉ cần ẩn nút xuất bản/ẩn.
+            <CreatorBackButton onClick={onBack} className="w-full" />
+          ) : isScheduled ? (
             <>
               <div className="rounded-xl border border-creator-gold/40 bg-creator-gold/10 p-4 text-sm">
                 <div className="flex items-center gap-2 font-bold text-creator-gold">

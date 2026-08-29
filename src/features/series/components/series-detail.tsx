@@ -44,7 +44,6 @@ import { useGetSeriesRatings } from "../hooks/use-series-ratings";
 import { useAuthStore } from "@/features/auth/store/auth.store";
 import { AdSlot } from "@/shared/ui/ad-slot";
 import { ReportDialog } from "@/features/moderation-reports/components/report-dialog";
-import { EpisodeCommentsSection } from "@/features/comments";
 
 interface SeriesDetailProps {
   seriesId: string;
@@ -988,6 +987,7 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
             )}
         </section>
 
+<<<<<<< HEAD
         {/* 4. Section: Bình luận dành riêng cho Series Truyện tranh */}
         {isComic && firstEpisodeId && (
           <section className="mt-10 w-full rounded-3xl border border-white/10 bg-[#121214]/60 p-6 md:p-8 shadow-2xl backdrop-blur-md relative">
@@ -1005,6 +1005,8 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
             </div>
           </section>
         )}
+=======
+>>>>>>> main
       </div>
     </div>
   );

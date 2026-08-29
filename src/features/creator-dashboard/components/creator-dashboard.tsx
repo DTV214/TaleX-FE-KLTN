@@ -1654,7 +1654,10 @@ function CreatorDashboardContent() {
       setComicPages([]);
     }
 
-    if (episode.status === "PUBLISHED") {
+    // FORCE_HIDDEN: episode đã từng PUBLISHED trước khi Admin ép ẩn — phải vào view
+    // "publish" (màn hình tổng kết/trạng thái) giống hệt episode PUBLISHED, không phải
+    // flow upload/nháp (nơi trước đây vô tình để lộ lại nút "Xuất bản Ngay").
+    if (episode.status === "PUBLISHED" || episode.status === "FORCE_HIDDEN") {
       setDashboardRouteState({
         view: "publish",
         seriesId: selectedSeries?.id ?? selectedSeriesId,
@@ -2138,7 +2141,7 @@ function CreatorDashboardContent() {
                   }
                   onSaveDraft={() => openSeriesManagement()}
                   onBack={() => {
-                    if (selectedEpisode?.status === "PUBLISHED") {
+                    if (selectedEpisode?.status === "PUBLISHED" || selectedEpisode?.status === "FORCE_HIDDEN") {
                       setDashboardRouteState({
                         view: "episodes",
                         seriesId: selectedSeriesId,
@@ -2200,7 +2203,7 @@ function CreatorDashboardContent() {
                   }
                   onSaveDraft={() => openSeriesManagement()}
                   onBack={() => {
-                    if (selectedEpisode?.status === "PUBLISHED") {
+                    if (selectedEpisode?.status === "PUBLISHED" || selectedEpisode?.status === "FORCE_HIDDEN") {
                       setDashboardRouteState({
                         view: "episodes",
                         seriesId: selectedSeriesId,
