@@ -435,7 +435,7 @@ export function PersonalRecommendationsTab({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-base font-bold text-slate-900 backoffice-dark:text-white">
-                  Danh Sách Series Đã Xem Hôm Nay
+                  Danh Sách Series Đã Hiển Thị Hôm Nay
                 </h3>
                 <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-800 border border-emerald-200 backoffice-dark:bg-emerald-950/50 backoffice-dark:text-emerald-300 backoffice-dark:border-emerald-800">
                   {watchedPoolSeries?.length ?? 0} series

@@ -273,8 +273,8 @@ function Top5RankingSection({
                         {ageLabel === "EVERYONE"
                           ? "P"
                           : ageLabel === "TEEN"
-                          ? "13+"
-                          : "18+"}
+                            ? "13+"
+                            : "18+"}
                       </span>
                     </div>
                   </div>
@@ -401,10 +401,10 @@ function SectionTitle({
 }) {
   return (
     <div className="mb-6">
-      <p className="mb-1 flex items-center gap-2 text-xs font-black uppercase tracking-[0.2em] text-[#D4AF37]">
+      {/* <p className="mb-1 flex items-center gap-2 text-xs font-black uppercase tracking-[0.2em] text-[#D4AF37]">
         <Icon className="h-3.5 w-3.5" />
         {eyebrow}
-      </p>
+      </p> */}
       <h2 className="font-heading text-2xl font-black text-white md:text-3xl">
         {title}
       </h2>

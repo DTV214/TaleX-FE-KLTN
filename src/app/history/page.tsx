@@ -211,11 +211,8 @@ export default function HistoryPage() {
               </div>
               <div>
                 <h1 className="text-2xl font-extrabold tracking-tight text-white md:text-3xl">
-                  Lịch sử xem gần đây
+                  Lịch Sử Xem Gần Đây
                 </h1>
-                <p className="mt-0.5 text-xs text-gray-400 md:text-sm">
-                  Quản lý và tiếp tục thưởng thức các tập phim và truyện tranh bạn đã theo dõi
-                </p>
               </div>
             </div>
           </div>
@@ -290,8 +287,8 @@ export default function HistoryPage() {
               {activeTab === "ALL"
                 ? "Bạn chưa xem tập phim hoặc bộ truyện nào gần đây."
                 : activeTab === "VIDEO"
-                ? "Bạn chưa xem video nào gần đây."
-                : "Bạn chưa đọc truyện tranh nào gần đây."}
+                  ? "Bạn chưa xem video nào gần đây."
+                  : "Bạn chưa đọc truyện tranh nào gần đây."}
             </p>
             <Link
               href="/series"
