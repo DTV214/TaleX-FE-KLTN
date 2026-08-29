@@ -367,8 +367,8 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
             <div className="absolute top-4 left-4">
               <span
                 className={`inline-flex items-center gap-1 px-3 py-1 rounded-md text-[10px] font-bold tracking-wide uppercase backdrop-blur-md border ${!isComic
-                    ? "bg-red-500/10 text-red-400 border-red-500/20"
-                    : "bg-blue-500/10 text-blue-400 border-blue-500/20"
+                  ? "bg-red-500/10 text-red-400 border-red-500/20"
+                  : "bg-blue-500/10 text-blue-400 border-blue-500/20"
                   }`}
               >
                 {!isComic ? "Phim bộ" : "Truyện tranh"}
@@ -580,8 +580,8 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
               <div className="relative">
                 <p
                   className={`whitespace-pre-line break-words text-sm leading-relaxed text-gray-300 [overflow-wrap:anywhere] sm:text-base ${!isDescriptionExpanded && canToggleDescription
-                      ? "max-h-[5.8rem] overflow-hidden"
-                      : ""
+                    ? "max-h-[5.8rem] overflow-hidden"
+                    : ""
                     }`}
                 >
                   {descriptionText}
@@ -837,8 +837,8 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
                                 setIsSeasonDropdownOpen(false);
                               }}
                               className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between cursor-pointer ${activeSeasonId === season.seasonId
-                                  ? "bg-[#D4AF37] text-black shadow-md"
-                                  : "text-gray-300 hover:bg-white/10 hover:text-white"
+                                ? "bg-[#D4AF37] text-black shadow-md"
+                                : "text-gray-300 hover:bg-white/10 hover:text-white"
                                 }`}
                             >
                               <span>{season.title}</span>
@@ -877,8 +877,8 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
                   : "Đang sắp xếp: Giảm dần (Tập N -> 1)"
               }
               className={`self-end sm:self-auto px-3 py-1.5 rounded-xl border transition-all cursor-pointer flex items-center gap-1.5 text-xs font-bold ${!isAscending
-                  ? "bg-[#D4AF37] text-black border-[#D4AF37]"
-                  : "bg-white/[0.05] hover:bg-white/10 border-white/10 text-gray-300 hover:text-white"
+                ? "bg-[#D4AF37] text-black border-[#D4AF37]"
+                : "bg-white/[0.05] hover:bg-white/10 border-white/10 text-gray-300 hover:text-white"
                 }`}
             >
               <ArrowUpDown className="w-3.5 h-3.5" />
@@ -900,8 +900,8 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
           {isEpisodesLoading && (
             <div
               className={`grid gap-2.5 relative z-10 mt-5 ${isComic
-                  ? "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7"
-                  : "grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10"
+                ? "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7"
+                : "grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10"
                 }`}
             >
               {Array.from({ length: 10 }).map((_, idx) => (
@@ -953,8 +953,8 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.2 }}
                 className={`grid gap-2.5 relative z-10 mt-5 ${isComic
-                    ? "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7"
-                    : "grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10"
+                  ? "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7"
+                  : "grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10"
                   }`}
               >
                 {sortedEpisodes.map((episode) => {
@@ -987,26 +987,6 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
             )}
         </section>
 
-<<<<<<< HEAD
-        {/* 4. Section: Bình luận dành riêng cho Series Truyện tranh */}
-        {isComic && firstEpisodeId && (
-          <section className="mt-10 w-full rounded-3xl border border-white/10 bg-[#121214]/60 p-6 md:p-8 shadow-2xl backdrop-blur-md relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none rounded-3xl" />
-            <div className="relative z-10">
-              <div className="mb-6 flex items-center justify-between gap-4 border-b border-white/10 pb-4">
-                <div>
-                  <h2 className="text-xl md:text-2xl font-bold text-white tracking-wide flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-[#D4AF37]" />
-                    Bình luận truyện
-                  </h2>
-                </div>
-              </div>
-              <EpisodeCommentsSection episodeId={firstEpisodeId} />
-            </div>
-          </section>
-        )}
-=======
->>>>>>> main
       </div>
     </div>
   );
