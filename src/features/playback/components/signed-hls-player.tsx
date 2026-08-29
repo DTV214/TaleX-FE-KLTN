@@ -780,10 +780,6 @@ export function SignedHlsPlayer({
                             <Film className="h-6 w-6 text-white/20" />
                           </div>
                         )}
-                        {/* Thời lượng video badge */}
-                        <div className="absolute bottom-1 right-1 bg-black/80 text-white font-extrabold text-[10px] px-1.5 py-0.5 rounded">
-                          15:00
-                        </div>
                         <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
                           <PlayCircle className="h-7 w-7 text-[#D4AF37] shadow-md" />
                         </div>
