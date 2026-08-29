@@ -17,6 +17,7 @@ import {
 } from "@/shared/ui/dialog";
 import {
   notificationKeys,
+  useDeleteReadNotifications,
   useMarkAllNotificationsAsRead,
   useMarkNotificationAsRead,
   useMyNotifications,
@@ -31,7 +32,6 @@ type NotificationBellProps = {
   className?: string;
 };
 
-const CLEARED_NOTIFICATIONS_STORAGE_KEY = "talex.notifications.cleared.v1";
 const CREATOR_MODERATION_REFERENCE_TYPES = new Set([
   "APPEAL",
   "MODERATION",
@@ -58,33 +58,6 @@ const CREATOR_MODERATION_KEYWORDS = [
   "xử phạt",
   "xu phat",
 ];
-
-function readClearedNotificationIds() {
-  if (typeof window === "undefined") return [];
-
-  try {
-    const value = window.localStorage.getItem(CLEARED_NOTIFICATIONS_STORAGE_KEY);
-    const parsed = value ? JSON.parse(value) : [];
-    return Array.isArray(parsed)
-      ? parsed.filter((item): item is string => typeof item === "string")
-      : [];
-  } catch {
-    return [];
-  }
-}
-
-function writeClearedNotificationIds(notificationIds: string[]) {
-  if (typeof window === "undefined") return;
-
-  try {
-    window.localStorage.setItem(
-      CLEARED_NOTIFICATIONS_STORAGE_KEY,
-      JSON.stringify(notificationIds.slice(-500)),
-    );
-  } catch {
-    // Ignore storage failures so notification actions remain usable.
-  }
-}
 
 function formatRelativeTime(isoDate: string) {
   const date = new Date(isoDate);
@@ -227,36 +200,19 @@ export function NotificationBell({
 }: NotificationBellProps) {
   const [open, setOpen] = useState(false);
   const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
-  const [clearedNotificationIds, setClearedNotificationIds] = useState<string[]>([]);
   const queryClient = useQueryClient();
   const unreadCountQuery = useUnreadNotificationCount(enabled);
   const notificationsQuery = useMyNotifications(1, 10, enabled && open, open ? 15000 : false);
   const markAllMutation = useMarkAllNotificationsAsRead();
+  const deleteReadMutation = useDeleteReadNotifications();
   const unreadCount = unreadCountQuery.data ?? 0;
   const notifications = notificationsQuery.data?.content ?? [];
-  const clearedNotificationIdSet = useMemo(
-    () => new Set(clearedNotificationIds),
-    [clearedNotificationIds],
-  );
-  const visibleNotifications = useMemo(
-    () =>
-      notifications.filter(
-        (notification) =>
-          !clearedNotificationIdSet.has(notification.notificationId),
-      ),
-    [clearedNotificationIdSet, notifications],
-  );
-  const readVisibleNotifications = useMemo(
-    () =>
-      visibleNotifications.filter((notification) => notification.isRead),
-    [visibleNotifications],
+  const readNotifications = useMemo(
+    () => notifications.filter((notification) => notification.isRead),
+    [notifications],
   );
   const badgeLabel = useMemo(() => (unreadCount > 9 ? "9+" : String(unreadCount)), [unreadCount]);
-  const hasReadNotifications = readVisibleNotifications.length > 0;
-
-  useEffect(() => {
-    setClearedNotificationIds(readClearedNotificationIds());
-  }, []);
+  const hasReadNotifications = readNotifications.length > 0;
 
   useEffect(() => {
     if (!enabled || unreadCount <= 0) return;
@@ -274,23 +230,15 @@ export function NotificationBell({
   }
 
   function handleConfirmClearReadNotifications() {
-    const readNotificationIds = readVisibleNotifications.map(
-      (notification) => notification.notificationId,
-    );
-
-    if (readNotificationIds.length === 0) {
-      setClearConfirmOpen(false);
-      return;
-    }
-
-    const nextClearedNotificationIds = Array.from(
-      new Set([...clearedNotificationIds, ...readNotificationIds]),
-    ).slice(-500);
-
-    setClearedNotificationIds(nextClearedNotificationIds);
-    writeClearedNotificationIds(nextClearedNotificationIds);
-    setClearConfirmOpen(false);
-    toast.success(`Đã xóa ${readNotificationIds.length} thông báo đã xem.`);
+    deleteReadMutation.mutate(undefined, {
+      onSuccess: (deletedCount) => {
+        setClearConfirmOpen(false);
+        toast.success(`Đã xóa ${deletedCount} thông báo đã xem.`);
+      },
+      onError: () => {
+        toast.error("Không thể xoá thông báo, vui lòng thử lại.");
+      },
+    });
   }
 
   return (
@@ -339,7 +287,7 @@ export function NotificationBell({
             )}
           </div>
 
-          {visibleNotifications.length > 0 && (
+          {notifications.length > 0 && (
             <div className="mb-1 flex items-center justify-end gap-1.5 px-2">
               <button
                 type="button"
@@ -360,14 +308,14 @@ export function NotificationBell({
             </div>
           )}
 
-          {!notificationsQuery.isLoading && visibleNotifications.length === 0 && (
+          {!notificationsQuery.isLoading && notifications.length === 0 && (
             <div className="px-3 py-6 text-center text-xs font-semibold text-zinc-500">
               Chưa có thông báo nào.
             </div>
           )}
 
           <div className="max-h-96 space-y-1 overflow-y-auto">
-            {visibleNotifications.map((notification) => (
+            {notifications.map((notification) => (
               <NotificationItem
                 key={notification.notificationId}
                 notification={notification}
@@ -389,30 +337,36 @@ export function NotificationBell({
               Xóa thông báo đã xem?
             </DialogTitle>
             <DialogDescription className="text-sm font-semibold leading-6 text-zinc-400">
-              Hành động này chỉ xóa các thông báo đã đọc khỏi danh sách hiển
-              thị. Thông báo mới hoặc chưa xem vẫn được giữ lại để bạn không bỏ
-              lỡ nội dung quan trọng.
+              Hành động này xóa vĩnh viễn các thông báo đã đọc. Thông báo mới
+              hoặc chưa xem vẫn được giữ lại để bạn không bỏ lỡ nội dung quan
+              trọng.
             </DialogDescription>
           </DialogHeader>
 
           <div className="rounded-xl border border-white/10 bg-white/[0.035] px-4 py-3 text-xs font-semibold text-zinc-400">
-            Sẽ xóa {readVisibleNotifications.length} thông báo đã xem.
+            Sẽ xóa {readNotifications.length} thông báo đã xem.
           </div>
 
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <button
               type="button"
               onClick={() => setClearConfirmOpen(false)}
-              className="inline-flex h-10 items-center justify-center rounded-xl border border-white/10 px-4 text-sm font-bold text-zinc-300 transition hover:bg-white/5 hover:text-white"
+              disabled={deleteReadMutation.isPending}
+              className="inline-flex h-10 items-center justify-center rounded-xl border border-white/10 px-4 text-sm font-bold text-zinc-300 transition hover:bg-white/5 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
             >
               Hủy
             </button>
             <button
               type="button"
               onClick={handleConfirmClearReadNotifications}
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#D4AF37] px-4 text-sm font-black text-black transition hover:bg-[#F0CB55]"
+              disabled={deleteReadMutation.isPending}
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#D4AF37] px-4 text-sm font-black text-black transition hover:bg-[#F0CB55] disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <Trash2 className="h-4 w-4" />
+              {deleteReadMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Trash2 className="h-4 w-4" />
+              )}
               Xóa đã xem
             </button>
           </div>
