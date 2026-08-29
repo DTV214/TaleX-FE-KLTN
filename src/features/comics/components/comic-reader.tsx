@@ -44,6 +44,7 @@ import {
 import { useComicHeartbeat } from "@/features/playback/hooks/useComicHeartbeat";
 import { getEpisodeWatchPosition } from "@/features/playback/api/watch-sessions-api";
 import { AdSlot } from "@/shared/ui/ad-slot";
+import { EpisodeCommentsSection } from "@/features/comments";
 import { WatermarkedImage } from "./watermarked-image";
 
 interface ComicReaderProps {
@@ -945,6 +946,10 @@ export function ComicReader({ episodeId }: ComicReaderProps) {
           format="horizontal"
           className="my-8"
         />
+
+        <div className="mx-auto w-full max-w-5xl px-4 pb-12">
+          <EpisodeCommentsSection episodeId={episodeId} />
+        </div>
       </div>
 
       {/* ─── BOTTOM BAR (chỉ hiển thị ở horizontal mode) ─── */}

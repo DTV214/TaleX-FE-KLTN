@@ -44,7 +44,6 @@ import { useGetSeriesRatings } from "../hooks/use-series-ratings";
 import { useAuthStore } from "@/features/auth/store/auth.store";
 import { AdSlot } from "@/shared/ui/ad-slot";
 import { ReportDialog } from "@/features/moderation-reports/components/report-dialog";
-import { EpisodeCommentsSection } from "@/features/comments";
 
 interface SeriesDetailProps {
   seriesId: string;
@@ -996,27 +995,6 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
             )}
         </section>
 
-        {/* 4. Section: Bình luận dành riêng cho Series Truyện tranh */}
-        {isComic && firstEpisodeId && (
-          <section className="mt-10 w-full rounded-3xl border border-white/10 bg-[#121214]/60 p-6 md:p-8 shadow-2xl backdrop-blur-md relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none rounded-3xl" />
-            <div className="relative z-10">
-              <div className="mb-6 flex items-center justify-between gap-4 border-b border-white/10 pb-4">
-                <div>
-                  <h2 className="text-xl md:text-2xl font-bold text-white tracking-wide flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-[#D4AF37]" />
-                    Bình luận truyện
-                  </h2>
-                  <p className="text-xs text-gray-400 mt-1">
-                    Cùng thảo luận và để lại cảm nghĩ về bộ truyện tranh này
-                    nhé!
-                  </p>
-                </div>
-              </div>
-              <EpisodeCommentsSection episodeId={firstEpisodeId} />
-            </div>
-          </section>
-        )}
       </div>
     </div>
   );
