@@ -671,19 +671,21 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
                       key={combo.comboId}
                       className="relative flex flex-col justify-between rounded-2xl border border-white/10 bg-[#161619] p-6 shadow-xl transition-all duration-300 hover:border-[#D4AF37]/50 hover:shadow-[0_0_24px_rgba(212,175,55,0.08)] group"
                     >
-                      {discountPercentage > 0 && (
-                        <div className="absolute top-4 right-4 z-10">
-                          <span className="inline-flex items-center rounded-full bg-red-500/10 border border-red-500/20 px-2.5 py-1 text-xs font-black text-red-400">
-                            Tiết kiệm {discountPercentage}%
-                          </span>
-                        </div>
-                      )}
-
-                      <div className="space-y-4 mt-8">
+                      <div className="space-y-4">
                         <div>
-                          <h3 className="font-bold text-lg text-white group-hover:text-[#D4AF37] transition-colors duration-200 line-clamp-1">
-                            {combo.title}
-                          </h3>
+                          <div className="flex items-start justify-between gap-3">
+                            <h3
+                              title={combo.title}
+                              className="font-bold text-base sm:text-lg text-white group-hover:text-[#D4AF37] transition-colors duration-200 truncate flex-1 min-w-0"
+                            >
+                              {combo.title}
+                            </h3>
+                            {discountPercentage > 0 && (
+                              <span className="inline-flex shrink-0 items-center rounded-full bg-red-500/10 border border-red-500/20 px-2.5 py-1 text-xs font-black text-red-400 whitespace-nowrap">
+                                Tiết kiệm {discountPercentage}%
+                              </span>
+                            )}
+                          </div>
                           <p className="mt-2 text-xs text-gray-400 line-clamp-2 leading-relaxed">
                             {combo.description ||
                               "Mở khóa nhiều tập cùng lúc với giá tốt."}

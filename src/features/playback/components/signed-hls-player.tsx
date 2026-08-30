@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueries, useQueryClient } from "@tanstack/react-query";
 import {
   AlertCircle,
   Loader2,
@@ -10,6 +10,7 @@ import {
   PlayCircle,
   ArrowUpDown,
   Menu,
+  ChevronDown,
   Lock,
   CheckCircle2,
   Sparkles,
@@ -30,6 +31,7 @@ import { getEpisodeWatchPosition } from "@/features/playback/api/watch-sessions-
 import {
   getPublicEpisodeDetail,
   getPublicEpisodes,
+  getPublicSeasons,
   getPublicSeriesList,
 } from "@/features/series/api/series-api";
 import { LikeButton } from "@/features/series/components/like-button";
@@ -156,11 +158,109 @@ export function SignedHlsPlayer({
     enabled: !!episodeId,
   });
 
+  // Fetch danh sách series public để ghép thông tin creator & danh sách season
+  const { data: publicSeriesData } = useQuery({
+    queryKey: ["publicSeriesListAll"],
+    queryFn: () => getPublicSeriesList(1, 100),
+    staleTime: 30 * 1000,
+  });
+
+  const episodeSeriesId = useMemo(() => {
+    if (!episodeDetail) return null;
+    return "seriesId" in episodeDetail &&
+      typeof episodeDetail.seriesId === "string"
+      ? episodeDetail.seriesId
+      : null;
+  }, [episodeDetail]);
+
+  const videoSeriesCandidates = useMemo(
+    () =>
+      (publicSeriesData?.content ?? []).filter(
+        (series) => String(series.contentType).toUpperCase() === "VIDEO",
+      ),
+    [publicSeriesData?.content],
+  );
+
+  const videoSeasonQueries = useQueries({
+    queries: videoSeriesCandidates.map((series) => ({
+      queryKey: ["publicVideoSeriesSeasonsForPlayer", series.seriesId],
+      queryFn: () => getPublicSeasons(series.seriesId),
+      enabled: Boolean(episodeDetail?.seasonId),
+      staleTime: 60 * 1000,
+    })),
+  });
+
+  const matchedSeries = useMemo(() => {
+    if (!episodeDetail) return null;
+
+    if (episodeSeriesId) {
+      const exactSeries = videoSeriesCandidates.find(
+        (series) => series.seriesId === episodeSeriesId,
+      );
+      if (exactSeries) return exactSeries;
+    }
+
+    const seriesIndexBySeason = videoSeasonQueries.findIndex((query) =>
+      query.data?.some((season) => season.seasonId === episodeDetail.seasonId),
+    );
+
+    if (seriesIndexBySeason >= 0) {
+      return videoSeriesCandidates[seriesIndexBySeason];
+    }
+
+    return (
+      videoSeriesCandidates.find(
+        (s) =>
+          s.creatorId === episodeDetail.creatorId ||
+          (s.creatorName && s.creatorName === episodeDetail.createdBy),
+      ) || null
+    );
+  }, [
+    videoSeasonQueries,
+    videoSeriesCandidates,
+    episodeDetail,
+    episodeSeriesId,
+  ]);
+
+  // Quản lý Season đang chọn trên UI
+  const [selectedSeasonId, setSelectedSeasonId] = useState<string | null>(null);
+  const [isSeasonDropdownOpen, setIsSeasonDropdownOpen] = useState(false);
+
+  useEffect(() => {
+    if (episodeDetail?.seasonId) {
+      setSelectedSeasonId(episodeDetail.seasonId);
+    }
+  }, [episodeDetail?.seasonId]);
+
+  // Danh sách các Season của Series này
+  const seasons = useMemo(() => {
+    if (!matchedSeries) return [];
+    const seriesIdx = videoSeriesCandidates.findIndex(
+      (s) => s.seriesId === matchedSeries.seriesId,
+    );
+    if (seriesIdx >= 0 && videoSeasonQueries[seriesIdx]?.data) {
+      return videoSeasonQueries[seriesIdx].data ?? [];
+    }
+    return [];
+  }, [matchedSeries, videoSeriesCandidates, videoSeasonQueries]);
+
+  const sortedSeasons = useMemo(
+    () => [...seasons].sort((a, b) => a.seasonNumber - b.seasonNumber),
+    [seasons],
+  );
+
+  const activeSeasonId = selectedSeasonId || episodeDetail?.seasonId;
+
+  const currentSeason = useMemo(
+    () => seasons.find((s) => s.seasonId === activeSeasonId) || null,
+    [seasons, activeSeasonId],
+  );
+
   const { data: seasonEpisodes = [], isLoading: isSeasonEpisodesLoading } =
     useQuery({
-      queryKey: ["publicSeasonEpisodes", episodeDetail?.seasonId],
-      queryFn: () => getPublicEpisodes(episodeDetail!.seasonId),
-      enabled: !compact && !!episodeDetail?.seasonId,
+      queryKey: ["publicSeasonEpisodes", activeSeasonId],
+      queryFn: () => getPublicEpisodes(activeSeasonId!),
+      enabled: !compact && !!activeSeasonId,
     });
 
   const [isAscending, setIsAscending] = useState(true);
@@ -192,29 +292,6 @@ export function SignedHlsPlayer({
     queryFn: () => getCreatorDetail(episodeDetail!.creatorId),
     enabled: !!episodeDetail?.creatorId,
   });
-
-  // Fetch danh sách series public để ghép thông tin creator (accountId, avatar, name, followers)
-  const { data: publicSeriesData } = useQuery({
-    queryKey: ["publicSeriesListAll"],
-    queryFn: () => getPublicSeriesList(1, 100),
-    staleTime: 30 * 1000,
-  });
-
-  const matchedSeries = useMemo(() => {
-    if (!episodeDetail || !publicSeriesData?.content) return null;
-    const episodeSeriesId =
-      "seriesId" in episodeDetail && typeof episodeDetail.seriesId === "string"
-        ? episodeDetail.seriesId
-        : null;
-    return (
-      publicSeriesData.content.find(
-        (s) =>
-          s.creatorId === episodeDetail.creatorId ||
-          s.seriesId === episodeSeriesId ||
-          (s.creatorName && s.creatorName === episodeDetail.createdBy),
-      ) || null
-    );
-  }, [episodeDetail, publicSeriesData]);
 
   const [selectedFilter, setSelectedFilter] = useState<"all" | "creator" | "newest">("all");
 
@@ -624,9 +701,20 @@ export function SignedHlsPlayer({
                 {/* Danh sách tập phim (Phần tập nằm ngay dưới Mô tả) */}
                 <div className="mt-6 pt-4 border-t border-white/10">
                   <div className="flex items-center justify-between gap-3 mb-3">
-                    <h3 className="text-base md:text-lg font-bold text-white tracking-wide">
-                      Danh sách tập
-                    </h3>
+                    <div className="flex items-center gap-3">
+                      <h3 className="text-base md:text-lg font-bold text-white tracking-wide">
+                        Danh sách tập
+                      </h3>
+                      {sortedSeasonEpisodes.length > 0 && (
+                        <span className="text-xs text-gray-400 font-semibold">
+                          (
+                          <strong className="text-[#FFD700] font-bold">
+                            {sortedSeasonEpisodes.length}
+                          </strong>{" "}
+                          tập)
+                        </span>
+                      )}
+                    </div>
                     <button
                       type="button"
                       onClick={() => setIsAscending((prev) => !prev)}
@@ -664,8 +752,8 @@ export function SignedHlsPlayer({
                               key={ep.episodeId}
                               href={`/watch/${ep.episodeId}`}
                               className={`px-4 py-2.5 rounded-xl text-xs md:text-sm font-extrabold transition-all duration-200 flex items-center gap-1.5 ${isActive
-                                  ? "bg-[#FFD700] text-black shadow-lg shadow-[#FFD700]/20 scale-[1.02]"
-                                  : "bg-[#242428] text-gray-300 hover:bg-[#323238] hover:text-white border border-white/5"
+                                ? "bg-[#FFD700] text-black shadow-lg shadow-[#FFD700]/20 scale-[1.02]"
+                                : "bg-[#242428] text-gray-300 hover:bg-[#323238] hover:text-white border border-white/5"
                                 }`}
                             >
                               <span>Tập {ep.episodeNumber}</span>
@@ -713,8 +801,8 @@ export function SignedHlsPlayer({
                   type="button"
                   onClick={() => setSelectedFilter("all")}
                   className={`px-3.5 py-1.5 rounded-lg whitespace-nowrap transition-colors cursor-pointer ${selectedFilter === "all"
-                      ? "bg-white text-black font-extrabold"
-                      : "bg-[#27272a] text-white hover:bg-zinc-700"
+                    ? "bg-white text-black font-extrabold"
+                    : "bg-[#27272a] text-white hover:bg-zinc-700"
                     }`}
                 >
                   Tất cả
@@ -723,8 +811,8 @@ export function SignedHlsPlayer({
                   type="button"
                   onClick={() => setSelectedFilter("creator")}
                   className={`px-3.5 py-1.5 rounded-lg whitespace-nowrap transition-colors cursor-pointer ${selectedFilter === "creator"
-                      ? "bg-white text-black font-extrabold"
-                      : "bg-[#27272a] text-white hover:bg-zinc-700"
+                    ? "bg-white text-black font-extrabold"
+                    : "bg-[#27272a] text-white hover:bg-zinc-700"
                     }`}
                 >
                   Của {creatorName.slice(0, 12)}
