@@ -25,6 +25,23 @@ export type CreatorIdentityRecord = {
   verifiedNote?: string;
 };
 
+export type CreatorIdentityDetail = {
+  creatorIdentityId?: string;
+  creatorId?: string;
+  accountName?: string;
+  idNumber?: string;
+  fullName?: string;
+  dob?: string;
+  sex?: string;
+  address?: string;
+  doe?: string;
+  status?: IdentityVerificationStatus;
+  taxId?: string;
+  verifiedNote?: string;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
 export type PaymentProfileRecord = {
   id: string;
   accountName: string;
@@ -71,6 +88,8 @@ export const adminVerificationKeys = {
   all: ["admin-creator-verification"] as const,
   identities: (params?: Record<string, unknown>) =>
     [...adminVerificationKeys.all, "identities", params ?? {}] as const,
+  identityDetail: (id: string) =>
+    [...adminVerificationKeys.all, "identity-detail", id] as const,
   paymentProfiles: (params?: Record<string, unknown>) =>
     [...adminVerificationKeys.all, "payment-profiles", params ?? {}] as const,
 };
@@ -148,14 +167,79 @@ function normalizePaymentProfile(item: PaymentProfileDto): PaymentProfileRecord 
   };
 }
 
+export type CreatorIdentitiesPageResponse = {
+  content: CreatorIdentityRecord[];
+  pageNumber: number;
+  pageSize: number;
+  totalElements: number;
+  totalPages: number;
+  isFirst: boolean;
+  isLast: boolean;
+};
+
 export async function getCreatorIdentities(
   params?: Record<string, unknown>,
-): Promise<CreatorIdentityRecord[]> {
+): Promise<CreatorIdentitiesPageResponse> {
   const payload = await unwrapBaseResponse<ListPayload<CreatorIdentityDto>>(
     httpClient.get("/api/v1/creators/identities", { params }),
   );
 
-  return extractItems(payload).map(normalizeIdentity).filter((item) => item.id);
+  if (Array.isArray(payload)) {
+    const items = payload.map(normalizeIdentity).filter((item) => item.id);
+    return {
+      content: items,
+      pageNumber: 1,
+      pageSize: items.length || 20,
+      totalElements: items.length,
+      totalPages: 1,
+      isFirst: true,
+      isLast: true,
+    };
+  }
+
+  const content = extractItems(payload).map(normalizeIdentity).filter((item) => item.id);
+  const pageNumber =
+    "pageNumber" in payload && typeof payload.pageNumber === "number"
+      ? payload.pageNumber
+      : 1;
+  const pageSize =
+    "pageSize" in payload && typeof payload.pageSize === "number"
+      ? payload.pageSize
+      : 20;
+  const totalElements =
+    "totalElements" in payload && typeof payload.totalElements === "number"
+      ? payload.totalElements
+      : content.length;
+  const totalPages =
+    "totalPages" in payload && typeof payload.totalPages === "number"
+      ? payload.totalPages
+      : 1;
+  const isFirst =
+    "isFirst" in payload && typeof payload.isFirst === "boolean"
+      ? payload.isFirst
+      : pageNumber <= 1;
+  const isLast =
+    "isLast" in payload && typeof payload.isLast === "boolean"
+      ? payload.isLast
+      : pageNumber >= totalPages;
+
+  return {
+    content,
+    pageNumber,
+    pageSize,
+    totalElements,
+    totalPages,
+    isFirst,
+    isLast,
+  };
+}
+
+export function getCreatorIdentityById(
+  id: string,
+): Promise<CreatorIdentityDetail> {
+  return unwrapBaseResponse<CreatorIdentityDetail>(
+    httpClient.get(`/api/v1/creators/identities/${id}`),
+  );
 }
 
 export function updateIdentityVerification(

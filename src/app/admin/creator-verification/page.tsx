@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Eye, FileText, Filter, RefreshCw, Search } from "lucide-react";
 import { toast } from "sonner";
 
 import {
   adminVerificationKeys,
   getCreatorIdentities,
+  getCreatorIdentityById,
   getPaymentProfiles,
   updateIdentityVerification,
   updatePaymentVerification,
@@ -78,6 +80,7 @@ export default function AdminCreatorVerificationPage() {
       : "Hồ Sơ Thuế";
   const [selectedIdentity, setSelectedIdentity] =
     useState<CreatorIdentityRecord | null>(null);
+  const [viewingIdentityId, setViewingIdentityId] = useState<string | null>(null);
   const [selectedPaymentProfile, setSelectedPaymentProfile] =
     useState<PaymentProfileRecord | null>(null);
   const [identityVerifiedNote, setIdentityVerifiedNote] = useState("");
@@ -87,15 +90,53 @@ export default function AdminCreatorVerificationPage() {
       "VERIFIED",
     );
 
+  // Pagination & Filter state for tax profiles
+  const [taxPage, setTaxPage] = useState(1);
+  const taxPageSize = 10;
+  const [searchDraft, setSearchDraft] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("ALL");
+
+  const queryParams = useMemo(() => {
+    const params: Record<string, unknown> = {
+      page: taxPage,
+      pageSize: taxPageSize,
+    };
+    if (statusFilter !== "ALL") {
+      params.statuses = statusFilter;
+    }
+    if (searchTerm.trim()) {
+      params["criteria[taxId]"] = searchTerm.trim();
+    }
+    return params;
+  }, [taxPage, taxPageSize, statusFilter, searchTerm]);
+
   const identitiesQuery = useQuery({
-    queryKey: adminVerificationKeys.identities(),
-    queryFn: () => getCreatorIdentities(),
+    queryKey: adminVerificationKeys.identities(queryParams),
+    queryFn: () => getCreatorIdentities(queryParams),
+  });
+
+  const identityDetailQuery = useQuery({
+    queryKey: adminVerificationKeys.identityDetail(viewingIdentityId ?? ""),
+    queryFn: () => getCreatorIdentityById(viewingIdentityId!),
+    enabled: Boolean(viewingIdentityId),
   });
 
   const paymentProfilesQuery = useQuery({
     queryKey: adminVerificationKeys.paymentProfiles(),
     queryFn: () => getPaymentProfiles(),
   });
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSearchTerm(searchDraft);
+    setTaxPage(1);
+  };
+
+  const handleStatusFilterChange = (newStatus: string) => {
+    setStatusFilter(newStatus);
+    setTaxPage(1);
+  };
 
   const invalidateIdentities = () => {
     void queryClient.invalidateQueries({
@@ -226,13 +267,127 @@ export default function AdminCreatorVerificationPage() {
     lockIdentityMutation.isPending || submitIdentityMutation.isPending;
   const isPaymentSubmitting = submitPaymentMutation.isPending;
 
+function removeVietnameseTones(str: string): string {
+  return str
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "d")
+    .toLowerCase()
+    .trim();
+}
+
+  const taxPageData = identitiesQuery.data;
+  const displayTaxRecords = useMemo(() => {
+    if (!taxPageData) return [];
+    if (!searchTerm.trim()) return taxPageData.content;
+    const rawTerm = searchTerm.toLowerCase().trim();
+    const normTerm = removeVietnameseTones(searchTerm);
+
+    return taxPageData.content.filter((r) => {
+      const nameRaw = (r.accountName || "").toLowerCase();
+      const nameNorm = removeVietnameseTones(r.accountName || "");
+      const taxIdRaw = (r.taxId || "").toLowerCase();
+      const idRaw = (r.id || "").toLowerCase();
+
+      return (
+        nameRaw.includes(rawTerm) ||
+        nameNorm.includes(normTerm) ||
+        taxIdRaw.includes(rawTerm) ||
+        idRaw.includes(rawTerm)
+      );
+    });
+  }, [taxPageData, searchTerm]);
+
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-slate-950 backoffice-dark:text-white">
-          {pageTitle}
-        </h1>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-950 backoffice-dark:text-white">
+            {pageTitle}
+          </h1>
+        </div>
+        {tab === "tax" && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => void identitiesQuery.refetch()}
+            disabled={identitiesQuery.isFetching}
+            className="border-gray-200 bg-white text-gray-700 shadow-sm hover:bg-gray-50 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/10"
+          >
+            <RefreshCw
+              className={
+                identitiesQuery.isFetching ? "mr-2 h-4 w-4 animate-spin" : "mr-2 h-4 w-4"
+              }
+            />
+            Làm mới
+          </Button>
+        )}
       </div>
+
+      {tab === "tax" && (
+        <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
+          <form
+            onSubmit={handleSearchSubmit}
+            className="grid gap-3 sm:grid-cols-[minmax(240px,1fr)_200px_auto] sm:items-end"
+          >
+            <label className="relative block">
+              <span className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-gray-500 backoffice-dark:text-white/45">
+                Tìm kiếm
+              </span>
+              <Search className="absolute bottom-3 left-3 h-4 w-4 text-gray-400" />
+              <input
+                type="search"
+                value={searchDraft}
+                onChange={(e) => setSearchDraft(e.target.value)}
+                placeholder="Mã số thuế, tên Creator, id..."
+                className="h-10 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white"
+              />
+            </label>
+
+            <label className="block">
+              <span className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-gray-500 backoffice-dark:text-white/45">
+                Trạng thái
+              </span>
+              <select
+                value={statusFilter}
+                onChange={(e) => handleStatusFilterChange(e.target.value)}
+                className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-100 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white"
+              >
+                <option value="ALL">Tất cả trạng thái</option>
+                <option value="PENDING">Chờ xử lý</option>
+                <option value="IN_PROGRESS">Đang xử lý</option>
+                <option value="APPROVED">Đã duyệt</option>
+                <option value="REJECTED">Từ chối</option>
+              </select>
+            </label>
+
+            <div className="flex gap-2">
+              <Button
+                type="submit"
+                className="h-10 bg-violet-600 px-4 font-semibold text-white hover:bg-violet-700 backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black backoffice-dark:hover:bg-[var(--backoffice-primary-bright)]"
+              >
+                Tìm kiếm
+              </Button>
+              {searchTerm || statusFilter !== "ALL" ? (
+                <Button
+                  type="button"
+                  onClick={() => {
+                    setSearchDraft("");
+                    setSearchTerm("");
+                    setStatusFilter("ALL");
+                    setTaxPage(1);
+                  }}
+                  className="h-10 border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50 hover:text-slate-900 backoffice-dark:border-white/10 backoffice-dark:bg-white/5 backoffice-dark:text-white backoffice-dark:hover:bg-white/10"
+                >
+                  Xóa lọc
+                </Button>
+              ) : null}
+            </div>
+          </form>
+        </section>
+      )}
+
       <div className="flex flex-col gap-6">
 
         {activeQuery.isLoading ? (
@@ -263,7 +418,13 @@ export default function AdminCreatorVerificationPage() {
 
         {!activeQuery.isLoading && !activeQuery.isError && tab === "tax" ? (
           <IdentityTable
-            records={identitiesQuery.data ?? []}
+            records={displayTaxRecords}
+            page={taxPageData?.pageNumber ?? taxPage}
+            pageSize={taxPageData?.pageSize ?? taxPageSize}
+            totalPages={taxPageData?.totalPages ?? 1}
+            totalElements={taxPageData?.totalElements ?? displayTaxRecords.length}
+            onPageChange={setTaxPage}
+            onViewDetail={(record) => setViewingIdentityId(record.id)}
             onStartVerification={handleStartIdentityVerification}
             onContinueVerification={handleContinueIdentityVerification}
             isSubmitting={isIdentitySubmitting}
@@ -280,6 +441,123 @@ export default function AdminCreatorVerificationPage() {
           />
         ) : null}
       </div>
+
+      {/* Modal xem chi tiết Hồ sơ Thuế */}
+      <Dialog
+        open={Boolean(viewingIdentityId)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setViewingIdentityId(null);
+          }
+        }}
+      >
+        <DialogContent className="gap-5 rounded-2xl border border-gray-200 bg-white p-6 text-gray-900 shadow-xl backoffice-dark:border-white/10 backoffice-dark:bg-[#121213] backoffice-dark:text-white sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 font-heading text-2xl font-bold tracking-tight text-gray-900 backoffice-dark:text-white">
+              <FileText className="h-6 w-6 text-violet-600 backoffice-dark:text-[var(--backoffice-primary)]" />
+              Chi tiết hồ sơ thuế
+            </DialogTitle>
+            <DialogDescription className="text-sm text-gray-500 backoffice-dark:text-white/60">
+              Thông tin chi tiết định danh và thuế của Creator.
+            </DialogDescription>
+          </DialogHeader>
+
+          {identityDetailQuery.isLoading ? (
+            <div className="flex min-h-52 items-center justify-center">
+              <div className="flex items-center gap-3 text-sm font-medium text-gray-500">
+                <span className="h-5 w-5 animate-spin rounded-full border-2 border-violet-600/25 border-t-violet-600 backoffice-dark:border-[var(--backoffice-primary)]/25 backoffice-dark:border-t-[var(--backoffice-primary)]" />
+                Đang tải chi tiết hồ sơ...
+              </div>
+            </div>
+          ) : identityDetailQuery.data ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+                <div className="rounded-xl border border-gray-100 bg-gray-50/80 p-3.5 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.03]">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">Tên tài khoản</p>
+                  <p className="mt-1 text-sm font-bold text-gray-900 backoffice-dark:text-white">
+                    {identityDetailQuery.data.accountName || "-"}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-gray-100 bg-gray-50/80 p-3.5 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.03]">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">Họ và tên</p>
+                  <p className="mt-1 text-sm font-bold text-gray-900 backoffice-dark:text-white">
+                    {identityDetailQuery.data.fullName || "-"}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-gray-100 bg-gray-50/80 p-3.5 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.03]">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">Mã số thuế</p>
+                  <p className="mt-1 font-mono text-sm font-bold text-violet-600 backoffice-dark:text-[var(--backoffice-primary)]">
+                    {identityDetailQuery.data.taxId || "-"}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-gray-100 bg-gray-50/80 p-3.5 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.03]">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">Số CCCD / CMND</p>
+                  <p className="mt-1 font-mono text-sm font-bold text-gray-900 backoffice-dark:text-white">
+                    {identityDetailQuery.data.idNumber || "-"}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-gray-100 bg-gray-50/80 p-3.5 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.03]">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">Ngày sinh</p>
+                  <p className="mt-1 text-sm font-medium text-gray-900 backoffice-dark:text-white">
+                    {identityDetailQuery.data.dob || "-"}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-gray-100 bg-gray-50/80 p-3.5 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.03]">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">Giới tính</p>
+                  <p className="mt-1 text-sm font-medium text-gray-900 backoffice-dark:text-white">
+                    {identityDetailQuery.data.sex || "-"}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-gray-100 bg-gray-50/80 p-3.5 sm:col-span-2 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.03]">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">Địa chỉ thường trú</p>
+                  <p className="mt-1 text-sm font-medium text-gray-900 backoffice-dark:text-white">
+                    {identityDetailQuery.data.address || "-"}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-gray-100 bg-gray-50/80 p-3.5 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.03]">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">Ngày hết hạn CCCD</p>
+                  <p className="mt-1 text-sm font-medium text-gray-900 backoffice-dark:text-white">
+                    {identityDetailQuery.data.doe || "-"}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-gray-100 bg-gray-50/80 p-3.5 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.03]">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">Trạng thái</p>
+                  <div className="mt-1">
+                    {identityDetailQuery.data.status ? (
+                      <StatusBadge
+                        label={identityStatusLabels[identityDetailQuery.data.status]}
+                        className={statusClassNames[identityDetailQuery.data.status]}
+                      />
+                    ) : (
+                      "-"
+                    )}
+                  </div>
+                </div>
+                {identityDetailQuery.data.verifiedNote ? (
+                  <div className="rounded-xl border border-amber-200/60 bg-amber-50/60 p-3.5 sm:col-span-2 backoffice-dark:border-amber-500/20 backoffice-dark:bg-amber-500/10">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-amber-700 backoffice-dark:text-amber-400">Ghi chú kiểm duyệt</p>
+                    <p className="mt-1 text-sm text-gray-800 backoffice-dark:text-white/90">
+                      {identityDetailQuery.data.verifiedNote}
+                    </p>
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          ) : (
+            <p className="text-center text-sm text-gray-400">Không có dữ liệu chi tiết.</p>
+          )}
+
+          <div className="flex justify-end gap-3 pt-2">
+            <Button
+              type="button"
+              onClick={() => setViewingIdentityId(null)}
+              className="h-9 border border-gray-200 bg-gray-100 px-4 font-semibold text-gray-700 hover:bg-gray-200 backoffice-dark:border-white/10 backoffice-dark:bg-white/10 backoffice-dark:text-white backoffice-dark:hover:bg-white/20"
+            >
+              Đóng
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog
         open={Boolean(selectedIdentity)}
@@ -404,15 +682,30 @@ export default function AdminCreatorVerificationPage() {
 
 function IdentityTable({
   records,
+  page,
+  pageSize,
+  totalPages,
+  totalElements,
+  onPageChange,
+  onViewDetail,
   onStartVerification,
   onContinueVerification,
   isSubmitting,
 }: {
   records: CreatorIdentityRecord[];
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  totalElements: number;
+  onPageChange: (page: number) => void;
+  onViewDetail: (record: CreatorIdentityRecord) => void;
   onStartVerification: (record: CreatorIdentityRecord) => void;
   onContinueVerification: (record: CreatorIdentityRecord) => void;
   isSubmitting: boolean;
 }) {
+  const firstItem = totalElements === 0 ? 0 : (page - 1) * pageSize + 1;
+  const lastItem = Math.min(page * pageSize, totalElements);
+
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
       <div className="overflow-x-auto">
@@ -445,29 +738,39 @@ function IdentityTable({
                     />
                   </td>
                   <td className="px-4 py-4 text-right">
-                    {record.status === "PENDING" ? (
+                    <div className="flex items-center justify-end gap-2">
                       <Button
                         type="button"
-                        disabled={isSubmitting}
-                        onClick={() => onStartVerification(record)}
-                        className="h-9 bg-violet-600 px-4 font-semibold text-white hover:bg-violet-700 backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black backoffice-dark:hover:bg-[var(--backoffice-primary-bright)]"
+                        onClick={() => onViewDetail(record)}
+                        className="h-9 border border-gray-200 bg-gray-50 px-3 text-xs font-semibold text-gray-700 hover:bg-gray-100 hover:text-gray-900 backoffice-dark:border-white/10 backoffice-dark:bg-white/5 backoffice-dark:text-white/80 backoffice-dark:hover:bg-white/10"
                       >
-                        {isSubmitting ? "Đang xử lý..." : "Tiến hành xử lý"}
+                        <Eye className="mr-1.5 h-3.5 w-3.5" />
+                        Chi tiết
                       </Button>
-                    ) : record.status === "IN_PROGRESS" ? (
-                      <Button
-                        type="button"
-                        disabled={isSubmitting}
-                        onClick={() => onContinueVerification(record)}
-                        className="h-9 bg-blue-600 px-4 font-semibold text-white hover:bg-blue-700 backoffice-dark:bg-blue-600 backoffice-dark:text-white backoffice-dark:hover:bg-blue-500"
-                      >
-                        Tiếp tục xử lý
-                      </Button>
-                    ) : (
-                      <span className="text-xs font-medium text-gray-400">
-                        Không có thao tác
-                      </span>
-                    )}
+                      {record.status === "PENDING" ? (
+                        <Button
+                          type="button"
+                          disabled={isSubmitting}
+                          onClick={() => onStartVerification(record)}
+                          className="h-9 bg-violet-600 px-4 font-semibold text-white hover:bg-violet-700 backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black backoffice-dark:hover:bg-[var(--backoffice-primary-bright)]"
+                        >
+                          {isSubmitting ? "Đang xử lý..." : "Tiến hành xử lý"}
+                        </Button>
+                      ) : record.status === "IN_PROGRESS" ? (
+                        <Button
+                          type="button"
+                          disabled={isSubmitting}
+                          onClick={() => onContinueVerification(record)}
+                          className="h-9 bg-blue-600 px-4 font-semibold text-white hover:bg-blue-700 backoffice-dark:bg-blue-600 backoffice-dark:text-white backoffice-dark:hover:bg-blue-500"
+                        >
+                          Tiếp tục xử lý
+                        </Button>
+                      ) : (
+                        <span className="text-xs font-medium text-gray-400">
+                          Không có thao tác
+                        </span>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))
@@ -484,6 +787,37 @@ function IdentityTable({
           </tbody>
         </table>
       </div>
+
+      {totalElements > 0 && (
+        <div className="flex flex-col gap-3 border-t border-slate-100 bg-gray-50/50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between backoffice-dark:border-white/10 backoffice-dark:bg-transparent">
+          <p className="text-sm font-semibold text-gray-500 backoffice-dark:text-zinc-400">
+            Hiển thị {firstItem} - {lastItem} / {totalElements} hồ sơ
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="border-gray-200 bg-white text-gray-700 shadow-sm hover:bg-gray-50 hover:text-gray-900 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-zinc-200 backoffice-dark:hover:bg-white/10"
+              disabled={page <= 1}
+              onClick={() => onPageChange(page - 1)}
+            >
+              Trước
+            </Button>
+            <span className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-black text-gray-700 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-zinc-200">
+              {page} / {Math.max(totalPages, 1)}
+            </span>
+            <Button
+              type="button"
+              variant="outline"
+              className="border-gray-200 bg-white text-gray-700 shadow-sm hover:bg-gray-50 hover:text-gray-900 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-zinc-200 backoffice-dark:hover:bg-white/10"
+              disabled={page >= totalPages}
+              onClick={() => onPageChange(page + 1)}
+            >
+              Sau
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

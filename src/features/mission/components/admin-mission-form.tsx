@@ -29,7 +29,7 @@ type AdminMissionFormProps = {
 };
 
 const fieldClassName =
-  "h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[#007A8A] focus:ring-3 focus:ring-[#007A8A]/10 aria-invalid:border-red-400 aria-invalid:ring-red-100";
+  "h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-violet-500 focus:ring-3 focus:ring-violet-100 aria-invalid:border-red-400 aria-invalid:ring-red-100 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white backoffice-dark:focus:border-[var(--backoffice-primary)] backoffice-dark:focus:ring-[rgba(212,175,55,0.16)]";
 
 export function AdminMissionForm({
   initialData,
@@ -139,9 +139,9 @@ export function AdminMissionForm({
   }
 
   return (
-    <section className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm sm:p-8">
-      <div className="border-b border-gray-100 pb-5">
-        <h2 className="mt-2 font-heading text-2xl font-bold text-gray-900">
+    <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] sm:p-8">
+      <div className="border-b border-gray-100 pb-5 backoffice-dark:border-white/10">
+        <h2 className="mt-2 font-heading text-2xl font-bold text-gray-900 backoffice-dark:text-white">
           {isEditing ? "Chỉnh Sửa Nhiệm Vụ" : "Thêm Nhiệm Vụ Mới"}
         </h2>
       </div>
@@ -160,7 +160,7 @@ export function AdminMissionForm({
           <div className="space-y-2">
             <label
               htmlFor="questType"
-              className="text-sm font-semibold text-gray-800"
+              className="text-sm font-semibold text-gray-800 backoffice-dark:text-white/80"
             >
               Loại nhiệm vụ
             </label>
@@ -180,7 +180,7 @@ export function AdminMissionForm({
             <div className="space-y-2">
               <label
                 htmlFor="duration"
-                className="text-sm font-semibold text-gray-800"
+                className="text-sm font-semibold text-gray-800 backoffice-dark:text-white/80"
               >
                 Thời gian (Phút)
               </label>
@@ -203,7 +203,7 @@ export function AdminMissionForm({
             <div className="space-y-2">
               <label
                 htmlFor="adSuffix"
-                className="text-sm font-semibold text-gray-800"
+                className="text-sm font-semibold text-gray-800 backoffice-dark:text-white/80"
               >
                 Hậu tố mã
               </label>
@@ -215,9 +215,9 @@ export function AdminMissionForm({
                 placeholder="VD: 1, DAILY, VIP"
                 className={fieldClassName}
               />
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1 text-xs text-gray-500 backoffice-dark:text-white/50">
                 Mã cuối cùng sẽ là:{" "}
-                <span className="font-mono font-bold text-[#007A8A]">
+                <span className="font-mono font-bold text-violet-600 backoffice-dark:text-[var(--backoffice-primary)]">
                   WATCH_AD_{normalizedAdSuffix || "{hậu_tố}"}
                 </span>
               </p>
@@ -226,7 +226,7 @@ export function AdminMissionForm({
         </div>
 
         <div className="space-y-2">
-          <label htmlFor="title" className="text-sm font-semibold text-gray-800">
+          <label htmlFor="title" className="text-sm font-semibold text-gray-800 backoffice-dark:text-white/80">
             Tên nhiệm vụ
           </label>
           <input
@@ -238,7 +238,7 @@ export function AdminMissionForm({
             className={fieldClassName}
           />
           {errors.title?.message && (
-            <p className="text-xs font-semibold text-red-600">
+            <p className="text-xs font-semibold text-red-600 dark:text-red-400">
               {errors.title.message}
             </p>
           )}
@@ -247,7 +247,7 @@ export function AdminMissionForm({
         <div className="space-y-2">
           <label
             htmlFor="description"
-            className="text-sm font-semibold text-gray-800"
+            className="text-sm font-semibold text-gray-800 backoffice-dark:text-white/80"
           >
             Mô tả
           </label>
@@ -257,10 +257,10 @@ export function AdminMissionForm({
             placeholder="Mô tả rõ cách người dùng hoàn thành nhiệm vụ..."
             aria-invalid={Boolean(errors.description)}
             {...register("description")}
-            className="w-full resize-y rounded-lg border border-gray-200 bg-white px-3 py-3 text-sm font-medium text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[#007A8A] focus:ring-3 focus:ring-[#007A8A]/10 aria-invalid:border-red-400 aria-invalid:ring-red-100"
+            className="w-full resize-y rounded-lg border border-gray-200 bg-white px-3 py-3 text-sm font-medium text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-violet-500 focus:ring-3 focus:ring-violet-100 aria-invalid:border-red-400 aria-invalid:ring-red-100 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white backoffice-dark:focus:border-[var(--backoffice-primary)] backoffice-dark:focus:ring-[rgba(212,175,55,0.16)]"
           />
           {errors.description?.message && (
-            <p className="text-xs font-semibold text-red-600">
+            <p className="text-xs font-semibold text-red-600 dark:text-red-400">
               {errors.description.message}
             </p>
           )}
@@ -270,7 +270,7 @@ export function AdminMissionForm({
           <div className="space-y-2">
             <label
               htmlFor="rewardAmount"
-              className="text-sm font-semibold text-gray-800"
+              className="text-sm font-semibold text-gray-800 backoffice-dark:text-white/80"
             >
               Phần thưởng Coin
             </label>
@@ -285,7 +285,7 @@ export function AdminMissionForm({
               className={fieldClassName}
             />
             {errors.rewardAmount?.message && (
-              <p className="text-xs font-semibold text-red-600">
+              <p className="text-xs font-semibold text-red-600 dark:text-red-400">
                 {errors.rewardAmount.message}
               </p>
             )}
@@ -294,7 +294,7 @@ export function AdminMissionForm({
           <div className="space-y-2">
             <label
               htmlFor="targetValue"
-              className="text-sm font-semibold text-gray-800"
+              className="text-sm font-semibold text-gray-800 backoffice-dark:text-white/80"
             >
               Chỉ tiêu hoàn thành
             </label>
@@ -308,53 +308,53 @@ export function AdminMissionForm({
               aria-invalid={Boolean(errors.targetValue)}
               {...register("targetValue", { valueAsNumber: true })}
               className={`${fieldClassName} ${questType === "ONLINE"
-                ? "cursor-not-allowed bg-gray-100 text-gray-500"
+                ? "cursor-not-allowed bg-gray-100 text-gray-500 backoffice-dark:bg-white/5 backoffice-dark:text-white/40"
                 : ""
                 }`}
             />
             {questType === "ONLINE" && (
-              <p className="text-xs font-medium text-gray-500">
+              <p className="text-xs font-medium text-gray-500 backoffice-dark:text-white/50">
                 Nhiệm vụ online bắn heartbeat mỗi 60 giây, nên chỉ tiêu được tự
                 động quy đổi theo số phút đã chọn.
               </p>
             )}
             {errors.targetValue?.message && (
-              <p className="text-xs font-semibold text-red-600">
+              <p className="text-xs font-semibold text-red-600 dark:text-red-400">
                 {errors.targetValue.message}
               </p>
             )}
           </div>
         </div>
 
-        <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-gray-200 bg-gray-50 p-4 transition hover:border-[#007A8A]/40">
+        <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-gray-200 bg-gray-50 p-4 transition hover:border-violet-500/40 backoffice-dark:border-white/10 backoffice-dark:bg-black/25">
           <input
             type="checkbox"
             {...register("isActive")}
-            className="mt-0.5 h-4 w-4 rounded border-gray-300 accent-[#007A8A]"
+            className="mt-0.5 h-4 w-4 rounded border-gray-300 accent-violet-600 backoffice-dark:accent-[var(--backoffice-primary)]"
           />
           <span>
-            <span className="block text-sm font-semibold text-gray-800">
+            <span className="block text-sm font-semibold text-gray-800 backoffice-dark:text-white">
               Kích hoạt nhiệm vụ
             </span>
-            <span className="mt-1 block text-xs leading-5 text-gray-500">
+            <span className="mt-1 block text-xs leading-5 text-gray-500 backoffice-dark:text-white/50">
               Nhiệm vụ được bật sẽ xuất hiện trong trung tâm nhiệm vụ của người dùng.
             </span>
           </span>
         </label>
 
-        <div className="flex flex-col-reverse gap-3 border-t border-gray-100 pt-6 sm:flex-row sm:justify-end">
+        <div className="flex flex-col-reverse gap-3 border-t border-gray-100 pt-6 sm:flex-row sm:justify-end backoffice-dark:border-white/10">
           <button
             type="button"
             disabled={isPending}
             onClick={onCancel}
-            className="inline-flex h-11 items-center justify-center rounded-lg border border-gray-200 bg-white px-5 text-sm font-bold text-gray-600 transition hover:bg-gray-50 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex h-11 items-center justify-center rounded-lg border border-gray-200 bg-white px-5 text-sm font-bold text-gray-600 transition hover:bg-gray-50 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-50 backoffice-dark:border-white/10 backoffice-dark:bg-white/5 backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/10 backoffice-dark:hover:text-white"
           >
             Hủy
           </button>
           <button
             type="submit"
             disabled={isPending}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-[#007A8A] px-6 text-sm font-bold text-white shadow-sm transition hover:bg-[#006673] disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-violet-600 px-6 text-sm font-bold text-white shadow-sm transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60 backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black backoffice-dark:hover:bg-[var(--backoffice-primary-bright)]"
           >
             {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
             {isEditing ? "Lưu Thay Đổi" : "Tạo Nhiệm Vụ"}

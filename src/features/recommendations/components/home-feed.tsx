@@ -543,13 +543,6 @@ function FeaturedShowcase({
                 <Play className="h-4 w-4 fill-black" />
                 Xem chi tiết
               </Link>
-              <button
-                type="button"
-                className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-white/10 bg-white/8 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/14"
-              >
-                <BookmarkPlus className="h-4 w-4" />
-                Lưu vào thư viện
-              </button>
             </div>
           </div>
 
@@ -870,13 +863,6 @@ function TypedSpotlightSection({ section }: { section: TypedHomeSection }) {
             >
               <Play className="h-4 w-4 fill-current" />
               Khám phá
-            </Link>
-            <Link
-              href={seriesHref(featured)}
-              className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-white/18 bg-white/[0.08] px-5 py-2.5 text-sm font-black text-white backdrop-blur transition hover:border-white/32 hover:bg-white/[0.14]"
-            >
-              <BookmarkPlus className="h-4 w-4" />
-              Lưu lại
             </Link>
           </div>
         </div>

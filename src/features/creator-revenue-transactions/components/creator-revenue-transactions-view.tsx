@@ -2,9 +2,11 @@
 
 import { useMemo, useState } from "react";
 import {
-  Area,
-  AreaChart,
+  Bar,
+  BarChart,
   CartesianGrid,
+  Line,
+  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -13,6 +15,7 @@ import {
 import {
   ArrowDownCircle,
   ArrowUpCircle,
+  BarChart2,
   CalendarDays,
   ChevronLeft,
   ChevronRight,
@@ -142,6 +145,242 @@ function formatPeriod(point: RevenueTimeSeriesPoint) {
     day: "2-digit",
     month: "2-digit",
   }).format(date);
+}
+
+function buildContinuousTimeSeries(
+  rawPoints: RevenueTimeSeriesPoint[],
+  startDateStr: string,
+  endDateStr: string,
+) {
+  if (!startDateStr || !endDateStr) return rawPoints;
+
+  const start = new Date(`${startDateStr}T00:00:00`);
+  const end = new Date(`${endDateStr}T23:59:59`);
+  if (
+    Number.isNaN(start.getTime()) ||
+    Number.isNaN(end.getTime()) ||
+    start > end
+  ) {
+    return rawPoints;
+  }
+
+  const diffMs = end.getTime() - start.getTime();
+  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+  // ----------------------------------------------------
+  // TRƯỜNG HỢP 1: 7 NGÀY (<= 7 ngày) -> HIỂN THỊ THEO GIỜ
+  // ----------------------------------------------------
+  if (diffDays <= 7) {
+    const hoursMap = new Map<
+      string,
+      {
+        totalRevenue: number;
+        totalPenalty: number;
+        totalAdjustment: number;
+        hourLabel: string;
+        fullDateLabel: string;
+      }
+    >();
+
+    // Đưa mốc bắt đầu của khoảng 7 ngày vào
+    const startKey = `${start.getFullYear()}-${pad(start.getMonth() + 1)}-${pad(start.getDate())} 00:00`;
+    hoursMap.set(startKey, {
+      totalRevenue: 0,
+      totalPenalty: 0,
+      totalAdjustment: 0,
+      hourLabel: `00:00 ${pad(start.getDate())}/${pad(start.getMonth() + 1)}`,
+      fullDateLabel: `00:00 ngày ${pad(start.getDate())}/${pad(start.getMonth() + 1)}/${start.getFullYear()}`,
+    });
+
+    // Map các điểm giờ từ backend
+    rawPoints.forEach((pt) => {
+      let key = pt.timePeriod;
+      if (key.length >= 13) {
+        key = key.slice(0, 13) + ":00";
+      }
+      const existing = hoursMap.get(key);
+      const rev = pt.totalRevenueAmount || 0;
+      const pen = pt.totalPenaltyAmount || 0;
+      const adj = pt.totalAdjustmentAmount || 0;
+
+      if (existing) {
+        existing.totalRevenue += rev;
+        existing.totalPenalty += pen;
+        existing.totalAdjustment += adj;
+      } else {
+        const parsedDate = new Date(pt.timePeriod.replace(" ", "T"));
+        const d = !Number.isNaN(parsedDate.getTime())
+          ? pad(parsedDate.getDate())
+          : key.slice(8, 10);
+        const m = !Number.isNaN(parsedDate.getTime())
+          ? pad(parsedDate.getMonth() + 1)
+          : key.slice(5, 7);
+        const y = !Number.isNaN(parsedDate.getTime())
+          ? parsedDate.getFullYear()
+          : key.slice(0, 4);
+        const h = !Number.isNaN(parsedDate.getTime())
+          ? `${pad(parsedDate.getHours())}:00`
+          : key.slice(11, 16);
+
+        hoursMap.set(key, {
+          totalRevenue: rev,
+          totalPenalty: pen,
+          totalAdjustment: adj,
+          hourLabel: `${h} ${d}/${m}`,
+          fullDateLabel: `${h} ngày ${d}/${m}/${y}`,
+        });
+      }
+    });
+
+    // Đưa mốc kết thúc của khoảng 7 ngày vào nếu chưa có
+    const endKey = `${end.getFullYear()}-${pad(end.getMonth() + 1)}-${pad(end.getDate())} 23:00`;
+    if (!hoursMap.has(endKey)) {
+      hoursMap.set(endKey, {
+        totalRevenue: 0,
+        totalPenalty: 0,
+        totalAdjustment: 0,
+        hourLabel: `23:00 ${pad(end.getDate())}/${pad(end.getMonth() + 1)}`,
+        fullDateLabel: `23:00 ngày ${pad(end.getDate())}/${pad(end.getMonth() + 1)}/${end.getFullYear()}`,
+      });
+    }
+
+    const sortedEntries = Array.from(hoursMap.entries()).sort(([a], [b]) =>
+      a.localeCompare(b),
+    );
+
+    return sortedEntries.map(([key, val]) => ({
+      timePeriod: key,
+      totalRevenueAmount: val.totalRevenue,
+      totalPenaltyAmount: val.totalPenalty,
+      totalAdjustmentAmount: val.totalAdjustment,
+      groupUnit: "HOUR",
+      label: val.hourLabel,
+      fullDateLabel: val.fullDateLabel,
+    }));
+  }
+
+  // ----------------------------------------------------
+  // TRƯỜNG HỢP 2: 1 THÁNG (<= 35 ngày) -> HIỂN THỊ THEO NGÀY (~30 NGÀY)
+  // ----------------------------------------------------
+  if (diffDays <= 35) {
+    const daysMap = new Map<
+      string,
+      { totalRevenue: number; totalPenalty: number; totalAdjustment: number }
+    >();
+
+    const current = new Date(start);
+    while (current <= end) {
+      const dateKey = `${current.getFullYear()}-${pad(current.getMonth() + 1)}-${pad(current.getDate())}`;
+      if (!daysMap.has(dateKey)) {
+        daysMap.set(dateKey, {
+          totalRevenue: 0,
+          totalPenalty: 0,
+          totalAdjustment: 0,
+        });
+      }
+      current.setDate(current.getDate() + 1);
+    }
+
+    rawPoints.forEach((pt) => {
+      if (pt.timePeriod.length >= 10) {
+        const dateStr = pt.timePeriod.slice(0, 10);
+        const existing = daysMap.get(dateStr);
+        if (existing) {
+          existing.totalRevenue += pt.totalRevenueAmount || 0;
+          existing.totalPenalty += pt.totalPenaltyAmount || 0;
+          existing.totalAdjustment += pt.totalAdjustmentAmount || 0;
+        }
+      } else if (pt.timePeriod.length === 7) {
+        const matchingDays = Array.from(daysMap.keys()).filter((k) =>
+          k.startsWith(pt.timePeriod),
+        );
+        if (matchingDays.length > 0) {
+          const targetDay = matchingDays[matchingDays.length - 1];
+          const existing = daysMap.get(targetDay);
+          if (existing) {
+            existing.totalRevenue += pt.totalRevenueAmount || 0;
+            existing.totalPenalty += pt.totalPenaltyAmount || 0;
+            existing.totalAdjustment += pt.totalAdjustmentAmount || 0;
+          }
+        }
+      }
+    });
+
+    return Array.from(daysMap.entries()).map(([dateKey, values]) => {
+      const [y, m, d] = dateKey.split("-");
+      return {
+        timePeriod: dateKey,
+        totalRevenueAmount: values.totalRevenue,
+        totalPenaltyAmount: values.totalPenalty,
+        totalAdjustmentAmount: values.totalAdjustment,
+        groupUnit: "DAY",
+        label: `${d}/${m}`,
+        fullDateLabel: `Ngày ${d}/${m}/${y}`,
+      };
+    });
+  }
+
+  // ----------------------------------------------------
+  // TRƯỜNG HỢP 3: 3 THÁNG HOẶC LỚN HƠN -> HIỂN THỊ THEO THÁNG
+  // ----------------------------------------------------
+  const monthsMap = new Map<
+    string,
+    { totalRevenue: number; totalPenalty: number; totalAdjustment: number }
+  >();
+
+  const currentMonth = new Date(start.getFullYear(), start.getMonth(), 1);
+  const endMonth = new Date(end.getFullYear(), end.getMonth(), 1);
+
+  while (currentMonth <= endMonth) {
+    const monthKey = `${currentMonth.getFullYear()}-${pad(currentMonth.getMonth() + 1)}`;
+    if (!monthsMap.has(monthKey)) {
+      monthsMap.set(monthKey, {
+        totalRevenue: 0,
+        totalPenalty: 0,
+        totalAdjustment: 0,
+      });
+    }
+    currentMonth.setMonth(currentMonth.getMonth() + 1);
+  }
+
+  rawPoints.forEach((pt) => {
+    const monthKey = pt.timePeriod.slice(0, 7);
+    const existing = monthsMap.get(monthKey);
+    if (existing) {
+      existing.totalRevenue += pt.totalRevenueAmount || 0;
+      existing.totalPenalty += pt.totalPenaltyAmount || 0;
+      existing.totalAdjustment += pt.totalAdjustmentAmount || 0;
+    }
+  });
+
+  return Array.from(monthsMap.entries()).map(([monthKey, values]) => {
+    const [y, m] = monthKey.split("-");
+    return {
+      timePeriod: monthKey,
+      totalRevenueAmount: values.totalRevenue,
+      totalPenaltyAmount: values.totalPenalty,
+      totalAdjustmentAmount: values.totalAdjustment,
+      groupUnit: "MONTH",
+      label: `Thg ${m}`,
+      fullDateLabel: `Tháng ${m}/${y}`,
+    };
+  });
+}
+
+function formatShortCurrency(value: number): string {
+  if (value === 0) return "0 đ";
+  const abs = Math.abs(value);
+  const sign = value < 0 ? "-" : "";
+  if (abs >= 1_000_000_000) {
+    return `${sign}${(abs / 1_000_000_000).toFixed(1).replace(/\.0$/, "")} tỷ đ`;
+  }
+  if (abs >= 1_000_000) {
+    return `${sign}${(abs / 1_000_000).toFixed(1).replace(/\.0$/, "")} tr đ`;
+  }
+  if (abs >= 1_000) {
+    return `${sign}${(abs / 1_000).toFixed(0)}k đ`;
+  }
+  return `${sign}${abs} đ`;
 }
 
 function shortId(value?: string | null) {
@@ -276,6 +515,13 @@ export function CreatorRevenueTransactionsView() {
   const [showTransactions, setShowTransactions] = useState(false);
   const [page, setPage] = useState(1);
 
+  const [chartType, setChartType] = useState<"bar" | "line">("line");
+  const [visibleSeries, setVisibleSeries] = useState({
+    revenue: true,
+    penalty: true,
+    adjustment: true,
+  });
+
   const dateRangeParams = useMemo(
     () => ({
       startDate: toApiDateTime(startDate, "start"),
@@ -301,14 +547,10 @@ export function CreatorRevenueTransactionsView() {
 
   const summary = summaryQuery.data;
   const amountByType = summary?.amountByType ?? {};
-  const chartData = useMemo(
-    () =>
-      (timeSeriesQuery.data ?? []).map((point) => ({
-        ...point,
-        label: formatPeriod(point),
-      })),
-    [timeSeriesQuery.data],
-  );
+  const chartData = useMemo(() => {
+    const rawData = timeSeriesQuery.data ?? [];
+    return buildContinuousTimeSeries(rawData, startDate, endDate);
+  }, [timeSeriesQuery.data, startDate, endDate]);
 
   const isLoadingSummary = summaryQuery.isLoading || timeSeriesQuery.isLoading;
   const hasRevenueError = summaryQuery.isError || timeSeriesQuery.isError;
@@ -464,18 +706,105 @@ export function CreatorRevenueTransactionsView() {
 
           <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-2">
                   <TrendingUp className="h-5 w-5 text-creator-gold" />
-                  <h2 className="text-xl font-black text-white">Biểu đồ doanh thu</h2>
+                  <h2 className="text-xl font-black text-white">Biểu đồ biến động</h2>
+                </div>
+
+                <div className="flex items-center rounded-xl border border-white/10 bg-black/40 p-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setChartType("bar")}
+                    className={`inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-lg px-2.5 text-xs font-bold transition ${
+                      chartType === "bar"
+                        ? "bg-creator-gold text-black shadow"
+                        : "text-zinc-400 hover:text-white"
+                    }`}
+                    title="Dạng biểu đồ Cột"
+                  >
+                    <BarChart2 className="h-3.5 w-3.5" />
+                    Cột
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setChartType("line")}
+                    className={`inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-lg px-2.5 text-xs font-bold transition ${
+                      chartType === "line"
+                        ? "bg-creator-gold text-black shadow"
+                        : "text-zinc-400 hover:text-white"
+                    }`}
+                    title="Dạng biểu đồ Đường"
+                  >
+                    <TrendingUp className="h-3.5 w-3.5" />
+                    Đường
+                  </button>
                 </div>
               </div>
-              {timeSeriesQuery.data?.[0]?.groupUnit && (
-                <span className="inline-flex h-9 items-center gap-2 rounded-full border border-white/10 bg-black/30 px-3 text-xs font-black uppercase tracking-wide text-creator-muted">
-                  <Clock3 className="h-4 w-4 text-creator-gold" />
-                  {timeSeriesQuery.data[0].groupUnit}
-                </span>
-              )}
+
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setVisibleSeries((prev) => ({
+                      ...prev,
+                      revenue: !prev.revenue,
+                    }))
+                  }
+                  className={`inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-full border px-3 text-xs font-black transition ${
+                    visibleSeries.revenue
+                      ? "border-creator-gold/40 bg-creator-gold/15 text-creator-gold"
+                      : "border-white/10 bg-white/5 text-white/30 line-through"
+                  }`}
+                  title="Bật/tắt hiển thị Doanh thu"
+                >
+                  <span className="h-2 w-2 rounded-full bg-creator-gold" />
+                  Doanh thu
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setVisibleSeries((prev) => ({
+                      ...prev,
+                      penalty: !prev.penalty,
+                    }))
+                  }
+                  className={`inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-full border px-3 text-xs font-black transition ${
+                    visibleSeries.penalty
+                      ? "border-red-400/40 bg-red-400/15 text-red-300"
+                      : "border-white/10 bg-white/5 text-white/30 line-through"
+                  }`}
+                  title="Bật/tắt hiển thị Khấu trừ phạt"
+                >
+                  <span className="h-2 w-2 rounded-full bg-red-400" />
+                  Khấu trừ phạt
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setVisibleSeries((prev) => ({
+                      ...prev,
+                      adjustment: !prev.adjustment,
+                    }))
+                  }
+                  className={`inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-full border px-3 text-xs font-black transition ${
+                    visibleSeries.adjustment
+                      ? "border-sky-400/40 bg-sky-400/15 text-sky-300"
+                      : "border-white/10 bg-white/5 text-white/30 line-through"
+                  }`}
+                  title="Bật/tắt hiển thị Điều chỉnh"
+                >
+                  <span className="h-2 w-2 rounded-full bg-sky-400" />
+                  Điều chỉnh
+                </button>
+
+                {timeSeriesQuery.data?.[0]?.groupUnit && (
+                  <span className="inline-flex h-8 items-center gap-1.5 rounded-full border border-white/10 bg-black/30 px-3 text-xs font-black uppercase tracking-wide text-creator-muted">
+                    <Clock3 className="h-3.5 w-3.5 text-creator-gold" />
+                    {timeSeriesQuery.data[0].groupUnit}
+                  </span>
+                )}
+              </div>
             </div>
 
             <div className="mt-5 h-[340px]">
@@ -490,37 +819,26 @@ export function CreatorRevenueTransactionsView() {
                     Chưa có biến động doanh thu trong khoảng thời gian này.
                   </p>
                 </div>
-              ) : (
+              ) : chartType === "bar" ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={chartData} margin={{ left: 0, right: 12, top: 10, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="creatorRevenueTotal" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#D4AF37" stopOpacity={0.35} />
-                        <stop offset="95%" stopColor="#D4AF37" stopOpacity={0} />
-                      </linearGradient>
-                      <linearGradient id="creatorRevenuePenalty" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#f87171" stopOpacity={0.24} />
-                        <stop offset="95%" stopColor="#f87171" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
+                  <BarChart data={chartData} margin={{ left: 0, right: 16, top: 12, bottom: 0 }}>
                     <CartesianGrid stroke="#27272a" strokeDasharray="3 3" vertical={false} />
                     <XAxis
                       dataKey="label"
                       fontSize={11}
                       stroke="#71717a"
                       tickLine={false}
+                      minTickGap={20}
+                      dy={6}
                     />
                     <YAxis
                       fontSize={11}
                       stroke="#71717a"
-                      tickFormatter={(value: number) =>
-                        new Intl.NumberFormat("vi-VN", {
-                          maximumFractionDigits: 0,
-                          notation: "compact",
-                        }).format(value)
-                      }
+                      tickFormatter={formatShortCurrency}
                       tickLine={false}
-                      width={54}
+                      allowDecimals={false}
+                      domain={[0, "auto"]}
+                      width={68}
                     />
                     <Tooltip
                       contentStyle={{
@@ -530,34 +848,129 @@ export function CreatorRevenueTransactionsView() {
                         color: "#fff",
                         fontSize: "12px",
                       }}
+                      labelFormatter={(label, payload) => {
+                        const item = payload?.[0]?.payload as
+                          | { fullDateLabel?: string }
+                          | undefined;
+                        return `Mốc thời gian: ${item?.fullDateLabel || label}`;
+                      }}
                       formatter={(value: unknown, name: unknown) => [
                         formatVND(Number(value) || 0),
-                        name === "totalRevenueAmount"
+                        name === "totalRevenueAmount" || name === "Doanh thu"
                           ? "Doanh thu"
-                          : name === "totalPenaltyAmount"
-                            ? "Phạt"
+                          : name === "totalPenaltyAmount" || name === "Khấu trừ phạt"
+                            ? "Khấu trừ phạt"
                             : "Điều chỉnh",
                       ]}
                     />
-                    <Area
-                      dataKey="totalRevenueAmount"
-                      fill="url(#creatorRevenueTotal)"
-                      fillOpacity={1}
-                      name="Doanh thu"
-                      stroke="#D4AF37"
-                      strokeWidth={2.5}
-                      type="monotone"
+                    {visibleSeries.revenue && (
+                      <Bar
+                        dataKey="totalRevenueAmount"
+                        name="Doanh thu"
+                        fill="#D4AF37"
+                        radius={[6, 6, 0, 0]}
+                        maxBarSize={48}
+                      />
+                    )}
+                    {visibleSeries.penalty && (
+                      <Bar
+                        dataKey="totalPenaltyAmount"
+                        name="Khấu trừ phạt"
+                        fill="#f87171"
+                        radius={[6, 6, 0, 0]}
+                        maxBarSize={48}
+                      />
+                    )}
+                    {visibleSeries.adjustment && (
+                      <Bar
+                        dataKey="totalAdjustmentAmount"
+                        name="Điều chỉnh"
+                        fill="#38bdf8"
+                        radius={[6, 6, 0, 0]}
+                        maxBarSize={48}
+                      />
+                    )}
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={chartData} margin={{ left: 0, right: 16, top: 12, bottom: 0 }}>
+                    <CartesianGrid stroke="#27272a" strokeDasharray="3 3" vertical={false} />
+                    <XAxis
+                      dataKey="label"
+                      fontSize={11}
+                      stroke="#71717a"
+                      tickLine={false}
+                      minTickGap={24}
+                      dy={6}
                     />
-                    <Area
-                      dataKey="totalPenaltyAmount"
-                      fill="url(#creatorRevenuePenalty)"
-                      fillOpacity={1}
-                      name="Phạt"
-                      stroke="#f87171"
-                      strokeWidth={2}
-                      type="monotone"
+                    <YAxis
+                      fontSize={11}
+                      stroke="#71717a"
+                      tickFormatter={formatShortCurrency}
+                      tickLine={false}
+                      allowDecimals={false}
+                      domain={[0, "auto"]}
+                      width={68}
                     />
-                  </AreaChart>
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "#18181b",
+                        border: "1px solid rgba(255,255,255,0.12)",
+                        borderRadius: "14px",
+                        color: "#fff",
+                        fontSize: "12px",
+                      }}
+                      labelFormatter={(label, payload) => {
+                        const item = payload?.[0]?.payload as
+                          | { fullDateLabel?: string }
+                          | undefined;
+                        return `Mốc thời gian: ${item?.fullDateLabel || label}`;
+                      }}
+                      formatter={(value: unknown, name: unknown) => [
+                        formatVND(Number(value) || 0),
+                        name === "totalRevenueAmount" || name === "Doanh thu"
+                          ? "Doanh thu"
+                          : name === "totalPenaltyAmount" || name === "Khấu trừ phạt"
+                            ? "Khấu trừ phạt"
+                            : "Điều chỉnh",
+                      ]}
+                    />
+                    {visibleSeries.revenue && (
+                      <Line
+                        dataKey="totalRevenueAmount"
+                        name="Doanh thu"
+                        stroke="#D4AF37"
+                        strokeWidth={2.5}
+                        type="monotone"
+                        dot={{ r: 4, fill: "#D4AF37", strokeWidth: 0 }}
+                        activeDot={{ r: 6, fill: "#D4AF37", stroke: "#fff", strokeWidth: 2 }}
+                      />
+                    )}
+                    {visibleSeries.penalty && (
+                      <Line
+                        dataKey="totalPenaltyAmount"
+                        name="Khấu trừ phạt"
+                        stroke="#f87171"
+                        strokeWidth={2.5}
+                        strokeDasharray="6 4"
+                        type="monotone"
+                        dot={{ r: 4, fill: "#f87171", strokeWidth: 0 }}
+                        activeDot={{ r: 6, fill: "#f87171", stroke: "#fff", strokeWidth: 2 }}
+                      />
+                    )}
+                    {visibleSeries.adjustment && (
+                      <Line
+                        dataKey="totalAdjustmentAmount"
+                        name="Điều chỉnh"
+                        stroke="#38bdf8"
+                        strokeWidth={2.5}
+                        type="monotone"
+                        dot={{ r: 4, fill: "#38bdf8", strokeWidth: 0 }}
+                        activeDot={{ r: 6, fill: "#38bdf8", stroke: "#fff", strokeWidth: 2 }}
+                      />
+                    )}
+                  </LineChart>
                 </ResponsiveContainer>
               )}
             </div>

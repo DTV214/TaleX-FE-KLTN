@@ -117,7 +117,7 @@ export default function StaffDashboardPage() {
     queryKey: adminVerificationKeys.identities(),
     queryFn: () => getCreatorIdentities(),
   });
-  const identities = identitiesQuery.data ?? [];
+  const identities = identitiesQuery.data?.content ?? [];
   const pendingIdentitiesCount = identities.filter(
     (item) => item.status === "PENDING",
   ).length;

@@ -1,7 +1,7 @@
 "use client";
 
-import { Edit3, Eye, EyeOff, Loader2, Plus, Trash2, X } from "lucide-react";
-import { type FormEvent, useState } from "react";
+import { Edit3, Eye, EyeOff, Loader2, Plus, RefreshCw, Search, Trash2, X } from "lucide-react";
+import { type FormEvent, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   type Tag,
@@ -34,6 +34,16 @@ function StatusBadge({ status }: { status: TagStatus }) {
       {status}
     </span>
   );
+}
+
+function removeVietnameseTones(str: string): string {
+  return str
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "d")
+    .toLowerCase()
+    .trim();
 }
 
 function TagFormModal({
@@ -202,6 +212,13 @@ export function TagManagement() {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [selectedTag, setSelectedTag] = useState<Tag | null>(null);
 
+  // Search, Filter & Pagination states
+  const [searchDraft, setSearchDraft] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("ALL");
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
+
   const tags = tagsQuery.data ?? [];
   const isMutating =
     createMutation.isPending ||
@@ -209,6 +226,52 @@ export function TagManagement() {
     deleteMutation.isPending ||
     toggleStatusMutation.isPending;
   const isSaving = createMutation.isPending || updateMutation.isPending;
+
+  const filteredTags = useMemo(() => {
+    return tags.filter((tag) => {
+      if (statusFilter !== "ALL" && tag.status !== statusFilter) {
+        return false;
+      }
+      if (searchTerm.trim()) {
+        const rawTerm = searchTerm.toLowerCase().trim();
+        const normTerm = removeVietnameseTones(searchTerm);
+
+        const nameRaw = tag.name.toLowerCase();
+        const nameNorm = removeVietnameseTones(tag.name);
+
+        const descRaw = (tag.description || "").toLowerCase();
+        const descNorm = removeVietnameseTones(tag.description || "");
+
+        const matchName = nameRaw.includes(rawTerm) || nameNorm.includes(normTerm);
+        const matchDesc = descRaw.includes(rawTerm) || descNorm.includes(normTerm);
+
+        if (!matchName && !matchDesc) return false;
+      }
+      return true;
+    });
+  }, [tags, statusFilter, searchTerm]);
+
+  const totalElements = filteredTags.length;
+  const totalPages = Math.max(1, Math.ceil(totalElements / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const paginatedTags = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredTags.slice(start, start + pageSize);
+  }, [filteredTags, currentPage, pageSize]);
+
+  const firstItem = totalElements === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const lastItem = Math.min(currentPage * pageSize, totalElements);
+
+  const handleSearchSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    setSearchTerm(searchDraft);
+    setPage(1);
+  };
+
+  const handleStatusFilterChange = (newStatus: string) => {
+    setStatusFilter(newStatus);
+    setPage(1);
+  };
 
   function openCreateModal() {
     setSelectedTag(null);
@@ -292,23 +355,100 @@ export function TagManagement() {
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
-      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-slate-950 backoffice-dark:text-white">
             Quản Lý Thẻ
           </h1>
         </div>
 
-        <button
-          type="button"
-          onClick={openCreateModal}
-          disabled={isMutating}
-          className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-violet-600 px-5 text-sm font-bold text-white shadow-sm transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          <Plus className="h-5 w-5" />
-          Thêm mới
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => void tagsQuery.refetch()}
+            disabled={tagsQuery.isFetching}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-50 backoffice-dark:border-white/10 backoffice-dark:bg-white/5 backoffice-dark:text-white/80 backoffice-dark:hover:bg-white/10"
+          >
+            <RefreshCw
+              className={
+                tagsQuery.isFetching
+                  ? "h-4 w-4 animate-spin"
+                  : "h-4 w-4"
+              }
+            />
+            Làm mới
+          </button>
+          <button
+            type="button"
+            onClick={openCreateModal}
+            disabled={isMutating}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-violet-600 px-5 text-sm font-bold text-white shadow-sm transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60 backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black backoffice-dark:hover:bg-[var(--backoffice-primary-bright)]"
+          >
+            <Plus className="h-5 w-5" />
+            Thêm mới
+          </button>
+        </div>
       </div>
+
+      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
+        <form
+          onSubmit={handleSearchSubmit}
+          className="grid gap-3 sm:grid-cols-[minmax(240px,1fr)_200px_auto] sm:items-end"
+        >
+          <label className="relative block">
+            <span className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-gray-500 backoffice-dark:text-white/45">
+              Tìm kiếm
+            </span>
+            <Search className="absolute bottom-3 left-3 h-4 w-4 text-gray-400" />
+            <input
+              type="search"
+              value={searchDraft}
+              onChange={(e) => setSearchDraft(e.target.value)}
+              placeholder="Tên thẻ, mô tả..."
+              className="h-10 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white"
+            />
+          </label>
+
+          <label className="block">
+            <span className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-gray-500 backoffice-dark:text-white/45">
+              Trạng thái
+            </span>
+            <select
+              value={statusFilter}
+              onChange={(e) => handleStatusFilterChange(e.target.value)}
+              className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-100 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white"
+            >
+              <option value="ALL">Tất cả trạng thái</option>
+              <option value="ACTIVE">ACTIVE</option>
+              <option value="INACTIVE">INACTIVE</option>
+              <option value="DELETED">DELETED</option>
+            </select>
+          </label>
+
+          <div className="flex gap-2">
+            <button
+              type="submit"
+              className="h-10 rounded-lg bg-violet-600 px-4 text-sm font-semibold text-white shadow-sm hover:bg-violet-700 backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black backoffice-dark:hover:bg-[var(--backoffice-primary-bright)]"
+            >
+              Tìm kiếm
+            </button>
+            {searchTerm || statusFilter !== "ALL" ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchDraft("");
+                  setSearchTerm("");
+                  setStatusFilter("ALL");
+                  setPage(1);
+                }}
+                className="h-10 rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 hover:text-slate-900 backoffice-dark:border-white/10 backoffice-dark:bg-white/5 backoffice-dark:text-white backoffice-dark:hover:bg-white/10"
+              >
+                Xóa lọc
+              </button>
+            ) : null}
+          </div>
+        </form>
+      </section>
 
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
         <div className="overflow-x-auto">
@@ -321,7 +461,7 @@ export function TagManagement() {
                 <th className="px-6 py-4 text-right">Hành động</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 backoffice-dark:divide-white/10">
               {tagsQuery.isLoading && (
                 <tr>
                   <td colSpan={4} className="px-6 py-14 text-center">
@@ -346,18 +486,20 @@ export function TagManagement() {
 
               {!tagsQuery.isLoading &&
                 !tagsQuery.isError &&
-                tags.length === 0 && (
+                paginatedTags.length === 0 && (
                   <tr>
                     <td
                       colSpan={4}
                       className="px-6 py-14 text-center text-sm font-medium text-slate-500"
                     >
-                      Chưa có thẻ nào.
+                      {searchTerm || statusFilter !== "ALL"
+                        ? "Không tìm thấy thẻ phù hợp với bộ lọc."
+                        : "Chưa có thẻ nào."}
                     </td>
                   </tr>
                 )}
 
-              {tags.map((tag) => {
+              {paginatedTags.map((tag) => {
                 const isInactive = tag.status === "INACTIVE";
                 const isDeleted = tag.status === "DELETED";
 
@@ -365,10 +507,10 @@ export function TagManagement() {
                   <tr key={tag.id} className="transition hover:bg-slate-50/80 backoffice-dark:hover:bg-white/[0.05]">
                     <td className="px-6 py-4">
                       <div>
-                        <p className="font-bold text-slate-950">{tag.name}</p>
+                        <p className="font-bold text-slate-950 backoffice-dark:text-white">{tag.name}</p>
                       </div>
                     </td>
-                    <td className="max-w-md px-6 py-4 text-slate-600">
+                    <td className="max-w-md px-6 py-4 text-slate-600 backoffice-dark:text-white/70">
                       <span className="line-clamp-2">
                         {tag.description || "Chưa có mô tả."}
                       </span>
@@ -382,7 +524,7 @@ export function TagManagement() {
                           type="button"
                           onClick={() => openEditModal(tag)}
                           disabled={isMutating || isDeleted}
-                          className="rounded-lg p-2 text-slate-400 transition hover:bg-violet-50 hover:text-violet-600 disabled:cursor-not-allowed disabled:opacity-40"
+                          className="rounded-lg p-2 text-slate-400 transition hover:bg-violet-50 hover:text-violet-600 disabled:cursor-not-allowed disabled:opacity-40 backoffice-dark:text-white/40 backoffice-dark:hover:bg-white/10 backoffice-dark:hover:text-white"
                           title="Sửa"
                         >
                           <Edit3 className="h-4 w-4" />
@@ -391,7 +533,7 @@ export function TagManagement() {
                           type="button"
                           onClick={() => handleToggleStatus(tag)}
                           disabled={isMutating || isDeleted}
-                          className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
+                          className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-40 backoffice-dark:text-white/40 backoffice-dark:hover:bg-white/10 backoffice-dark:hover:text-white"
                           title={isInactive ? "Hiện" : "Ẩn"}
                         >
                           {isInactive ? (
@@ -404,7 +546,7 @@ export function TagManagement() {
                           type="button"
                           onClick={() => openDeleteModal(tag)}
                           disabled={isMutating || isDeleted}
-                          className="rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40"
+                          className="rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40 backoffice-dark:text-white/40 backoffice-dark:hover:bg-red-500/10 backoffice-dark:hover:text-red-400"
                           title="Xóa"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -417,6 +559,35 @@ export function TagManagement() {
             </tbody>
           </table>
         </div>
+
+        {totalElements > 0 && (
+          <div className="flex flex-col gap-3 border-t border-slate-100 bg-gray-50/50 px-6 py-4 sm:flex-row sm:items-center sm:justify-between backoffice-dark:border-white/10 backoffice-dark:bg-transparent">
+            <p className="text-sm font-semibold text-gray-500 backoffice-dark:text-zinc-400">
+              Hiển thị {firstItem} - {lastItem} / {totalElements} thẻ
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                className="inline-flex h-9 items-center justify-center rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-zinc-200 backoffice-dark:hover:bg-white/10"
+                disabled={currentPage <= 1}
+                onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+              >
+                Trước
+              </button>
+              <span className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-black text-gray-700 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-zinc-200">
+                {currentPage} / {totalPages}
+              </span>
+              <button
+                type="button"
+                className="inline-flex h-9 items-center justify-center rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-zinc-200 backoffice-dark:hover:bg-white/10"
+                disabled={currentPage >= totalPages}
+                onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+              >
+                Sau
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       <TagFormModal
