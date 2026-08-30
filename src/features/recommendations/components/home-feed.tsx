@@ -3,12 +3,14 @@
 import Link from "next/link";
 import {
   Fragment,
+  type CSSProperties,
   useEffect,
   useMemo,
   useRef,
   useState,
   type ReactNode,
 } from "react";
+import { motion } from "framer-motion";
 import {
   AlertCircle,
   ArrowRight,
@@ -19,7 +21,6 @@ import {
   Clapperboard,
   Crown,
   Eye,
-  Film,
   Filter,
   Play,
   RefreshCw,
@@ -262,6 +263,7 @@ export function HomeFeed({
   const queryParams = useMemo<HomeFeedRequest>(
     () => ({
       ...DEFAULT_HOME_FEED_LIMITS,
+      trendingLimit: 7,
       latestCommunityChoiceLimit: MIXED_RECOMMENDATION_LIMIT,
       communityChoiceLimit: MIXED_RECOMMENDATION_LIMIT,
     }),
@@ -685,29 +687,130 @@ function StripCard({
 }
 
 function TypedRankingSection({ section }: { section: TypedHomeSection }) {
+  const items = section.items.slice(0, 7);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const featured = items[activeIndex] ?? items[0];
+  if (!featured) return null;
+
+  const featuredKind = normalizeKind(featured);
+
   return (
-    <section
+    <motion.section
       id={section.id}
-      className="relative scroll-mt-24 overflow-hidden rounded-[1.75rem] border border-white/10 bg-white/[0.035] p-5 shadow-[0_22px_70px_rgba(0,0,0,0.28)] md:p-6"
+      initial={{ opacity: 0, y: 28 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-90px" }}
+      transition={{ duration: 0.55, ease: "easeOut" }}
+      className="group relative scroll-mt-24 overflow-hidden rounded-[1.8rem] border border-[#D4AF37]/20 bg-[#030406] shadow-[0_24px_80px_rgba(0,0,0,0.36)]"
     >
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_8%_20%,rgba(212,175,55,0.14),transparent_28%),radial-gradient(circle_at_88%_12%,rgba(84,118,255,0.12),transparent_30%)]" />
-      <div className="relative">
-        <SectionHeading
-          section={section}
-          icon={getSectionIcon(section.poolKey)}
-        />
-        <ScrollableRow>
-          {section.items.slice(0, 10).map((series, index) => (
-            <NetflixRankCard
-              key={series.seriesId}
-              series={series}
-              index={index}
-              rank={index + 1}
+      <div
+        className="absolute inset-0 bg-cover bg-center opacity-34 transition duration-700 group-hover:scale-[1.012]"
+        style={{
+          backgroundImage: `url(${imageFor(featured, activeIndex, "banner")})`,
+        }}
+      />
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,4,6,0.9)_0%,rgba(3,4,6,0.52)_36%,rgba(3,4,6,0.82)_72%,rgba(3,4,6,0.98)_100%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(212,175,55,0.14),transparent_42%),linear-gradient(90deg,rgba(3,4,6,0.92),rgba(3,4,6,0.38)_48%,rgba(3,4,6,0.92))]" />
+      <div className="pointer-events-none absolute inset-x-7 top-0 h-px bg-gradient-to-r from-transparent via-[#D4AF37]/70 to-transparent" />
+      <div className="pointer-events-none absolute inset-x-10 bottom-0 h-px bg-gradient-to-r from-transparent via-white/18 to-transparent" />
+      <div className="pointer-events-none absolute left-8 right-8 top-16 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+      <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-36 bg-[linear-gradient(180deg,transparent,rgba(10,13,18,0.9)),repeating-linear-gradient(100deg,rgba(255,255,255,0.08)_0_1px,transparent_1px_18px)] opacity-35" />
+
+      <div className="relative px-5 py-5 md:px-7 md:py-6">
+        <div className="flex flex-col items-center gap-2 text-center">
+          <div className="inline-flex items-center gap-3 rounded-full border border-[#D4AF37]/22 bg-black/32 px-4 py-2 shadow-[0_0_26px_rgba(212,175,55,0.12)] backdrop-blur">
+            <span className="h-px w-8 bg-gradient-to-r from-transparent to-[#D4AF37]/70" />
+            <SectionHeading
+              section={section}
+              icon={getSectionIcon(section.poolKey)}
+              compact
             />
-          ))}
-        </ScrollableRow>
+            <span className="h-px w-8 bg-gradient-to-l from-transparent to-[#D4AF37]/70" />
+          </div>
+          <p className="max-w-xl text-xs font-bold uppercase tracking-[0.24em] text-white/34">
+            Gallery xu hướng TaleX
+          </p>
+        </div>
+
+        <div
+          className="relative mt-7 overflow-x-auto overflow-y-visible pb-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+          onMouseLeave={() => setActiveIndex(0)}
+        >
+          <div className="mx-auto flex min-w-max items-end justify-center gap-4 px-2 md:min-w-0 md:gap-5 lg:gap-6">
+            {items.map((series, index) => (
+              <NetflixRankCard
+                key={series.seriesId}
+                series={series}
+                index={index}
+                rank={index + 1}
+                active={index === activeIndex}
+                onPreview={() => {
+                  if (activeIndex !== index) setActiveIndex(index);
+                }}
+              />
+            ))}
+          </div>
+        </div>
+
+        <div className="relative mt-1 min-h-[230px] overflow-hidden rounded-2xl border border-white/10 bg-black/38 p-4 shadow-[0_16px_46px_rgba(0,0,0,0.28)] backdrop-blur-md sm:min-h-[214px] md:min-h-[198px] md:p-5 lg:min-h-[158px]">
+          <div className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-[#D4AF37]/55 to-transparent" />
+          <div className="flex h-full flex-col gap-4 lg:flex-row lg:items-stretch lg:justify-between">
+            <div className="flex min-w-0 flex-1 flex-col justify-center">
+              <div className="flex min-h-[28px] flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#D4AF37] px-3 py-1 text-xs font-black uppercase tracking-[0.12em] text-black shadow-[0_0_28px_rgba(212,175,55,0.24)]">
+                  <TrendingUp className="h-3.5 w-3.5" />
+                  #{activeIndex + 1} Xu hướng
+                </span>
+                <span className="rounded-full border border-white/14 bg-white/[0.08] px-3 py-1 text-xs font-black text-white/78">
+                  {contentLabel(featuredKind)}
+                </span>
+                {featured.ageRating ? (
+                  <span className="rounded-full border border-[#D4AF37]/28 bg-[#D4AF37]/12 px-3 py-1 text-xs font-black text-[#F2D76B]">
+                    {featured.ageRating}
+                  </span>
+                ) : null}
+                <span className="inline-flex items-center gap-1.5 text-xs font-black text-white/62">
+                  <Eye className="h-3.5 w-3.5 text-[#D4AF37]" />
+                  {formatViews(featured.totalViews, featured.analyticData?.views)}
+                </span>
+              </div>
+              <h3 className="mt-3 min-h-[32px] line-clamp-1 font-sans text-2xl font-black leading-tight text-white md:min-h-[38px] md:text-3xl">
+                {featured.title}
+              </h3>
+              <p className="mt-2 min-h-[48px] max-w-3xl text-sm font-semibold leading-6 text-white/52 line-clamp-2">
+                {featured.description || section.description || contentLabel(featuredKind)}
+              </p>
+            </div>
+
+            <div className="flex shrink-0 flex-wrap items-center gap-3 lg:justify-end">
+              <div className="hidden items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-2.5 md:flex">
+                <Eye className="h-4 w-4 text-[#D4AF37]" />
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.14em] text-white/34">
+                    Trending pool
+                  </p>
+                  <p className="text-sm font-black text-white">Top {items.length}</p>
+                </div>
+              </div>
+              <Link
+                href={seriesHref(featured)}
+                className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-full bg-[#D4AF37] px-5 text-sm font-black text-black shadow-[0_0_30px_rgba(212,175,55,0.24)] transition hover:bg-[#f2d761] hover:shadow-[0_0_42px_rgba(212,175,55,0.36)]"
+              >
+                <Play className="h-4 w-4 fill-current" />
+                Xem chi tiết
+              </Link>
+              <Link
+                href={seriesHref(featured)}
+                className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-full border border-white/14 bg-white/[0.08] px-5 text-sm font-black text-white backdrop-blur transition hover:border-[#D4AF37]/40 hover:bg-white/[0.13]"
+              >
+                <ArrowRight className="h-4 w-4" />
+                Mở trang
+              </Link>
+            </div>
+          </div>
+        </div>
       </div>
-    </section>
+    </motion.section>
   );
 }
 
@@ -1006,46 +1109,83 @@ function NetflixRankCard({
   series,
   index,
   rank,
+  active,
+  onPreview,
 }: {
   series: HomeFeedSeries;
   index: number;
   rank: number;
+  active?: boolean;
+  onPreview?: () => void;
 }) {
-  const kind = normalizeKind(series);
+  const stageCenter = 3;
+  const distance = Math.abs(index - stageCenter);
+  const cardStyle: CSSProperties = {
+    transform: `perspective(900px) rotateY(${(stageCenter - index) * 4}deg) translateY(${active ? -10 : distance * 5}px)`,
+    transformOrigin: "center bottom",
+  };
 
   return (
     <Link
       href={seriesHref(series)}
-      className="group relative shrink-0 cursor-pointer w-[320px] sm:w-[380px]"
+      onMouseEnter={onPreview}
+      onFocus={onPreview}
+      className="group group/rank relative w-[132px] shrink-0 cursor-pointer transition-transform duration-300 ease-out sm:w-[150px] md:w-[166px]"
+      style={cardStyle}
     >
-      <span
-        aria-hidden="true"
-        className="pointer-events-none absolute -left-2 top-1/2 z-0 -translate-y-1/2 font-heading text-[8.5rem] font-black leading-none text-white/[0.055] transition duration-300 group-hover:text-[#D4AF37]/12 sm:text-[10rem]"
+      <motion.div
+        initial={{ opacity: 0, y: 18 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-80px" }}
+        transition={{ duration: 0.32, delay: index * 0.04, ease: "easeOut" }}
+        className={`relative transition-transform duration-300 ease-out ${
+          active
+            ? "-translate-y-2 scale-[1.06]"
+            : "group-hover/rank:-translate-y-1 group-hover/rank:scale-[1.025]"
+        }`}
       >
-        {rank}
-      </span>
-      <div
-        className="relative z-10 ml-14 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.045] aspect-video shadow-[0_18px_50px_rgba(0,0,0,0.3)] transition duration-300 group-hover:-translate-y-1 group-hover:border-[#D4AF37]/45"
-      >
+        <p
+          className={`mb-2 line-clamp-1 text-center font-sans text-[10px] font-black uppercase tracking-[0.14em] transition ${
+            active ? "text-[#F2D76B]" : "text-white/44 group-hover/rank:text-white/70"
+          }`}
+        >
+          {series.title}
+        </p>
         <div
-          className="absolute inset-0 bg-cover bg-center transition duration-500 group-hover:scale-105"
-          style={{
-            backgroundImage: `url(${imageFor(series, index, "banner")})`,
-          }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/86 via-black/18 to-black/10" />
-        <CardSunSheen />
-        <CardStar rating={series.averageRating} />
-        <TypeBadge kind={kind} />
-        <div className="absolute bottom-3 left-3 right-3">
-          <p className="line-clamp-2 text-sm font-black leading-tight text-white sm:text-base">
-            {series.title}
-          </p>
-          <p className="mt-1 text-xs font-bold text-[#D4AF37]">
-            {formatViews(series.totalViews, series.analyticData?.views)}
-          </p>
+          className={`relative aspect-[3/4] overflow-hidden rounded-[1.1rem] border bg-white/[0.04] shadow-[0_20px_46px_rgba(0,0,0,0.44)] transition duration-300 ${
+            active
+              ? "border-[#D4AF37]/80 shadow-[0_0_0_1px_rgba(212,175,55,0.28),0_0_34px_rgba(212,175,55,0.28),0_24px_54px_rgba(0,0,0,0.46)]"
+              : "border-white/12 group-hover/rank:border-[#D4AF37]/46"
+          }`}
+        >
+          <div
+            className="absolute inset-0 bg-cover bg-center transition duration-500 group-hover/rank:scale-105"
+            style={{
+              backgroundImage: `url(${imageFor(series, index, "cover")})`,
+            }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/86 via-black/16 to-black/8" />
+          <CardSunSheen />
+          <span
+            className={`absolute left-2 top-2 z-10 rounded-full px-2 py-1 text-[10px] font-black backdrop-blur ${
+              active
+                ? "bg-[#D4AF37] text-black"
+                : "bg-black/62 text-white/82"
+            }`}
+          >
+            #{rank}
+          </span>
+          <span className="absolute bottom-2 left-2 right-2 z-10 rounded-xl border border-white/10 bg-black/54 px-2 py-1.5 text-center text-[10px] font-black text-white/78 backdrop-blur">
+            {contentLabel(normalizeKind(series))}
+          </span>
         </div>
-      </div>
+        <div
+          aria-hidden="true"
+          className={`mx-auto mt-2 h-8 w-[78%] rounded-[50%] blur-md transition ${
+            active ? "bg-[#D4AF37]/24" : "bg-white/10 group-hover/rank:bg-[#D4AF37]/16"
+          }`}
+        />
+      </motion.div>
     </Link>
   );
 }
