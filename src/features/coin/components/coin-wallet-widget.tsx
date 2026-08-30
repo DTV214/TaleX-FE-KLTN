@@ -56,9 +56,6 @@ export function CoinWalletWidget() {
                 <p className="text-sm font-bold text-white">
                   Điểm danh hằng ngày
                 </p>
-                <p className="mt-1 text-xs text-white/45">
-                  Nhận Coin miễn phí mỗi ngày
-                </p>
               </div>
               <CircleDollarSign className="h-5 w-5 shrink-0 text-[#D4AF37]" />
             </div>

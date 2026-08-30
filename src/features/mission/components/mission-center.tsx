@@ -97,9 +97,6 @@ function MissionRewardTimeline({ currentStreak }: { currentStreak: number }) {
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
           <p className="text-sm font-medium text-[#D4AF37]">Chuỗi nhiệm vụ</p>
-          <p className="mt-1 text-xs text-slate-400">
-            Giữ nhịp điểm danh để mở các mốc thưởng dài ngày.
-          </p>
         </div>
         <Trophy className="h-5 w-5 text-[#D4AF37]" />
       </div>
@@ -169,7 +166,7 @@ function MissionDetail({
     mission.targetValue,
   );
   const passiveStatusText =
-    mission.currentValue > 0 ? "Đang tiến hành" : "Lắng nghe hệ thống";
+    mission.currentValue > 0 ? "Đang tiến hành" : "Chưa thực hiện";
 
   return (
     <article className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#121214]/88 p-5 shadow-[0_20px_58px_rgba(0,0,0,0.28)]">
@@ -191,9 +188,6 @@ function MissionDetail({
           </div>
 
           <div className="rounded-xl border border-[#D4AF37]/25 bg-[#D4AF37]/10 px-3 py-2 text-right">
-            <p className="text-[11px] font-medium text-[#F5D46E]/75">
-              Thưởng
-            </p>
             <p className="mt-1 flex items-center gap-1.5 text-lg font-semibold text-[#F5D46E]">
               <CircleDollarSign className="h-4 w-4" />
               + {formatCoin(mission.rewardAmount)}
@@ -299,9 +293,6 @@ export function MissionCenter() {
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_8%,rgba(212,175,55,0.18),transparent_32%),radial-gradient(circle_at_88%_12%,rgba(125,211,252,0.08),transparent_30%),linear-gradient(135deg,rgba(212,175,55,0.06),transparent_38%)]" />
         <div className="relative z-10 grid gap-6 lg:grid-cols-[minmax(0,1fr)_390px] lg:items-center">
           <div>
-            <Badge variant="premium" className="mb-4 px-3 py-1 text-xs font-medium">
-              TaleX Reward Hub
-            </Badge>
             <h1 className="text-3xl font-semibold tracking-normal text-white/92 md:text-4xl">
               Thử thách hằng ngày
             </h1>

@@ -67,7 +67,7 @@ const RECOMMENDATION_POOLS: HomeFeedPoolKey[] = [
   "communityChoice",
 ];
 
-const MIXED_RECOMMENDATION_LIMIT = 10;
+const MIXED_RECOMMENDATION_LIMIT = 4;
 
 const poolCopy: Record<
   HomeFeedPoolKey,
@@ -724,11 +724,11 @@ function TypedRowSection({ section }: { section: TypedHomeSection }) {
           section={section}
           icon={getSectionIcon(section.poolKey)}
         />
-        <ScrollableRow>
-          {section.items.map((series, index) => (
-            <LandscapeCard key={series.seriesId} series={series} index={index} />
+        <div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-4 md:gap-5">
+          {section.items.slice(0, 4).map((series, index) => (
+            <LandscapeCard key={series.seriesId} series={series} index={index} grid />
           ))}
-        </ScrollableRow>
+        </div>
       </div>
     </section>
   );
@@ -1053,16 +1053,18 @@ function NetflixRankCard({
 function LandscapeCard({
   series,
   index,
+  grid = false,
 }: {
   series: HomeFeedSeries;
   index: number;
+  grid?: boolean;
 }) {
   const kind = normalizeKind(series);
 
   return (
     <Link
       href={seriesHref(series)}
-      className="group w-[260px] shrink-0 sm:w-[320px] lg:w-[360px]"
+      className={grid ? "group min-w-0" : "group w-[260px] shrink-0 sm:w-[320px] lg:w-[360px]"}
     >
       <div className="relative aspect-video overflow-hidden rounded-xl border border-white/10 bg-white/[0.04]">
         <div

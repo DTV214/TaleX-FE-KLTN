@@ -647,16 +647,9 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
             <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37]/5 to-transparent pointer-events-none rounded-3xl" />
             <div className="relative z-10">
               <div className="mb-6 flex flex-col gap-2">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black tracking-wider uppercase border border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37] self-start">
-                  <Sparkles className="w-3.5 h-3.5" /> COMBO ƯU ĐÃI ĐỘC QUYỀN
-                </span>
                 <h2 className="text-2xl font-bold text-white tracking-wide">
-                  Mua trọn gói - Tiết kiệm đến 40%
+                  Mua trọn gói
                 </h2>
-                <p className="text-xs text-gray-400">
-                  Mở khóa hàng loạt tập phim/truyện cùng lúc với mức giá tốt
-                  nhất để xem không bị gián đoạn.
-                </p>
               </div>
 
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -686,7 +679,7 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
                         </div>
                       )}
 
-                      <div className="space-y-4">
+                      <div className="space-y-4 mt-8">
                         <div>
                           <h3 className="font-bold text-lg text-white group-hover:text-[#D4AF37] transition-colors duration-200 line-clamp-1">
                             {combo.title}

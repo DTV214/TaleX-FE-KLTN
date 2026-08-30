@@ -25,9 +25,6 @@ export function CoinBalanceSummary() {
             <h2 className="mt-2 text-2xl font-semibold text-white/90">
               {walletQuery.isLoading ? "..." : formatCoin(wallet?.balance)} Coin
             </h2>
-            <p className="mt-2 text-sm leading-6 text-slate-400">
-              Theo dõi tổng coin đã nhận, đã dùng và số dư hiện tại trong ví TaleX.
-            </p>
           </div>
           <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[#D4AF37]/25 bg-[#D4AF37]/10 text-[#D4AF37]">
             <WalletCards className="h-6 w-6" />
