@@ -33,6 +33,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getMyLikedEpisodes, getEpisodeLikes } from "../api/episode-likes-api";
 import { useGetPublicCombos } from "@/features/public/hooks/use-public-combos";
+import { ComboCard } from "@/features/public/components/combo-packages";
 import { useCreatorFollow } from "../hooks/use-creator-follow";
 import { useContentEntitlement } from "../hooks/use-content-entitlement";
 import { getFollowers } from "../api/creator-follows-api";
@@ -54,9 +55,6 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
   const authUser = useAuthStore((state) => state.user);
   const [selectedSeasonId, setSelectedSeasonId] = useState<string | null>(null);
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
-  const [expandedCombos, setExpandedCombos] = useState<Record<string, boolean>>(
-    {},
-  );
   const [isAscending, setIsAscending] = useState(true);
   const [isSeasonDropdownOpen, setIsSeasonDropdownOpen] = useState(false);
 
@@ -653,129 +651,13 @@ export function SeriesDetail({ seriesId }: SeriesDetailProps) {
               </div>
 
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {seriesCombos.map((combo) => {
-                  const originalPrice =
-                    combo.originalPriceVnd ?? combo.priceVnd;
-                  const discountPercentage =
-                    originalPrice > combo.priceVnd
-                      ? Math.round(
-                        ((originalPrice - combo.priceVnd) / originalPrice) *
-                        100,
-                      )
-                      : 0;
-                  const isPurchasable = combo.priceVnd > 0;
-                  const episodeCount = combo.episodes?.length ?? 0;
-
-                  return (
-                    <div
-                      key={combo.comboId}
-                      className="relative flex flex-col justify-between rounded-2xl border border-white/10 bg-[#161619] p-6 shadow-xl transition-all duration-300 hover:border-[#D4AF37]/50 hover:shadow-[0_0_24px_rgba(212,175,55,0.08)] group"
-                    >
-                      <div className="space-y-4">
-                        <div>
-                          <div className="flex items-start justify-between gap-3">
-                            <h3
-                              title={combo.title}
-                              className="font-bold text-base sm:text-lg text-white group-hover:text-[#D4AF37] transition-colors duration-200 truncate flex-1 min-w-0"
-                            >
-                              {combo.title}
-                            </h3>
-                            {discountPercentage > 0 && (
-                              <span className="inline-flex shrink-0 items-center rounded-full bg-red-500/10 border border-red-500/20 px-2.5 py-1 text-xs font-black text-red-400 whitespace-nowrap">
-                                Tiết kiệm {discountPercentage}%
-                              </span>
-                            )}
-                          </div>
-                          <p className="mt-2 text-xs text-gray-400 line-clamp-2 leading-relaxed">
-                            {combo.description ||
-                              "Mở khóa nhiều tập cùng lúc với giá tốt."}
-                          </p>
-                        </div>
-
-                        {combo.episodes && combo.episodes.length > 0 && (
-                          <div className="border-t border-white/5 pt-3">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setExpandedCombos((prev) => ({
-                                  ...prev,
-                                  [combo.comboId]: !prev[combo.comboId],
-                                }));
-                              }}
-                              className="text-xs font-bold text-[#D4AF37] hover:text-[#F3CE5E] flex items-center gap-1 cursor-pointer focus:outline-none"
-                            >
-                              {expandedCombos[combo.comboId]
-                                ? "Ẩn danh sách tập"
-                                : "Xem danh sách tập bao gồm"}
-                              <ChevronRight
-                                className={`w-3.5 h-3.5 transition-transform duration-200 ${expandedCombos[combo.comboId] ? "rotate-90" : ""}`}
-                              />
-                            </button>
-                            {expandedCombos[combo.comboId] && (
-                              <ul className="mt-2 max-h-32 overflow-y-auto space-y-1.5 pl-2 text-xs text-gray-400 no-scrollbar">
-                                {combo.episodes.map((ep) => (
-                                  <li
-                                    key={ep.episodeId}
-                                    className="flex items-center gap-1.5"
-                                  >
-                                    <span className="w-1 h-1 rounded-full bg-[#D4AF37] shrink-0" />
-                                    <span className="truncate">
-                                      {ep.episodeNumber != null
-                                        ? `Tập ${ep.episodeNumber}: `
-                                        : ""}
-                                      {ep.title}
-                                    </span>
-                                  </li>
-                                ))}
-                              </ul>
-                            )}
-                          </div>
-                        )}
-
-                        <div className="space-y-2 text-xs bg-black/40 rounded-xl border border-white/5 p-4">
-                          <div className="flex justify-between items-center text-gray-300">
-                            <span>Số lượng tập:</span>
-                            <span className="font-bold text-white">
-                              {episodeCount} tập
-                            </span>
-                          </div>
-                          {originalPrice > combo.priceVnd && (
-                            <div className="flex justify-between items-center text-gray-400">
-                              <span>Giá gốc:</span>
-                              <span className="line-through">
-                                {(originalPrice || 0).toLocaleString("vi-VN")} đ
-                              </span>
-                            </div>
-                          )}
-                          <div className="flex justify-between items-center pt-1.5 border-t border-white/5">
-                            <span className="font-bold text-gray-300">
-                              Giá combo:
-                            </span>
-                            <span className="text-base font-black text-[#D4AF37]">
-                              {(combo.priceVnd || 0).toLocaleString("vi-VN")} đ
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <button
-                        onClick={() => {
-                          const params = new URLSearchParams({
-                            itemId: combo.comboId,
-                            itemType: "COMBO",
-                            title: combo.title,
-                            returnTo: `/series/${seriesId}`,
-                          });
-                          router.push(`/checkout-content?${params.toString()}`);
-                        }}
-                        disabled={!isPurchasable}
-                        className="mt-6 w-full rounded-xl bg-[#D4AF37] py-3 text-xs font-bold text-black transition-all hover:bg-[#F3CE5E] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
-                      >
-                        {isPurchasable ? "Mua Gói Ngay" : "Liên hệ để mua"}
-                      </button>
-                    </div>
-                  );
-                })}
+                {seriesCombos.map((combo) => (
+                  <ComboCard
+                    key={combo.comboId}
+                    combo={combo}
+                    returnTo={`/series/${seriesId}`}
+                  />
+                ))}
               </div>
             </div>
           </section>
