@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import { Upload, X, ChevronDown, Check, ImageIcon } from "lucide-react";
 import { useGetActiveContentWarningCategories } from "@/features/admin/hooks/use-content-warning-category";
+import { ImageCropModal } from "@/features/creator-dashboard/components/image-crop-modal";
 
 export interface CoreIdentityData {
   title: string;
@@ -55,21 +56,72 @@ export function CoreIdentityStep({ initialData, onSave, onCancel, categories, ta
   const [bannerPreview, setBannerPreview] = useState<string | null>(initialData?.bannerUrl || null);
   const [posterPreview, setPosterPreview] = useState<string | null>(initialData?.coverUrl || null);
 
+  // State quản lý Modal Crop Ảnh
+  const [cropModalState, setCropModalState] = useState<{
+    isOpen: boolean;
+    imageSrc: string | null;
+    aspectRatio: number;
+    aspectRatioLabel: string;
+    title: string;
+    originalFileName: string;
+    targetField: "cover" | "banner";
+  }>({
+    isOpen: false,
+    imageSrc: null,
+    aspectRatio: 2 / 3,
+    aspectRatioLabel: "2:3 (Dọc)",
+    title: "Cắt ảnh Poster",
+    originalFileName: "",
+    targetField: "cover",
+  });
+
   const handleBannerUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setFormData({ ...formData, bannerFile: file });
-      const objectUrl = URL.createObjectURL(file);
-      setBannerPreview(objectUrl);
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setCropModalState({
+          isOpen: true,
+          imageSrc: event.target?.result as string,
+          aspectRatio: 16 / 9,
+          aspectRatioLabel: "16:9 (Ngang)",
+          title: "Cắt ảnh Banner ngang",
+          originalFileName: file.name,
+          targetField: "banner",
+        });
+      };
+      reader.readAsDataURL(file);
+      e.target.value = "";
     }
   };
 
   const handlePosterUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setFormData({ ...formData, coverFile: file });
-      const objectUrl = URL.createObjectURL(file);
-      setPosterPreview(objectUrl);
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setCropModalState({
+          isOpen: true,
+          imageSrc: event.target?.result as string,
+          aspectRatio: 2 / 3,
+          aspectRatioLabel: "2:3 (Dọc)",
+          title: "Cắt ảnh Poster dọc",
+          originalFileName: file.name,
+          targetField: "cover",
+        });
+      };
+      reader.readAsDataURL(file);
+      e.target.value = "";
+    }
+  };
+
+  const handleCropComplete = (croppedFile: File, previewUrl: string) => {
+    if (cropModalState.targetField === "cover") {
+      setFormData((prev) => ({ ...prev, coverFile: croppedFile }));
+      setPosterPreview(previewUrl);
+    } else {
+      setFormData((prev) => ({ ...prev, bannerFile: croppedFile }));
+      setBannerPreview(previewUrl);
     }
   };
 
@@ -362,6 +414,18 @@ export function CoreIdentityStep({ initialData, onSave, onCancel, categories, ta
           </button>
         </div>
       </div>
+
+      {/* Modal Cắt Ảnh Poster & Banner */}
+      <ImageCropModal
+        isOpen={cropModalState.isOpen}
+        imageSrc={cropModalState.imageSrc}
+        aspectRatio={cropModalState.aspectRatio}
+        aspectRatioLabel={cropModalState.aspectRatioLabel}
+        title={cropModalState.title}
+        originalFileName={cropModalState.originalFileName}
+        onClose={() => setCropModalState((prev) => ({ ...prev, isOpen: false }))}
+        onCropComplete={handleCropComplete}
+      />
     </form>
   );
 }

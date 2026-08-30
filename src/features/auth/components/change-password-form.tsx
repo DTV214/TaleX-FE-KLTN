@@ -90,7 +90,7 @@ export function ChangePasswordForm() {
           </h2>
           <p className="mt-1 text-sm text-slate-400">
             {requiresCurrentPassword
-              ? "Bảo mật tài khoản của bạn"
+              ? ""
               : "Thêm mật khẩu để đăng nhập bằng email"}
           </p>
         </div>

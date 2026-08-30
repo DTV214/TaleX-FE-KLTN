@@ -80,10 +80,10 @@ export function MyRatingsView() {
                 onClick={() => router.push(`/series/${item.seriesId}`)}
                 className="relative aspect-[3/4] w-full cursor-pointer overflow-hidden bg-black/60"
               >
-                {item.seriesCoverUrl ? (
+                {item.coverUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    src={item.seriesCoverUrl}
+                    src={item.coverUrl}
                     alt={item.seriesTitle || "Series"}
                     className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
                   />

@@ -49,13 +49,10 @@ export function UpdateProfileForm() {
 
   return (
     <section className="rounded-2xl border border-white/10 bg-[#121214]/88 p-6 shadow-[0_18px_50px_rgba(0,0,0,0.24)] transition hover:border-[#D4AF37]/35 sm:p-7">
-      <div className="mb-7">
+      <div className="mb-5">
         <h2 className="text-xl font-semibold tracking-normal text-white/90">
           Thông tin cá nhân
         </h2>
-        <p className="mt-2 text-sm font-normal leading-relaxed text-slate-400">
-          Cập nhật thông tin hồ sơ để TaleX cá nhân hóa trải nghiệm của bạn.
-        </p>
       </div>
 
       {errorMsg && (

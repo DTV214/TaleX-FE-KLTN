@@ -43,9 +43,9 @@ const ageOptions: Array<{
   label: string;
   helper: string;
 }> = [
-  { value: "TEEN", label: "11-18", helper: "Thanh thiếu niên" },
-  { value: "MATURE", label: "18+", helper: "Trưởng thành" },
-];
+    { value: "TEEN", label: "11-18", helper: "Thanh thiếu niên" },
+    { value: "MATURE", label: "18+", helper: "Trưởng thành" },
+  ];
 
 function normalizeToken(value: string) {
   return value.trim().toLocaleLowerCase("vi-VN");
@@ -310,35 +310,35 @@ function PreferencePicker({
       {!isLoading && !isError && (
         <div className="max-h-[360px] overflow-y-auto pr-1">
           <div className="grid gap-3 sm:grid-cols-2">
-          {options.map((option) => {
-            const selected = isOptionSelected(selectedValues, option);
+            {options.map((option) => {
+              const selected = isOptionSelected(selectedValues, option);
 
-            return (
-              <button
-                key={option.id}
-                type="button"
-                onClick={() => onToggleOption(option)}
-                className={cn(
-                  "flex min-h-11 items-center justify-between gap-3 rounded-xl border px-3 py-2 text-left text-sm font-semibold transition hover:border-[#D4AF37]/45 hover:bg-[#D4AF37]/10",
-                  selected
-                    ? "border-[#D4AF37]/60 bg-[#D4AF37]/12 text-[#F5D46E]"
-                    : "border-white/10 bg-white/[0.035] text-white/78",
-                )}
-              >
-                <span className="min-w-0 truncate">{option.name}</span>
-                <span
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  onClick={() => onToggleOption(option)}
                   className={cn(
-                    "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border",
+                    "flex min-h-11 items-center justify-between gap-3 rounded-xl border px-3 py-2 text-left text-sm font-semibold transition hover:border-[#D4AF37]/45 hover:bg-[#D4AF37]/10",
                     selected
-                      ? "border-[#D4AF37] bg-[#D4AF37] text-black"
-                      : "border-white/15 bg-black/30 text-white/30",
+                      ? "border-[#D4AF37]/60 bg-[#D4AF37]/12 text-[#F5D46E]"
+                      : "border-white/10 bg-white/[0.035] text-white/78",
                   )}
                 >
-                  <Check className="h-3.5 w-3.5" />
-                </span>
-              </button>
-            );
-          })}
+                  <span className="min-w-0 truncate">{option.name}</span>
+                  <span
+                    className={cn(
+                      "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border",
+                      selected
+                        ? "border-[#D4AF37] bg-[#D4AF37] text-black"
+                        : "border-white/15 bg-black/30 text-white/30",
+                    )}
+                  >
+                    <Check className="h-3.5 w-3.5" />
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
@@ -473,16 +473,9 @@ export function ProfilePreferencesForm() {
     <section className="rounded-2xl border border-white/10 bg-[#121214]/88 p-6 shadow-[0_18px_50px_rgba(0,0,0,0.24)] transition hover:border-[#D4AF37]/35 sm:p-7">
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <Badge variant="premium" className="mb-3 gap-1.5 px-3 py-1 text-xs font-medium">
-            <Sparkles className="h-3.5 w-3.5" />
-            Gu nội dung
-          </Badge>
           <h2 className="text-xl font-semibold tracking-normal text-white/90">
             Sở thích nội dung
           </h2>
-          <p className="mt-2 text-sm leading-relaxed text-slate-400">
-            Điều chỉnh thể loại và tag để TaleX cá nhân hóa nội dung gợi ý.
-          </p>
         </div>
 
         {!isEditing && (

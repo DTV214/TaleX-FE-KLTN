@@ -104,11 +104,8 @@ export function PremiumSubscriptionHistory() {
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_14%_0%,rgba(212,175,55,0.18),transparent_34%),radial-gradient(circle_at_88%_12%,rgba(125,211,252,0.08),transparent_30%),linear-gradient(135deg,rgba(212,175,55,0.06),transparent_42%)]" />
         <div className="relative z-10 grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-end">
           <div>
-            <Badge variant="premium" className="mb-4 px-3 py-1 text-xs font-medium">
-              TaleX Premium
-            </Badge>
             <h1 className="text-3xl font-semibold tracking-normal text-white/92 md:text-4xl">
-              Lịch sử gói Premium
+              Lịch Sử Mua Gói Premium
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400 md:text-base">
               Theo dõi các gói Premium đã kích hoạt, thời hạn sử dụng và trạng
@@ -117,13 +114,7 @@ export function PremiumSubscriptionHistory() {
           </div>
 
           <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
-            <div className="rounded-2xl border border-[#D4AF37]/20 bg-[#D4AF37]/10 p-4">
-              <Crown className="mb-3 h-5 w-5 text-[#D4AF37]" />
-              <p className="text-xs font-medium text-[#F5D46E]/75">Tổng gói</p>
-              <p className="mt-1 text-xl font-semibold text-white/90">
-                {historyQuery.isLoading ? "..." : totalElements}
-              </p>
-            </div>
+
             <div className="grid grid-cols-2 gap-3 sm:col-span-2 lg:col-span-1">
               <div className="rounded-2xl border border-emerald-300/15 bg-emerald-300/[0.06] p-4">
                 <CheckCircle2 className="mb-3 h-5 w-5 text-emerald-300" />
@@ -134,11 +125,11 @@ export function PremiumSubscriptionHistory() {
                   {historyQuery.isLoading ? "..." : activeCount}
                 </p>
               </div>
-              <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
-                <ReceiptText className="mb-3 h-5 w-5 text-slate-300" />
-                <p className="text-xs font-medium text-slate-500">Bản ghi</p>
-                <p className="mt-1 text-sm font-semibold text-white/88">
-                  {historyQuery.isLoading ? "..." : subscriptions.length}
+              <div className="rounded-2xl border border-[#D4AF37]/20 bg-[#D4AF37]/10 p-4">
+                <Crown className="mb-3 h-5 w-5 text-[#D4AF37]" />
+                <p className="text-xs font-medium text-[#F5D46E]/75">Tổng gói</p>
+                <p className="mt-1 text-xl font-semibold text-white/90">
+                  {historyQuery.isLoading ? "..." : totalElements}
                 </p>
               </div>
             </div>

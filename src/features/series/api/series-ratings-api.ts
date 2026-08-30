@@ -15,7 +15,7 @@ export interface SeriesRatingItem {
   updatedAt: string;
   createdAt: string;
   seriesTitle?: string;
-  seriesCoverUrl?: string;
+  coverUrl?: string;
 }
 
 export interface RatingFilterParams {

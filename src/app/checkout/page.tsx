@@ -63,14 +63,12 @@ function PaymentFrame({
 }) {
   return (
     <div
-      className={`group relative overflow-hidden rounded-2xl border ${
-        isHighlighted ? "border-[#D4AF37]/28" : "border-white/10"
-      } bg-[#111114]/88 shadow-[0_14px_36px_rgba(0,0,0,0.28)] ${className ?? ""}`}
+      className={`group relative overflow-hidden rounded-2xl border ${isHighlighted ? "border-[#D4AF37]/28" : "border-white/10"
+        } bg-[#111114]/88 shadow-[0_14px_36px_rgba(0,0,0,0.28)] ${className ?? ""}`}
     >
       <div
-        className={`pointer-events-none absolute -inset-24 bg-[conic-gradient(from_0deg,transparent_0deg,rgba(212,175,55,0.34)_48deg,transparent_108deg,transparent_360deg)] opacity-0 blur-sm transition-opacity duration-500 group-hover:opacity-25 ${
-          isHighlighted ? "opacity-15" : ""
-        }`}
+        className={`pointer-events-none absolute -inset-24 bg-[conic-gradient(from_0deg,transparent_0deg,rgba(212,175,55,0.34)_48deg,transparent_108deg,transparent_360deg)] opacity-0 blur-sm transition-opacity duration-500 group-hover:opacity-25 ${isHighlighted ? "opacity-15" : ""
+          }`}
         style={{ animation: "spin 22s linear infinite" }}
       />
       <div className="pointer-events-none absolute inset-px rounded-[15px] bg-[#111114]/95" />
@@ -184,7 +182,7 @@ function CheckoutPageContent() {
           ) : (
             <ArrowLeft className="h-4 w-4" />
           )}
-          Quay lại / Hủy thanh toán
+          Quay lại
         </button>
         <div className="mx-auto flex w-full flex-col gap-3">
           <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
@@ -203,10 +201,6 @@ function CheckoutPageContent() {
                         {subscription
                           ? `Gói Dịch Vụ: TaleX Premium ${subscription.tier} (${subscription.duration} ${subscription.durationUnit})`
                           : "Đang tải thông tin gói..."}
-                      </p>
-                      <p className="mt-1 text-sm font-normal leading-6 text-slate-400">
-                        Đơn hàng Premium sẽ được kích hoạt sau khi hệ thống xác
-                        nhận giao dịch thành công.
                       </p>
                     </div>
                   </div>
@@ -267,29 +261,10 @@ function CheckoutPageContent() {
                       <p className="text-2xl font-semibold tracking-tight text-[#F5D46E] sm:text-3xl">
                         {order ? formatCurrency(order.totalAmount) : "—"}
                       </p>
-                      <Badge
-                        variant="premium"
-                        className="h-8 px-3 text-xs font-medium"
-                      >
-                        <ShieldCheck className="mr-1.5 h-3.5 w-3.5" />
-                        SePay bảo vệ
-                      </Badge>
                     </div>
                   </div>
 
-                  <div className="w-full rounded-xl border border-white/10 bg-black/25 p-3 md:w-[220px]">
-                    <div className="mb-2 flex items-center justify-between text-xs font-medium text-slate-500">
-                      <span>Tiến trình</span>
-                      <span className="text-[#F5D46E]">
-                        {displayStatus === "SUCCESS" ? "100%" : "62%"}
-                      </span>
-                    </div>
-                    <Progress value={displayStatus === "SUCCESS" ? 100 : 62} />
-                    <div className="mt-2 flex items-center gap-2 text-xs font-normal text-slate-400">
-                      <Sparkles className="h-3.5 w-3.5 text-[#D4AF37]" />
-                      Chờ ngân hàng xác nhận
-                    </div>
-                  </div>
+
                 </div>
               </PaymentFrame>
 
@@ -340,17 +315,19 @@ function CheckoutPageContent() {
                       value={SEPAY_BANK_NAME}
                       logoUrl={SEPAY_BANK_LOGO_URL}
                     />
-                    <CopyableField
-                      label="Số tài khoản"
-                      value={SEPAY_ACCOUNT_NUMBER}
-                    />
+                    <div>
+                      <CopyableField
+                        label="Số tài khoản"
+                        value={SEPAY_ACCOUNT_NUMBER}
+                      />
+                    </div>
                     <div>
                       <CopyableField
                         label="Nội dung"
                         value={order?.paymentCode ?? "—"}
                         isHighlight
                       />
-                      <p className="mt-1 flex items-center gap-2 text-xs font-medium text-red-300">
+                      <p className="mt-3 flex items-center gap-2 text-xs font-medium text-red-300">
                         <ReceiptText className="h-3.5 w-3.5" />
                         Bắt buộc nhập đúng nội dung
                       </p>
@@ -408,10 +385,9 @@ function CheckoutPageContent() {
 
                   <div className="flex items-end justify-between gap-4 border-b border-white/10 py-4">
                     <span className="text-base font-semibold text-white/82">
-                      Total
+                      Tổng Cộng
                     </span>
                     <div className="text-right">
-                      <p className="text-xs font-medium text-slate-500">VND</p>
                       <p className="text-xl font-semibold text-[#F5D46E]">
                         {order ? formatCurrency(order.totalAmount) : "—"}
                       </p>
@@ -458,17 +434,6 @@ function CheckoutPageContent() {
                       status={displayStatus}
                     />
                   )}
-
-                  <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
-                    <div className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-xs font-medium text-slate-300">
-                      <ShieldCheck className="h-4 w-4 text-[#D4AF37]" />
-                      SSL 256-bit
-                    </div>
-                    <div className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-xs font-medium text-slate-300">
-                      <Building2 className="h-4 w-4 text-[#D4AF37]" />
-                      {SEPAY_BANK_NAME}
-                    </div>
-                  </div>
 
                   <div className="mt-4 grid gap-2.5">
                     <Button
