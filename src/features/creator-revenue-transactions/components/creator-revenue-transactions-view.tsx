@@ -209,10 +209,10 @@ function TransactionRow({ transaction }: { transaction: RevenueTransaction }) {
     <tr className="transition hover:bg-white/[0.035]">
       <td className="px-5 py-4">
         <p className="font-black text-white">
-          {shortId(transaction.revenueTransactionId)}
+          {formatDateTime(transaction.createdAt)}
         </p>
         <p className="mt-1 text-xs font-semibold text-creator-muted">
-          {formatDateTime(transaction.createdAt)}
+          {shortId(transaction.revenueTransactionId)}
         </p>
       </td>
       <td className="px-5 py-4">
@@ -246,7 +246,7 @@ function TransactionRow({ transaction }: { transaction: RevenueTransaction }) {
           )}
         </div>
         <p className="mt-1 text-xs font-semibold text-creator-muted">
-          {transaction.referenceType || "-"} · {shortId(transaction.referenceId)}
+          {transaction.referenceType || "-"} · {transaction.referenceId}
         </p>
       </td>
       <td className="px-5 py-4 text-right">
@@ -256,11 +256,12 @@ function TransactionRow({ transaction }: { transaction: RevenueTransaction }) {
         </p>
       </td>
       <td className="px-5 py-4 text-right">
-        <p className="text-sm font-black text-white">
+        <p className="mt-1 text-xs font-semibold text-creator-muted">
+
           {formatVND(transaction.balanceBefore)}
         </p>
-        <p className="mt-1 text-xs font-semibold text-creator-muted">
-          sau: {formatVND(transaction.balanceAfter)}
+        <p className="text-sm font-black text-white">
+          {formatVND(transaction.balanceAfter)}
         </p>
       </td>
     </tr>

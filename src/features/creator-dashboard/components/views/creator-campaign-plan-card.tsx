@@ -43,29 +43,24 @@ export function CreatorCampaignPlanCard({
                 )}
 
                 <div className="relative z-10">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-white/[0.04]">
-                        <Icon className={`h-6 w-6 transition-transform ${iconClass}`} />
-                    </div>
-                    <h3 className={`text-xl font-black text-zinc-50 ${isPopular ? "mt-8" : "mt-5"}`}>
+                    <h3 className={`text-xl font-black text-zinc-50 mt-2`}>
                         {plan.name}
                     </h3>
                     <p className="mt-3 min-h-12 text-sm font-semibold leading-6 text-zinc-400">
                         {plan.description}
                     </p>
-                    <div className="mt-6 flex items-end gap-2">
+                    <div className="flex items-end gap-2">
                         <span className="text-3xl font-black tracking-tight text-zinc-50">
                             {formatPrice(plan.price)}
                         </span>
                     </div>
                 </div>
 
-                <ul className="relative z-10 mt-7 flex-1 space-y-4 text-sm font-bold leading-6 text-zinc-300">
+                <ul className="relative z-10 mt-5 flex-1 space-y-4 text-sx font-bold leading-6 text-zinc-300">
                     <li className="flex items-start gap-3">
                         <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-yellow-400" />
                         Mục tiêu hiển thị: {plan.targetValue} lượt
                     </li>
-
-
                 </ul>
 
                 <button

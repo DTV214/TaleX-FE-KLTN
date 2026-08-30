@@ -206,13 +206,13 @@ export function CreatorViolationsView() {
                         </span>
                       </div>
                       <p className="mt-1 break-all text-xs font-semibold text-creator-muted">
-                        {penalty.penaltyId} · {formatDateTime(penalty.createdAt)}
+                        {formatDateTime(penalty.createdAt)}
                       </p>
                       <p className="mt-2 text-sm font-semibold text-zinc-300">
                         {labelForTargetType(penalty.targetType)}: {penalty.targetId || "-"}
                       </p>
                       <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-zinc-400">
-                        {penalty.reason || "Không có lý do chi tiết."}
+                        Ghi chú: {penalty.reason || "Không có lý do chi tiết."}
                       </p>
                     </div>
                     <button

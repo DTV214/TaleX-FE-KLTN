@@ -1208,9 +1208,6 @@ function PayoutRequestsListSection() {
                       >
                         {item.status}
                       </Badge>
-                      <span className="text-[11px] font-bold text-zinc-400">
-                        ID: {shortenId(item.payoutRequestId)}
-                      </span>
                       {item.createdAt ? (
                         <span className="text-[11px] font-bold text-zinc-500">
                           {formatDateTime(item.createdAt)}
@@ -1245,9 +1242,6 @@ function PayoutRequestsListSection() {
                   <div className="text-right shrink-0">
                     <p className="text-lg font-black text-[#F5D46E]">
                       {formatNumber(item.amount)}đ
-                    </p>
-                    <p className="text-xs font-bold text-zinc-400">
-                      Toàn bộ số dư ví
                     </p>
                   </div>
                 </div>
@@ -1499,7 +1493,7 @@ function CampaignSeriesInsights({
                 Xem tất cả
               </Button>
             </div>
-            <div className="mt-4 flex gap-3 overflow-x-auto pb-1">
+            <div className="mt-2 flex gap-3 overflow-x-auto pb-1">
               {rows.map((row) => {
                 const isSelected =
                   row.campaignSeries.campaignSeriesId ===

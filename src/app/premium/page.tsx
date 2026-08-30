@@ -462,12 +462,6 @@ function AudienceTrendBanner() {
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_10%,rgba(212,175,55,0.13),transparent_32%),radial-gradient(circle_at_88%_16%,rgba(151,176,255,0.10),transparent_28%)]" />
           <div className="relative z-10 grid gap-5 lg:grid-cols-[1.05fr_1.3fr] lg:items-center">
             <div>
-              {/* <Badge
-                variant="premium"
-                className="mb-3 px-3 py-1 text-xs font-medium"
-              >
-                Xu hướng
-              </Badge> */}
               <h2 className="text-xl font-semibold tracking-normal text-white/90 sm:text-2xl">
                 Trải nghiệm trọn mạch hơn
               </h2>

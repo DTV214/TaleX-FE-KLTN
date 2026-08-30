@@ -130,11 +130,11 @@ function PublicChannelContent() {
       const matchPublicDisplayName =
         publicCreator?.displayName &&
         item.creatorName?.toLowerCase() ===
-          publicCreator.displayName.toLowerCase();
+        publicCreator.displayName.toLowerCase();
       const matchPublicUsername =
         publicCreator?.username &&
         item.creatorName?.toLowerCase() ===
-          publicCreator.username.toLowerCase();
+        publicCreator.username.toLowerCase();
 
       return (
         matchCreatorId ||
@@ -440,12 +440,7 @@ function PublicChannelContent() {
                   </div>
 
                   <div className="mt-3 max-w-2xl">
-                    <p
-                      className={`text-xs text-[#A1A1AA] leading-relaxed ${isBioExpanded ? "" : "line-clamp-2"}`}
-                    >
-                      {creator?.bio ||
-                        "Nhà sáng tạo nội dung độc quyền trên TaleX."}
-                    </p>
+
                     {creator?.bio && creator.bio.length > 100 && (
                       <button
                         type="button"
@@ -493,11 +488,10 @@ function PublicChannelContent() {
                         key={tab.id}
                         type="button"
                         onClick={() => setActiveTab(tab.id)}
-                        className={`py-3.5 px-2 text-sm font-black relative transition-colors cursor-pointer outline-none focus:outline-none flex items-center gap-1.5 ${
-                          isActive
+                        className={`py-3.5 px-2 text-sm font-black relative transition-colors cursor-pointer outline-none focus:outline-none flex items-center gap-1.5 ${isActive
                             ? "text-red-500"
                             : "text-red-500/70 hover:text-red-400"
-                        }`}
+                          }`}
                       >
                         <Flame className="h-4 w-4 fill-red-500 text-red-500 animate-pulse" />
                         <span>{tab.label}</span>
@@ -521,11 +515,10 @@ function PublicChannelContent() {
                       key={tab.id}
                       type="button"
                       onClick={() => setActiveTab(tab.id)}
-                      className={`py-3.5 px-2 text-sm font-black relative transition-colors cursor-pointer outline-none focus:outline-none ${
-                        isActive
+                      className={`py-3.5 px-2 text-sm font-black relative transition-colors cursor-pointer outline-none focus:outline-none ${isActive
                           ? "text-[#FACC15]"
                           : "text-[#A1A1AA] hover:text-white"
-                      }`}
+                        }`}
                     >
                       {tab.label}
                       {isActive && (
@@ -584,11 +577,10 @@ function PublicChannelContent() {
                                 setSortBy(option);
                                 setShowSortMenu(false);
                               }}
-                              className={`w-full text-left px-4 py-2 text-xs font-semibold hover:bg-white/5 transition-colors cursor-pointer ${
-                                isOptionActive
+                              className={`w-full text-left px-4 py-2 text-xs font-semibold hover:bg-white/5 transition-colors cursor-pointer ${isOptionActive
                                   ? "text-[#FACC15] font-bold"
                                   : "text-zinc-400"
-                              }`}
+                                }`}
                             >
                               {optionLabel}
                             </button>
@@ -623,11 +615,10 @@ function PublicChannelContent() {
                           onClick={() =>
                             handleItemPress(spotlightSeries.seriesId)
                           }
-                          className={`cursor-pointer overflow-hidden rounded-2xl bg-zinc-900 border border-white/5 shadow-xl shrink-0 w-full group relative ${
-                            spotlightSeries.contentType === "VIDEO"
+                          className={`cursor-pointer overflow-hidden rounded-2xl bg-zinc-900 border border-white/5 shadow-xl shrink-0 w-full group relative ${spotlightSeries.contentType === "VIDEO"
                               ? "aspect-video lg:w-[420px]"
                               : "aspect-[3/4] lg:w-[280px]"
-                          }`}
+                            }`}
                         >
                           {spotlightSeries.coverUrl ? (
                             // eslint-disable-next-line @next/next/no-img-element

@@ -62,34 +62,23 @@ export function ComboCard({
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(212,175,55,0.08),transparent_40%)] rounded-2xl" />
 
         <div className="relative z-10 space-y-4">
-          {/* Top row: Icon & Badges */}
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37]">
-              <Sparkles className="h-5 w-5" />
-            </div>
-
-            <div className="flex items-center gap-1.5">
-              {isPopular && (
-                <span className="rounded-full bg-[#D4AF37] px-2.5 py-0.5 text-[9.5px] font-black uppercase tracking-wider text-black shadow-[0_0_15px_rgba(212,175,55,0.3)]">
-                  PHỔ BIẾN
-                </span>
-              )}
-              {discountPercentage > 0 && (
-                <span className="inline-flex shrink-0 items-center rounded-full bg-red-500/10 border border-red-500/20 px-2 py-0.5 text-[10px] font-black text-red-400 whitespace-nowrap">
-                  Tiết kiệm {discountPercentage}%
-                </span>
-              )}
-            </div>
-          </div>
-
           {/* Title & Short Description */}
           <div>
-            <h3
-              title={combo.title}
-              className="font-bold text-base sm:text-lg text-white group-hover:text-[#D4AF37] transition-colors duration-200 truncate"
-            >
-              {combo.title}
-            </h3>
+            <div className="flex items-center justify-between gap-2">
+              <h3
+                title={combo.title}
+                className="font-bold text-base sm:text-lg text-white group-hover:text-[#D4AF37] transition-colors duration-200 truncate"
+              >
+                {combo.title}
+              </h3>
+              <div className="flex items-center gap-1.5">
+                {discountPercentage > 0 && (
+                  <span className="inline-flex shrink-0 items-center rounded-full bg-red-500/10 border border-red-500/20 px-2 py-0.5 text-[10px] font-black text-red-400 whitespace-nowrap">
+                    Tiết kiệm {discountPercentage}%
+                  </span>
+                )}
+              </div>
+            </div>
             <p className="mt-1.5 text-xs text-slate-400 line-clamp-2 leading-relaxed min-h-[2rem]">
               {combo.description || "Mở khóa combo nội dung với mức giá ưu đãi trên TaleX."}
             </p>
@@ -178,7 +167,6 @@ export function ComboCard({
       <ComboDetailModal
         isOpen={isDetailOpen}
         combo={combo}
-        isPopular={isPopular}
         onClose={() => setIsDetailOpen(false)}
         onPurchase={handlePurchase}
       />

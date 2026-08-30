@@ -736,7 +736,7 @@ export function CreatorAnalyticsLogsView({
           </div>
           <span className="mt-1 block text-[11px] text-zinc-400">
             Likes ({totals.likes}) • Comments ({totals.comments}) • Shares (
-            {totals.shares})
+            {totals.shares}) • Bookmarks ({totals.bookmarks})
           </span>
         </div>
       </div>

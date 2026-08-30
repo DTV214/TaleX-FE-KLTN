@@ -727,9 +727,6 @@ function TypedRankingSection({ section }: { section: TypedHomeSection }) {
             />
             <span className="h-px w-8 bg-gradient-to-l from-transparent to-[#D4AF37]/70" />
           </div>
-          <p className="max-w-xl text-xs font-bold uppercase tracking-[0.24em] text-white/34">
-            Gallery xu hướng TaleX
-          </p>
         </div>
 
         <div
@@ -757,10 +754,6 @@ function TypedRankingSection({ section }: { section: TypedHomeSection }) {
           <div className="flex h-full flex-col gap-4 lg:flex-row lg:items-stretch lg:justify-between">
             <div className="flex min-w-0 flex-1 flex-col justify-center">
               <div className="flex min-h-[28px] flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#D4AF37] px-3 py-1 text-xs font-black uppercase tracking-[0.12em] text-black shadow-[0_0_28px_rgba(212,175,55,0.24)]">
-                  <TrendingUp className="h-3.5 w-3.5" />
-                  #{activeIndex + 1} Xu hướng
-                </span>
                 <span className="rounded-full border border-white/14 bg-white/[0.08] px-3 py-1 text-xs font-black text-white/78">
                   {contentLabel(featuredKind)}
                 </span>
@@ -783,15 +776,6 @@ function TypedRankingSection({ section }: { section: TypedHomeSection }) {
             </div>
 
             <div className="flex shrink-0 flex-wrap items-center gap-3 lg:justify-end">
-              <div className="hidden items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-2.5 md:flex">
-                <Eye className="h-4 w-4 text-[#D4AF37]" />
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.14em] text-white/34">
-                    Trending pool
-                  </p>
-                  <p className="text-sm font-black text-white">Top {items.length}</p>
-                </div>
-              </div>
               <Link
                 href={seriesHref(featured)}
                 className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-full bg-[#D4AF37] px-5 text-sm font-black text-black shadow-[0_0_30px_rgba(212,175,55,0.24)] transition hover:bg-[#f2d761] hover:shadow-[0_0_42px_rgba(212,175,55,0.36)]"
@@ -1138,25 +1122,22 @@ function NetflixRankCard({
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-80px" }}
         transition={{ duration: 0.32, delay: index * 0.04, ease: "easeOut" }}
-        className={`relative transition-transform duration-300 ease-out ${
-          active
-            ? "-translate-y-2 scale-[1.06]"
-            : "group-hover/rank:-translate-y-1 group-hover/rank:scale-[1.025]"
-        }`}
+        className={`relative transition-transform duration-300 ease-out ${active
+          ? "-translate-y-2 scale-[1.06]"
+          : "group-hover/rank:-translate-y-1 group-hover/rank:scale-[1.025]"
+          }`}
       >
         <p
-          className={`mb-2 line-clamp-1 text-center font-sans text-[10px] font-black uppercase tracking-[0.14em] transition ${
-            active ? "text-[#F2D76B]" : "text-white/44 group-hover/rank:text-white/70"
-          }`}
+          className={`mb-2 line-clamp-1 text-center font-sans text-[10px] font-black uppercase tracking-[0.14em] transition ${active ? "text-[#F2D76B]" : "text-white/44 group-hover/rank:text-white/70"
+            }`}
         >
           {series.title}
         </p>
         <div
-          className={`relative aspect-[3/4] overflow-hidden rounded-[1.1rem] border bg-white/[0.04] shadow-[0_20px_46px_rgba(0,0,0,0.44)] transition duration-300 ${
-            active
-              ? "border-[#D4AF37]/80 shadow-[0_0_0_1px_rgba(212,175,55,0.28),0_0_34px_rgba(212,175,55,0.28),0_24px_54px_rgba(0,0,0,0.46)]"
-              : "border-white/12 group-hover/rank:border-[#D4AF37]/46"
-          }`}
+          className={`relative aspect-[3/4] overflow-hidden rounded-[1.1rem] border bg-white/[0.04] shadow-[0_20px_46px_rgba(0,0,0,0.44)] transition duration-300 ${active
+            ? "border-[#D4AF37]/80 shadow-[0_0_0_1px_rgba(212,175,55,0.28),0_0_34px_rgba(212,175,55,0.28),0_24px_54px_rgba(0,0,0,0.46)]"
+            : "border-white/12 group-hover/rank:border-[#D4AF37]/46"
+            }`}
         >
           <div
             className="absolute inset-0 bg-cover bg-center transition duration-500 group-hover/rank:scale-105"
@@ -1167,11 +1148,10 @@ function NetflixRankCard({
           <div className="absolute inset-0 bg-gradient-to-t from-black/86 via-black/16 to-black/8" />
           <CardSunSheen />
           <span
-            className={`absolute left-2 top-2 z-10 rounded-full px-2 py-1 text-[10px] font-black backdrop-blur ${
-              active
-                ? "bg-[#D4AF37] text-black"
-                : "bg-black/62 text-white/82"
-            }`}
+            className={`absolute left-2 top-2 z-10 rounded-full px-2 py-1 text-[10px] font-black backdrop-blur ${active
+              ? "bg-[#D4AF37] text-black"
+              : "bg-black/62 text-white/82"
+              }`}
           >
             #{rank}
           </span>
@@ -1181,9 +1161,8 @@ function NetflixRankCard({
         </div>
         <div
           aria-hidden="true"
-          className={`mx-auto mt-2 h-8 w-[78%] rounded-[50%] blur-md transition ${
-            active ? "bg-[#D4AF37]/24" : "bg-white/10 group-hover/rank:bg-[#D4AF37]/16"
-          }`}
+          className={`mx-auto mt-2 h-8 w-[78%] rounded-[50%] blur-md transition ${active ? "bg-[#D4AF37]/24" : "bg-white/10 group-hover/rank:bg-[#D4AF37]/16"
+            }`}
         />
       </motion.div>
     </Link>
@@ -1351,9 +1330,6 @@ function SectionHeading({
   return (
     <div>
       <div className="flex items-center gap-3">
-        <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[#D4AF37]/22 bg-[#D4AF37]/10 text-[#D4AF37] shadow-[0_0_20px_rgba(212,175,55,0.12)]">
-          {icon}
-        </span>
         <div className="min-w-0">
           {section.eyebrow ? (
             <p className="mb-1 text-[11px] font-black uppercase tracking-[0.22em] text-[#D4AF37]">

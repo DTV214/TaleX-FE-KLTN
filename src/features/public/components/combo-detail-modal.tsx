@@ -9,7 +9,6 @@ import { type PublicCombo } from "@/features/public/api/public-content.api";
 interface ComboDetailModalProps {
   isOpen: boolean;
   combo: PublicCombo | null;
-  isPopular?: boolean;
   onClose: () => void;
   onPurchase: () => void;
 }
@@ -17,7 +16,6 @@ interface ComboDetailModalProps {
 export function ComboDetailModal({
   isOpen,
   combo,
-  isPopular,
   onClose,
   onPurchase,
 }: ComboDetailModalProps) {
@@ -79,19 +77,11 @@ export function ComboDetailModal({
           {/* Header */}
           <div className="shrink-0 flex items-start justify-between border-b border-white/10 p-5 sm:p-6 bg-gradient-to-r from-[#D4AF37]/10 via-transparent to-transparent">
             <div className="flex items-start gap-3.5">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#D4AF37]/25 bg-[#D4AF37]/15 text-[#D4AF37] shadow-lg shadow-[#D4AF37]/10">
-                <Sparkles className="h-6 w-6" />
-              </div>
               <div className="space-y-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <h3 className="text-lg sm:text-xl font-black text-white">
                     {combo.title}
                   </h3>
-                  {isPopular && (
-                    <span className="rounded-full bg-[#D4AF37] px-2.5 py-0.5 text-[9.5px] font-black uppercase tracking-wider text-black">
-                      PHỔ BIẾN NHẤT
-                    </span>
-                  )}
                   {discountPercentage > 0 && (
                     <span className="rounded-full bg-red-500/15 border border-red-500/30 px-2 py-0.5 text-[10px] font-black text-red-400">
                       Tiết kiệm {discountPercentage}%
