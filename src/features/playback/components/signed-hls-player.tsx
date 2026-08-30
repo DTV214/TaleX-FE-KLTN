@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueries, useQueryClient } from "@tanstack/react-query";
 import {
   AlertCircle,
   Loader2,
@@ -10,6 +10,7 @@ import {
   PlayCircle,
   ArrowUpDown,
   Menu,
+  ChevronDown,
   Lock,
   CheckCircle2,
   Sparkles,
@@ -30,6 +31,7 @@ import { getEpisodeWatchPosition } from "@/features/playback/api/watch-sessions-
 import {
   getPublicEpisodeDetail,
   getPublicEpisodes,
+  getPublicSeasons,
   getPublicSeriesList,
 } from "@/features/series/api/series-api";
 import { LikeButton } from "@/features/series/components/like-button";
@@ -156,11 +158,109 @@ export function SignedHlsPlayer({
     enabled: !!episodeId,
   });
 
+  // Fetch danh sách series public để ghép thông tin creator & danh sách season
+  const { data: publicSeriesData } = useQuery({
+    queryKey: ["publicSeriesListAll"],
+    queryFn: () => getPublicSeriesList(1, 100),
+    staleTime: 30 * 1000,
+  });
+
+  const episodeSeriesId = useMemo(() => {
+    if (!episodeDetail) return null;
+    return "seriesId" in episodeDetail &&
+      typeof episodeDetail.seriesId === "string"
+      ? episodeDetail.seriesId
+      : null;
+  }, [episodeDetail]);
+
+  const videoSeriesCandidates = useMemo(
+    () =>
+      (publicSeriesData?.content ?? []).filter(
+        (series) => String(series.contentType).toUpperCase() === "VIDEO",
+      ),
+    [publicSeriesData?.content],
+  );
+
+  const videoSeasonQueries = useQueries({
+    queries: videoSeriesCandidates.map((series) => ({
+      queryKey: ["publicVideoSeriesSeasonsForPlayer", series.seriesId],
+      queryFn: () => getPublicSeasons(series.seriesId),
+      enabled: Boolean(episodeDetail?.seasonId),
+      staleTime: 60 * 1000,
+    })),
+  });
+
+  const matchedSeries = useMemo(() => {
+    if (!episodeDetail) return null;
+
+    if (episodeSeriesId) {
+      const exactSeries = videoSeriesCandidates.find(
+        (series) => series.seriesId === episodeSeriesId,
+      );
+      if (exactSeries) return exactSeries;
+    }
+
+    const seriesIndexBySeason = videoSeasonQueries.findIndex((query) =>
+      query.data?.some((season) => season.seasonId === episodeDetail.seasonId),
+    );
+
+    if (seriesIndexBySeason >= 0) {
+      return videoSeriesCandidates[seriesIndexBySeason];
+    }
+
+    return (
+      videoSeriesCandidates.find(
+        (s) =>
+          s.creatorId === episodeDetail.creatorId ||
+          (s.creatorName && s.creatorName === episodeDetail.createdBy),
+      ) || null
+    );
+  }, [
+    videoSeasonQueries,
+    videoSeriesCandidates,
+    episodeDetail,
+    episodeSeriesId,
+  ]);
+
+  // Quản lý Season đang chọn trên UI
+  const [selectedSeasonId, setSelectedSeasonId] = useState<string | null>(null);
+  const [isSeasonDropdownOpen, setIsSeasonDropdownOpen] = useState(false);
+
+  useEffect(() => {
+    if (episodeDetail?.seasonId) {
+      setSelectedSeasonId(episodeDetail.seasonId);
+    }
+  }, [episodeDetail?.seasonId]);
+
+  // Danh sách các Season của Series này
+  const seasons = useMemo(() => {
+    if (!matchedSeries) return [];
+    const seriesIdx = videoSeriesCandidates.findIndex(
+      (s) => s.seriesId === matchedSeries.seriesId,
+    );
+    if (seriesIdx >= 0 && videoSeasonQueries[seriesIdx]?.data) {
+      return videoSeasonQueries[seriesIdx].data ?? [];
+    }
+    return [];
+  }, [matchedSeries, videoSeriesCandidates, videoSeasonQueries]);
+
+  const sortedSeasons = useMemo(
+    () => [...seasons].sort((a, b) => a.seasonNumber - b.seasonNumber),
+    [seasons],
+  );
+
+  const activeSeasonId = selectedSeasonId || episodeDetail?.seasonId;
+
+  const currentSeason = useMemo(
+    () => seasons.find((s) => s.seasonId === activeSeasonId) || null,
+    [seasons, activeSeasonId],
+  );
+
   const { data: seasonEpisodes = [], isLoading: isSeasonEpisodesLoading } =
     useQuery({
-      queryKey: ["publicSeasonEpisodes", episodeDetail?.seasonId],
-      queryFn: () => getPublicEpisodes(episodeDetail!.seasonId),
-      enabled: !compact && !!episodeDetail?.seasonId,
+      queryKey: ["publicSeasonEpisodes", activeSeasonId],
+      queryFn: () => getPublicEpisodes(activeSeasonId!),
+      enabled: !compact && !!activeSeasonId,
     });
 
   const [isAscending, setIsAscending] = useState(true);
@@ -192,29 +292,6 @@ export function SignedHlsPlayer({
     queryFn: () => getCreatorDetail(episodeDetail!.creatorId),
     enabled: !!episodeDetail?.creatorId,
   });
-
-  // Fetch danh sách series public để ghép thông tin creator (accountId, avatar, name, followers)
-  const { data: publicSeriesData } = useQuery({
-    queryKey: ["publicSeriesListAll"],
-    queryFn: () => getPublicSeriesList(1, 100),
-    staleTime: 30 * 1000,
-  });
-
-  const matchedSeries = useMemo(() => {
-    if (!episodeDetail || !publicSeriesData?.content) return null;
-    const episodeSeriesId =
-      "seriesId" in episodeDetail && typeof episodeDetail.seriesId === "string"
-        ? episodeDetail.seriesId
-        : null;
-    return (
-      publicSeriesData.content.find(
-        (s) =>
-          s.creatorId === episodeDetail.creatorId ||
-          s.seriesId === episodeSeriesId ||
-          (s.creatorName && s.creatorName === episodeDetail.createdBy),
-      ) || null
-    );
-  }, [episodeDetail, publicSeriesData]);
 
   const [selectedFilter, setSelectedFilter] = useState<"all" | "creator" | "newest">("all");
 
@@ -624,9 +701,20 @@ export function SignedHlsPlayer({
               {/* Danh sách tập phim (Phần tập nằm ngay dưới Mô tả) */}
               <div className="mt-6 pt-4 border-t border-white/10">
                 <div className="flex items-center justify-between gap-3 mb-3">
-                  <h3 className="text-base md:text-lg font-bold text-white tracking-wide">
-                    Danh sách tập
-                  </h3>
+                  <div className="flex items-center gap-3">
+                    <h3 className="text-base md:text-lg font-bold text-white tracking-wide">
+                      Danh sách tập
+                    </h3>
+                    {sortedSeasonEpisodes.length > 0 && (
+                      <span className="text-xs text-gray-400 font-semibold">
+                        (
+                        <strong className="text-[#FFD700] font-bold">
+                          {sortedSeasonEpisodes.length}
+                        </strong>{" "}
+                        tập)
+                      </span>
+                    )}
+                  </div>
                   <button
                     type="button"
                     onClick={() => setIsAscending((prev) => !prev)}
@@ -637,10 +725,66 @@ export function SignedHlsPlayer({
                   </button>
                 </div>
 
-                <div className="flex items-center gap-2 mb-3 text-xs font-bold text-gray-400">
-                  <Menu className="w-4 h-4 text-gray-400" />
-                  <span>Phần 1</span>
-                </div>
+                {/* Phần chọn Season (nếu có nhiều season thì hiện dropdown, nếu 1 season thì hiện tên season) */}
+                {sortedSeasons.length > 1 ? (
+                  <div className="relative mb-3 inline-block">
+                    <button
+                      type="button"
+                      onClick={() => setIsSeasonDropdownOpen((prev) => !prev)}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.08] hover:bg-white/[0.14] border border-white/15 text-white font-bold text-xs transition-all cursor-pointer shadow-sm active:scale-95"
+                    >
+                      <Menu className="w-4 h-4 text-[#FFD700]" />
+                      <span>
+                        {currentSeason?.title || `Phần ${currentSeason?.seasonNumber ?? 1}`}
+                      </span>
+                      <ChevronDown
+                        className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-200 ${
+                          isSeasonDropdownOpen ? "rotate-180 text-white" : ""
+                        }`}
+                      />
+                    </button>
+
+                    {isSeasonDropdownOpen && (
+                      <>
+                        <div
+                          className="fixed inset-0 z-30"
+                          onClick={() => setIsSeasonDropdownOpen(false)}
+                        />
+                        <div className="absolute left-0 top-full mt-2 w-52 p-1.5 rounded-2xl bg-[#1e1e24] border border-white/20 shadow-2xl z-40 space-y-1 backdrop-blur-xl">
+                          {sortedSeasons.map((season) => (
+                            <button
+                              key={season.seasonId}
+                              type="button"
+                              onClick={() => {
+                                setSelectedSeasonId(season.seasonId);
+                                setIsSeasonDropdownOpen(false);
+                              }}
+                              className={`w-full text-left px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-between cursor-pointer ${
+                                activeSeasonId === season.seasonId
+                                  ? "bg-[#FFD700] text-black shadow-md"
+                                  : "text-gray-300 hover:bg-white/10 hover:text-white"
+                              }`}
+                            >
+                              <span>{season.title || `Phần ${season.seasonNumber}`}</span>
+                              {activeSeasonId === season.seasonId && (
+                                <span className="text-[10px] font-black uppercase tracking-wider bg-black/20 px-1.5 py-0.5 rounded">
+                                  Đang chọn
+                                </span>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 mb-3 text-xs font-bold text-gray-400">
+                    <Menu className="w-4 h-4 text-gray-400" />
+                    <span>
+                      {currentSeason?.title || `Phần ${currentSeason?.seasonNumber ?? 1}`}
+                    </span>
+                  </div>
+                )}
 
                 <div className="bg-[#121214]/80 border border-white/10 rounded-2xl p-4 backdrop-blur-sm">
                   {isSeasonEpisodesLoading ? (
