@@ -388,10 +388,10 @@ function SingleMediaPipelinePanel({
               <p className="font-bold">Nội dung cần kiểm duyệt thủ công</p>
               <p className="leading-relaxed text-amber-400/90">
                 {hasBlockingCopyright
-                  ? `Phát hiện ${blockingCopyright.length} đoạn nội dung tương đồng ${similarityScore}% với nội dung đã có trên hệ thống của creator khác — vui lòng chờ xác nhận đây có thật sự vi phạm bản quyền hay không trước khi xuất bản.`
+                  ? `Phát hiện ${blockingCopyright.length} đoạn nội dung tương đồng ${similarityScore}% với nội dung đã có trên hệ thống của creator khác — vui lòng chờ đội ngũ kiểm duyệt xác nhận đây có thật sự vi phạm bản quyền hay không trước khi xuất bản.`
                   : rejectionLabels
-                    ? `Nội dung có yếu tố nhạy cảm (${rejectionLabels}) — vui lòng chờ xác nhận thủ công trước khi xuất bản.`
-                    : "Vui lòng chờ xác nhận thủ công trước khi xuất bản."}
+                    ? `Nội dung có yếu tố nhạy cảm (${rejectionLabels}) — vui lòng chờ đội ngũ kiểm duyệt xác nhận thủ công trước khi xuất bản.`
+                    : "Vui lòng chờ đội ngũ kiểm duyệt xác nhận thủ công trước khi xuất bản."}
               </p>
             </div>
           </div>
