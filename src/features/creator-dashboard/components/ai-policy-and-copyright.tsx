@@ -87,11 +87,12 @@ function buildSteps(params: {
   approvalStatus?: ContentApprovalStatus;
   hasContentId: boolean;
   hasCensorshipResult: boolean;
+  hasBlockingCopyright: boolean;
   hasWatermark?: boolean;
   isFailed: boolean;
   isForceHidden: boolean;
 }): Step[] {
-  const { mediaId, mediaType, mediaStatus, approvalStatus, hasContentId, hasCensorshipResult, hasWatermark, isFailed, isForceHidden } = params;
+  const { mediaId, mediaType, mediaStatus, approvalStatus, hasContentId, hasCensorshipResult, hasBlockingCopyright, hasWatermark, isFailed, isForceHidden } = params;
   const steps: Step[] = [];
 
   if (!mediaId) {
@@ -112,11 +113,14 @@ function buildSteps(params: {
   // là "đang chờ Staff" thật sự khi mediaStatus đã chuyển INACTIVE (BE chỉ set cặp này
   // khi thật sự flag nội dung, xem ContentPipelineServiceImpl).
   const isPendingReview = approvalStatus === "PENDING_REVIEW" && mediaStatus === "INACTIVE";
-  // Copyright bị flag chờ Staff thì pipeline dừng lại luôn, KHÔNG dispatch kiểm duyệt —
-  // nên "moderation chưa từng chạy" (hasCensorshipResult=false) là dấu hiệu để biết chính
-  // xác bước nào đang bị treo chờ Staff, thay vì gán nhầm cho cả 2 bước.
-  const copyrightPendingReview = isPendingReview && !hasCensorshipResult;
-  const moderationPendingReview = isPendingReview && hasCensorshipResult;
+  // Cả 2 bước có thể chạy XONG ĐỘC LẬP rồi mới cùng dẫn tới PENDING_REVIEW — kiểm duyệt
+  // nội dung sạch (hasCensorshipResult=true, không vi phạm) nhưng bản quyền lại phát hiện
+  // trùng, hoặc ngược lại. Trước đây suy đoán "bước nào treo" qua !hasCensorshipResult (coi
+  // "moderation chưa có kết quả" = "vậy chắc bản quyền đang treo"), sai ngay khi cả 2 bước
+  // đều đã có kết quả thật — gán nhầm icon "chờ duyệt" cho bước đã sạch. Dùng thẳng
+  // hasBlockingCopyright (dữ liệu vi phạm thật, đã tính từ violations query) làm dấu hiệu.
+  const copyrightPendingReview = isPendingReview && hasBlockingCopyright;
+  const moderationPendingReview = isPendingReview && !hasBlockingCopyright;
 
   if (mediaType === "VIDEO") {
     // Video mới upload có status=PENDING (BE cố ý chưa submit job HLS ngay — xem comment
@@ -302,6 +306,7 @@ function SingleMediaPipelinePanel({
     // query riêng biệt, có thể fetch xong TRƯỚC KHI censorship record kịp lưu vào DB,
     // khiến panel kẹt ở "active" dù toast đã báo hoàn tất (race giữa 2 nguồn dữ liệu).
     hasCensorshipResult: (violations?.censorshipResults.length ?? 0) > 0 || mediaStatus === "ACTIVE",
+    hasBlockingCopyright,
     isFailed,
     isForceHidden,
   });
