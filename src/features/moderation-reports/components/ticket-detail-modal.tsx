@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useMemo, useState } from "react";
 import {
   Eye,
   EyeOff,
@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import {
+  type ReportTargetType,
   type ModerationTicket,
   type PenaltyLevel,
   type TicketStatus,
@@ -101,6 +102,23 @@ function getDominantReason(ticket: ModerationTicket) {
 
 function isFinalTicket(status?: TicketStatus) {
   return status === "RESOLVED" || status === "DISMISSED";
+}
+
+const penaltyLevelsByTargetType: Partial<Record<ReportTargetType, PenaltyLevel[]>> = {
+  COMMENT: ["WARNING_COMMENT"],
+  EPISODE: ["WARNING_EPISODE", "FINE_EPISODE"],
+  SERIES: ["WARNING_SERIES", "FINE_SERIES"],
+  ACCOUNT: ["WARNING_ACCOUNT", "FINE_ACCOUNT"],
+};
+
+function getPenaltyLevelOptionsForTarget(targetType?: ReportTargetType) {
+  const allowedLevels = targetType ? penaltyLevelsByTargetType[targetType] : undefined;
+
+  if (!allowedLevels) return [];
+
+  return penaltyLevelOptions.filter((option) =>
+    allowedLevels.includes(option.value),
+  );
 }
 
 function ProofLinks({
@@ -200,13 +218,28 @@ export function TicketDetailModal({
   const [reason, setReason] = useState("");
   const processMutation = useProcessTicket(ticket?.ticketId);
   const targetDetailQuery = useModerationTargetDetail(ticket);
+  const allowedPenaltyLevelOptions = useMemo(
+    () => getPenaltyLevelOptionsForTarget(ticket?.targetType),
+    [ticket?.targetType],
+  );
+  const hasAllowedPenaltyLevels = allowedPenaltyLevelOptions.length > 0;
+  const isPenaltyLevelAllowed = allowedPenaltyLevelOptions.some(
+    (option) => option.value === penaltyLevel,
+  );
+  const selectedPenaltyLevel = isPenaltyLevelAllowed
+    ? penaltyLevel
+    : allowedPenaltyLevelOptions[0]?.value;
+  const targetDetail = targetDetailQuery.data;
 
   if (!ticket) return null;
 
   const canProcess = ticket.status === "IN_PROGRESS";
   const canAssign = !canProcess && !isFinalTicket(ticket.status);
   const dominantReason = getDominantReason(ticket);
-  const targetDetail = targetDetailQuery.data;
+  const isSubmitDisabled =
+    !canProcess ||
+    processMutation.isPending ||
+    (decision === "approve" && !hasAllowedPenaltyLevels);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -216,14 +249,24 @@ export function TicketDetailModal({
       return;
     }
 
-    if (decision === "approve" && !penaltyLevel) {
+    if (decision === "approve" && !selectedPenaltyLevel) {
       toast.error("Vui lòng chọn mức hình phạt.");
+      return;
+    }
+
+    if (
+      decision === "approve" &&
+      !allowedPenaltyLevelOptions.some(
+        (option) => option.value === selectedPenaltyLevel,
+      )
+    ) {
+      toast.error("Mức hình phạt không khớp với đối tượng bị report.");
       return;
     }
 
     await processMutation.mutateAsync(
       decision === "approve"
-        ? { isApproved: true, penaltyLevel, reason: trimmedReason }
+        ? { isApproved: true, penaltyLevel: selectedPenaltyLevel, reason: trimmedReason }
         : { isApproved: false, reason: trimmedReason },
     );
     onProcessed();
@@ -431,19 +474,31 @@ export function TicketDetailModal({
                   Mức hình phạt
                 </span>
                 <select
-                  value={penaltyLevel}
+                  value={selectedPenaltyLevel ?? ""}
                   onChange={(event) =>
                     setPenaltyLevel(event.target.value as PenaltyLevel)
                   }
-                  disabled={!canProcess || processMutation.isPending}
+                  disabled={
+                    !canProcess ||
+                    processMutation.isPending ||
+                    !hasAllowedPenaltyLevels
+                  }
                   className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-bold text-slate-900 outline-none focus:border-amber-500"
                 >
-                  {penaltyLevelOptions.map((option) => (
+                  {!hasAllowedPenaltyLevels && (
+                    <option value="">Không có mức hình phạt phù hợp</option>
+                  )}
+                  {allowedPenaltyLevelOptions.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
                     </option>
                   ))}
                 </select>
+                {!hasAllowedPenaltyLevels && (
+                  <p className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-600">
+                    Loại đối tượng này chưa có mức hình phạt phù hợp.
+                  </p>
+                )}
 
               </label>
             )}
@@ -468,7 +523,7 @@ export function TicketDetailModal({
 
             <button
               type="submit"
-              disabled={!canProcess || processMutation.isPending}
+              disabled={isSubmitDisabled}
               className="mt-5 inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-slate-950 text-sm font-black text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {processMutation.isPending && (

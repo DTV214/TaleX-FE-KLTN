@@ -236,7 +236,7 @@ function normalizeSeriesTarget(
   return {
     targetType: "SERIES",
     targetId,
-    title: toText(record.title) ?? "Series bị báo cáo",
+    title: toText(record.title) ?? "Series bị vi phạm",
     subtitle: ownerName,
     ownerName,
     imageUrl: toText(record.coverUrl) ?? toText(record.bannerUrl),
@@ -257,6 +257,9 @@ function normalizeEpisodeTarget(
 ): ModerationTargetDetail {
   const record = isRecord(payload) ? payload : {};
   const episodeNumber = toNumber(record.episodeNumber);
+  const seriesTitle = toText(record.seriesTitle);
+  const seasonTitle = toText(record.seasonTitle);
+  const seasonNumber = toNumber(record.seasonNumber);
   const ownerName =
     toText(record.creatorName) ??
     toText(record.ownerName) ??
@@ -266,17 +269,65 @@ function normalizeEpisodeTarget(
   return {
     targetType: "EPISODE",
     targetId,
-    title: toText(record.title) ?? "Tập nội dung bị báo cáo",
-    subtitle: episodeNumber ? `Tập ${episodeNumber}` : toText(record.seasonId),
+    title: toText(record.title) ?? "Tập nội dung bị vi phạm",
+    subtitle: [
+      seriesTitle,
+      seasonTitle ?? (seasonNumber ? `Mùa ${seasonNumber}` : undefined),
+      episodeNumber ? `Tập ${episodeNumber}` : undefined,
+    ]
+      .filter(Boolean)
+      .join(" • "),
     ownerName,
     imageUrl: toText(record.thumbnail),
     metadata: compactMetadata([
+      { label: "Series", value: seriesTitle },
       { label: "Loại nội dung", value: toText(record.contentType) },
       { label: "Trạng thái", value: toText(record.status) },
       { label: "Unlock", value: toText(record.unlockType) },
-      { label: "Lượt xem", value: toNumber(record.views) },
+      {
+        label: "Lượt xem",
+        value:
+          toNumber(record.views) ??
+          (isRecord(record.analyticData)
+            ? toNumber(record.analyticData.views)
+            : undefined),
+      },
       { label: "Đánh giá", value: toNumber(record.averageRating) },
       { label: "Cập nhật", value: toText(record.updatedAt) },
+    ]),
+  };
+}
+
+function normalizeCommentTarget(
+  payload: unknown,
+  targetId: string,
+): ModerationTargetDetail {
+  const record = isRecord(payload) ? payload : {};
+  const username = toText(record.username);
+  const displayName = toText(record.displayName) ?? toText(record.fullName);
+  const content = toText(record.content);
+  const seriesTitle = toText(record.seriesTitle);
+  const episodeTitle = toText(record.episodeTitle);
+
+  return {
+    targetType: "COMMENT",
+    targetId,
+    title: content ? `"${content}"` : "Bình luận bị vi phạm",
+    subtitle: [
+      displayName ?? username,
+      episodeTitle ? `Tập: ${episodeTitle}` : undefined,
+      seriesTitle ? `Series: ${seriesTitle}` : undefined,
+    ]
+      .filter(Boolean)
+      .join(" • "),
+    ownerName: displayName ?? username,
+    imageUrl: toText(record.avatarUrl) ?? toText(record.avatar),
+    metadata: compactMetadata([
+      { label: "Người bình luận", value: displayName ?? username },
+      { label: "Series", value: seriesTitle },
+      { label: "Tập", value: episodeTitle },
+      { label: "Trạng thái", value: toText(record.status) },
+      { label: "Ngày tạo", value: toText(record.createdAt) },
     ]),
   };
 }
@@ -351,7 +402,7 @@ export async function getModerationTargetDetail(
 
   if (targetType === "SERIES") {
     const response = await httpClient.get<BaseResponse<TargetDetailRecord> | TargetDetailRecord>(
-      `/api/v1/public/series/${targetId}`,
+      `/api/v1/series/${targetId}`,
     );
 
     return normalizeSeriesTarget(unwrapFlexiblePayload(response.data), targetId);
@@ -359,10 +410,18 @@ export async function getModerationTargetDetail(
 
   if (targetType === "EPISODE") {
     const response = await httpClient.get<BaseResponse<TargetDetailRecord> | TargetDetailRecord>(
-      `/api/v1/public/episodes/${targetId}`,
+      `/api/v1/episodes/${targetId}`,
     );
 
     return normalizeEpisodeTarget(unwrapFlexiblePayload(response.data), targetId);
+  }
+
+  if (targetType === "COMMENT") {
+    const response = await httpClient.get<BaseResponse<TargetDetailRecord> | TargetDetailRecord>(
+      `/api/v1/comments/${targetId}`,
+    );
+
+    return normalizeCommentTarget(unwrapFlexiblePayload(response.data), targetId);
   }
 
   return null;

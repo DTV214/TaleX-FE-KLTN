@@ -25,6 +25,7 @@ import {
   type ModerationTicket,
   type PenaltySearchParams,
   type ProcessAppealRequest,
+  type ReportTargetType,
   type TicketProcessRequest,
   type TicketSearchParams,
 } from "../api/moderation-reports.api";
@@ -81,19 +82,28 @@ export function useTickets(params: TicketSearchParams) {
   });
 }
 
-export function useModerationTargetDetail(ticket?: ModerationTicket | null) {
+type ModerationTargetRef = {
+  targetType?: ReportTargetType | null;
+  targetId?: string | null;
+};
+
+export function useModerationTargetDetail(
+  target?: ModerationTicket | ModerationTargetRef | null,
+) {
   const canFetch =
-    Boolean(ticket?.targetId) &&
-    (ticket?.targetType === "ACCOUNT" ||
-      ticket?.targetType === "SERIES" ||
-      ticket?.targetType === "EPISODE");
+    Boolean(target?.targetId) &&
+    (target?.targetType === "ACCOUNT" ||
+      target?.targetType === "SERIES" ||
+      target?.targetType === "EPISODE" ||
+      target?.targetType === "COMMENT");
 
   return useQuery({
     queryKey: moderationReportKeys.targetDetail(
-      ticket?.targetType,
-      ticket?.targetId,
+      target?.targetType,
+      target?.targetId,
     ),
-    queryFn: () => getModerationTargetDetail(ticket!.targetType, ticket!.targetId),
+    queryFn: () =>
+      getModerationTargetDetail(target!.targetType!, target!.targetId!),
     enabled: canFetch,
     retry: false,
     staleTime: 60 * 1000,
