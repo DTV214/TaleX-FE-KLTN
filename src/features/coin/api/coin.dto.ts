@@ -18,9 +18,17 @@ export type CoinTransaction = {
 export type DailyCheckInStatus = {
   isCheckedInToday: boolean;
   currentStreak: number;
+  nextStreak?: number;
+  todayRewardAmount?: number;
+  milestones?: CheckInMilestone[];
 };
 
 export type DailyCheckInResponse = {
   rewardAmount: number;
   currentStreak: number;
+};
+
+export type CheckInMilestone = {
+  day: number;
+  rewardAmount: number;
 };

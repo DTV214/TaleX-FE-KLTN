@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import {
   coinAdminApi,
   type CoinEconomyConfigRequest,
@@ -9,12 +10,6 @@ export const coinAdminKeys = {
   all: ["admin", "coin-economy"] as const,
   config: () => [...coinAdminKeys.all, "config"] as const,
 };
-
-function notify(message: string) {
-  if (typeof window !== "undefined") {
-    window.alert(message);
-  }
-}
 
 export function useCoinEconomyConfig() {
   return useQuery({
@@ -31,10 +26,10 @@ export function useUpdateCoinEconomyConfig() {
       coinAdminApi.updateConfig(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: coinAdminKeys.config() });
-      notify("Cập nhật thành công");
+      toast.success("Cập nhật thành công");
     },
     onError: (error) => {
-      notify(getApiErrorMessage(error));
+      toast.error(getApiErrorMessage(error));
     },
   });
 }

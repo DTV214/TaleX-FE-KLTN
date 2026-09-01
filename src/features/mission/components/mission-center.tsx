@@ -21,6 +21,7 @@ import {
   WalletCards,
 } from "lucide-react";
 import { useDailyCheckInMutation } from "@/features/coin/hooks/useCoinMutations";
+import type { CheckInMilestone } from "@/features/coin/api/coin.dto";
 import {
   useCoinWallet,
   useDailyCheckInStatus,
@@ -89,8 +90,18 @@ function MissionListSkeleton() {
   );
 }
 
-function MissionRewardTimeline({ currentStreak }: { currentStreak: number }) {
-  const milestones = [1, 3, 7, 16, 30];
+function MissionRewardTimeline({
+  currentStreak,
+  isLoading,
+  milestones,
+}: {
+  currentStreak: number;
+  isLoading: boolean;
+  milestones: CheckInMilestone[];
+}) {
+  const visibleMilestones = milestones.filter(
+    (milestone) => milestone.day > 0 && milestone.rewardAmount > 0,
+  );
 
   return (
     <div className="rounded-2xl border border-white/10 bg-[#121214]/80 p-4 shadow-[0_18px_48px_rgba(0,0,0,0.24)]">
@@ -103,8 +114,22 @@ function MissionRewardTimeline({ currentStreak }: { currentStreak: number }) {
 
       <div className="relative">
         <div className="absolute left-5 right-5 top-5 h-px bg-white/10" />
-        <div className="relative grid grid-cols-5 gap-2">
-          {milestones.map((day) => {
+        <div
+          className="relative grid gap-2"
+          style={{
+            gridTemplateColumns: `repeat(${isLoading ? 4 : Math.max(visibleMilestones.length, 1)}, minmax(0, 1fr))`,
+          }}
+        >
+          {isLoading &&
+            [0, 1, 2, 3].map((item) => (
+              <div key={item} className="flex flex-col items-center gap-2">
+                <span className="h-10 w-10 animate-pulse rounded-full bg-white/[0.05]" />
+                <span className="h-3 w-10 animate-pulse rounded bg-white/[0.05]" />
+                <span className="h-3 w-14 animate-pulse rounded bg-white/[0.05]" />
+              </div>
+            ))}
+          {!isLoading && visibleMilestones.map((milestone) => {
+            const day = milestone.day;
             const isReached = currentStreak >= day;
 
             return (
@@ -128,9 +153,22 @@ function MissionRewardTimeline({ currentStreak }: { currentStreak: number }) {
                     isReached ? "text-[#D4AF37]" : "text-slate-600",
                   )}
                 />
+                <span
+                  className={cn(
+                    "text-[11px] font-semibold tabular-nums",
+                    isReached ? "text-[#F5D46E]" : "text-slate-500",
+                  )}
+                >
+                  +{formatCoin(milestone.rewardAmount)}
+                </span>
               </div>
             );
           })}
+          {!isLoading && visibleMilestones.length === 0 && (
+            <div className="rounded-xl border border-dashed border-white/10 bg-white/[0.03] px-4 py-5 text-center text-xs font-medium text-slate-500">
+              Chưa có cấu hình mốc điểm danh.
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -281,6 +319,13 @@ export function MissionCenter() {
     checkInMutation.data?.currentStreak ??
     checkInStatusQuery.data?.currentStreak ??
     0;
+  const nextStreak =
+    checkInStatusQuery.data?.nextStreak ??
+    currentStreak + (isCheckedInToday ? 0 : 1);
+  const todayRewardAmount =
+    checkInMutation.data?.rewardAmount ??
+    checkInStatusQuery.data?.todayRewardAmount;
+  const checkInMilestones = checkInStatusQuery.data?.milestones ?? [];
   const isCheckingIn =
     checkInStatusQuery.isLoading || checkInMutation.isPending;
   const walletBalance = walletQuery.isLoading
@@ -332,7 +377,7 @@ export function MissionCenter() {
               <CalendarDays className="h-8 w-8" />
             </div>
             <h2 className="mt-4 text-xl font-semibold text-white/90">
-              Điểm danh ngày {currentStreak + (isCheckedInToday ? 0 : 1)}
+              Điểm danh ngày {nextStreak}
             </h2>
             <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-400">
               Chuỗi hiện tại:{" "}
@@ -341,6 +386,12 @@ export function MissionCenter() {
               </span>
               .
             </p>
+            {todayRewardAmount !== undefined && (
+              <p className="mt-2 text-sm font-semibold text-[#F5D46E]">
+                {isCheckedInToday ? "Hôm nay đã nhận" : "Hôm nay nhận"}{" "}
+                +{formatCoin(todayRewardAmount)} Coin
+              </p>
+            )}
 
             <Button
               type="button"
@@ -366,7 +417,9 @@ export function MissionCenter() {
                   ? "Đang nhận quà..."
                   : checkInStatusQuery.isLoading
                     ? "Đang kiểm tra..."
-                    : "Điểm danh"}
+                    : todayRewardAmount !== undefined
+                      ? `Điểm danh +${formatCoin(todayRewardAmount)} Coin`
+                      : "Điểm danh"}
             </Button>
 
             <Link
@@ -387,7 +440,11 @@ export function MissionCenter() {
 
       <section className="mt-6 grid gap-6 lg:grid-cols-[360px_minmax(0,1fr)]">
         <div className="space-y-4">
-          <MissionRewardTimeline currentStreak={currentStreak} />
+          <MissionRewardTimeline
+            currentStreak={currentStreak}
+            isLoading={checkInStatusQuery.isLoading}
+            milestones={checkInMilestones}
+          />
 
           <div className="rounded-2xl border border-white/10 bg-[#121214]/80 p-4">
             <div className="mb-4 flex items-center justify-between gap-3">
