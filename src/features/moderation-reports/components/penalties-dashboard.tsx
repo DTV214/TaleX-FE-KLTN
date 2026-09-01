@@ -1,12 +1,13 @@
 "use client";
 
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { type FormEvent, useMemo, useState } from "react";
 import {
   Ban,
-  ChevronLeft,
-  ChevronRight,
   Eye,
   EyeOff,
+  FileQuestion,
   Loader2,
   RefreshCcw,
   RotateCcw,
@@ -19,6 +20,8 @@ import {
   type ReportTargetType,
 } from "../api/moderation-reports.api";
 import {
+  useAppealByPenalty,
+  usePenalty,
   usePenalties,
   useRevokePenalty,
 } from "../hooks/use-moderation-reports";
@@ -32,8 +35,11 @@ import {
   reportTargetOptions,
   statusTone,
 } from "../utils/moderation-labels";
+import { ModerationAccountSummary } from "./moderation-account-summary";
+import { ModerationPagination } from "./moderation-pagination";
+import { ModerationTargetSummary } from "./moderation-target-summary";
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 10;
 
 function shortId(value?: string | null) {
   if (!value) return "-";
@@ -151,7 +157,40 @@ function PenaltyRevokeModal({
   );
 }
 
+function PenaltyAppealCell({ penalty }: { penalty: Penalty }) {
+  const appealQuery = useAppealByPenalty(penalty.penaltyId);
+  const appealStatus = penalty.appealStatus ?? appealQuery.data?.status;
+
+  if (appealQuery.isLoading && !appealStatus) {
+    return (
+      <span className="text-xs font-semibold text-slate-400">
+        Đang kiểm tra...
+      </span>
+    );
+  }
+
+  if (appealStatus || appealQuery.data) {
+    return (
+      <Link
+        href={`/admin/appeals?penaltyId=${penalty.penaltyId}`}
+        className="inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-black text-slate-600 transition hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.05] backoffice-dark:text-white/75"
+      >
+        <FileQuestion className="h-3.5 w-3.5" />
+        Xem khiếu nại
+      </Link>
+    );
+  }
+
+  return (
+    <span className="text-xs font-semibold text-slate-400">
+      Chưa có
+    </span>
+  );
+}
+
 export function PenaltiesDashboard() {
+  const searchParams = useSearchParams();
+  const focusedPenaltyId = searchParams.get("penaltyId");
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState<PenaltyStatus | "ALL">("ALL");
   const [level, setLevel] = useState<PenaltyLevel | "ALL">("ALL");
@@ -163,11 +202,50 @@ export function PenaltiesDashboard() {
     [page, status, level, targetType],
   );
   const penaltiesQuery = usePenalties(queryParams);
+  const focusedPenaltyQuery = usePenalty(focusedPenaltyId);
   const penalties = penaltiesQuery.data?.content ?? [];
+  const focusedPenalty = focusedPenaltyQuery.data;
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
-      <div className="mx-auto flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between flex w-full max-w-7xl flex-col gap-6">
+    <div className="mx-auto flex w-full max-w-full flex-col gap-6">
+      {focusedPenaltyId && (
+        <section className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 shadow-sm backoffice-dark:border-red-300/20 backoffice-dark:bg-red-300/[0.08]">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="flex items-center gap-2 text-sm font-black text-red-700 backoffice-dark:text-red-200">
+                <Ban className="h-4 w-4" />
+                Hình phạt được liên kết
+              </p>
+              {focusedPenaltyQuery.isLoading ? (
+                <p className="mt-1 text-xs font-semibold text-red-600/70 backoffice-dark:text-red-100/70">
+                  Đang tải hình phạt...
+                </p>
+              ) : focusedPenaltyQuery.isError ? (
+                <p className="mt-1 text-xs font-semibold text-red-600/70 backoffice-dark:text-red-100/70">
+                  Không tải được hình phạt từ liên kết này.
+                </p>
+              ) : (
+                <p className="mt-1 text-xs font-semibold text-red-600/80 backoffice-dark:text-red-100/80">
+                  {labelForPenaltyLevel(focusedPenalty?.level)} ·{" "}
+                  {labelForTargetType(focusedPenalty?.targetType)} ·{" "}
+                  {formatDateTime(focusedPenalty?.createdAt)}
+                </p>
+              )}
+            </div>
+            {focusedPenalty?.appealStatus && (
+              <Link
+                href={`/admin/appeals?penaltyId=${focusedPenalty.penaltyId}`}
+                className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-xs font-black text-white transition hover:bg-slate-800 backoffice-dark:bg-white backoffice-dark:text-slate-950"
+              >
+                <FileQuestion className="h-4 w-4" />
+                Xem khiếu nại
+              </Link>
+            )}
+          </div>
+        </section>
+      )}
+
+      <div className="mx-auto flex w-full max-w-full flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-slate-950 backoffice-dark:text-white">
             Hình Phạt Vi Phạm
@@ -247,70 +325,72 @@ export function PenaltiesDashboard() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[1280px] table-fixed text-left text-sm">
+            <table className="w-full table-fixed text-left text-sm">
               <thead className="border-b border-slate-200 bg-slate-50 text-xs font-black uppercase tracking-wide text-slate-500 backoffice-dark:border-white/10 backoffice-dark:bg-white/5 backoffice-dark:text-white/45">
                 <tr>
-                  <th className="w-[250px] px-5 py-4">Hình Phạt</th>
-                  <th className="w-[250px] px-5 py-4">Người bị phạt</th>
-                  <th className="w-[300px] px-5 py-4">Đối tượng</th>
-                  <th className="w-[180px] px-5 py-4">Mức phạt</th>
-                  <th className="w-[160px] px-5 py-4">Trạng thái</th>
-                  <th className="w-[140px] px-5 py-4 text-right">Thao tác</th>
+                  <th className="w-[12%] px-4 py-4">Hình Phạt</th>
+                  <th className="w-[19%] px-4 py-4">Người bị phạt</th>
+                  <th className="w-[25%] px-4 py-4">Đối tượng</th>
+                  <th className="w-[14%] px-4 py-4">Mức phạt</th>
+                  <th className="w-[11%] px-4 py-4">Trạng thái</th>
+                  <th className="w-[10%] px-4 py-4">Khiếu nại</th>
+                  <th className="w-[9%] px-4 py-4 text-right">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 backoffice-dark:divide-white/10">
                 {penalties.map((penalty) => (
-                  <tr key={penalty.penaltyId} className="hover:bg-slate-50 backoffice-dark:hover:bg-white/[0.05]">
-                    <td className="px-5 py-4 align-top">
+                  <tr
+                    key={penalty.penaltyId}
+                    className={`hover:bg-slate-50 backoffice-dark:hover:bg-white/[0.05] ${
+                      penalty.penaltyId === focusedPenaltyId
+                        ? "bg-red-50/60 backoffice-dark:bg-red-300/[0.06]"
+                        : ""
+                    }`}
+                  >
+                    <td className="px-4 py-4 align-top">
                       <MaskedId
                         label="Penalty ID"
                         value={penalty.penaltyId}
-                        className="max-w-[210px] text-xs"
+                        className="max-w-full text-xs"
                       />
                       <p className="mt-1 text-xs font-semibold text-slate-500 backoffice-dark:text-white/55">
                         {formatDateTime(penalty.createdAt)}
                       </p>
                     </td>
-                    <td className="px-5 py-4 align-top">
-                      {penalty.targetUsername ? (
-                        <p className="font-bold text-slate-800 backoffice-dark:text-white">
-                          {penalty.targetUsername}
-                        </p>
-                      ) : (
-                        <MaskedId
-                          label="User ID"
-                          value={penalty.targetUserId}
-                          className="max-w-[210px] text-xs"
-                        />
-                      )}
+                    <td className="px-4 py-4 align-top">
+                      <ModerationAccountSummary
+                        accountId={penalty.targetUserId}
+                        fallbackName={penalty.targetUsername}
+                      />
                     </td>
-                    <td className="px-5 py-4 align-top">
-                      <p className="font-bold text-slate-800 backoffice-dark:text-white">{labelForTargetType(penalty.targetType)}</p>
-                      <div className="mt-1">
-                        <MaskedId
-                          label="Target ID"
-                          value={penalty.targetId}
-                          className="max-w-[220px] text-xs"
-                        />
-                      </div>
+                    <td className="px-4 py-4 align-top">
+                      <ModerationTargetSummary
+                        fallbackTitle={labelForTargetType(penalty.targetType)}
+                        targetId={penalty.targetId}
+                        targetType={penalty.targetType}
+                      />
                     </td>
-                    <td className="px-5 py-4 align-top font-black text-slate-800 backoffice-dark:text-white">
+                    <td className="px-4 py-4 align-top font-black text-slate-800 backoffice-dark:text-white">
                       {labelForPenaltyLevel(penalty.level)}
                     </td>
-                    <td className="px-5 py-4 align-top">
+                    <td className="px-4 py-4 align-top">
                       <span className={`inline-flex whitespace-nowrap rounded-full border px-2.5 py-1 text-[11px] font-black ${statusTone(penalty.status)}`}>
                         {labelForPenaltyStatus(penalty.status)}
                       </span>
                     </td>
-                    <td className="px-5 py-4 text-right align-top">
+                    <td className="px-4 py-4 align-top">
+                      <PenaltyAppealCell penalty={penalty} />
+                    </td>
+                    <td className="px-4 py-4 text-right align-top">
                       <button
                         type="button"
                         onClick={() => setRevokeTarget(penalty)}
                         disabled={penalty.status !== "ACTIVE"}
-                        className="inline-flex h-9 cursor-pointer items-center gap-2 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-3 text-xs font-black text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.05] backoffice-dark:text-white/75 backoffice-dark:hover:bg-white/10"
+                        title="Gỡ phạt"
+                        className="inline-flex h-9 w-full max-w-[92px] cursor-pointer items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-2 text-xs font-black text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.05] backoffice-dark:text-white/75 backoffice-dark:hover:bg-white/10"
                       >
                         <RotateCcw className="h-4 w-4" />
-                        Gỡ phạt
+                        Gỡ
                       </button>
                     </td>
                   </tr>
@@ -320,33 +400,12 @@ export function PenaltiesDashboard() {
           </div>
         )}
 
-        {penaltiesQuery.data && penaltiesQuery.data.totalPages > 1 && (
-          <div className="flex items-center justify-between border-t border-slate-200 px-5 py-3 backoffice-dark:border-white/10">
-            <p className="text-sm font-semibold text-slate-500 backoffice-dark:text-white/55">
-              Trang {penaltiesQuery.data.pageNumber} / {penaltiesQuery.data.totalPages}
-            </p>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setPage((current) => Math.max(1, current - 1))}
-                disabled={penaltiesQuery.data.isFirst || penaltiesQuery.isFetching}
-                className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-slate-200 text-slate-500 disabled:cursor-not-allowed disabled:opacity-40 backoffice-dark:border-white/10 backoffice-dark:text-white/60 backoffice-dark:hover:bg-white/10"
-                aria-label="Trang trước"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setPage((current) => current + 1)}
-                disabled={penaltiesQuery.data.isLast || penaltiesQuery.isFetching}
-                className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-slate-200 text-slate-500 disabled:cursor-not-allowed disabled:opacity-40 backoffice-dark:border-white/10 backoffice-dark:text-white/60 backoffice-dark:hover:bg-white/10"
-                aria-label="Trang sau"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-        )}
+        <ModerationPagination
+          data={penaltiesQuery.data}
+          isFetching={penaltiesQuery.isFetching}
+          itemLabel="hình phạt"
+          onPageChange={setPage}
+        />
       </div>
 
       <PenaltyRevokeModal penalty={revokeTarget} onClose={() => setRevokeTarget(null)} />

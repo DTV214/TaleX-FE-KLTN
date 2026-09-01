@@ -70,10 +70,13 @@ const contentNavItems: NavItem[] = [
   { name: "Cảnh báo nội dung", href: "/admin/content-warnings", icon: AlertTriangle },
   { name: "Kiểm duyệt & Bản quyền", href: "/admin/ai-pipeline-config", icon: SlidersHorizontal },
   { name: "Xu hướng", href: "/admin/trending", icon: TrendingUp },
+  { name: "Quản lý Kênh", href: "/admin/channels", icon: Tv },
+];
+
+const moderationNavItems: NavItem[] = [
   { name: "Báo cáo", href: "/admin/reports", icon: Flag },
   { name: "Hình phạt", href: "/admin/penalties", icon: Ban },
   { name: "Khiếu nại", href: "/admin/appeals", icon: FileQuestion },
-  { name: "Quản lý Kênh", href: "/admin/channels", icon: Tv },
 ];
 
 const creatorNavItems: NavItem[] = [
@@ -322,6 +325,9 @@ export function AdminSidebar() {
   const isContentRouteActive = contentNavItems.some((item) =>
     isRouteActive(pathname, item.href),
   );
+  const isModerationRouteActive = moderationNavItems.some((item) =>
+    isRouteActive(pathname, item.href),
+  );
   const isCreatorRouteActive = creatorNavItems.some((item) =>
     isRouteActive(pathname, item.href),
   );
@@ -336,6 +342,8 @@ export function AdminSidebar() {
   );
   const [isContentMenuOpen, setIsContentMenuOpen] =
     useState(isContentRouteActive);
+  const [isModerationMenuOpen, setIsModerationMenuOpen] =
+    useState(isModerationRouteActive);
   const [isCreatorMenuOpen, setIsCreatorMenuOpen] =
     useState(isCreatorRouteActive);
   const [isCreatorVerificationMenuOpen, setIsCreatorVerificationMenuOpen] =
@@ -388,6 +396,18 @@ export function AdminSidebar() {
           label="Nội dung"
           pathname={pathname}
           setIsOpen={setIsContentMenuOpen}
+        />
+
+        <AdminNavGroup
+          currentHref={currentHref}
+          icon={Flag}
+          isOpen={isModerationMenuOpen}
+          isRouteGroup
+          isSidebarOpen={isSidebarOpen}
+          items={moderationNavItems}
+          label="Báo cáo & Vi phạm"
+          pathname={pathname}
+          setIsOpen={setIsModerationMenuOpen}
         />
 
         <AdminNavGroup

@@ -4,6 +4,7 @@ import { type ChangeEvent, type FormEvent, useMemo, useState } from "react";
 import {
   AlertTriangle,
   CalendarClock,
+  Eye,
   FileQuestion,
   Image as ImageIcon,
   Loader2,
@@ -11,6 +12,7 @@ import {
   ShieldAlert,
   Tv,
   Upload,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuthStore } from "@/features/auth/store/auth.store";
@@ -24,6 +26,7 @@ import {
   type ReportTargetType,
 } from "../api/moderation-reports.api";
 import {
+  useAppealByPenalty,
   useCreateAppeal,
   useModerationTargetDetail,
   useMyAppeals,
@@ -37,9 +40,11 @@ import {
   labelForTargetType,
   statusTone,
 } from "../utils/moderation-labels";
+import { ModerationPagination } from "./moderation-pagination";
 
 const MAX_FILES = 3;
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const PAGE_SIZE = 10;
 const RESOLVABLE_TARGET_TYPES: ReportTargetType[] = [
   "SERIES",
   "EPISODE",
@@ -101,7 +106,7 @@ function TargetMetadata({
             {item.label}
           </p>
           <p className="mt-1 truncate text-xs font-bold text-zinc-200">
-            {String(item.value)}
+            {formatMetadataValue(item.label, item.value)}
           </p>
         </div>
       ))}
@@ -109,7 +114,30 @@ function TargetMetadata({
   );
 }
 
-function TargetDetailCard({ penalty }: { penalty: Penalty }) {
+function formatMetadataValue(
+  label: string,
+  value: string | number | null | undefined,
+) {
+  if (typeof value !== "string") {
+    return String(value ?? "-");
+  }
+
+  const normalizedLabel = label.toLowerCase();
+  const isDateValue =
+    normalizedLabel.includes("cập nhật") ||
+    normalizedLabel.includes("ngày") ||
+    normalizedLabel.includes("lúc");
+
+  return isDateValue ? formatDateTime(value) : value;
+}
+
+function TargetDetailCard({
+  onViewDetail,
+  penalty,
+}: {
+  onViewDetail: () => void;
+  penalty: Penalty;
+}) {
   const canResolve = isResolvableTargetType(penalty.targetType);
   const detailQuery = useModerationTargetDetail(
     canResolve
@@ -122,8 +150,9 @@ function TargetDetailCard({ penalty }: { penalty: Penalty }) {
   const detail = detailQuery.data;
 
   return (
-    <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.035] p-4">
-      <div className="flex gap-3">
+    <div className="mt-4 rounded-2xl border border-white/10 border-l-2 border-l-creator-gold/50 bg-white/[0.035] p-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex min-w-0 gap-3">
         <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-creator-gold/20 bg-creator-gold/10 text-creator-gold">
           {detail?.imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -181,9 +210,128 @@ function TargetDetailCard({ penalty }: { penalty: Penalty }) {
             </p>
           )}
         </div>
-      </div>
+        </div>
 
-      <TargetMetadata detail={detail} />
+        {canResolve && (
+          <button
+            type="button"
+            onClick={onViewDetail}
+            className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-xl border border-white/10 px-3 text-xs font-black text-creator-muted transition hover:border-creator-gold/40 hover:text-creator-gold"
+          >
+            <Eye className="h-4 w-4" />
+            Xem chi tiết
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function TargetDetailDialog({
+  onClose,
+  penalty,
+}: {
+  onClose: () => void;
+  penalty: Penalty | null;
+}) {
+  const canResolve = isResolvableTargetType(penalty?.targetType);
+  const detailQuery = useModerationTargetDetail(
+    canResolve
+      ? {
+          targetType: penalty?.targetType,
+          targetId: penalty?.targetId,
+        }
+      : null,
+  );
+  const detail = detailQuery.data;
+
+  if (!penalty) return null;
+
+  return (
+    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/70 px-4 py-8 backdrop-blur-sm">
+      <div className="flex max-h-full w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#111113] shadow-2xl">
+        <div className="flex items-start justify-between gap-4 border-b border-white/10 px-5 py-4">
+          <div>
+            <h2 className="text-lg font-black text-white">
+              Chi tiết đối tượng vi phạm
+            </h2>
+            <p className="mt-1 text-xs font-semibold text-creator-muted">
+              {labelForTargetType(penalty.targetType)} · Mã{" "}
+              <span title={penalty.targetId}>{shortId(penalty.targetId)}</span>
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg p-2 text-zinc-500 transition hover:bg-white/10 hover:text-white"
+            aria-label="Đóng"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="min-h-0 overflow-y-auto p-5">
+          <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+            <div className="flex flex-col gap-4 sm:flex-row">
+              <div className="flex h-32 w-full shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-black/25 text-creator-gold sm:w-40">
+                {detail?.imageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={detail.imageUrl}
+                    alt={detail.title}
+                    loading="lazy"
+                    className="h-full w-full object-cover"
+                  />
+                ) : detailQuery.isLoading ? (
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                ) : (
+                  <TargetIcon targetType={penalty.targetType} />
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <span className="rounded-full border border-creator-gold/25 bg-creator-gold/10 px-2.5 py-1 text-[11px] font-black text-creator-gold">
+                  {labelForTargetType(penalty.targetType)}
+                </span>
+                {detailQuery.isError ? (
+                  <p className="mt-3 rounded-xl border border-red-400/20 bg-red-400/[0.08] px-3 py-2 text-xs font-semibold text-red-200">
+                    Không lấy được thông tin chi tiết, vui lòng thử lại sau.
+                  </p>
+                ) : (
+                  <>
+                    <h3 className="mt-3 text-xl font-black text-white">
+                      {detail?.title ??
+                        (detailQuery.isLoading
+                          ? "Đang tải thông tin..."
+                          : "Chưa có thông tin")}
+                    </h3>
+                    {detail?.subtitle && (
+                      <p className="mt-2 text-sm font-semibold leading-relaxed text-creator-muted">
+                        {detail.subtitle}
+                      </p>
+                    )}
+                    {detail?.ownerName && (
+                      <p className="mt-2 text-sm font-semibold text-zinc-300">
+                        Chủ sở hữu: {detail.ownerName}
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+
+            <TargetMetadata detail={detail} />
+          </div>
+
+          <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4">
+            <p className="text-[11px] font-black uppercase tracking-wide text-creator-muted">
+              Lý do xử lý từ admin
+            </p>
+            <p className="mt-2 whitespace-pre-line text-sm font-medium leading-relaxed text-zinc-300">
+              {penalty.reason || "Không có lý do chi tiết."}
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -388,18 +536,24 @@ function PenaltyCard({
   appeal,
   isAppealOpen,
   onToggleAppeal,
+  onViewTargetDetail,
   penalty,
 }: {
   appeal?: Appeal;
   isAppealOpen: boolean;
   onToggleAppeal: () => void;
+  onViewTargetDetail: () => void;
   penalty: Penalty;
 }) {
-  const hasAppeal = Boolean(appeal || penalty.appealStatus);
-  const appealStatus = appeal?.status ?? penalty.appealStatus;
+  const appealDetailQuery = useAppealByPenalty(
+    !appeal && penalty.appealStatus ? penalty.penaltyId : undefined,
+  );
+  const linkedAppeal = appeal ?? appealDetailQuery.data;
+  const hasAppeal = Boolean(linkedAppeal || penalty.appealStatus);
+  const appealStatus = linkedAppeal?.status ?? penalty.appealStatus;
 
   return (
-    <article className="rounded-2xl border border-white/10 bg-black/25 p-4 shadow-[0_18px_48px_rgba(0,0,0,0.18)]">
+    <article className="rounded-2xl border border-white/10 bg-black/25 p-4 shadow-[0_18px_48px_rgba(0,0,0,0.18)] ring-1 ring-white/[0.025]">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
@@ -440,7 +594,7 @@ function PenaltyCard({
         </button>
       </div>
 
-      <TargetDetailCard penalty={penalty} />
+      <TargetDetailCard penalty={penalty} onViewDetail={onViewTargetDetail} />
 
       <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4">
         <p className="text-[11px] font-black uppercase tracking-wide text-creator-muted">
@@ -461,7 +615,12 @@ function PenaltyCard({
         )}
       </div>
 
-      <AppealSummary appeal={appeal} />
+      {appealDetailQuery.isLoading && !linkedAppeal && (
+        <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.035] px-4 py-3 text-xs font-semibold text-creator-muted">
+          Đang tải thông tin khiếu nại...
+        </div>
+      )}
+      <AppealSummary appeal={linkedAppeal} />
       {isAppealOpen && (
         <AppealForm penalty={penalty} onClose={onToggleAppeal} />
       )}
@@ -470,7 +629,10 @@ function PenaltyCard({
 }
 
 export function CreatorViolationsView() {
-  const penaltiesQuery = useMyPenalties({ page: 1, pageSize: 20 });
+  const [page, setPage] = useState(1);
+  const [selectedTargetPenalty, setSelectedTargetPenalty] =
+    useState<Penalty | null>(null);
+  const penaltiesQuery = useMyPenalties({ page, pageSize: PAGE_SIZE });
   const appealsQuery = useMyAppeals({ page: 1, pageSize: 20 });
   const [appealPenaltyId, setAppealPenaltyId] = useState<string | null>(null);
 
@@ -488,6 +650,11 @@ export function CreatorViolationsView() {
 
   return (
     <div className="space-y-6">
+      <TargetDetailDialog
+        penalty={selectedTargetPenalty}
+        onClose={() => setSelectedTargetPenalty(null)}
+      />
+
       <section className="rounded-3xl border border-white/10 bg-white/[0.035] p-6 shadow-[0_22px_70px_rgba(0,0,0,0.22)]">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
@@ -546,6 +713,7 @@ export function CreatorViolationsView() {
                 key={penalty.penaltyId}
                 appeal={appealsByPenaltyId.get(penalty.penaltyId)}
                 isAppealOpen={appealPenaltyId === penalty.penaltyId}
+                onViewTargetDetail={() => setSelectedTargetPenalty(penalty)}
                 onToggleAppeal={() =>
                   setAppealPenaltyId((current) =>
                     current === penalty.penaltyId ? null : penalty.penaltyId,
@@ -556,6 +724,13 @@ export function CreatorViolationsView() {
             ))}
           </div>
         )}
+
+        <ModerationPagination
+          data={penaltiesQuery.data}
+          isFetching={penaltiesQuery.isFetching}
+          itemLabel="vi phạm"
+          onPageChange={setPage}
+        />
 
         {appealsQuery.isError && (
           <div className="mt-4 rounded-2xl border border-amber-300/20 bg-amber-300/[0.08] px-4 py-3 text-xs font-semibold text-amber-100">

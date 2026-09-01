@@ -11,7 +11,9 @@ import {
   getMyAppeals,
   getMyPenalties,
   getMyReports,
+  getModerationAccount,
   getModerationTargetDetail,
+  getModerationStaffAccount,
   getPenalty,
   processAppeal,
   processTicket,
@@ -38,6 +40,10 @@ export const moderationReportKeys = {
     [...moderationReportKeys.all, "tickets", params] as const,
   targetDetail: (targetType?: string | null, targetId?: string | null) =>
     [...moderationReportKeys.all, "target-detail", targetType, targetId] as const,
+  staffAccount: (accountId?: string | null) =>
+    [...moderationReportKeys.all, "staff-account", accountId] as const,
+  account: (accountId?: string | null) =>
+    [...moderationReportKeys.all, "account", accountId] as const,
   penalties: (params?: Record<string, unknown>) =>
     [...moderationReportKeys.all, "penalties", params] as const,
   myPenalties: (params?: Record<string, unknown>) =>
@@ -107,6 +113,26 @@ export function useModerationTargetDetail(
     enabled: canFetch,
     retry: false,
     staleTime: 60 * 1000,
+  });
+}
+
+export function useModerationStaffAccount(accountId?: string | null) {
+  return useQuery({
+    queryKey: moderationReportKeys.staffAccount(accountId),
+    queryFn: () => getModerationStaffAccount(accountId!),
+    enabled: Boolean(accountId),
+    retry: false,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useModerationAccount(accountId?: string | null) {
+  return useQuery({
+    queryKey: moderationReportKeys.account(accountId),
+    queryFn: () => getModerationAccount(accountId!),
+    enabled: Boolean(accountId),
+    retry: false,
+    staleTime: 5 * 60 * 1000,
   });
 }
 

@@ -62,9 +62,22 @@ export type ModerationTicket = {
   assignedStaffId?: string | null;
   assignedStaffUsername?: string | null;
   dominantReason?: ReportReason;
+  penaltyId?: string;
+  penalty?: Penalty;
+  appealStatus?: AppealStatus;
   createdAt?: string;
   updatedAt?: string;
   reports?: ReportItem[];
+};
+
+export type ModerationAccount = {
+  accountId: string;
+  username?: string;
+  fullName?: string;
+  email?: string;
+  avatarUrl?: string;
+  roleName?: string;
+  status?: string;
 };
 
 export type TicketSearchParams = {
@@ -332,6 +345,23 @@ function normalizeCommentTarget(
   };
 }
 
+function normalizeStaffAccount(
+  payload: unknown,
+  accountId: string,
+): ModerationAccount {
+  const record = isRecord(payload) ? payload : {};
+
+  return {
+    accountId: toText(record.accountId) ?? toText(record.id) ?? accountId,
+    username: toText(record.username),
+    fullName: toText(record.fullName) ?? toText(record.name),
+    email: toText(record.email),
+    avatarUrl: toText(record.avatarUrl) ?? toText(record.avatar),
+    roleName: toText(record.roleName) ?? toText(record.role),
+    status: toText(record.status),
+  };
+}
+
 export function parseProofUrls(value?: string | null) {
   if (!value) return [];
   const trimmed = value.trim();
@@ -426,6 +456,16 @@ export async function getModerationTargetDetail(
 
   return null;
 }
+
+export async function getModerationStaffAccount(accountId: string) {
+  const response = await httpClient.get<BaseResponse<TargetDetailRecord> | TargetDetailRecord>(
+    `/api/v1/admin/accounts/${accountId}`,
+  );
+
+  return normalizeStaffAccount(unwrapFlexiblePayload(response.data), accountId);
+}
+
+export const getModerationAccount = getModerationStaffAccount;
 
 export function searchPenalties(params: PenaltySearchParams = {}) {
   return unwrapBaseResponse<BasePageResponse<Penalty>>(

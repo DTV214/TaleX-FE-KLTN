@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { type FormEvent, useMemo, useState } from "react";
 import {
   Eye,
@@ -15,15 +16,23 @@ import { toast } from "sonner";
 import {
   type ReportTargetType,
   type ModerationTicket,
+  type Penalty,
   type PenaltyLevel,
   type TicketStatus,
 } from "../api/moderation-reports.api";
 import {
+  useAppealByPenalty,
   useModerationTargetDetail,
+  useModerationStaffAccount,
+  usePenalty,
+  usePenalties,
   useProcessTicket,
 } from "../hooks/use-moderation-reports";
 import {
   formatDateTime,
+  labelForAppealStatus,
+  labelForPenaltyLevel,
+  labelForPenaltyStatus,
   labelForReason,
   labelForTargetType,
   labelForTicketStatus,
@@ -205,19 +214,39 @@ export function TicketDetailModal({
   ticket,
   onClose,
   onProcessed,
+  currentAccountId,
 }: {
   isAssigning: boolean;
   onAssign: (ticket: ModerationTicket) => Promise<void>;
   ticket: ModerationTicket | null;
   onClose: () => void;
   onProcessed: () => void;
+  currentAccountId?: string | null;
 }) {
   const [decision, setDecision] = useState<"approve" | "dismiss">("approve");
   const [penaltyLevel, setPenaltyLevel] =
     useState<PenaltyLevel>("WARNING_EPISODE");
   const [reason, setReason] = useState("");
+  const [processedPenalty, setProcessedPenalty] = useState<Penalty | null>(null);
+  const [processedStatus, setProcessedStatus] = useState<TicketStatus | null>(null);
   const processMutation = useProcessTicket(ticket?.ticketId);
   const targetDetailQuery = useModerationTargetDetail(ticket);
+  const assignedStaffQuery = useModerationStaffAccount(ticket?.assignedStaffId);
+  const linkedPenaltyId =
+    processedPenalty?.penaltyId ??
+    ticket?.penaltyId ??
+    ticket?.penalty?.penaltyId ??
+    undefined;
+  const linkedPenaltyQuery = usePenalty(
+    linkedPenaltyId && !processedPenalty && !ticket?.penalty
+      ? linkedPenaltyId
+      : null,
+  );
+  const fallbackPenaltiesQuery = usePenalties({
+    page: 1,
+    pageSize: 20,
+    targetType: ticket?.targetType ?? "ALL",
+  });
   const allowedPenaltyLevelOptions = useMemo(
     () => getPenaltyLevelOptionsForTarget(ticket?.targetType),
     [ticket?.targetType],
@@ -230,11 +259,47 @@ export function TicketDetailModal({
     ? penaltyLevel
     : allowedPenaltyLevelOptions[0]?.value;
   const targetDetail = targetDetailQuery.data;
+  const fallbackPenalty = useMemo(() => {
+    if (linkedPenaltyId || !ticket) return undefined;
+
+    return fallbackPenaltiesQuery.data?.content.find((penalty) => {
+      if (penalty.ticketId && penalty.ticketId === ticket.ticketId) {
+        return true;
+      }
+
+      return (
+        penalty.targetType === ticket.targetType &&
+        penalty.targetId === ticket.targetId
+      );
+    });
+  }, [
+    fallbackPenaltiesQuery.data?.content,
+    linkedPenaltyId,
+    ticket,
+  ]);
+  const linkedPenalty =
+    processedPenalty ?? ticket?.penalty ?? linkedPenaltyQuery.data ?? fallbackPenalty;
+  const resolvedLinkedPenaltyId = linkedPenalty?.penaltyId ?? linkedPenaltyId;
+  const linkedAppealQuery = useAppealByPenalty(resolvedLinkedPenaltyId);
+  const linkedAppeal = linkedAppealQuery.data;
 
   if (!ticket) return null;
 
-  const canProcess = ticket.status === "IN_PROGRESS";
-  const canAssign = !canProcess && !isFinalTicket(ticket.status);
+  const assignedStaffId = ticket.assignedStaffId?.trim() || null;
+  const isAssignedToCurrentUser =
+    Boolean(assignedStaffId) && assignedStaffId === currentAccountId;
+  const isAssignedToAnother =
+    Boolean(assignedStaffId) && assignedStaffId !== currentAccountId;
+  const assignedStaffName =
+    ticket.assignedStaffUsername ??
+    assignedStaffQuery.data?.fullName ??
+    assignedStaffQuery.data?.username ??
+    assignedStaffQuery.data?.email;
+  const canProcess =
+    (processedStatus ?? ticket.status) === "IN_PROGRESS" &&
+    (!assignedStaffId || isAssignedToCurrentUser);
+  const canAssign =
+    !canProcess && !isFinalTicket(processedStatus ?? ticket.status) && !assignedStaffId;
   const dominantReason = getDominantReason(ticket);
   const isSubmitDisabled =
     !canProcess ||
@@ -264,16 +329,22 @@ export function TicketDetailModal({
       return;
     }
 
-    await processMutation.mutateAsync(
+    const result = await processMutation.mutateAsync(
       decision === "approve"
         ? { isApproved: true, penaltyLevel: selectedPenaltyLevel, reason: trimmedReason }
         : { isApproved: false, reason: trimmedReason },
     );
+    setProcessedPenalty(result ?? null);
+    setProcessedStatus(decision === "approve" ? "RESOLVED" : "DISMISSED");
     onProcessed();
   }
 
   async function handleAssignInModal() {
     if (!ticket) return;
+    if (assignedStaffId) {
+      toast.info("Ticket này đang có nhân viên nhận xử lý.");
+      return;
+    }
     await onAssign(ticket);
   }
 
@@ -286,7 +357,7 @@ export function TicketDetailModal({
               <h2 className="text-lg font-black text-slate-950 backoffice-dark:text-white">
                 Chi Tiết Báo Cáo
               </h2>
-              {statusBadge(ticket.status)}
+              {statusBadge(processedStatus ?? ticket.status)}
             </div>
             <p className="mt-1 text-xs font-semibold text-slate-500 backoffice-dark:text-white/50">
               Report Id: <MaskedId label="Ticket ID" value={ticket.ticketId} />
@@ -413,6 +484,85 @@ export function TicketDetailModal({
                   Ticket này chưa trả về danh sách report chi tiết.
                 </div>
               )}
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
+                <h4 className="text-xs font-black uppercase tracking-wider text-slate-500">
+                  Các mục liên quan
+                </h4>
+                <div className="mt-3 grid gap-3 md:grid-cols-2">
+                  <div className="rounded-xl border border-slate-200 bg-white p-3 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.03]">
+                    <p className="text-[11px] font-black uppercase tracking-wide text-slate-400">
+                      Hình phạt
+                    </p>
+                    {linkedPenaltyQuery.isLoading && !linkedPenalty ? (
+                      <p className="mt-1 text-xs font-semibold text-slate-500">
+                        Đang tải hình phạt...
+                      </p>
+                    ) : linkedPenalty ? (
+                      <>
+                        <p className="mt-1 text-sm font-black text-slate-950 backoffice-dark:text-white">
+                          {labelForPenaltyLevel(linkedPenalty.level)}
+                        </p>
+                        <p className="mt-1 text-xs font-semibold text-slate-500">
+                          {labelForPenaltyStatus(linkedPenalty.status)} ·{" "}
+                          {formatDateTime(linkedPenalty.createdAt)}
+                        </p>
+                        {linkedPenalty.reason && (
+                          <p className="mt-2 line-clamp-2 text-xs font-medium leading-relaxed text-slate-600 backoffice-dark:text-white/70">
+                            {linkedPenalty.reason}
+                          </p>
+                        )}
+                        <Link
+                          href={`/admin/penalties?penaltyId=${linkedPenalty.penaltyId}`}
+                          className="mt-3 inline-flex h-8 items-center justify-center rounded-lg border border-slate-200 px-3 text-xs font-black text-slate-600 transition hover:border-red-300 hover:bg-red-50 hover:text-red-700 backoffice-dark:border-white/10 backoffice-dark:text-white/75 backoffice-dark:hover:bg-red-300/10"
+                        >
+                          Xem hình phạt
+                        </Link>
+                      </>
+                    ) : (
+                      <p className="mt-1 text-xs font-semibold text-slate-500">
+                        Chưa có hình phạt liên quan.
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="rounded-xl border border-slate-200 bg-white p-3 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.03]">
+                    <p className="text-[11px] font-black uppercase tracking-wide text-slate-400">
+                      Khiếu nại
+                    </p>
+                    {linkedAppealQuery.isLoading && !linkedAppeal ? (
+                      <p className="mt-1 text-xs font-semibold text-slate-500">
+                        Đang tải khiếu nại...
+                      </p>
+                    ) : linkedAppeal ? (
+                      <>
+                        <p className="mt-1 text-sm font-black text-slate-950 backoffice-dark:text-white">
+                          {labelForAppealStatus(linkedAppeal.status)}
+                        </p>
+                        <p className="mt-1 truncate text-xs font-semibold text-slate-500">
+                          {linkedAppeal.reason || "Không có lý do chi tiết."}
+                        </p>
+                        {linkedAppeal.adminNote && (
+                          <p className="mt-2 line-clamp-2 text-xs font-medium leading-relaxed text-slate-600 backoffice-dark:text-white/70">
+                            Ghi chú admin: {linkedAppeal.adminNote}
+                          </p>
+                        )}
+                        {resolvedLinkedPenaltyId && (
+                          <Link
+                            href={`/admin/appeals?penaltyId=${resolvedLinkedPenaltyId}`}
+                            className="mt-3 inline-flex h-8 items-center justify-center rounded-lg border border-slate-200 px-3 text-xs font-black text-slate-600 transition hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700 backoffice-dark:border-white/10 backoffice-dark:text-white/75 backoffice-dark:hover:bg-amber-300/10"
+                          >
+                            Xem khiếu nại
+                          </Link>
+                        )}
+                      </>
+                    ) : (
+                      <p className="mt-1 text-xs font-semibold text-slate-500">
+                        Chưa có khiếu nại liên quan.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -424,9 +574,30 @@ export function TicketDetailModal({
               Xử lý ticket
             </h3>
 
-            {!canProcess && (
+            {!canProcess && !isAssignedToAnother && (
               <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs font-bold text-amber-700">
                 Hãy bấm “Nhận xử lý” trước, hoặc ticket này đã được xử lý xong.
+              </div>
+            )}
+
+            {assignedStaffId && (
+              <div className="mt-4 rounded-xl border border-slate-200 bg-white p-3 text-xs font-semibold text-slate-600 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.05] backoffice-dark:text-white/70">
+                <p className="font-black uppercase tracking-wide text-slate-400">
+                  Nhân viên đang xử lý
+                </p>
+                <p className="mt-1 truncate text-sm font-black text-slate-900 backoffice-dark:text-white">
+                  {assignedStaffName ??
+                    (assignedStaffQuery.isLoading
+                      ? "Đang tải thông tin..."
+                      : shortId(assignedStaffId))}
+                </p>
+              </div>
+            )}
+
+            {isAssignedToAnother && (
+              <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs font-bold text-amber-700">
+                Ticket này đang có nhân viên khác nhận xử lý. Bạn chỉ nên xem
+                thông tin, không xử lý ticket này.
               </div>
             )}
 

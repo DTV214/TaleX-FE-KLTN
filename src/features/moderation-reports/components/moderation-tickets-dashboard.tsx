@@ -1,13 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import {
   AlertTriangle,
-  ChevronLeft,
-  ChevronRight,
   Eye,
   EyeOff,
-  Flag,
   Loader2,
   RefreshCcw,
   UserCheck,
@@ -17,8 +15,10 @@ import {
   type ReportTargetType,
   type TicketStatus,
 } from "../api/moderation-reports.api";
+import { useAuthStore } from "@/features/auth/store/auth.store";
 import {
   useAssignTicket,
+  useModerationStaffAccount,
   useTickets,
 } from "../hooks/use-moderation-reports";
 import {
@@ -32,8 +32,9 @@ import {
 } from "../utils/moderation-labels";
 
 import { TicketDetailModal } from "./ticket-detail-modal";
+import { ModerationPagination } from "./moderation-pagination";
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 10;
 
 type Props = {
   scope?: "admin" | "staff";
@@ -126,11 +127,66 @@ function getTargetPreview(ticket: ModerationTicket, index: number) {
   }
 }
 
+function getAssignedStaffId(ticket: ModerationTicket) {
+  return ticket.assignedStaffId?.trim() || null;
+}
+
+function StaffAssigneeCell({ ticket }: { ticket: ModerationTicket }) {
+  const assignedStaffId = getAssignedStaffId(ticket);
+  const staffQuery = useModerationStaffAccount(
+    ticket.assignedStaffUsername ? null : assignedStaffId,
+  );
+  const staff = staffQuery.data;
+  const staffName =
+    ticket.assignedStaffUsername ??
+    staff?.fullName ??
+    staff?.username ??
+    staff?.email;
+
+  if (!assignedStaffId && !staffName) {
+    return (
+      <span className="text-xs font-bold text-slate-400">
+        Chưa có nhân viên
+      </span>
+    );
+  }
+
+  return (
+    <div className="min-w-0 space-y-1">
+      <p
+        className="truncate text-xs font-black text-slate-700 backoffice-dark:text-white/80"
+        title={staffName ?? assignedStaffId ?? undefined}
+      >
+        {staffName ??
+          (staffQuery.isLoading
+            ? "Đang tải nhân viên..."
+            : shortId(assignedStaffId))}
+      </p>
+      {staff?.username && staff.fullName && staff.username !== staff.fullName && (
+        <p className="truncate text-[11px] font-semibold text-slate-400">
+          @{staff.username}
+        </p>
+      )}
+      {staffQuery.isError && assignedStaffId && (
+        <MaskedId
+          label="Staff ID"
+          value={assignedStaffId}
+          className="max-w-[180px]"
+        />
+      )}
+    </div>
+  );
+}
+
 export function ModerationTicketsDashboard({ scope = "staff" }: Props) {
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState<TicketStatus | "ALL">("ALL");
   const [targetType, setTargetType] = useState<ReportTargetType | "ALL">("ALL");
   const [selectedTicket, setSelectedTicket] = useState<ModerationTicket | null>(null);
+  const currentUser = useAuthStore((state) => state.user);
+  const currentAccountId = currentUser?.accountId ?? null;
+  const currentUsername =
+    currentUser && "username" in currentUser ? currentUser.username : undefined;
 
   const queryParams = useMemo(
     () => ({ page, pageSize: PAGE_SIZE, status, targetType }),
@@ -143,10 +199,28 @@ export function ModerationTicketsDashboard({ scope = "staff" }: Props) {
   const title = scope === "admin" ? "Báo Cáo Vi Phạm" : "Báo Cáo Vi Phạm";
 
   async function handleAssign(ticket: ModerationTicket) {
+    const assignedStaffId = getAssignedStaffId(ticket);
+
+    if (assignedStaffId && assignedStaffId !== currentAccountId) {
+      toast.info("Ticket này đang có nhân viên khác nhận xử lý.");
+      return;
+    }
+
+    if (assignedStaffId && assignedStaffId === currentAccountId) {
+      toast.info("Bạn đã nhận xử lý ticket này.");
+      return;
+    }
+
     await assignMutation.mutateAsync(ticket.ticketId);
     setSelectedTicket((current) =>
       current?.ticketId === ticket.ticketId
-        ? { ...current, status: "IN_PROGRESS" }
+        ? {
+            ...current,
+            assignedStaffId: currentAccountId ?? current.assignedStaffId,
+            assignedStaffUsername:
+              currentUsername ?? current.assignedStaffUsername,
+            status: "IN_PROGRESS",
+          }
         : current,
     );
   }
@@ -155,12 +229,13 @@ export function ModerationTicketsDashboard({ scope = "staff" }: Props) {
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
       {selectedTicket && (
         <TicketDetailModal
+          key={selectedTicket.ticketId}
           isAssigning={assignMutation.isPending}
+          currentAccountId={currentAccountId}
           onAssign={handleAssign}
           ticket={selectedTicket}
           onClose={() => setSelectedTicket(null)}
           onProcessed={() => {
-            setSelectedTicket(null);
             ticketsQuery.refetch();
           }}
         />
@@ -251,6 +326,29 @@ export function ModerationTicketsDashboard({ scope = "staff" }: Props) {
               <tbody className="divide-y divide-slate-100 backoffice-dark:divide-white/10">
                 {tickets.map((ticket, index) => {
                   const dominantReason = getDominantReason(ticket);
+                  const assignedStaffId = getAssignedStaffId(ticket);
+                  const isAssigned = Boolean(assignedStaffId);
+                  const isAssignedToCurrentUser =
+                    Boolean(assignedStaffId) &&
+                    assignedStaffId === currentAccountId;
+                  const isAssignedToAnother =
+                    Boolean(assignedStaffId) &&
+                    assignedStaffId !== currentAccountId;
+                  const isFinal =
+                    ticket.status === "RESOLVED" ||
+                    ticket.status === "DISMISSED";
+                  const isAssignDisabled =
+                    assignMutation.isPending || isFinal || isAssigned;
+                  const assignButtonLabel = isFinal
+                    ? "Đã xử lý"
+                    : isAssignedToCurrentUser
+                      ? "Bạn đang xử lý"
+                      : isAssignedToAnother
+                        ? "Có người xử lý"
+                        : "Nhận xử lý";
+                  const assignButtonTitle = isAssignedToAnother
+                    ? "Ticket này đang có nhân viên khác nhận xử lý"
+                    : assignButtonLabel;
 
                   return (
                     <tr key={ticket.ticketId} className="transition hover:bg-slate-50 backoffice-dark:hover:bg-white/[0.05]">
@@ -287,17 +385,7 @@ export function ModerationTicketsDashboard({ scope = "staff" }: Props) {
                       </td>
                       <td className="px-5 py-4">{statusBadge(ticket.status)}</td>
                       <td className="px-5 py-4 text-xs font-bold text-slate-500">
-                        {ticket.assignedStaffUsername ? (
-                          <span className="text-slate-700 backoffice-dark:text-white/75">
-                            {ticket.assignedStaffUsername}
-                          </span>
-                        ) : (
-                          <MaskedId
-                            label="Staff ID"
-                            value={ticket.assignedStaffId}
-                            className="max-w-[180px]"
-                          />
-                        )}
+                        <StaffAssigneeCell ticket={ticket} />
                       </td>
                       <td className="px-5 py-4">
                         <div className="flex justify-end gap-2">
@@ -312,11 +400,8 @@ export function ModerationTicketsDashboard({ scope = "staff" }: Props) {
                           <button
                             type="button"
                             onClick={() => handleAssign(ticket)}
-                            disabled={
-                              assignMutation.isPending ||
-                              ticket.status === "RESOLVED" ||
-                              ticket.status === "DISMISSED"
-                            }
+                            disabled={isAssignDisabled}
+                            title={assignButtonTitle}
                             className="inline-flex h-9 cursor-pointer items-center gap-2 whitespace-nowrap rounded-lg bg-slate-950 px-3 text-xs font-black text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40 backoffice-dark:bg-white backoffice-dark:text-slate-950 backoffice-dark:hover:bg-white/85"
                           >
                             {assignMutation.isPending ? (
@@ -324,7 +409,7 @@ export function ModerationTicketsDashboard({ scope = "staff" }: Props) {
                             ) : (
                               <UserCheck className="h-4 w-4" />
                             )}
-                            Nhận xử lý
+                            {assignButtonLabel}
                           </button>
                         </div>
                       </td>
@@ -335,34 +420,12 @@ export function ModerationTicketsDashboard({ scope = "staff" }: Props) {
             </table>
           </div>
 
-          {ticketsQuery.data && ticketsQuery.data.totalPages > 1 && (
-            <div className="flex items-center justify-between border-t border-slate-200 px-5 py-3 backoffice-dark:border-white/10">
-              <p className="text-sm font-semibold text-slate-500 backoffice-dark:text-white/55">
-                Trang {ticketsQuery.data.pageNumber} / {ticketsQuery.data.totalPages} ·{" "}
-                {ticketsQuery.data.totalElements} ticket
-              </p>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setPage((current) => Math.max(1, current - 1))}
-                  disabled={ticketsQuery.data.isFirst || ticketsQuery.isFetching}
-                  className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 backoffice-dark:border-white/10 backoffice-dark:text-white/60 backoffice-dark:hover:bg-white/10"
-                  aria-label="Trang trước"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPage((current) => current + 1)}
-                  disabled={ticketsQuery.data.isLast || ticketsQuery.isFetching}
-                  className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 backoffice-dark:border-white/10 backoffice-dark:text-white/60 backoffice-dark:hover:bg-white/10"
-                  aria-label="Trang sau"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          )}
+          <ModerationPagination
+            data={ticketsQuery.data}
+            isFetching={ticketsQuery.isFetching}
+            itemLabel="ticket"
+            onPageChange={setPage}
+          />
         </div>
       )}
     </div>
