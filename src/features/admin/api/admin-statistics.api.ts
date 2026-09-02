@@ -194,6 +194,78 @@ export async function getContentDetailStatistics(
   );
 }
 
+export async function exportGeneralStatisticsExcel(
+  params?: GetStatisticsParams,
+): Promise<Blob> {
+  const queryParams: Record<string, string> = {};
+  if (params?.startTime) queryParams.startTime = params.startTime;
+  if (params?.endTime) queryParams.endTime = params.endTime;
 
+  const response = await httpClient.get("/api/v1/statistics/export-excel", {
+    params: queryParams,
+    responseType: "blob",
+  });
+  return response.data;
+}
 
+export async function exportCampaignStatisticsExcel(
+  params?: Partial<GetCampaignOverviewParams>,
+): Promise<Blob> {
+  const queryParams: Record<string, string> = {};
+  if (params?.startTime) queryParams.startTime = params.startTime;
+  if (params?.endTime) queryParams.endTime = params.endTime;
 
+  const response = await httpClient.get(
+    "/api/v1/statistics/campaign/export-excel",
+    {
+      params: queryParams,
+      responseType: "blob",
+    },
+  );
+  return response.data;
+}
+
+export async function exportSubscriptionStatisticsExcel(
+  params?: Partial<GetSubscriptionOverviewParams>,
+): Promise<Blob> {
+  const queryParams: Record<string, string> = {};
+  if (params?.startTime) queryParams.startTime = params.startTime;
+  if (params?.endTime) queryParams.endTime = params.endTime;
+
+  const response = await httpClient.get(
+    "/api/v1/statistics/subscription/export-excel",
+    {
+      params: queryParams,
+      responseType: "blob",
+    },
+  );
+  return response.data;
+}
+
+export async function exportContentStatisticsExcel(
+  params?: Partial<GetContentOverviewParams>,
+): Promise<Blob> {
+  const queryParams: Record<string, string> = {};
+  if (params?.startTime) queryParams.startTime = params.startTime;
+  if (params?.endTime) queryParams.endTime = params.endTime;
+
+  const response = await httpClient.get(
+    "/api/v1/statistics/content/export-excel",
+    {
+      params: queryParams,
+      responseType: "blob",
+    },
+  );
+  return response.data;
+}
+
+export function triggerFileDownload(blob: Blob, filename: string) {
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  window.URL.revokeObjectURL(url);
+  document.body.removeChild(link);
+}
