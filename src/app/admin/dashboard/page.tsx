@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   TrendingUp,
@@ -27,10 +27,20 @@ import {
   Tooltip,
   Legend,
 } from "recharts";
+import {
+  FileSpreadsheet,
+  Loader2,
+} from "lucide-react";
+import { toast } from "sonner";
 
 import {
   adminStatisticsKeys,
   getAdminStatistics,
+  exportGeneralStatisticsExcel,
+  exportCampaignStatisticsExcel,
+  exportSubscriptionStatisticsExcel,
+  exportContentStatisticsExcel,
+  triggerFileDownload,
   type StatisticsData,
 } from "@/features/admin/api/admin-statistics.api";
 import { AdminCampaignOverviewWidget } from "@/features/admin/components/admin-campaign-overview-widget";
@@ -57,7 +67,9 @@ export default function AdminDashboardPage() {
   const [startTime, setStartTime] = useState<string>("");
   const [endTime, setEndTime] = useState<string>("");
   const [activeTab, setActiveTab] = useState<DashboardTab>("all");
+  const [isExporting, setIsExporting] = useState<boolean>(false);
 
+  // 1. Query for General / All Overview
   const statisticsQuery = useQuery({
     queryKey: adminStatisticsKeys.list({ startTime, endTime }),
     queryFn: () =>
@@ -65,6 +77,7 @@ export default function AdminDashboardPage() {
         startTime: startTime ? `${startTime}T00:00:00` : undefined,
         endTime: endTime ? `${endTime}T23:59:59` : undefined,
       }),
+    enabled: activeTab === "all",
   });
 
   const data: StatisticsData | undefined = statisticsQuery.data;
@@ -76,36 +89,103 @@ export default function AdminDashboardPage() {
     setEndTime("");
   };
 
+  const handleExportExcel = async () => {
+    setIsExporting(true);
+
+    try {
+      const startIso = startTime ? `${startTime}T00:00:00` : undefined;
+      const endIso = endTime ? `${endTime}T23:59:59` : undefined;
+      const dateSuffix = new Date().toISOString().slice(0, 10);
+
+      let blob: Blob;
+      let filename = "";
+
+      switch (activeTab) {
+        case "campaign":
+          blob = await exportCampaignStatisticsExcel({
+            startTime: startIso,
+            endTime: endIso,
+          });
+          filename = `Bao_cao_Doanh_thu_Campaign_${dateSuffix}.xlsx`;
+          break;
+
+        case "subscription":
+          blob = await exportSubscriptionStatisticsExcel({
+            startTime: startIso,
+            endTime: endIso,
+          });
+          filename = `Bao_cao_Doanh_thu_Premium_${dateSuffix}.xlsx`;
+          break;
+
+        case "content":
+          blob = await exportContentStatisticsExcel({
+            startTime: startIso,
+            endTime: endIso,
+          });
+          filename = `Bao_cao_Doanh_thu_Tap_Combo_${dateSuffix}.xlsx`;
+          break;
+
+        case "all":
+        default:
+          blob = await exportGeneralStatisticsExcel({
+            startTime: startIso,
+            endTime: endIso,
+          });
+          filename = `Bao_cao_Tai_chinh_Tong_hop_${dateSuffix}.xlsx`;
+          break;
+      }
+
+      triggerFileDownload(blob, filename);
+      toast.success("Tải báo cáo thành công!");
+    } catch (err: any) {
+      console.error("Lỗi tải báo cáo:", err);
+      toast.error(
+        err?.response?.data?.message || err?.message || "Không thể tải báo cáo",
+      );
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const currentExportLabel =
+    activeTab === "campaign"
+      ? "Tải Báo Cáo Chiến Dịch"
+      : activeTab === "subscription"
+      ? "Tải Báo Cáo Premium"
+      : activeTab === "content"
+      ? "Tải Báo Cáo Doanh Thu"
+      : "Tải Báo Cáo Tài Chính";
+
   return (
     <div className="flex flex-col gap-8 max-w-7xl mx-auto w-full">
       {/* 1. Header & Date Filters */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-950 backoffice-dark:text-white">
+      <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
+        <div className="shrink-0">
+          <h1 className="text-2xl xl:text-3xl font-bold tracking-tight text-slate-950 backoffice-dark:text-white whitespace-nowrap">
             Thống Kê Tài Chính
           </h1>
         </div>
 
-        {/* Date Filter Inputs */}
-        <div className="flex flex-wrap items-center gap-3 bg-white p-3 rounded-2xl border border-gray-200 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
-          <div className="flex items-center gap-2 text-xs font-bold text-gray-500 backoffice-dark:text-white/60">
-            <Filter className="w-4 h-4 text-violet-600 backoffice-dark:text-violet-400" />
+        {/* Date Filter Inputs & Action Buttons */}
+        <div className="flex flex-wrap items-center gap-2.5 bg-white p-2.5 rounded-2xl border border-gray-200 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
+          <div className="flex items-center gap-1.5 text-xs font-bold text-gray-500 backoffice-dark:text-white/60 shrink-0">
+            <Filter className="w-3.5 h-3.5 text-violet-600 backoffice-dark:text-violet-400" />
             <span>Khoảng thời gian:</span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 shrink-0">
             <input
               type="date"
               value={startTime}
               onChange={(e) => setStartTime(e.target.value)}
-              className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-700 bg-gray-50 focus:bg-white focus:border-violet-500 focus:outline-none transition backoffice-dark:bg-black/30 backoffice-dark:border-white/10 backoffice-dark:text-white"
+              className="px-2.5 py-1 rounded-lg border border-gray-200 text-xs font-medium text-gray-700 bg-gray-50 focus:bg-white focus:border-violet-500 focus:outline-none transition backoffice-dark:bg-black/30 backoffice-dark:border-white/10 backoffice-dark:text-white"
             />
             <span className="text-xs font-bold text-gray-400">-</span>
             <input
               type="date"
               value={endTime}
               onChange={(e) => setEndTime(e.target.value)}
-              className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-700 bg-gray-50 focus:bg-white focus:border-violet-500 focus:outline-none transition backoffice-dark:bg-black/30 backoffice-dark:border-white/10 backoffice-dark:text-white"
+              className="px-2.5 py-1 rounded-lg border border-gray-200 text-xs font-medium text-gray-700 bg-gray-50 focus:bg-white focus:border-violet-500 focus:outline-none transition backoffice-dark:bg-black/30 backoffice-dark:border-white/10 backoffice-dark:text-white"
             />
           </div>
 
@@ -113,11 +193,11 @@ export default function AdminDashboardPage() {
             <button
               type="button"
               onClick={handleResetFilter}
-              className="h-8 px-3 text-xs font-semibold text-rose-600 bg-rose-50 border border-rose-200 hover:bg-rose-100 hover:text-rose-700 rounded-lg flex items-center gap-1.5 transition cursor-pointer backoffice-dark:bg-rose-500/10 backoffice-dark:border-rose-500/20 backoffice-dark:text-rose-300 backoffice-dark:hover:bg-rose-500/20"
+              className="h-8 px-2.5 text-xs font-semibold text-rose-600 bg-rose-50 border border-rose-200 hover:bg-rose-100 hover:text-rose-700 rounded-lg flex items-center gap-1 transition cursor-pointer shrink-0 backoffice-dark:bg-rose-500/10 backoffice-dark:border-rose-500/20 backoffice-dark:text-rose-300 backoffice-dark:hover:bg-rose-500/20"
               title="Xóa bộ lọc ngày"
             >
               <RotateCcw className="w-3.5 h-3.5" />
-              <span>Xóa bộ lọc</span>
+              <span>Xóa</span>
             </button>
           )}
 
@@ -125,90 +205,31 @@ export default function AdminDashboardPage() {
             type="button"
             onClick={() => void statisticsQuery.refetch()}
             disabled={statisticsQuery.isFetching}
-            className="h-8 px-3.5 text-xs font-semibold text-white bg-violet-600 hover:bg-violet-700 active:bg-violet-800 disabled:opacity-50 rounded-lg flex items-center gap-1.5 shadow-sm transition cursor-pointer"
+            className="h-8 px-3 text-xs font-semibold text-white bg-violet-600 hover:bg-violet-700 active:bg-violet-800 disabled:opacity-50 rounded-lg flex items-center gap-1.5 shadow-sm transition cursor-pointer shrink-0"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${statisticsQuery.isFetching ? "animate-spin" : ""}`} />
             <span>Cập nhật</span>
           </button>
+
+          {/* Download Report Button (1 API riêng cho từng Tab đang chọn) */}
+          <button
+            type="button"
+            onClick={handleExportExcel}
+            disabled={isExporting}
+            className="h-8 px-3 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 disabled:opacity-60 rounded-lg flex items-center gap-1.5 shadow-sm transition cursor-pointer shrink-0 whitespace-nowrap"
+            title={currentExportLabel}
+          >
+            {isExporting ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <FileSpreadsheet className="w-3.5 h-3.5" />
+            )}
+            <span>{isExporting ? "Đang tạo..." : "Tải báo cáo"}</span>
+          </button>
         </div>
       </div>
 
-      {/* 2. Top Hero KPI Cards (Toàn Sàn) */}
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        {/* GMV */}
-        <div className="rounded-2xl bg-white p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
-          <div className="flex items-center justify-between mb-4">
-            <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center backoffice-dark:bg-blue-500/20">
-              <TrendingUp className="h-5 w-5 text-blue-600 backoffice-dark:text-blue-300" />
-            </div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-1 rounded-md backoffice-dark:bg-blue-900/30 backoffice-dark:text-blue-300">
-              GROSS Revenue
-            </span>
-          </div>
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 backoffice-dark:text-white/60">
-            Tổng Doanh Thu Gộp Toàn Sàn
-          </p>
-          <h3 className="text-2xl font-bold text-gray-900 backoffice-dark:text-white">
-            {formatVND(overview?.gmv)}
-          </h3>
-        </div>
-
-        {/* Doanh thu thuần */}
-        <div className="rounded-2xl bg-white p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
-          <div className="flex items-center justify-between mb-4">
-            <div className="h-10 w-10 rounded-xl bg-emerald-50 flex items-center justify-center backoffice-dark:bg-emerald-500/20">
-              <DollarSign className="h-5 w-5 text-emerald-600 backoffice-dark:text-emerald-300" />
-            </div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md backoffice-dark:bg-emerald-900/30 backoffice-dark:text-emerald-300">
-              NET REVENUE
-            </span>
-          </div>
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 backoffice-dark:text-white/60">
-            Doanh Thu Thực Nhận
-          </p>
-          <h3 className="text-2xl font-bold text-gray-900 backoffice-dark:text-white">
-            {formatVND(overview?.totalNetRevenue)}
-          </h3>
-        </div>
-
-        {/* Tổng VAT */}
-        <div className="rounded-2xl bg-white p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
-          <div className="flex items-center justify-between mb-4">
-            <div className="h-10 w-10 rounded-xl bg-amber-50 flex items-center justify-center backoffice-dark:bg-amber-500/20">
-              <Receipt className="h-5 w-5 text-amber-600 backoffice-dark:text-amber-300" />
-            </div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 bg-amber-50 px-2 py-1 rounded-md backoffice-dark:bg-amber-900/30 backoffice-dark:text-amber-300">
-              TOTAL VAT
-            </span>
-          </div>
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 backoffice-dark:text-white/60">
-            Tổng Thuế VAT
-          </p>
-          <h3 className="text-2xl font-bold text-gray-900 backoffice-dark:text-white">
-            {formatVND(overview?.totalVat)}
-          </h3>
-        </div>
-
-        {/* Tổng Coin sử dụng */}
-        <div className="rounded-2xl bg-white p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
-          <div className="flex items-center justify-between mb-4">
-            <div className="h-10 w-10 rounded-xl bg-purple-50 flex items-center justify-center backoffice-dark:bg-purple-500/20">
-              <Coins className="h-5 w-5 text-purple-600 backoffice-dark:text-purple-300" />
-            </div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-purple-600 bg-purple-50 px-2 py-1 rounded-md backoffice-dark:bg-purple-900/30 backoffice-dark:text-purple-300">
-              COINS USED
-            </span>
-          </div>
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 backoffice-dark:text-white/60">
-            Coin Sử Dụng
-          </p>
-          <h3 className="text-2xl font-bold text-gray-900 backoffice-dark:text-white">
-            {formatNumber(overview?.totalCoin)} <span className="text-xs font-semibold text-purple-600 backoffice-dark:text-purple-400">Coin</span>
-          </h3>
-        </div>
-      </div>
-
-      {/* 3. Stream Navigation Tabs */}
+      {/* 2. Stream Navigation Tabs */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 border-b border-gray-200/80 backoffice-dark:border-white/10">
         <button
           type="button"
@@ -259,7 +280,7 @@ export default function AdminDashboardPage() {
         </button>
       </div>
 
-      {/* 4. Tab Content Area */}
+      {/* 3. Tab Content Area */}
       {activeTab === "campaign" && (
         <AdminCampaignOverviewWidget startTime={startTime} endTime={endTime} />
       )}
@@ -304,6 +325,84 @@ export default function AdminDashboardPage() {
 
           {!statisticsQuery.isLoading && !statisticsQuery.isError && (
             <div className="flex flex-col gap-8">
+              {/* 4 Hero KPI Cards Toàn Sàn */}
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                {/* GMV */}
+                <div className="rounded-2xl bg-white p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center backoffice-dark:bg-blue-500/20">
+                      <TrendingUp className="h-5 w-5 text-blue-600 backoffice-dark:text-blue-300" />
+                    </div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-1 rounded-md backoffice-dark:bg-blue-900/30 backoffice-dark:text-blue-300">
+                      GROSS Revenue
+                    </span>
+                  </div>
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 backoffice-dark:text-white/60">
+                    Tổng Doanh Thu Gộp Toàn Sàn
+                  </p>
+                  <h3 className="text-2xl font-bold text-gray-900 backoffice-dark:text-white">
+                    {formatVND(overview?.gmv)}
+                  </h3>
+                </div>
+
+                {/* Doanh thu thuần */}
+                <div className="rounded-2xl bg-white p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="h-10 w-10 rounded-xl bg-emerald-50 flex items-center justify-center backoffice-dark:bg-emerald-500/20">
+                      <DollarSign className="h-5 w-5 text-emerald-600 backoffice-dark:text-emerald-300" />
+                    </div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md backoffice-dark:bg-emerald-900/30 backoffice-dark:text-emerald-300">
+                      NET REVENUE
+                    </span>
+                  </div>
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 backoffice-dark:text-white/60">
+                    Doanh Thu Thực Nhận
+                  </p>
+                  <h3 className="text-2xl font-bold text-gray-900 backoffice-dark:text-white">
+                    {formatVND(overview?.totalNetRevenue)}
+                  </h3>
+                </div>
+
+                {/* Tổng VAT */}
+                <div className="rounded-2xl bg-white p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="h-10 w-10 rounded-xl bg-amber-50 flex items-center justify-center backoffice-dark:bg-amber-500/20">
+                      <Receipt className="h-5 w-5 text-amber-600 backoffice-dark:text-amber-300" />
+                    </div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 bg-amber-50 px-2 py-1 rounded-md backoffice-dark:bg-amber-900/30 backoffice-dark:text-amber-300">
+                      TOTAL VAT
+                    </span>
+                  </div>
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 backoffice-dark:text-white/60">
+                    Tổng Thuế VAT
+                  </p>
+                  <h3 className="text-2xl font-bold text-gray-900 backoffice-dark:text-white">
+                    {formatVND(overview?.totalVat)}
+                  </h3>
+                </div>
+
+                {/* Tổng Coin sử dụng */}
+                <div className="rounded-2xl bg-white p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="h-10 w-10 rounded-xl bg-purple-50 flex items-center justify-center backoffice-dark:bg-purple-500/20">
+                      <Coins className="h-5 w-5 text-purple-600 backoffice-dark:text-purple-300" />
+                    </div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-purple-600 bg-purple-50 px-2 py-1 rounded-md backoffice-dark:bg-purple-900/30 backoffice-dark:text-purple-300">
+                      COINS USED
+                    </span>
+                  </div>
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 backoffice-dark:text-white/60">
+                    Coin Sử Dụng
+                  </p>
+                  <h3 className="text-2xl font-bold text-gray-900 backoffice-dark:text-white">
+                    {formatNumber(overview?.totalCoin)}{" "}
+                    <span className="text-xs font-semibold text-purple-600 backoffice-dark:text-purple-400">
+                      Coin
+                    </span>
+                  </h3>
+                </div>
+              </div>
+
               {/* General Trend Chart Area */}
               <div className="rounded-2xl bg-white border border-gray-100 shadow-sm p-6 flex flex-col backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
                 <div className="flex items-center justify-between mb-6">
