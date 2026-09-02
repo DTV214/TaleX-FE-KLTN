@@ -8,6 +8,7 @@ import {
   Film,
   Flag,
   Image as ImageIcon,
+  Download,
   Loader2,
   UserCheck,
   X,
@@ -18,10 +19,12 @@ import {
   type ModerationTicket,
   type Penalty,
   type PenaltyLevel,
+  type ReportedContentExportTargetType,
   type TicketStatus,
 } from "../api/moderation-reports.api";
 import {
   useAppealByPenalty,
+  useExportReportedContentOrders,
   useModerationTargetDetail,
   useModerationStaffAccount,
   usePenalty,
@@ -130,6 +133,54 @@ function getPenaltyLevelOptionsForTarget(targetType?: ReportTargetType) {
   );
 }
 
+function padDatePart(value: number) {
+  return String(value).padStart(2, "0");
+}
+
+function toDateTimeLocalValue(date: Date) {
+  const year = date.getFullYear();
+  const month = padDatePart(date.getMonth() + 1);
+  const day = padDatePart(date.getDate());
+  const hours = padDatePart(date.getHours());
+  const minutes = padDatePart(date.getMinutes());
+
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+function getDefaultExportRange() {
+  const end = new Date();
+  const start = new Date(end);
+  start.setDate(start.getDate() - 30);
+  start.setHours(0, 0, 0, 0);
+
+  return {
+    startTime: toDateTimeLocalValue(start),
+    endTime: toDateTimeLocalValue(end),
+  };
+}
+
+function toApiDateTime(value: string) {
+  if (!value) return "";
+  return value.length === 16 ? `${value}:00` : value;
+}
+
+function isExportableTargetType(
+  targetType?: ReportTargetType,
+): targetType is ReportedContentExportTargetType {
+  return targetType === "EPISODE" || targetType === "SERIES";
+}
+
+function downloadBlob(blob: Blob, fileName: string) {
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
+}
+
 function ProofLinks({
   images,
   videos,
@@ -229,7 +280,9 @@ export function TicketDetailModal({
   const [reason, setReason] = useState("");
   const [processedPenalty, setProcessedPenalty] = useState<Penalty | null>(null);
   const [processedStatus, setProcessedStatus] = useState<TicketStatus | null>(null);
+  const [exportRange, setExportRange] = useState(getDefaultExportRange);
   const processMutation = useProcessTicket(ticket?.ticketId);
+  const exportMutation = useExportReportedContentOrders();
   const targetDetailQuery = useModerationTargetDetail(ticket);
   const assignedStaffQuery = useModerationStaffAccount(ticket?.assignedStaffId);
   const linkedPenaltyId =
@@ -301,6 +354,7 @@ export function TicketDetailModal({
   const canAssign =
     !canProcess && !isFinalTicket(processedStatus ?? ticket.status) && !assignedStaffId;
   const dominantReason = getDominantReason(ticket);
+  const canExportOrders = isExportableTargetType(ticket.targetType);
   const isSubmitDisabled =
     !canProcess ||
     processMutation.isPending ||
@@ -348,9 +402,42 @@ export function TicketDetailModal({
     await onAssign(ticket);
   }
 
+  async function handleExportOrders() {
+    const currentTicket = ticket;
+    const exportTargetType = isExportableTargetType(currentTicket?.targetType)
+      ? currentTicket.targetType
+      : null;
+
+    if (!currentTicket || !exportTargetType) {
+      toast.error("Chỉ hỗ trợ xuất Excel cho tập nội dung hoặc series.");
+      return;
+    }
+
+    const startTime = toApiDateTime(exportRange.startTime);
+    const endTime = toApiDateTime(exportRange.endTime);
+    if (!startTime || !endTime) {
+      toast.error("Vui lòng chọn đầy đủ thời gian bắt đầu và kết thúc.");
+      return;
+    }
+
+    if (new Date(startTime).getTime() > new Date(endTime).getTime()) {
+      toast.error("Thời gian bắt đầu phải nhỏ hơn hoặc bằng thời gian kết thúc.");
+      return;
+    }
+
+    const result = await exportMutation.mutateAsync({
+      targetType: exportTargetType,
+      targetId: currentTicket.targetId,
+      startTime,
+      endTime,
+    });
+    downloadBlob(result.blob, result.fileName);
+    toast.success("Đã xuất file Excel người mua nội dung.");
+  }
+
   return (
-    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/60 px-4 py-8 backdrop-blur-sm">
-      <div className="flex max-h-full w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl backoffice-dark:border-white/10 backoffice-dark:bg-[#111113]">
+    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/60 px-4 py-6 backdrop-blur-sm">
+      <div className="flex h-[calc(100vh-3rem)] max-h-[920px] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl backoffice-dark:border-white/10 backoffice-dark:bg-[#111113]">
         <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-4 backoffice-dark:border-white/10">
           <div>
             <div className="flex flex-wrap items-center gap-2">
@@ -379,7 +466,7 @@ export function TicketDetailModal({
           </button>
         </div>
 
-        <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[1fr_360px]">
+        <div className="grid min-h-0 flex-1 overflow-hidden grid-cols-1 lg:grid-cols-[1fr_360px]">
           <div className="min-h-0 overflow-y-auto p-5 [scrollbar-width:thin] [scrollbar-color:rgba(148,163,184,0.55)_transparent]">
             <section className="mb-4 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
               <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
@@ -568,8 +655,79 @@ export function TicketDetailModal({
 
           <form
             onSubmit={handleSubmit}
-            className="border-t border-slate-200 bg-slate-50 p-5 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.05] lg:border-l lg:border-t-0"
+            className="min-h-0 overflow-y-auto border-t border-slate-200 bg-slate-50 p-5 [scrollbar-width:thin] [scrollbar-color:rgba(148,163,184,0.55)_transparent] backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.05] lg:border-l lg:border-t-0"
           >
+            {canExportOrders && (
+              <section className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 backoffice-dark:border-emerald-300/20 backoffice-dark:bg-emerald-300/[0.08]">
+                <div className="flex items-start gap-3">
+                  <div className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-emerald-700 shadow-sm backoffice-dark:bg-white/10 backoffice-dark:text-emerald-200">
+                    <Download className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-black text-emerald-900 backoffice-dark:text-emerald-100">
+                      Xuất Excel người mua
+                    </h3>
+                    <p className="mt-1 text-xs font-semibold leading-relaxed text-emerald-700/80 backoffice-dark:text-emerald-100/70">
+                      {ticket.targetType === "SERIES"
+                        ? "Lấy các đơn hoàn tất thuộc series bị report."
+                        : "Lấy các đơn hoàn tất theo tập nội dung bị report."}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-3 grid gap-2">
+                  <label className="block">
+                    <span className="mb-1 block text-[11px] font-black uppercase tracking-wide text-emerald-700/80 backoffice-dark:text-emerald-100/70">
+                      Từ thời gian
+                    </span>
+                    <input
+                      type="datetime-local"
+                      value={exportRange.startTime}
+                      onChange={(event) =>
+                        setExportRange((current) => ({
+                          ...current,
+                          startTime: event.target.value,
+                        }))
+                      }
+                      disabled={exportMutation.isPending}
+                      className="h-9 w-full rounded-lg border border-emerald-200 bg-white px-3 text-xs font-bold text-slate-900 outline-none focus:border-emerald-500 disabled:bg-slate-100 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="mb-1 block text-[11px] font-black uppercase tracking-wide text-emerald-700/80 backoffice-dark:text-emerald-100/70">
+                      Đến thời gian
+                    </span>
+                    <input
+                      type="datetime-local"
+                      value={exportRange.endTime}
+                      onChange={(event) =>
+                        setExportRange((current) => ({
+                          ...current,
+                          endTime: event.target.value,
+                        }))
+                      }
+                      disabled={exportMutation.isPending}
+                      className="h-9 w-full rounded-lg border border-emerald-200 bg-white px-3 text-xs font-bold text-slate-900 outline-none focus:border-emerald-500 disabled:bg-slate-100 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white"
+                    />
+                  </label>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleExportOrders}
+                  disabled={exportMutation.isPending}
+                  className="mt-3 inline-flex h-9 w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 text-xs font-black text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {exportMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Download className="h-4 w-4" />
+                  )}
+                  Tải file Excel
+                </button>
+              </section>
+            )}
+
             <h3 className="text-base font-black text-slate-950">
               Xử lý ticket
             </h3>

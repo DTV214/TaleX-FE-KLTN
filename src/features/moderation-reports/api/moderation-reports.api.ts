@@ -1,6 +1,8 @@
 "use client";
 
+import axios from "axios";
 import {
+  ApiError,
   httpClient,
   unwrapBaseResponse,
   type BasePageResponse,
@@ -158,6 +160,20 @@ export type ProcessAppealRequest = {
   adminNote: string;
 };
 
+export type ReportedContentExportTargetType = Extract<ReportTargetType, "EPISODE" | "SERIES">;
+
+export type ReportedContentExportRequest = {
+  targetType: ReportedContentExportTargetType;
+  targetId: string;
+  startTime: string;
+  endTime: string;
+};
+
+export type ExcelExportResult = {
+  blob: Blob;
+  fileName: string;
+};
+
 export type ModerationTargetDetail = {
   targetType: ReportTargetType;
   targetId: string;
@@ -208,6 +224,40 @@ function compactMetadata(
   entries: Array<{ label: string; value: string | number | null | undefined }>,
 ) {
   return entries.filter((entry) => entry.value !== undefined && entry.value !== null && entry.value !== "");
+}
+
+function getFileNameFromContentDisposition(value?: string) {
+  if (!value) return undefined;
+
+  const utf8FileName = value.match(/filename\*=UTF-8''([^;]+)/i)?.[1];
+  if (utf8FileName) {
+    return decodeURIComponent(utf8FileName.replace(/"/g, ""));
+  }
+
+  return value.match(/filename="?([^";]+)"?/i)?.[1];
+}
+
+async function readBlobErrorMessage(error: unknown) {
+  if (!axios.isAxiosError(error)) {
+    return error instanceof Error ? error.message : "Không thể xuất file Excel.";
+  }
+
+  const data = error.response?.data;
+  if (data instanceof Blob) {
+    const text = await data.text();
+    try {
+      const body = JSON.parse(text) as Partial<BaseResponse<unknown>>;
+      return body.message || text || error.message;
+    } catch {
+      return text || error.message;
+    }
+  }
+
+  if (isRecord(data) && typeof data.message === "string") {
+    return data.message;
+  }
+
+  return error.message;
 }
 
 function normalizeAccountTarget(
@@ -416,6 +466,45 @@ export function processTicket(ticketId: string, payload: TicketProcessRequest) {
   return unwrapBaseResponse<Penalty | null>(
     httpClient.post(`/api/v1/moderation/tickets/${ticketId}/process`, payload),
   );
+}
+
+export async function exportReportedContentOrders(
+  payload: ReportedContentExportRequest,
+): Promise<ExcelExportResult> {
+  const isSeries = payload.targetType === "SERIES";
+  const endpoint = isSeries
+    ? "/api/v1/statistics/content/export-excel-by-series"
+    : "/api/v1/statistics/content/export-excel-by-item";
+  const params = isSeries
+    ? {
+        seriesId: payload.targetId,
+        startTime: payload.startTime,
+        endTime: payload.endTime,
+      }
+    : {
+        itemId: payload.targetId,
+        startTime: payload.startTime,
+        endTime: payload.endTime,
+      };
+
+  try {
+    const response = await httpClient.get<Blob>(endpoint, {
+      params,
+      responseType: "blob",
+    });
+    const fallbackName = isSeries
+      ? `Bao_Cao_Don_Hang_Series_${payload.targetId}.xlsx`
+      : `Bao_Cao_Don_Hang_Item_${payload.targetId}.xlsx`;
+
+    return {
+      blob: response.data,
+      fileName:
+        getFileNameFromContentDisposition(response.headers["content-disposition"]) ??
+        fallbackName,
+    };
+  } catch (error) {
+    throw new ApiError(await readBlobErrorMessage(error));
+  }
 }
 
 export async function getModerationTargetDetail(

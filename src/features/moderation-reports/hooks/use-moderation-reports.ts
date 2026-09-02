@@ -7,6 +7,7 @@ import {
   assignTicket,
   createAppeal,
   createReport,
+  exportReportedContentOrders,
   getAppealByPenalty,
   getMyAppeals,
   getMyPenalties,
@@ -28,6 +29,7 @@ import {
   type PenaltySearchParams,
   type ProcessAppealRequest,
   type ReportTargetType,
+  type ReportedContentExportRequest,
   type TicketProcessRequest,
   type TicketSearchParams,
 } from "../api/moderation-reports.api";
@@ -159,6 +161,14 @@ export function useProcessTicket(ticketId?: string) {
       toast.success("Đã cập nhật kết quả xử lý ticket.");
       invalidateModeration(queryClient);
     },
+    onError: (error) => toast.error(getApiErrorMessage(error)),
+  });
+}
+
+export function useExportReportedContentOrders() {
+  return useMutation({
+    mutationFn: (payload: ReportedContentExportRequest) =>
+      exportReportedContentOrders(payload),
     onError: (error) => toast.error(getApiErrorMessage(error)),
   });
 }
