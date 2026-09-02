@@ -142,9 +142,9 @@ function TargetDetailCard({
   const detailQuery = useModerationTargetDetail(
     canResolve
       ? {
-          targetType: penalty.targetType,
-          targetId: penalty.targetId,
-        }
+        targetType: penalty.targetType,
+        targetId: penalty.targetId,
+      }
       : null,
   );
   const detail = detailQuery.data;
@@ -153,63 +153,63 @@ function TargetDetailCard({
     <div className="mt-4 rounded-2xl border border-white/10 border-l-2 border-l-creator-gold/50 bg-white/[0.035] p-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex min-w-0 gap-3">
-        <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-creator-gold/20 bg-creator-gold/10 text-creator-gold">
-          {detail?.imageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={detail.imageUrl}
-              alt={detail.title}
-              loading="lazy"
-              className="h-full w-full object-cover"
-            />
-          ) : detailQuery.isLoading ? (
-            <Loader2 className="h-5 w-5 animate-spin" />
-          ) : (
-            <TargetIcon targetType={penalty.targetType} />
-          )}
-        </div>
-
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full border border-creator-gold/25 bg-creator-gold/10 px-2.5 py-1 text-[11px] font-black text-creator-gold">
-              {labelForTargetType(penalty.targetType)}
-            </span>
-            {penalty.targetId && (
-              <span
-                title={penalty.targetId}
-                className="text-[11px] font-semibold text-creator-muted"
-              >
-                Mã: {shortId(penalty.targetId)}
-              </span>
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-creator-gold/20 bg-creator-gold/10 text-creator-gold">
+            {detail?.imageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={detail.imageUrl}
+                alt={detail.title}
+                loading="lazy"
+                className="h-full w-full object-cover"
+              />
+            ) : detailQuery.isLoading ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <TargetIcon targetType={penalty.targetType} />
             )}
           </div>
 
-          {canResolve ? (
-            detailQuery.isError ? (
-              <div className="mt-2 rounded-xl border border-red-400/20 bg-red-400/[0.08] px-3 py-2 text-xs font-semibold text-red-200">
-                Không lấy được thông tin của nội dung hoặc đã bị xóa.
-              </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full border border-creator-gold/25 bg-creator-gold/10 px-2.5 py-1 text-[11px] font-black text-creator-gold">
+                {labelForTargetType(penalty.targetType)}
+              </span>
+              {penalty.targetId && (
+                <span
+                  title={penalty.targetId}
+                  className="text-[11px] font-semibold text-creator-muted"
+                >
+                  Mã: {shortId(penalty.targetId)}
+                </span>
+              )}
+            </div>
+
+            {canResolve ? (
+              detailQuery.isError ? (
+                <div className="mt-2 rounded-xl border border-red-400/20 bg-red-400/[0.08] px-3 py-2 text-xs font-semibold text-red-200">
+                  Không lấy được thông tin của nội dung hoặc đã bị xóa.
+                </div>
+              ) : (
+                <>
+                  <h3 className="mt-2 line-clamp-2 text-base font-black text-white">
+                    {detail?.title ??
+                      (detailQuery.isLoading
+                        ? "Đang tải thông tin đối tượng..."
+                        : "Chưa có thông tin đối tượng")}
+                  </h3>
+                  {detail?.subtitle && (
+                    <p className="mt-1 line-clamp-2 text-xs font-semibold leading-relaxed text-creator-muted">
+                      {detail.subtitle}
+                    </p>
+                  )}
+                </>
+              )
             ) : (
-              <>
-                <h3 className="mt-2 line-clamp-2 text-base font-black text-white">
-                  {detail?.title ??
-                    (detailQuery.isLoading
-                      ? "Đang tải thông tin đối tượng..."
-                      : "Chưa có thông tin đối tượng")}
-                </h3>
-                {detail?.subtitle && (
-                  <p className="mt-1 line-clamp-2 text-xs font-semibold leading-relaxed text-creator-muted">
-                    {detail.subtitle}
-                  </p>
-                )}
-              </>
-            )
-          ) : (
-            <p className="mt-2 text-sm font-semibold text-zinc-300">
-              Chưa hỗ trợ lấy chi tiết cho loại đối tượng này.
-            </p>
-          )}
-        </div>
+              <p className="mt-2 text-sm font-semibold text-zinc-300">
+                Chưa hỗ trợ lấy chi tiết cho loại đối tượng này.
+              </p>
+            )}
+          </div>
         </div>
 
         {canResolve && (
@@ -238,9 +238,9 @@ function TargetDetailDialog({
   const detailQuery = useModerationTargetDetail(
     canResolve
       ? {
-          targetType: penalty?.targetType,
-          targetId: penalty?.targetId,
-        }
+        targetType: penalty?.targetType,
+        targetId: penalty?.targetId,
+      }
       : null,
   );
   const detail = detailQuery.data;
@@ -649,48 +649,45 @@ export function CreatorViolationsView() {
   }, [appeals]);
 
   return (
-    <div className="space-y-6">
+    <div className="w-full text-creator-text space-y-8">
       <TargetDetailDialog
         penalty={selectedTargetPenalty}
         onClose={() => setSelectedTargetPenalty(null)}
       />
 
-      <section className="rounded-3xl border border-white/10 bg-white/[0.035] p-6 shadow-[0_22px_70px_rgba(0,0,0,0.22)]">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="text-2xl font-black text-white">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-creator-border pb-6">
+        <div>
+          <div className="flex items-center gap-2.5">
+            <h2 className="text-2xl sm:text-3xl font-bold text-white">
               Vi Phạm & Khiếu Nại
-            </h1>
-            <p className="mt-2 max-w-2xl text-sm font-medium leading-relaxed text-creator-muted">
-              Mỗi vi phạm được gắn với nội dung liên quan và trạng thái khiếu
-              nại tương ứng để bạn dễ theo dõi.
-            </p>
-          </div>
-          <div className="grid grid-cols-2 gap-2 sm:min-w-[240px]">
-            <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
-              <p className="text-[11px] font-black uppercase tracking-wide text-creator-muted">
-                Vi phạm
-              </p>
-              <p className="mt-1 text-xl font-black text-white">
-                {penalties.length}
-              </p>
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
-              <p className="text-[11px] font-black uppercase tracking-wide text-creator-muted">
-                Khiếu nại
-              </p>
-              <p className="mt-1 text-xl font-black text-white">
-                {appeals.length}
-              </p>
-            </div>
+            </h2>
           </div>
         </div>
-      </section>
+        <div className="grid grid-cols-2 gap-2 sm:min-w-[240px]">
+          <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
+            <p className="text-[11px] font-black uppercase tracking-wide text-creator-muted">
+              Vi phạm
+            </p>
+            <p className="mt-1 text-xl font-black text-white">
+              {penalties.length}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
+            <p className="text-[11px] font-black uppercase tracking-wide text-creator-muted">
+              Khiếu nại
+            </p>
+            <p className="mt-1 text-xl font-black text-white">
+              {appeals.length}
+            </p>
+          </div>
+        </div>
+
+      </div>
 
       <section className="rounded-3xl border border-white/10 bg-white/[0.035] p-5">
         <h2 className="mb-4 flex items-center gap-2 text-lg font-black text-white">
           <AlertTriangle className="h-5 w-5 text-creator-gold" />
-          Danh sách vi phạm
+          Danh Sách Vi Phạm
         </h2>
 
         {penaltiesQuery.isLoading ? (

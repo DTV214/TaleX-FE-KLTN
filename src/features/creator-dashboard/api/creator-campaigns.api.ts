@@ -218,6 +218,16 @@ export async function getOrderWalletTransactions(
     return response.data.data;
 }
 
+export async function getCampaignWalletTransactionsByCampaign(
+    campaignId: string,
+): Promise<CampaignWalletTransaction[]> {
+    const response = await httpClient.get<OrderWalletTransactionsResponse>(
+        `/api/v1/campaign-wallets/campaigns/${campaignId}/wallet-transactions`,
+    );
+
+    return response.data.data;
+}
+
 export async function createPayoutRequest(): Promise<PayoutRequest> {
     const response = await httpClient.post<PayoutRequestSingleResponse>(
         "/api/v1/payout-requests",

@@ -386,12 +386,6 @@ export function MissionCenter() {
               </span>
               .
             </p>
-            {todayRewardAmount !== undefined && (
-              <p className="mt-2 text-sm font-semibold text-[#F5D46E]">
-                {isCheckedInToday ? "Hôm nay đã nhận" : "Hôm nay nhận"}{" "}
-                +{formatCoin(todayRewardAmount)} Coin
-              </p>
-            )}
 
             <Button
               type="button"

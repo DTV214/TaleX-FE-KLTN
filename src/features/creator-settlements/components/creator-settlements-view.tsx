@@ -161,25 +161,24 @@ export function CreatorSettlementsView() {
 
   return (
     <div className="space-y-6">
-      <section className="overflow-hidden rounded-[1.75rem] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.08),rgba(255,255,255,0.025))] p-6 shadow-[0_28px_90px_rgba(0,0,0,0.35)]">
-        <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-          <div>
-            <h1 className="mt-4 text-3xl font-black tracking-tight text-white md:text-5xl">
-              {activeTab === "tax" ? "Thuế & Chứng từ khấu trừ" : "Quyết toán"}
-            </h1>
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-creator-border pb-6">
+        <div>
+          <div className="flex items-center gap-2.5">
+            <h2 className="text-2xl sm:text-3xl font-bold text-white">
+              {activeTab === "tax" ? "Thuế & Chứng từ khấu trừ" : "Quyết Toán"}
+            </h2>
           </div>
-
-          <button
-            type="button"
-            onClick={() => settlementsQuery.refetch()}
-            disabled={settlementsQuery.isFetching}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.045] px-4 text-sm font-black text-zinc-200 transition hover:border-creator-gold/40 hover:text-creator-gold disabled:opacity-50"
-          >
-            <RefreshCw className={settlementsQuery.isFetching ? "h-4 w-4 animate-spin" : "h-4 w-4"} />
-            Tải lại
-          </button>
         </div>
-      </section>
+        <button
+          type="button"
+          onClick={() => settlementsQuery.refetch()}
+          disabled={settlementsQuery.isFetching}
+          className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.045] px-4 text-sm font-black text-zinc-200 transition hover:border-creator-gold/40 hover:text-creator-gold disabled:opacity-50"
+        >
+          <RefreshCw className={settlementsQuery.isFetching ? "h-4 w-4 animate-spin" : "h-4 w-4"} />
+          Tải lại
+        </button>
+      </div>
 
       <div className="flex flex-wrap gap-2 rounded-2xl border border-white/10 bg-black/35 p-2">
         {tabs.map((tab) => {
@@ -253,7 +252,7 @@ export function CreatorSettlementsView() {
                   Chứng từ điện tử hợp lệ
                 </div>
                 <h2 className="text-xl font-black text-white md:text-2xl">
-                  Chứng từ Khấu trừ Thuế TNCN Điện tử 
+                  Chứng từ Khấu trừ Thuế TNCN Điện tử
                 </h2>
                 <p className="max-w-2xl text-sm font-semibold leading-relaxed text-creator-muted">
                   Tải chứng từ khấu trừ thuế TNCN điện tử theo quy định của Tổng cục Thuế để sử dụng khi thực hiện quyết toán thuế cuối năm hoặc hoàn thuế TNCN cá nhân.

@@ -531,9 +531,9 @@ export function CreatorMonetizationView({ onBack }: CreatorMonetizationViewProps
                 <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
                   <div className="max-w-3xl">
                     <div className="flex flex-wrap items-center gap-3">
-                      <h1 className="font-heading text-3xl font-black tracking-tight text-white sm:text-5xl">
+                      <h2 className="font-heading text-2xl font-black tracking-tight text-white sm:text-5xl">
                         Kiếm Tiền Trên TaleX
-                      </h1>
+                      </h2>
                       {isStatusRefreshing ? (
                         <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-semibold text-white/55">
                           Đang đồng bộ...

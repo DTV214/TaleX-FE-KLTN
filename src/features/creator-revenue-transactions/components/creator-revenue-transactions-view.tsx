@@ -573,31 +573,31 @@ export function CreatorRevenueTransactionsView() {
 
   return (
     <div className="space-y-6">
-      <section className="overflow-hidden rounded-[1.75rem] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.08),rgba(255,255,255,0.025))] p-6 shadow-[0_28px_90px_rgba(0,0,0,0.35)]">
-        <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-          <div>
-            <h1 className="mt-4 text-3xl font-black tracking-tight text-white md:text-5xl">
-              Doanh Thu
-            </h1>
-          </div>
 
-          <button
-            type="button"
-            onClick={handleRefresh}
-            disabled={summaryQuery.isFetching || timeSeriesQuery.isFetching}
-            className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.045] px-4 text-sm font-black text-zinc-200 transition hover:border-creator-gold/40 hover:text-creator-gold disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <RefreshCw
-              className={
-                summaryQuery.isFetching || timeSeriesQuery.isFetching
-                  ? "h-4 w-4 animate-spin"
-                  : "h-4 w-4"
-              }
-            />
-            Tải lại
-          </button>
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-creator-border pb-6">
+        <div>
+          <div className="flex items-center gap-2.5">
+            <h2 className="text-2xl sm:text-3xl font-bold text-white">
+              Doanh Thu
+            </h2>
+          </div>
         </div>
-      </section>
+        <button
+          type="button"
+          onClick={handleRefresh}
+          disabled={summaryQuery.isFetching || timeSeriesQuery.isFetching}
+          className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.045] px-4 text-sm font-black text-zinc-200 transition hover:border-creator-gold/40 hover:text-creator-gold disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <RefreshCw
+            className={
+              summaryQuery.isFetching || timeSeriesQuery.isFetching
+                ? "h-4 w-4 animate-spin"
+                : "h-4 w-4"
+            }
+          />
+          Tải lại
+        </button>
+      </div>
 
       <section className="rounded-2xl border border-white/10 bg-black/35 p-4">
         <div className="flex flex-col gap-4 2xl:flex-row 2xl:items-end 2xl:justify-between">
@@ -716,11 +716,10 @@ export function CreatorRevenueTransactionsView() {
                   <button
                     type="button"
                     onClick={() => setChartType("bar")}
-                    className={`inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-lg px-2.5 text-xs font-bold transition ${
-                      chartType === "bar"
-                        ? "bg-creator-gold text-black shadow"
-                        : "text-zinc-400 hover:text-white"
-                    }`}
+                    className={`inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-lg px-2.5 text-xs font-bold transition ${chartType === "bar"
+                      ? "bg-creator-gold text-black shadow"
+                      : "text-zinc-400 hover:text-white"
+                      }`}
                     title="Dạng biểu đồ Cột"
                   >
                     <BarChart2 className="h-3.5 w-3.5" />
@@ -729,11 +728,10 @@ export function CreatorRevenueTransactionsView() {
                   <button
                     type="button"
                     onClick={() => setChartType("line")}
-                    className={`inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-lg px-2.5 text-xs font-bold transition ${
-                      chartType === "line"
-                        ? "bg-creator-gold text-black shadow"
-                        : "text-zinc-400 hover:text-white"
-                    }`}
+                    className={`inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-lg px-2.5 text-xs font-bold transition ${chartType === "line"
+                      ? "bg-creator-gold text-black shadow"
+                      : "text-zinc-400 hover:text-white"
+                      }`}
                     title="Dạng biểu đồ Đường"
                   >
                     <TrendingUp className="h-3.5 w-3.5" />
@@ -751,11 +749,10 @@ export function CreatorRevenueTransactionsView() {
                       revenue: !prev.revenue,
                     }))
                   }
-                  className={`inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-full border px-3 text-xs font-black transition ${
-                    visibleSeries.revenue
-                      ? "border-creator-gold/40 bg-creator-gold/15 text-creator-gold"
-                      : "border-white/10 bg-white/5 text-white/30 line-through"
-                  }`}
+                  className={`inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-full border px-3 text-xs font-black transition ${visibleSeries.revenue
+                    ? "border-creator-gold/40 bg-creator-gold/15 text-creator-gold"
+                    : "border-white/10 bg-white/5 text-white/30 line-through"
+                    }`}
                   title="Bật/tắt hiển thị Doanh thu"
                 >
                   <span className="h-2 w-2 rounded-full bg-creator-gold" />
@@ -769,11 +766,10 @@ export function CreatorRevenueTransactionsView() {
                       penalty: !prev.penalty,
                     }))
                   }
-                  className={`inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-full border px-3 text-xs font-black transition ${
-                    visibleSeries.penalty
-                      ? "border-red-400/40 bg-red-400/15 text-red-300"
-                      : "border-white/10 bg-white/5 text-white/30 line-through"
-                  }`}
+                  className={`inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-full border px-3 text-xs font-black transition ${visibleSeries.penalty
+                    ? "border-red-400/40 bg-red-400/15 text-red-300"
+                    : "border-white/10 bg-white/5 text-white/30 line-through"
+                    }`}
                   title="Bật/tắt hiển thị Khấu trừ phạt"
                 >
                   <span className="h-2 w-2 rounded-full bg-red-400" />
@@ -787,11 +783,10 @@ export function CreatorRevenueTransactionsView() {
                       adjustment: !prev.adjustment,
                     }))
                   }
-                  className={`inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-full border px-3 text-xs font-black transition ${
-                    visibleSeries.adjustment
-                      ? "border-sky-400/40 bg-sky-400/15 text-sky-300"
-                      : "border-white/10 bg-white/5 text-white/30 line-through"
-                  }`}
+                  className={`inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-full border px-3 text-xs font-black transition ${visibleSeries.adjustment
+                    ? "border-sky-400/40 bg-sky-400/15 text-sky-300"
+                    : "border-white/10 bg-white/5 text-white/30 line-through"
+                    }`}
                   title="Bật/tắt hiển thị Điều chỉnh"
                 >
                   <span className="h-2 w-2 rounded-full bg-sky-400" />

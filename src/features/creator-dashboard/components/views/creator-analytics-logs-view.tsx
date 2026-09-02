@@ -568,15 +568,16 @@ export function CreatorAnalyticsLogsView({
 
   // Giao diện đầy đủ trong Tab Thống kê
   return (
-    <div className="space-y-6 -mt-6">
+    <div className="space-y-6 mt-6">
       {/* Header & Bộ lọc thời gian */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-white/10 bg-black/40 p-4">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-creator-border pb-6">
         <div>
-          <h2 className="creator-spotlight-text text-xl font-black tracking-wide text-white flex items-center gap-2">
-            Thống Kê Hoạt Động & Tương Tác
-          </h2>
+          <div className="flex items-center gap-2.5">
+            <h2 className="text-2xl sm:text-3xl font-bold text-white">
+              Thống Kê Hoạt Động & Tương Tác
+            </h2>
+          </div>
         </div>
-
         <div className="flex flex-wrap items-center gap-2">
           {/* Presets */}
           <div className="inline-flex rounded-xl border border-white/10 bg-white/[0.03] p-1">

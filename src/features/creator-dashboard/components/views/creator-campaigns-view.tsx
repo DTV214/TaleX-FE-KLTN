@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import {
   Activity,
+  AlertCircle,
   ArrowDownLeft,
   ArrowLeft,
   ArrowRight,
@@ -77,6 +78,7 @@ import { parseBackendDate } from "@/shared/utils/backend-date";
 import { getApiErrorMessage } from "@/shared/api/http-client";
 import { toast } from "sonner";
 import { useOrderStatus } from "@/features/payment/api/payment.api";
+import type { OrderResponse } from "@/features/payment/types/payment.types";
 import {
   useGetCreatorCampaignPlans,
   useGetCreatorCampaignSeriesByCampaignId,
@@ -87,6 +89,7 @@ import {
   useGetCampaignWalletHistory,
   useGetTransactionsByReference,
   useGetOrderWalletTransactions,
+  useGetCampaignWalletTransactionsByCampaign,
   useCreatePayoutRequest,
   useGetPayoutRequests,
   useGetOwnPayoutRequests,
@@ -2969,6 +2972,7 @@ export function CampaignDetailDashboard({
 }) {
   const [activeSubTab, setActiveSubTab] = useState<"performance" | "series">("performance");
   const [isOrderStatusModalOpen, setIsOrderStatusModalOpen] = useState(false);
+  const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
   const [isCopiedId, setIsCopiedId] = useState(false);
   const progress = getProgress(campaign);
   const remaining = getRemaining(campaign);
@@ -3057,11 +3061,8 @@ export function CampaignDetailDashboard({
 
   const canCancel =
     Boolean(onCancelCampaign) &&
-    progress === 0 &&
     (campaign.status === "RUNNING" ||
-      campaign.status === "PAUSED" ||
-      campaign.status === "PAUSE" ||
-      campaign.status === "PENDING");
+      campaign.status === "PAUSED");
 
   return (
     <article className="space-y-6 animate-in fade-in duration-300">
@@ -3082,7 +3083,7 @@ export function CampaignDetailDashboard({
             <Button
               type="button"
               variant="outline"
-              onClick={() => onCancelCampaign!(campaign.campaignId)}
+              onClick={() => setIsCancelConfirmOpen(true)}
               className="h-10 cursor-pointer rounded-xl border-red-500/35 bg-red-500/10 px-4 text-xs font-bold text-red-300 hover:border-red-400 hover:bg-red-500/20 transition shadow-sm"
             >
               <Trash2 className="mr-1.5 h-4 w-4" />
@@ -3542,7 +3543,19 @@ export function CampaignDetailDashboard({
       <CampaignOrderStatusModal
         isOpen={isOrderStatusModalOpen}
         orderId={campaign.orderId ?? null}
+        campaignId={campaign.campaignId ?? null}
         onClose={() => setIsOrderStatusModalOpen(false)}
+      />
+
+      {/* Modal Xác Nhận Hủy Chiến Dịch */}
+      <CampaignCancellationConfirmModal
+        isOpen={isCancelConfirmOpen}
+        campaign={campaign}
+        onClose={() => setIsCancelConfirmOpen(false)}
+        onConfirm={() => {
+          setIsCancelConfirmOpen(false);
+          onCancelCampaign!(campaign.campaignId);
+        }}
       />
     </article>
   );
@@ -3551,12 +3564,23 @@ export function CampaignDetailDashboard({
 function CampaignOrderStatusModal({
   isOpen,
   orderId,
+  campaignId,
   onClose,
 }: {
   isOpen: boolean;
   orderId: string | null;
+  campaignId?: string | null;
   onClose: () => void;
 }) {
+  const orderQuery = useOrderStatus(orderId || undefined);
+  const walletQuery = useGetCampaignWalletTransactionsByCampaign(campaignId, isOpen);
+  const walletTransactions = walletQuery.data ?? [];
+
+  const order = orderQuery.data;
+  const orderTotalAmount = order?.totalAmount ?? 0;
+  const totalRefundedAmount = walletTransactions.reduce((sum, tx) => sum + (tx.amount ?? 0), 0);
+  const originalAmount = orderTotalAmount + totalRefundedAmount;
+
   if (!isOpen || !orderId) return null;
 
   return (
@@ -3587,7 +3611,115 @@ function CampaignOrderStatusModal({
           </button>
         </div>
 
-        <CampaignOrderPollingCard orderId={orderId} />
+        <div className="space-y-5">
+          <CampaignOrderPollingCard orderId={orderId} />
+
+          {/* Tổng quan tài chính - chỉ hiển thị khi có wallet transactions */}
+          {!walletQuery.isLoading && walletTransactions.length > 0 ? (
+            <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+              <h4 className="mb-3 text-xs font-bold text-zinc-300">Tổng Quan Tài Chính Khi Hủy Chiến Dịch</h4>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <div className="rounded-lg border border-white/[0.06] bg-white/[0.03] p-3">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
+                    Số tiền gốc
+                  </p>
+                  <p className="mt-2 text-base font-black text-[#F5D46E]">
+                    {formatNumber(originalAmount)}đ
+                  </p>
+                </div>
+                <div className="rounded-lg border border-white/[0.06] bg-white/[0.03] p-3">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
+                    Đã chạy chiến dịch
+                  </p>
+                  <p className="mt-2 text-base font-black text-orange-400">
+                    {formatNumber(orderTotalAmount)}đ
+                  </p>
+                </div>
+                <div className="rounded-lg border border-white/[0.06] bg-white/[0.03] p-3">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
+                    Hoàn trả vào ví
+                  </p>
+                  <p className="mt-2 text-base font-black text-emerald-400">
+                    {formatNumber(Math.max(totalRefundedAmount, 0))}đ
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+            <div className="mb-3 flex items-center justify-between">
+              <p className="text-xs font-bold text-zinc-300">
+                Lịch Sử Biến Động Giao Dịch
+              </p>
+              {campaignId ? (
+                <p className="text-[10px] font-mono text-zinc-500">
+                  Campaign: {campaignId}
+                </p>
+              ) : null}
+            </div>
+
+            {walletQuery.isLoading ? (
+              <div className="flex items-center gap-2 text-xs font-bold text-zinc-400">
+                <Loader2 className="h-4 w-4 animate-spin text-[#D4AF37]" />
+                Đang tải biến động ví chiến dịch...
+              </div>
+            ) : walletTransactions.length === 0 ? (
+              <p className="text-xs text-zinc-500 font-semibold">
+                Chưa có biến động giao dịch nào cho chiến dịch này.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {walletTransactions.map((tx) => {
+                  const isPositive = tx.amount >= 0;
+                  const amountLabel = `${isPositive ? "+" : "-"}${formatNumber(Math.abs(tx.amount))}đ`;
+
+                  return (
+                    <div
+                      key={tx.transactionId}
+                      className="flex items-center justify-between rounded-lg border border-white/[0.06] bg-white/[0.03] p-2.5 text-xs font-semibold"
+                    >
+                      <div className="min-w-0 pr-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge
+                            className={cn(
+                              "text-[10px]",
+                              isPositive
+                                ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300"
+                                : "border-orange-400/30 bg-orange-400/10 text-orange-300",
+                            )}
+                          >
+                            {tx.transactionType ?? "TRANSACTION"}
+                          </Badge>
+                          <span className="text-[11px] text-zinc-500">
+                            {formatDateTime(tx.createdAt)}
+                          </span>
+                        </div>
+                        <p className="mt-1 line-clamp-1 text-[11px] text-zinc-300">
+                          {tx.description || "Không có mô tả"}
+                        </p>
+                      </div>
+
+                      <div className="shrink-0 text-right">
+                        <p
+                          className={cn(
+                            "text-sm font-black",
+                            isPositive ? "text-emerald-400" : "text-orange-400",
+                          )}
+                        >
+                          {amountLabel}
+                        </p>
+                        <p className="text-[10px] text-zinc-500">
+                          Số dư: {formatNumber(tx.balanceBefore)}đ → {formatNumber(tx.balanceAfter)}đ
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -3616,6 +3748,150 @@ const campaignBenefits: Array<{
       icon: BarChart3,
     },
   ];
+
+function CampaignCancellationConfirmModal({
+  isOpen,
+  campaign,
+  onClose,
+  onConfirm,
+}: {
+  isOpen: boolean;
+  campaign: CreatorCampaign;
+  onClose: () => void;
+  onConfirm: () => void;
+}) {
+  const cancelMutation = useCancelCreatorCampaign();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const orderQuery = useOrderStatus(campaign.orderId || undefined);
+
+  if (!isOpen) return null;
+
+  const order = orderQuery.data;
+  const totalAmount = order?.totalAmount ?? 0;
+  const currentImpression = campaign?.currentImpression ?? 0;
+  const targetImpression = campaign?.targetImpression ?? 0;
+
+  // Tính toán hoàn tiền dựa trên backend logic
+  let refundAmount = 0;
+  if (currentImpression === 0) {
+    // Nếu chưa chạy, hoàn toàn bộ
+    refundAmount = totalAmount;
+  } else if (currentImpression > 0 && currentImpression < targetImpression) {
+    // Nếu chạy một phần, tính hoàn tiền theo tỷ lệ
+    const proportion = currentImpression / targetImpression;
+    refundAmount = Math.round(totalAmount * (1 - proportion));
+  } else if (currentImpression >= targetImpression) {
+    // Nếu chạy hết hoặc vượt target, không hoàn
+    refundAmount = 0;
+  }
+
+  // VAT calculation (10%)
+  const VAT_RATE = 0.1;
+  const totalWithVAT = totalAmount + Math.round(totalAmount * VAT_RATE);
+  const refundWithVAT = refundAmount + Math.round(refundAmount * VAT_RATE);
+
+  const vatBefore = Math.round(totalAmount * VAT_RATE);
+  const vatAfter = Math.round(refundAmount * VAT_RATE);
+  const vatReduction = vatBefore - vatAfter;
+
+  const handleConfirm = () => {
+    if (!campaign.campaignId) return;
+
+    setIsSubmitting(true);
+    cancelMutation.mutate(campaign.campaignId, {
+      onSuccess: () => {
+        toast.success("Chiến dịch đã được hủy thành công!");
+        setIsSubmitting(false);
+        onConfirm();
+      },
+      onError: (err) => {
+        toast.error(getApiErrorMessage(err));
+        setIsSubmitting(false);
+      },
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4 backdrop-blur-md">
+      <div className="relative w-full max-w-md rounded-3xl border border-white/15 bg-[#121215] p-6 shadow-2xl">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-red-400/25 bg-red-400/10 text-red-400">
+            <AlertCircle className="h-5 w-5" />
+          </div>
+          <h3 className="text-lg font-black text-white">
+            Xác nhận hủy chiến dịch
+          </h3>
+        </div>
+
+        <div className="space-y-4">
+          {/* Thông báo cảnh báo */}
+          <div className="rounded-lg border border-red-400/20 bg-red-400/10 p-3">
+            <p className="text-xs text-red-300 font-semibold">
+              Khi hủy chiến dịch, hệ thống sẽ hoàn trả tiền dựa trên số tiền đã sử dụng. VAT sẽ được điều chỉnh theo tỷ lệ hoàn tiền.
+            </p>
+          </div>
+
+          {/* Tổng quan chi tiết */}
+          <div className="space-y-3 rounded-lg border border-white/10 bg-black/20 p-4">
+            {/* Thông tin chiến dịch */}
+            <div className="space-y-2">
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-zinc-400 font-semibold">Số tiền gốc:</span>
+                <span className="font-black text-white">{formatNumber(totalAmount)}đ</span>
+              </div>
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-zinc-400 font-semibold">Đã chạy chiến dịch:</span>
+                <span className="font-black text-orange-400">
+                  {formatNumber(currentImpression)}/{formatNumber(targetImpression)} lượt
+                </span>
+              </div>
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-zinc-400 font-semibold">Hệ thống giữ lại:</span>
+                <span className="font-black text-emerald-400">{formatNumber(totalAmount - refundAmount)}đ</span>
+              </div>
+            </div>
+
+            {/* Tổng cộng */}
+            <div className="border-t border-white/10 pt-3 space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-black text-white">Sẽ hoàn trả:</span>
+                <span className="text-lg font-black text-emerald-400">
+                  {formatNumber(refundAmount)}đ
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-6 flex gap-3">
+          <Button
+            onClick={onClose}
+            variant="outline"
+            disabled={isSubmitting}
+            className="flex-1 h-11 rounded-2xl border-white/10 bg-white/[0.04] text-xs font-bold text-zinc-300 hover:bg-white/10"
+          >
+            Hủy
+          </Button>
+          <Button
+            onClick={handleConfirm}
+            variant="destructive"
+            disabled={isSubmitting}
+            className="flex-1 h-11 rounded-2xl bg-red-600 font-black text-xs text-white hover:bg-red-500"
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Đang xử lý...
+              </>
+            ) : (
+              "Xác nhận hủy"
+            )}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function CreatorCampaignsView() {
   const [activeTab, setActiveTab] = useState<
@@ -3753,62 +4029,51 @@ export function CreatorCampaignsView() {
           onSelectCampaign={setSelectedCampaignId}
           onCancelCampaign={(id) => setCancellingCampaignId(id)}
         />
-        <CreatorCampaignCancelModal
-          isOpen={Boolean(cancellingCampaignId)}
-          campaignId={cancellingCampaignId}
-          onClose={() => {
-            setCancellingCampaignId(null);
-            setSelectedCampaignId(null);
-          }}
-        />
       </section>
     );
   }
 
   return (
     <section className="space-y-8">
-      <div className="relative overflow-hidden rounded-[24px] border border-white/10 bg-gradient-to-r from-white/[0.05] via-white/[0.025] to-black/50 p-5 md:p-6 shadow-xl backdrop-blur-xl">
-        <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_15%_10%,rgba(212,175,55,0.16),transparent_35%),radial-gradient(circle_at_85%_25%,rgba(59,130,246,0.1),transparent_40%)]" />
-
-        <div className="relative z-10 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <h1 className="font-heading text-2xl font-black tracking-tight text-white md:text-3xl">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-creator-border pb-6">
+        <div>
+          <div className="flex items-center gap-2.5">
+            <h2 className="text-2xl sm:text-3xl font-bold text-white">
               Chiến Dịch Tăng Tương Tác
-            </h1>
+            </h2>
           </div>
-
-          <div className="flex flex-wrap items-center gap-2.5">
-            <div className="relative flex flex-col items-center">
-              <CampaignStatCard
-                icon={Coins}
-                label="Số Dư Ví"
-                value={
-                  campaignWalletQuery.isLoading
-                    ? "Đang tải..."
-                    : campaignWalletQuery.data === null
-                      ? "Chưa có"
-                      : `${formatNumber(campaignWalletQuery.data?.balance)}đ`
-                }
-                tone="gold"
-              />
-            </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="relative flex flex-col items-center">
             <CampaignStatCard
-              icon={Megaphone}
-              label="Chiến dịch"
-              value={formatNumber(totalElements)}
-            />
-            <CampaignStatCard
-              icon={TrendingUp}
-              label="Đang chạy"
-              value={formatNumber(stats.activeCount)}
-              tone="green"
-            />
-            <CampaignStatCard
-              icon={CheckCircle2}
-              label="Hoàn tất"
-              value={formatNumber(stats.completedCount)}
+              icon={Coins}
+              label="Số Dư Ví"
+              value={
+                campaignWalletQuery.isLoading
+                  ? "Đang tải..."
+                  : campaignWalletQuery.data === null
+                    ? "Chưa có"
+                    : `${formatNumber(campaignWalletQuery.data?.balance)}đ`
+              }
+              tone="gold"
             />
           </div>
+          <CampaignStatCard
+            icon={Megaphone}
+            label="Chiến dịch"
+            value={formatNumber(totalElements)}
+          />
+          <CampaignStatCard
+            icon={TrendingUp}
+            label="Đang chạy"
+            value={formatNumber(stats.activeCount)}
+            tone="green"
+          />
+          <CampaignStatCard
+            icon={CheckCircle2}
+            label="Hoàn tất"
+            value={formatNumber(stats.completedCount)}
+          />
         </div>
       </div>
 
@@ -4193,11 +4458,6 @@ export function CreatorCampaignsView() {
                 </Button>
               </div>
             </div>
-            <CreatorCampaignCancelModal
-              isOpen={Boolean(cancellingCampaignId)}
-              campaignId={cancellingCampaignId}
-              onClose={() => setCancellingCampaignId(null)}
-            />
           </section>
         </div>
       )}

@@ -381,16 +381,14 @@ export function CreatorProfileView() {
   }
 
   return (
-    <div className="space-y-7 text-creator-text">
-      <section className="creator-shine-card relative overflow-hidden rounded-[2rem] border border-creator-gold/20 bg-black/45 p-6 shadow-[0_24px_90px_rgba(0,0,0,0.42)] backdrop-blur-2xl md:p-8">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_0%,rgba(226,177,60,0.18),transparent_32%),radial-gradient(circle_at_92%_14%,rgba(151,176,255,0.12),transparent_34%)]" />
-        <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-creator-gold/70 to-transparent" />
+    <div className="space-y-6 text-creator-text">
+      <div className="lg:flex-row lg:items-end justify-between gap-4 border-b border-creator-border pb-6">
         <div className="relative z-10 flex flex-col gap-7 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl">
             <div className="flex flex-wrap items-center gap-3">
-              <h1 className="font-heading text-3xl font-black tracking-tight text-white sm:text-4xl">
+              <h2 className="text-2xl sm:text-3xl font-bold text-white">
                 Hồ Sơ
-              </h1>
+              </h2>
               <span
                 className={cn(
                   "inline-flex items-center rounded-full border px-3 py-1 text-xs font-black",
@@ -432,7 +430,7 @@ export function CreatorProfileView() {
             </Button>
           </div>
         </div>
-      </section>
+      </div>
 
       <section className="creator-shine-card rounded-[2rem] border border-white/10 bg-white/[0.04] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.28)] backdrop-blur-xl md:p-6">
         <div className="mb-6 flex flex-col gap-2 border-b border-white/10 pb-5">

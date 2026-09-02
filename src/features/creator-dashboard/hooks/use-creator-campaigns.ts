@@ -12,6 +12,7 @@ import {
     getCampaignWalletHistory,
     getTransactionsByReference,
     getOrderWalletTransactions,
+    getCampaignWalletTransactionsByCampaign,
     createPayoutRequest,
     getPayoutRequests,
     processPayoutRequest,
@@ -221,6 +222,18 @@ export function useGetOrderWalletTransactions(orderId?: string, enabled = true) 
         queryKey: [...creatorCampaignQueryKeys.all, "order-wallet-transactions", orderId] as const,
         queryFn: () => getOrderWalletTransactions(orderId!),
         enabled: Boolean(orderId) && enabled,
+        staleTime: 30 * 1000,
+    });
+}
+
+export function useGetCampaignWalletTransactionsByCampaign(
+    campaignId?: string | null,
+    enabled = true,
+) {
+    return useQuery<CampaignWalletTransaction[]>({
+        queryKey: [...creatorCampaignQueryKeys.all, "campaign-wallet-transactions", campaignId] as const,
+        queryFn: () => getCampaignWalletTransactionsByCampaign(campaignId!),
+        enabled: Boolean(campaignId) && enabled,
         staleTime: 30 * 1000,
     });
 }

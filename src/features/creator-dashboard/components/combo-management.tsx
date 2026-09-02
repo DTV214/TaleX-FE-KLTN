@@ -71,14 +71,11 @@ export function ComboManagementView() {
   const combos = combosQuery.data ?? [];
 
   return (
-    <div className="w-full py-6 text-creator-text space-y-8">
+    <div className="w-full py-2 text-creator-text space-y-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-creator-border pb-6">
         <div>
           <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-creator-gold/10 border border-creator-gold/20 text-creator-gold">
-              <Package className="h-5 w-5" />
-            </div>
             <h2 className="text-2xl sm:text-3xl font-bold text-white">Quản lý Gói Combo</h2>
           </div>
         </div>
@@ -141,10 +138,10 @@ export function ComboManagementView() {
                       {/* Status Badge */}
                       <span
                         className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${combo.status === "PUBLISHED"
-                            ? "border border-emerald-500/30 bg-emerald-950/80 text-emerald-400"
-                            : combo.status === "DRAFT"
-                              ? "border border-zinc-500/30 bg-zinc-900/80 text-zinc-300"
-                              : "border border-creator-gold/30 bg-creator-gold/10 text-creator-gold"
+                          ? "border border-emerald-500/30 bg-emerald-950/80 text-emerald-400"
+                          : combo.status === "DRAFT"
+                            ? "border border-zinc-500/30 bg-zinc-900/80 text-zinc-300"
+                            : "border border-creator-gold/30 bg-creator-gold/10 text-creator-gold"
                           }`}
                       >
                         <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
