@@ -131,6 +131,11 @@ export function AdminVatReportTable() {
   };
 
   const handleExportExcel = async () => {
+    if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
+      toast.error("Ngày bắt đầu không được lớn hơn ngày kết thúc!");
+      return;
+    }
+
     try {
       setIsExporting(true);
       const blob = await exportVatExcel(

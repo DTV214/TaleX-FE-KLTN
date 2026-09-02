@@ -90,12 +90,22 @@ export default function AdminDashboardPage() {
   };
 
   const handleExportExcel = async () => {
+    if (!startTime || !endTime) {
+      toast.warning("Vui lòng chọn đầy đủ ngày bắt đầu và ngày kết thúc trước khi tải báo cáo!");
+      return;
+    }
+
+    if (new Date(startTime) > new Date(endTime)) {
+      toast.error("Ngày bắt đầu không được lớn hơn ngày kết thúc!");
+      return;
+    }
+
     setIsExporting(true);
 
     try {
-      const startIso = startTime ? `${startTime}T00:00:00` : undefined;
-      const endIso = endTime ? `${endTime}T23:59:59` : undefined;
-      const dateSuffix = new Date().toISOString().slice(0, 10);
+      const startIso = `${startTime}T00:00:00`;
+      const endIso = `${endTime}T23:59:59`;
+      const dateSuffix = `${startTime}_den_${endTime}`;
 
       let blob: Blob;
       let filename = "";
@@ -136,7 +146,7 @@ export default function AdminDashboardPage() {
       }
 
       triggerFileDownload(blob, filename);
-      toast.success("Tải báo cáo thành công!");
+      toast.success(`Tải báo cáo thành công (từ ${startTime} đến ${endTime})!`);
     } catch (err: any) {
       console.error("Lỗi tải báo cáo:", err);
       toast.error(
