@@ -111,11 +111,8 @@ export function OrdersDashboard() {
       <header className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-gray-900 backoffice-dark:text-white">
-            Quản lý Đơn hàng
+            Quản Lý Đơn Hàng
           </h1>
-          <p className="mt-1 text-sm font-semibold text-gray-500 backoffice-dark:text-zinc-400">
-            Tra cứu đơn hàng của toàn hệ thống.
-          </p>
         </div>
 
         <div className="flex flex-wrap gap-3">
@@ -143,11 +140,10 @@ export function OrdersDashboard() {
             key={tab.key}
             type="button"
             onClick={() => setActiveTab(tab.key)}
-            className={`border-b-2 px-4 py-3 text-sm font-bold transition ${
-              activeTab === tab.key
-                ? "border-violet-600 text-violet-600 backoffice-dark:border-[var(--backoffice-primary)] backoffice-dark:text-[var(--backoffice-primary)]"
-                : "border-transparent text-gray-500 hover:text-gray-800 backoffice-dark:text-zinc-400 backoffice-dark:hover:text-white"
-            }`}
+            className={`border-b-2 px-4 py-3 text-sm font-bold transition ${activeTab === tab.key
+              ? "border-violet-600 text-violet-600 backoffice-dark:border-[var(--backoffice-primary)] backoffice-dark:text-[var(--backoffice-primary)]"
+              : "border-transparent text-gray-500 hover:text-gray-800 backoffice-dark:text-zinc-400 backoffice-dark:hover:text-white"
+              }`}
           >
             {tab.label}
           </button>
@@ -158,120 +154,120 @@ export function OrdersDashboard() {
 
       {activeTab === "all" && (
         <>
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
-        <div className="grid gap-4 lg:grid-cols-[minmax(280px,1fr)_200px_200px_auto] lg:items-end">
-          <label className="relative block">
-            <span className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-500 backoffice-dark:text-white/45">
-              Tìm kiếm
-            </span>
-            <Search className="absolute bottom-3.5 left-3 h-4 w-4 text-gray-400" />
-            <input
-              type="search"
-              value={searchDraft}
-              onChange={(event) => setSearchDraft(event.target.value)}
-              placeholder="Mã đơn, mã giao dịch, username, email hoặc họ tên..."
-              className="h-11 w-full rounded-lg border border-slate-200 bg-white pl-10 pr-3 text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-violet-500 focus:ring-4 focus:ring-violet-100 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white backoffice-dark:focus:ring-[rgba(212,175,55,0.16)]"
-            />
-          </label>
-
-          <FilterSelect
-            label="Trạng thái"
-            value={status}
-            onChange={(value) =>
-              updateFilter(setStatus, value as StatusFilter)
-            }
-            options={[
-              { label: "Tất cả", value: "ALL" },
-              { label: "Chờ thanh toán", value: "AWAITING_PAYMENT" },
-              { label: "Hoàn tất", value: "COMPLETED" },
-              { label: "Hết hạn", value: "OUT_OF_TIME" },
-              { label: "Đã hủy", value: "CANCELLED" },
-            ]}
-          />
-
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsFilterPanelOpen((current) => !current)}
-              aria-expanded={isFilterPanelOpen}
-              className="h-11 border-gray-200 bg-white px-4 text-gray-700 shadow-sm hover:bg-gray-50 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/10"
-            >
-              <Filter className="h-4 w-4 text-violet-600 backoffice-dark:text-[var(--backoffice-primary)]" />
-              Bộ lọc
-              {activeFilterCount > 0 && (
-                <span className="ml-1 rounded-full bg-violet-600 px-2 py-0.5 text-xs font-black text-white backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black">
-                  {activeFilterCount}
+          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
+            <div className="grid gap-4 lg:grid-cols-[minmax(280px,1fr)_200px_200px_auto] lg:items-end">
+              <label className="relative block">
+                <span className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-500 backoffice-dark:text-white/45">
+                  Tìm kiếm
                 </span>
-              )}
-              <ChevronDown
-                className={`h-4 w-4 transition-transform ${isFilterPanelOpen ? "rotate-180" : ""}`}
-              />
-            </Button>
-            {activeFilterCount > 0 && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={resetFilters}
-                className="h-11 border-gray-200 bg-white px-3 text-gray-700 shadow-sm hover:bg-gray-50 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/10"
-                aria-label="Xóa lọc"
-              >
-                <RotateCcw className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
-        </div>
+                <Search className="absolute bottom-3.5 left-3 h-4 w-4 text-gray-400" />
+                <input
+                  type="search"
+                  value={searchDraft}
+                  onChange={(event) => setSearchDraft(event.target.value)}
+                  placeholder="Mã đơn, mã giao dịch, username, email hoặc họ tên..."
+                  className="h-11 w-full rounded-lg border border-slate-200 bg-white pl-10 pr-3 text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-violet-500 focus:ring-4 focus:ring-violet-100 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white backoffice-dark:focus:ring-[rgba(212,175,55,0.16)]"
+                />
+              </label>
 
-        {isFilterPanelOpen && (
-          <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50/60 p-4 backoffice-dark:border-white/10 backoffice-dark:bg-black/20">
-            <div className="grid gap-4 lg:grid-cols-3">
               <FilterSelect
-                label="Loại đơn"
-                value={itemType}
+                label="Trạng thái"
+                value={status}
                 onChange={(value) =>
-                  updateFilter(setItemType, value as ItemTypeFilter)
+                  updateFilter(setStatus, value as StatusFilter)
                 }
                 options={[
                   { label: "Tất cả", value: "ALL" },
-                  { label: "Gói Premium", value: "SUBSCRIPTION" },
-                  { label: "Tập lẻ", value: "EPISODE" },
-                  { label: "Combo", value: "COMBO" },
-                  { label: "Dịch vụ tương tác", value: "ENGAGEMENT" },
+                  { label: "Chờ thanh toán", value: "AWAITING_PAYMENT" },
+                  { label: "Hoàn tất", value: "COMPLETED" },
+                  { label: "Hết hạn", value: "OUT_OF_TIME" },
+                  { label: "Đã hủy", value: "CANCELLED" },
                 ]}
               />
 
-              <DateTimeFilter
-                label="Tạo từ"
-                value={createdAtFrom}
-                onChange={(value) => updateFilter(setCreatedAtFrom, value)}
-              />
-              <DateTimeFilter
-                label="Tạo đến"
-                value={createdAtTo}
-                onChange={(value) => updateFilter(setCreatedAtTo, value)}
-              />
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsFilterPanelOpen((current) => !current)}
+                  aria-expanded={isFilterPanelOpen}
+                  className="h-11 border-gray-200 bg-white px-4 text-gray-700 shadow-sm hover:bg-gray-50 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/10"
+                >
+                  <Filter className="h-4 w-4 text-violet-600 backoffice-dark:text-[var(--backoffice-primary)]" />
+                  Bộ lọc
+                  {activeFilterCount > 0 && (
+                    <span className="ml-1 rounded-full bg-violet-600 px-2 py-0.5 text-xs font-black text-white backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black">
+                      {activeFilterCount}
+                    </span>
+                  )}
+                  <ChevronDown
+                    className={`h-4 w-4 transition-transform ${isFilterPanelOpen ? "rotate-180" : ""}`}
+                  />
+                </Button>
+                {activeFilterCount > 0 && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={resetFilters}
+                    className="h-11 border-gray-200 bg-white px-3 text-gray-700 shadow-sm hover:bg-gray-50 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04] backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/10"
+                    aria-label="Xóa lọc"
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
             </div>
-          </div>
-        )}
-      </section>
 
-      {ordersQuery.isError && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-bold text-red-700">
-          Không thể tải danh sách đơn hàng. Kiểm tra API
-          `/api/v1/admin/orders`.
-        </div>
-      )}
+            {isFilterPanelOpen && (
+              <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50/60 p-4 backoffice-dark:border-white/10 backoffice-dark:bg-black/20">
+                <div className="grid gap-4 lg:grid-cols-3">
+                  <FilterSelect
+                    label="Loại đơn"
+                    value={itemType}
+                    onChange={(value) =>
+                      updateFilter(setItemType, value as ItemTypeFilter)
+                    }
+                    options={[
+                      { label: "Tất cả", value: "ALL" },
+                      { label: "Gói Premium", value: "SUBSCRIPTION" },
+                      { label: "Tập lẻ", value: "EPISODE" },
+                      { label: "Combo", value: "COMBO" },
+                      { label: "Dịch vụ tương tác", value: "ENGAGEMENT" },
+                    ]}
+                  />
 
-      <OrdersTable
-        orders={orders}
-        page={pageData?.pageNumber ?? page}
-        pageSize={pageData?.pageSize ?? DEFAULT_PAGE_SIZE}
-        totalPages={pageData?.totalPages ?? 0}
-        totalElements={pageData?.totalElements ?? 0}
-        isLoading={ordersQuery.isLoading}
-        onPageChange={setPage}
-        onViewDetail={openDetail}
-      />
+                  <DateTimeFilter
+                    label="Tạo từ"
+                    value={createdAtFrom}
+                    onChange={(value) => updateFilter(setCreatedAtFrom, value)}
+                  />
+                  <DateTimeFilter
+                    label="Tạo đến"
+                    value={createdAtTo}
+                    onChange={(value) => updateFilter(setCreatedAtTo, value)}
+                  />
+                </div>
+              </div>
+            )}
+          </section>
+
+          {ordersQuery.isError && (
+            <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-bold text-red-700">
+              Không thể tải danh sách đơn hàng. Kiểm tra API
+              `/api/v1/admin/orders`.
+            </div>
+          )}
+
+          <OrdersTable
+            orders={orders}
+            page={pageData?.pageNumber ?? page}
+            pageSize={pageData?.pageSize ?? DEFAULT_PAGE_SIZE}
+            totalPages={pageData?.totalPages ?? 0}
+            totalElements={pageData?.totalElements ?? 0}
+            isLoading={ordersQuery.isLoading}
+            onPageChange={setPage}
+            onViewDetail={openDetail}
+          />
         </>
       )}
 

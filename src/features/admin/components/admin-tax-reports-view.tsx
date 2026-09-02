@@ -20,18 +20,15 @@ export function AdminTaxReportsView() {
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
       {/* Header with Title & PayOS Balance Badge */}
-      <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between border-b border-gray-100 pb-4 backoffice-dark:border-white/10">
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between border-gray-100 backoffice-dark:border-white/10">
         <div>
-          <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950 backoffice-dark:text-white">
-            Báo Cáo Thuế & Quyết Toán
-          </h1>
-          <p className="mt-1 text-sm font-medium text-slate-500 backoffice-dark:text-white/60">
-            Tổng quan nghĩa vụ thuế VAT, PIT và các báo cáo đối soát chi tiết.
-          </p>
+          <h2 className="text-3xl font-bold tracking-tight text-slate-950 backoffice-dark:text-white">
+            Báo Cáo Thuế
+          </h2>
         </div>
 
         {/* PayOS Payout Account Balance Badge */}
-        <PayoutBalanceBadge />
+
       </div>
 
       {/* 3 Tabs Bar with Segmented Button styling */}
@@ -39,11 +36,10 @@ export function AdminTaxReportsView() {
         <button
           type="button"
           onClick={() => setActiveTab("overview")}
-          className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-all cursor-pointer ${
-            activeTab === "overview"
-              ? "bg-white text-violet-700 shadow-sm backoffice-dark:bg-violet-600 backoffice-dark:text-white"
-              : "text-gray-600 hover:bg-white/60 hover:text-gray-900 backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/[0.06] backoffice-dark:hover:text-white"
-          }`}
+          className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-all cursor-pointer ${activeTab === "overview"
+            ? "bg-white text-violet-700 shadow-sm backoffice-dark:bg-violet-600 backoffice-dark:text-white"
+            : "text-gray-600 hover:bg-white/60 hover:text-gray-900 backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/[0.06] backoffice-dark:hover:text-white"
+            }`}
         >
           <PieChart className="w-4 h-4 text-violet-600 backoffice-dark:text-white" />
           <span>Tổng quan</span>
@@ -52,11 +48,10 @@ export function AdminTaxReportsView() {
         <button
           type="button"
           onClick={() => setActiveTab("vat")}
-          className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-all cursor-pointer ${
-            activeTab === "vat"
-              ? "bg-white text-violet-700 shadow-sm backoffice-dark:bg-violet-600 backoffice-dark:text-white"
-              : "text-gray-600 hover:bg-white/60 hover:text-gray-900 backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/[0.06] backoffice-dark:hover:text-white"
-          }`}
+          className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-all cursor-pointer ${activeTab === "vat"
+            ? "bg-white text-violet-700 shadow-sm backoffice-dark:bg-violet-600 backoffice-dark:text-white"
+            : "text-gray-600 hover:bg-white/60 hover:text-gray-900 backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/[0.06] backoffice-dark:hover:text-white"
+            }`}
         >
           <Receipt className="w-4 h-4 text-emerald-600 backoffice-dark:text-emerald-400" />
           <span>Báo Cáo VAT (Xuất Excel VAT)</span>
@@ -65,11 +60,10 @@ export function AdminTaxReportsView() {
         <button
           type="button"
           onClick={() => setActiveTab("pit")}
-          className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-all cursor-pointer ${
-            activeTab === "pit"
-              ? "bg-white text-violet-700 shadow-sm backoffice-dark:bg-violet-600 backoffice-dark:text-white"
-              : "text-gray-600 hover:bg-white/60 hover:text-gray-900 backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/[0.06] backoffice-dark:hover:text-white"
-          }`}
+          className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-all cursor-pointer ${activeTab === "pit"
+            ? "bg-white text-violet-700 shadow-sm backoffice-dark:bg-violet-600 backoffice-dark:text-white"
+            : "text-gray-600 hover:bg-white/60 hover:text-gray-900 backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/[0.06] backoffice-dark:hover:text-white"
+            }`}
         >
           <Scale className="w-4 h-4 text-amber-600 backoffice-dark:text-amber-400" />
           <span>Báo Cáo PIT (Xuất Bảng kê 05-2)</span>

@@ -4,10 +4,13 @@ import { type ReactNode, useState } from "react";
 import {
   AlertTriangle,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   FileText,
   Loader2,
   ReceiptText,
   RefreshCw,
+  Send,
   WalletCards,
   X,
 } from "lucide-react";
@@ -15,6 +18,8 @@ import { toast } from "sonner";
 import { cn } from "@/shared/utils/utils";
 import {
   useCreatorSettlementDetail,
+  useCreatorPrimaryPaymentProfile,
+  useRunSingleCreatorPayout,
   useUpdateCreatorSettlementStatus,
 } from "../hooks/use-creator-settlements";
 import type {
@@ -24,6 +29,13 @@ import type {
   RevenueTransactionType,
   SettlementStatus,
 } from "../types/creator-settlements.types";
+
+const paymentProfileStatusLabels: Record<string, string> = {
+  PENDING: "Đang chờ duyệt",
+  VERIFIED: "Đã xác minh",
+  REJECTED: "Bị từ chối",
+  CANCELLED: "Đã hủy",
+};
 
 export const settlementStatuses: SettlementStatus[] = [
   "CALCULATED",
@@ -37,19 +49,19 @@ export const settlementStatuses: SettlementStatus[] = [
 const validNextStatuses: Record<SettlementStatus, SettlementStatus[]> = {
   CALCULATED: ["APPROVED", "UNDER_REVIEW", "FORFEITED", "FROZEN_PENALTY"],
   FROZEN_PENALTY: ["APPROVED", "UNDER_REVIEW", "FORFEITED"],
-  APPROVED: ["PAID", "UNDER_REVIEW", "FORFEITED"],
+  APPROVED: ["UNDER_REVIEW", "FORFEITED"],
   UNDER_REVIEW: ["APPROVED", "FORFEITED"],
   PAID: [],
   FORFEITED: [],
 };
 
 const statusLabels: Record<SettlementStatus, string> = {
-  CALCULATED: "Đã tính",
-  APPROVED: "Đã duyệt",
-  PAID: "Đã chi trả",
-  UNDER_REVIEW: "Đang xem xét",
-  FROZEN_PENALTY: "Đóng băng",
-  FORFEITED: "Không chi",
+  CALCULATED: "Đã Tính",
+  APPROVED: "Đã Duyệt",
+  PAID: "Đã Chi Trả",
+  UNDER_REVIEW: "Đang Xem Xét",
+  FROZEN_PENALTY: "Đóng Băng",
+  FORFEITED: "Tịch Thu",
 };
 
 const revenueTypeLabels: Record<RevenueTransactionType, string> = {
@@ -233,12 +245,68 @@ function InfoRow({
   );
 }
 
+function PrimaryPaymentProfilePanel({ creatorId }: { creatorId: string | null }) {
+  const paymentProfileQuery = useCreatorPrimaryPaymentProfile(creatorId);
+  const profile = paymentProfileQuery.data;
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-3.5 sm:p-4 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.035]">
+      <div className="mb-2 flex items-center gap-2">
+        <WalletCards className="h-4 w-4 text-cyan-500" />
+        <h3 className="text-xs sm:text-sm font-black text-slate-950 backoffice-dark:text-white">
+          Tài khoản nhận tiền
+        </h3>
+      </div>
+
+      {paymentProfileQuery.isLoading && (
+        <div className="flex items-center gap-2 py-4 text-xs font-semibold text-slate-500 backoffice-dark:text-white/45">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Đang tải tài khoản nhận tiền...
+        </div>
+      )}
+
+      {paymentProfileQuery.isError && (
+        <p className="py-3 text-xs font-semibold text-red-600 backoffice-dark:text-red-300">
+          Không thể tải tài khoản nhận tiền.
+        </p>
+      )}
+
+      {!paymentProfileQuery.isLoading && !paymentProfileQuery.isError && !profile && (
+        <p className="py-3 text-xs font-semibold text-slate-500 backoffice-dark:text-white/45">
+          Nhà sáng tạo chưa có tài khoản nhận tiền chính.
+        </p>
+      )}
+
+      {profile && (
+        <>
+          <InfoRow label="Ngân hàng" value={profile.bankCode} />
+          <InfoRow label="Số tài khoản" value={profile.accountNumber} />
+          <InfoRow label="Chủ tài khoản" value={profile.accountName} />
+          <InfoRow
+            label="Trạng thái"
+            value={paymentProfileStatusLabels[profile.status] ?? profile.status}
+          />
+          <InfoRow label="Xác minh lúc" value={formatDateTime(profile.verifiedAt)} />
+        </>
+      )}
+    </div>
+  );
+}
+
 function RevenueTransactionsTable({
   detail,
 }: {
   detail: CreatorSettlementDetail;
 }) {
   const transactions = detail.revenueTransactions ?? [];
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 5;
+  const totalPages = Math.max(1, Math.ceil(transactions.length / pageSize));
+  const page = Math.min(currentPage, totalPages);
+  const paginatedTransactions = transactions.slice(
+    (page - 1) * pageSize,
+    page * pageSize,
+  );
 
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.035]">
@@ -268,7 +336,7 @@ function RevenueTransactionsTable({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 backoffice-dark:divide-white/10">
-              {transactions.map((transaction) => (
+              {paginatedTransactions.map((transaction) => (
                 <tr key={transaction.revenueTransactionId}>
                   <td className="px-3.5 py-2.5 font-bold text-slate-800 backoffice-dark:text-white/85">
                     {revenueTypeLabels[transaction.revenueTransactionType] ??
@@ -295,6 +363,35 @@ function RevenueTransactionsTable({
               ))}
             </tbody>
           </table>
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between gap-3 border-t border-slate-200 px-3.5 py-2.5 backoffice-dark:border-white/10">
+              <span className="text-xs font-bold text-slate-500 backoffice-dark:text-white/45">
+                Trang {page}/{totalPages}
+              </span>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((previousPage) => Math.max(1, previousPage - 1))}
+                  disabled={page === 1}
+                  aria-label="Trang trước"
+                  title="Trang trước"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 backoffice-dark:border-white/10 backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/10"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((previousPage) => Math.min(totalPages, previousPage + 1))}
+                  disabled={page === totalPages}
+                  aria-label="Trang sau"
+                  title="Trang sau"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 backoffice-dark:border-white/10 backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/10"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -312,13 +409,13 @@ function PayoutTransactionsTable({ detail }: { detail: CreatorSettlementDetail }
           Giao dịch chi trả
         </h3>
         <span className="ml-auto text-xs font-bold text-slate-400">
-          {transactions.length} payout
+          {transactions.length} giao dịch
         </span>
       </div>
 
       {transactions.length === 0 ? (
         <div className="px-4 py-6 text-center text-xs sm:text-sm font-semibold text-slate-500 backoffice-dark:text-white/45">
-          Chưa có payout transaction. Settlement chỉ có payout sau khi được duyệt và xử lý chi trả.
+          Chưa có giao dịch chi trả. Quyết toán chỉ có giao dịch chi trả sau khi được duyệt và xử lý chi trả.
         </div>
       ) : (
         <div className="w-full">
@@ -333,11 +430,10 @@ function PayoutTransactionsTable({ detail }: { detail: CreatorSettlementDetail }
             </thead>
             <tbody className="divide-y divide-slate-100 backoffice-dark:divide-white/10">
               {transactions.map((transaction) => (
-                <tr key={transaction.payoutTransactionId}>
+                <tr key={transaction.transactionReferenceId}>
                   <td className="px-3.5 py-2.5">
                     <p className="font-bold text-slate-800 backoffice-dark:text-white/85 break-all">
-                      {transaction.payoutReference ||
-                        transaction.transactionReferenceId ||
+                      {transaction.transactionReferenceId ||
                         transaction.payoutTransactionId}
                     </p>
                     <p className="mt-0.5 text-xs font-semibold text-slate-400 whitespace-nowrap">
@@ -459,6 +555,43 @@ function AdminStatusPanel({ detail }: { detail: CreatorSettlementDetail }) {
   );
 }
 
+function AdminSinglePayoutPanel({
+  settlementId,
+}: {
+  settlementId: string;
+}) {
+  const payoutMutation = useRunSingleCreatorPayout(settlementId);
+
+  async function handlePayout() {
+    try {
+      await payoutMutation.mutateAsync();
+      toast.success("Đã thực hiện chuyển tiền cho settlement.");
+    } catch {
+      toast.error("Không thể thực hiện chuyển tiền cho settlement.");
+    }
+  }
+
+  return (
+    <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 backoffice-dark:border-emerald-400/20 backoffice-dark:bg-emerald-400/5">
+      <div className="flex items-center gap-2">
+        <Send className="h-4 w-4 text-emerald-600 backoffice-dark:text-emerald-300" />
+        <h3 className="text-sm font-black text-slate-950 backoffice-dark:text-white">
+          Chuyển tiền
+        </h3>
+      </div>
+      <button
+        type="button"
+        onClick={handlePayout}
+        disabled={payoutMutation.isPending}
+        className="mt-3.5 inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 text-xs sm:text-sm font-black text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50 backoffice-dark:bg-emerald-400 backoffice-dark:text-black backoffice-dark:hover:bg-emerald-300"
+      >
+        {payoutMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+        Thực hiện chuyển tiền
+      </button>
+    </div>
+  );
+}
+
 export function SettlementDetailDialog({
   onClose,
   role,
@@ -489,13 +622,10 @@ export function SettlementDetailDialog({
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-lg font-black text-slate-950 backoffice-dark:text-white">
-                Chi tiết quyết toán
+                Chi Tiết Quyết Toán
               </h2>
               {detail && <SettlementStatusBadge status={detail.status} />}
             </div>
-            <p className="mt-0.5 break-all text-xs font-semibold text-slate-500 backoffice-dark:text-white/45">
-              {settlementId}
-            </p>
           </div>
           <button
             type="button"
@@ -590,6 +720,13 @@ export function SettlementDetailDialog({
                   />
                 </div>
 
+                <PrimaryPaymentProfilePanel
+                  creatorId={detail.creatorDetail?.creatorId ?? null}
+                />
+
+                {role === "admin" && detail.status === "APPROVED" && (
+                  <AdminSinglePayoutPanel settlementId={settlementId} />
+                )}
                 {role === "admin" && <AdminStatusPanel detail={detail} />}
               </aside>
             </div>

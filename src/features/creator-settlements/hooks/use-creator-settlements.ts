@@ -14,6 +14,8 @@ export const creatorSettlementKeys = {
     [...creatorSettlementKeys.all, "own-list", params] as const,
   detail: (settlementId: string) =>
     [...creatorSettlementKeys.all, "detail", settlementId] as const,
+  primaryPaymentProfile: (creatorId: string) =>
+    [...creatorSettlementKeys.all, "primary-payment-profile", creatorId] as const,
 };
 
 export function useAdminCreatorSettlements(params: SettlementSearchParams) {
@@ -41,6 +43,15 @@ export function useCreatorSettlementDetail(settlementId: string | null) {
   });
 }
 
+export function useCreatorPrimaryPaymentProfile(creatorId: string | null) {
+  return useQuery({
+    queryKey: creatorSettlementKeys.primaryPaymentProfile(creatorId ?? ""),
+    queryFn: () => creatorSettlementsApi.primaryPaymentProfile(creatorId!),
+    enabled: Boolean(creatorId),
+    retry: false,
+  });
+}
+
 export function useUpdateCreatorSettlementStatus(settlementId: string | null) {
   const queryClient = useQueryClient();
 
@@ -63,6 +74,17 @@ export function useRunCreatorSettlementProcess() {
       if (!variables.isDemo) {
         queryClient.invalidateQueries({ queryKey: creatorSettlementKeys.all });
       }
+    },
+  });
+}
+
+export function useRunSingleCreatorPayout(settlementId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => creatorSettlementsApi.runSinglePayout(settlementId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: creatorSettlementKeys.all });
     },
   });
 }

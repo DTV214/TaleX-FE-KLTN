@@ -194,15 +194,9 @@ function ConfigModal<T extends Record<string, any>>({
       <div className="w-full max-w-2xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl backoffice-dark:border-white/10 backoffice-dark:bg-[#121213]">
         <div className="flex items-start justify-between border-b border-slate-200 p-6 backoffice-dark:border-white/10">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--backoffice-primary)]">
-              Cài đặt
-            </p>
             <h2 className="mt-2 text-2xl font-bold text-slate-950 backoffice-dark:text-white">
               {title}
             </h2>
-            <p className="mt-1 text-sm font-medium text-slate-500 backoffice-dark:text-white/55">
-              {description}
-            </p>
           </div>
           <button
             type="button"
@@ -325,16 +319,9 @@ export function TaxConfigDashboard() {
       {/* Header */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3.5 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-amber-700 backoffice-dark:border-[var(--backoffice-primary)]/35 backoffice-dark:bg-[var(--backoffice-primary)]/10 backoffice-dark:text-[var(--backoffice-primary)]">
-            <Percent className="h-3.5 w-3.5" />
-            Tài chính & Thuế
-          </div>
-          <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-950 backoffice-dark:text-white">
+          <h2 className="text-3xl font-bold tracking-tight text-slate-950 backoffice-dark:text-white">
             Cấu Hình Thuế & Quyết Toán
-          </h1>
-          <p className="mt-1 text-sm font-medium text-slate-500 backoffice-dark:text-white/55">
-            Quản lý ngưỡng quyết toán, rút tiền và tỷ lệ thuế VAT/PIT áp dụng cho các hoạt động tài chính trên nền tảng.
-          </p>
+          </h2>
         </div>
 
         <button
@@ -354,10 +341,6 @@ export function TaxConfigDashboard() {
       <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-[linear-gradient(135deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))]">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-1">
-            <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.14em] text-[var(--backoffice-primary)]">
-              <SlidersHorizontal className="h-3.5 w-3.5" />
-              Quyết toán Creator
-            </div>
             <h2 className="text-xl font-bold text-slate-950 backoffice-dark:text-white">
               Cấu hình quyết toán
             </h2>
@@ -418,10 +401,6 @@ export function TaxConfigDashboard() {
       <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-[linear-gradient(135deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))]">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-1">
-            <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.14em] text-amber-600 backoffice-dark:text-[var(--backoffice-primary)]">
-              <Percent className="h-3.5 w-3.5" />
-              Thuế nền tảng
-            </div>
             <h2 className="text-xl font-bold text-slate-950 backoffice-dark:text-white">
               Cấu hình thuế VAT & PIT
             </h2>

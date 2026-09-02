@@ -123,11 +123,8 @@ export default function SettingsPage() {
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-8">
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-gray-900 backoffice-dark:text-white">
-          Cài đặt hệ thống
+          Cài Đặt Hệ Thống
         </h1>
-        <p className="mt-2 max-w-3xl text-sm font-medium leading-6 text-slate-500 backoffice-dark:text-white/55">
-          Quản lý các cấu hình vận hành dành cho Admin và Staff.
-        </p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
@@ -141,11 +138,10 @@ export default function SettingsPage() {
                 key={item.id}
                 type="button"
                 onClick={() => setActiveTab(item.id)}
-                className={`flex items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-bold transition ${
-                  isActive
-                    ? "bg-[#00D1FF] text-white shadow-md shadow-[#00D1FF]/20 backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black backoffice-dark:shadow-[0_12px_30px_rgba(212,175,55,0.14)]"
-                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-950 backoffice-dark:text-white/65 backoffice-dark:hover:bg-white/10 backoffice-dark:hover:text-white"
-                }`}
+                className={`flex items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-bold transition ${isActive
+                  ? "bg-[#00D1FF] text-white shadow-md shadow-[#00D1FF]/20 backoffice-dark:bg-[var(--backoffice-primary)] backoffice-dark:text-black backoffice-dark:shadow-[0_12px_30px_rgba(212,175,55,0.14)]"
+                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-950 backoffice-dark:text-white/65 backoffice-dark:hover:bg-white/10 backoffice-dark:hover:text-white"
+                  }`}
               >
                 <Icon className="h-5 w-5 shrink-0" />
                 <span className="min-w-0 truncate">{item.name}</span>
@@ -216,9 +212,8 @@ function AppearancePanel({
           className="backoffice-theme-switch relative inline-flex h-8 w-16 shrink-0 items-center rounded-full border transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37]/35"
         >
           <span
-            className={`backoffice-theme-switch-knob inline-flex h-6 w-6 items-center justify-center rounded-full transition-transform duration-200 ${
-              isDark ? "translate-x-8" : "translate-x-1"
-            }`}
+            className={`backoffice-theme-switch-knob inline-flex h-6 w-6 items-center justify-center rounded-full transition-transform duration-200 ${isDark ? "translate-x-8" : "translate-x-1"
+              }`}
           >
             {isDark ? (
               <Moon className="h-3.5 w-3.5" />

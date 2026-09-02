@@ -165,7 +165,7 @@ export function CreatorSettlementsView() {
         <div>
           <div className="flex items-center gap-2.5">
             <h2 className="text-2xl sm:text-3xl font-bold text-white">
-              {activeTab === "tax" ? "Thuế & Chứng từ khấu trừ" : "Quyết Toán"}
+              {activeTab === "tax" ? "Thuế & Chứng Từ Khấu Trừ" : "Quyết Toán"}
             </h2>
           </div>
         </div>
@@ -213,85 +213,61 @@ export function CreatorSettlementsView() {
               <p className="mt-2 text-2xl font-black text-amber-300 md:text-3xl">
                 {formatVND(totalTaxWithheld)}
               </p>
-              <p className="mt-1 text-xs font-semibold text-creator-muted">
-                Khấu trừ tự động qua các kỳ quyết toán
-              </p>
             </div>
 
             <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
               <p className="text-xs font-bold uppercase tracking-wider text-creator-muted">
-                Tổng Thu Nhập Trước Thuế (Gross)
+                Tổng Thu Nhập Trước Thuế
               </p>
               <p className="mt-2 text-2xl font-black text-white md:text-3xl">
                 {formatVND(totalGrossIncome)}
-              </p>
-              <p className="mt-1 text-xs font-semibold text-creator-muted">
-                Tổng thu nhập phát sinh từ nội dung & chia sẻ
               </p>
             </div>
 
             <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.04] p-5 sm:col-span-2 xl:col-span-1">
               <p className="text-xs font-bold uppercase tracking-wider text-emerald-300/80">
-                Tổng Thực Nhận (Net Payout)
+                Tổng Thực Nhận
               </p>
               <p className="mt-2 text-2xl font-black text-emerald-300 md:text-3xl">
                 {formatVND(totalNetPayout)}
-              </p>
-              <p className="mt-1 text-xs font-semibold text-creator-muted">
-                Thu nhập thực tế chuyển về tài khoản
               </p>
             </div>
           </div>
 
           {/* Export Tax Certificate Card */}
-          <section className="overflow-hidden rounded-2xl border border-creator-gold/20 bg-[linear-gradient(135deg,rgba(226,177,60,0.08),rgba(255,255,255,0.02))] p-6 shadow-lg">
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-              <div className="space-y-2">
-                <div className="inline-flex items-center gap-2 rounded-full border border-creator-gold/30 bg-creator-gold/10 px-3 py-1 text-xs font-black text-creator-gold">
-                  <ShieldCheck className="h-3.5 w-3.5" />
-                  Chứng từ điện tử hợp lệ
-                </div>
-                <h2 className="text-xl font-black text-white md:text-2xl">
-                  Chứng từ Khấu trừ Thuế TNCN Điện tử
-                </h2>
-                <p className="max-w-2xl text-sm font-semibold leading-relaxed text-creator-muted">
-                  Tải chứng từ khấu trừ thuế TNCN điện tử theo quy định của Tổng cục Thuế để sử dụng khi thực hiện quyết toán thuế cuối năm hoặc hoàn thuế TNCN cá nhân.
-                </p>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-white/10 bg-black/40 p-4">
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-creator-gold" />
-                  <span className="text-xs font-bold text-creator-muted">Năm tính thuế:</span>
-                  <select
-                    value={taxYear}
-                    onChange={(e) => setTaxYear(Number(e.target.value))}
-                    className="h-10 rounded-xl border border-white/10 bg-zinc-900 px-3 text-sm font-bold text-white outline-none transition focus:border-creator-gold/60"
-                  >
-                    {Array.from({ length: 4 }, (_, i) => new Date().getFullYear() - i).map((year) => (
-                      <option key={year} value={year}>
-                        Năm {year}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => handleDownloadTaxCertificate()}
-                  disabled={isDownloadingPdf}
-                  className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-creator-gold px-5 text-sm font-black text-black shadow-[0_8px_24px_rgba(226,177,60,0.25)] transition hover:bg-yellow-400 disabled:opacity-50"
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-white/10 bg-black/40 p-4">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-creator-gold" />
+                <span className="text-xs font-bold text-creator-muted">Năm tính thuế:</span>
+                <select
+                  value={taxYear}
+                  onChange={(e) => setTaxYear(Number(e.target.value))}
+                  className="h-10 rounded-xl border border-white/10 bg-zinc-900 px-3 text-sm font-bold text-white outline-none transition focus:border-creator-gold/60"
                 >
-                  {isDownloadingPdf ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <FileDown className="h-4 w-4" />
-                  )}
-                  Tải Chứng Từ Thuế
-                </button>
+                  {Array.from({ length: 4 }, (_, i) => new Date().getFullYear() - i).map((year) => (
+                    <option key={year} value={year}>
+                      Năm {year}
+                    </option>
+                  ))}
+                </select>
               </div>
+
+              <button
+                type="button"
+                onClick={() => handleDownloadTaxCertificate()}
+                disabled={isDownloadingPdf}
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-creator-gold px-5 text-sm font-black text-black shadow-[0_8px_24px_rgba(226,177,60,0.25)] transition hover:bg-yellow-400 disabled:opacity-50"
+              >
+                {isDownloadingPdf ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <FileDown className="h-4 w-4" />
+                )}
+                Tải Chứng Từ Thuế
+              </button>
             </div>
-          </section>
+          </div>
 
           {/* Tax Breakdown Table per Settlement */}
           <div className="space-y-3">
@@ -328,10 +304,10 @@ export function CreatorSettlementsView() {
                     <thead className="border-b border-white/10 bg-white/[0.035] text-xs font-black uppercase tracking-wide text-creator-muted">
                       <tr>
                         <th className="px-5 py-4">Kỳ quyết toán</th>
-                        <th className="px-5 py-4 text-right">Thu nhập chịu thuế (Gross)</th>
+                        <th className="px-5 py-4 text-right">Thu nhập chịu thuế</th>
                         <th className="px-5 py-4 text-right">Tỷ lệ thuế TNCN</th>
                         <th className="px-5 py-4 text-right">Thuế TNCN đã khấu trừ</th>
-                        <th className="px-5 py-4 text-right">Thực nhận (Net)</th>
+                        <th className="px-5 py-4 text-right">Thực nhận</th>
                         <th className="px-5 py-4">Trạng thái</th>
                         <th className="px-5 py-4 text-right">Thao tác</th>
                       </tr>
@@ -380,9 +356,9 @@ export function CreatorSettlementsView() {
           <div className="flex items-start gap-3.5 rounded-2xl border border-white/10 bg-white/[0.02] p-5">
             <Info className="mt-0.5 h-5 w-5 flex-shrink-0 text-creator-gold" />
             <div className="space-y-1 text-xs font-medium leading-relaxed text-creator-muted">
-              <p className="font-bold text-zinc-200">Quy định khấu trừ thuế đối với Creator:</p>
+              <p className="font-bold text-zinc-200">Quy định khấu trừ thuế đối với Nhà Sáng Tạo:</p>
               <p>
-                - Theo quy định pháp luật thuế Việt Nam, nền tảng thực hiện khấu trừ thuế TNCN trực tiếp trên từng khoản thu nhập quyết toán của Creator trước khi chi trả.
+                - Theo quy định pháp luật thuế Việt Nam, nền tảng thực hiện khấu trừ thuế TNCN trực tiếp trên từng khoản thu nhập quyết toán của Nhà Sáng Tạo trước khi chi trả.
               </p>
               <p>
                 - Đảm bảo bạn đã cập nhật chính xác Mã số thuế cá nhân và CCCD tại mục{" "}
@@ -429,7 +405,7 @@ export function CreatorSettlementsView() {
                 <option value="settlementMonth">Theo tháng</option>
                 <option value="createdAt">Theo ngày tạo</option>
                 <option value="grossAmount">Theo doanh thu</option>
-                <option value="netPayoutAmount">Theo net payout</option>
+                <option value="netPayoutAmount">Theo thực nhận</option>
                 <option value="status">Theo trạng thái</option>
               </select>
               <select
@@ -478,8 +454,8 @@ export function CreatorSettlementsView() {
                       <th className="px-5 py-4 text-right">Doanh Thu</th>
                       <th className="px-5 py-4 text-right">Phạt</th>
                       <th className="px-5 py-4 text-right">Thuế</th>
-                      <th className="px-5 py-4 text-right">Net payout</th>
-                      <th className="px-5 py-4">Status</th>
+                      <th className="px-5 py-4 text-right">Thực nhận</th>
+                      <th className="px-5 py-4">Trạng thái</th>
                       <th className="px-5 py-4 text-right">Thao tác</th>
                     </tr>
                   </thead>
@@ -499,7 +475,7 @@ export function CreatorSettlementsView() {
                 <div className="flex items-center justify-between border-t border-white/10 px-5 py-3">
                   <p className="text-sm font-semibold text-creator-muted">
                     Trang {settlementsQuery.data.pageNumber} / {settlementsQuery.data.totalPages || 1} ·{" "}
-                    {settlementsQuery.data.totalElements} settlement
+                    {settlementsQuery.data.totalElements} Kỳ
                   </p>
                   <div className="flex gap-2">
                     <button

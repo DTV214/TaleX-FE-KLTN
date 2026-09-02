@@ -62,26 +62,26 @@ export const useAdminSidebarStore = create<AdminSidebarState>((set) => ({
 }));
 
 const contentNavItems: NavItem[] = [
-  { name: "Danh sách Series", href: "/admin/series", icon: Clapperboard },
-  { name: "Thể loại", href: "/admin/categories", icon: Grid3X3 },
+  { name: "Danh Sách Series", href: "/admin/series", icon: Clapperboard },
+  { name: "Thể Loại", href: "/admin/categories", icon: Grid3X3 },
   { name: "Thẻ", href: "/admin/tags", icon: Tag },
-  { name: "Kiểm duyệt", href: "/admin/moderation", icon: ShieldAlert },
-  { name: "Nhãn kiểm duyệt", href: "/admin/violation-labels", icon: Languages },
-  { name: "Cảnh báo nội dung", href: "/admin/content-warnings", icon: AlertTriangle },
-  { name: "Kiểm duyệt & Bản quyền", href: "/admin/ai-pipeline-config", icon: SlidersHorizontal },
-  { name: "Xu hướng", href: "/admin/trending", icon: TrendingUp },
-  { name: "Quản lý Kênh", href: "/admin/channels", icon: Tv },
+  { name: "Kiểm Duyệt", href: "/admin/moderation", icon: ShieldAlert },
+  { name: "Nhãn Kiểm Duyệt", href: "/admin/violation-labels", icon: Languages },
+  { name: "Cảnh Báo Nội Dung", href: "/admin/content-warnings", icon: AlertTriangle },
+  { name: "Kiểm Duyệt & Bản Quyền", href: "/admin/ai-pipeline-config", icon: SlidersHorizontal },
+  { name: "Phân Phối", href: "/admin/trending", icon: TrendingUp },
+  { name: "Quản Lý Kênh", href: "/admin/channels", icon: Tv },
 ];
 
 const moderationNavItems: NavItem[] = [
-  { name: "Báo cáo", href: "/admin/reports", icon: Flag },
-  { name: "Hình phạt", href: "/admin/penalties", icon: Ban },
-  { name: "Khiếu nại", href: "/admin/appeals", icon: FileQuestion },
+  { name: "Báo Cáo", href: "/admin/reports", icon: Flag },
+  { name: "Hình Phạt", href: "/admin/penalties", icon: Ban },
+  { name: "Khiếu Nại", href: "/admin/appeals", icon: FileQuestion },
 ];
 
 const creatorNavItems: NavItem[] = [
-  { name: "Người sáng tạo", href: "/admin/creators", icon: Users },
-  { name: "Cấp Creator", href: "/admin/creator-tiers", icon: ShieldCheck },
+  { name: "Nhà Sáng Tạo", href: "/admin/creators", icon: Users },
+  { name: "Cấp Bậc", href: "/admin/creator-tiers", icon: ShieldCheck },
   {
     name: "Creator Config",
     href: "/admin/creator-config",
@@ -91,32 +91,32 @@ const creatorNavItems: NavItem[] = [
 
 const creatorVerificationNavItems: NavItem[] = [
   {
-    name: "Hồ sơ thuế",
+    name: "Hồ Sơ Thuế",
     href: "/admin/creator-verification?tab=tax",
     icon: UserCheck,
   },
   {
-    name: "Hồ sơ thanh toán",
+    name: "Hồ Sơ Thanh Toán",
     href: "/admin/creator-verification?tab=payment",
     icon: CreditCard,
   },
 ];
 
 const financialNavItems: NavItem[] = [
-  { name: "Quyết toán Creator", href: "/admin/financials", icon: CircleDollarSign },
-  { name: "Chia tiền Creator", href: "/admin/subscription-revenue-sharing", icon: Share2 },
-  { name: "Yêu cầu rút tiền", href: "/admin/payouts", icon: Banknote },
+  { name: "Quyết Toán", href: "/admin/financials", icon: CircleDollarSign },
+  { name: "Chia Tiền", href: "/admin/subscription-revenue-sharing", icon: Share2 },
+  { name: "Yêu Cầu Rút Tiền", href: "/admin/payouts", icon: Banknote },
   { name: "Báo Cáo Thuế", href: "/admin/tax-summary", icon: Receipt },
-  { name: "Cấu hình Thuế & Quyết toán", href: "/admin/tax-config", icon: Percent },
+  { name: "Cấu Hình Thuế & Quyết Toán", href: "/admin/tax-config", icon: Percent },
 ];
 
 const interactionNavItems: NavItem[] = [
   {
-    name: "Dịch vụ tương tác",
+    name: "Dịch Vụ Tương Tác",
     href: "/admin/engagement-services",
     icon: Megaphone,
   },
-  { name: "Chiến dịch", href: "/admin/campaigns", icon: ImageIcon },
+  { name: "Chiến Dịch", href: "/admin/campaigns", icon: ImageIcon },
 ];
 
 const navItems: NavItem[] = [
@@ -128,12 +128,12 @@ const navItems: NavItem[] = [
     icon: CreditCard,
   },
   {
-    name: "Đơn hàng",
+    name: "Đơn Hàng",
     href: "/admin/orders",
     icon: ListOrdered,
   },
   {
-    name: "Kinh Tế Coin",
+    name: "Quản Lý Xu",
     href: "/admin/coin-management",
     icon: CircleDollarSign,
   },
@@ -142,7 +142,7 @@ const navItems: NavItem[] = [
     href: "/admin/mission-management",
     icon: Target,
   },
-  { name: "Quảng cáo Direct", href: "/admin/ads", icon: Megaphone },
+  { name: "Quảng Cáo", href: "/admin/ads", icon: Megaphone },
   { name: "Điều Khoản", href: "/admin/terms", icon: FileText },
   { name: "Quét Bản Quyền", href: "/admin/copyright-check", icon: Scan },
   { name: "Cài Đặt", href: "/admin/settings", icon: Settings },
@@ -199,8 +199,8 @@ function AdminNavLink({
       />
       <span
         className={`truncate whitespace-nowrap transition-all duration-200 ${isSidebarOpen
-            ? "max-w-[170px] opacity-100"
-            : "max-w-0 overflow-hidden opacity-0"
+          ? "max-w-[170px] opacity-100"
+          : "max-w-0 overflow-hidden opacity-0"
           }`}
       >
         {name}
@@ -255,8 +255,8 @@ function AdminNavGroup({
         />
         <span
           className={`truncate whitespace-nowrap transition-all duration-200 ${isSidebarOpen
-              ? "max-w-[170px] opacity-100"
-              : "max-w-0 overflow-hidden opacity-0"
+            ? "max-w-[170px] opacity-100"
+            : "max-w-0 overflow-hidden opacity-0"
             }`}
         >
           {label}
@@ -285,8 +285,8 @@ function AdminNavGroup({
                   href={item.href}
                   title={item.name}
                   className={`flex items-center rounded-lg py-2.5 text-sm font-medium transition-all duration-300 ${isSidebarOpen
-                      ? "justify-start gap-3 pl-12 pr-3"
-                      : "justify-center px-0"
+                    ? "justify-start gap-3 pl-12 pr-3"
+                    : "justify-center px-0"
                     } ${itemActive
                       ? "bg-violet-50 text-violet-600 backoffice-dark:bg-white/10 backoffice-dark:text-white font-semibold"
                       : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 backoffice-dark:text-white/60 backoffice-dark:hover:bg-white/5 backoffice-dark:hover:text-white"
@@ -298,8 +298,8 @@ function AdminNavGroup({
                   />
                   <span
                     className={`truncate whitespace-nowrap transition-all duration-200 ${isSidebarOpen
-                        ? "max-w-[150px] opacity-100"
-                        : "max-w-0 overflow-hidden opacity-0"
+                      ? "max-w-[150px] opacity-100"
+                      : "max-w-0 overflow-hidden opacity-0"
                       }`}
                   >
                     {item.name}
@@ -474,15 +474,15 @@ export function AdminSidebar() {
             <Home className="h-5 w-5 shrink-0 text-slate-400 backoffice-dark:text-white/40" />
             <span
               className={`truncate whitespace-nowrap transition-all duration-200 ${isSidebarOpen
-                  ? "max-w-[120px] opacity-100"
-                  : "max-w-0 overflow-hidden opacity-0"
+                ? "max-w-[120px] opacity-100"
+                : "max-w-0 overflow-hidden opacity-0"
                 }`}
             >
               Về Trang Chủ
             </span>
           </Link>
 
-          <Link
+          {/* <Link
             href="/admin/support"
             className={`flex w-full items-center rounded-lg py-2.5 text-sm font-medium text-slate-600 transition-all hover:bg-slate-100 hover:text-slate-900 backoffice-dark:text-white/70 backoffice-dark:hover:bg-white/5 backoffice-dark:hover:text-white ${isSidebarOpen ? "justify-start gap-3 px-4" : "justify-center px-0"
               }`}
@@ -491,13 +491,13 @@ export function AdminSidebar() {
             <Settings className="h-5 w-5 shrink-0 text-slate-400 backoffice-dark:text-white/40" />
             <span
               className={`truncate whitespace-nowrap transition-all duration-200 ${isSidebarOpen
-                  ? "max-w-[120px] opacity-100"
-                  : "max-w-0 overflow-hidden opacity-0"
+                ? "max-w-[120px] opacity-100"
+                : "max-w-0 overflow-hidden opacity-0"
                 }`}
             >
               Hỗ Trợ
             </span>
-          </Link>
+          </Link> */}
           <button
             type="button"
             onClick={handleLogout}
@@ -508,8 +508,8 @@ export function AdminSidebar() {
             <LogOut className="h-5 w-5 shrink-0 text-slate-400 backoffice-dark:text-white/40" />
             <span
               className={`truncate whitespace-nowrap transition-all duration-200 ${isSidebarOpen
-                  ? "max-w-[120px] opacity-100"
-                  : "max-w-0 overflow-hidden opacity-0"
+                ? "max-w-[120px] opacity-100"
+                : "max-w-0 overflow-hidden opacity-0"
                 }`}
             >
               Đăng xuất

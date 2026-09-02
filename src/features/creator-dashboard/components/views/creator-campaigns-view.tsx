@@ -1078,7 +1078,7 @@ function CampaignPayoutModal({
                 {formatNumber(balance)}đ
               </p>
               <p className="mt-2 text-[11px] font-semibold text-zinc-500">
-                Yêu cầu rút tiền áp dụng cho toàn bộ số dư (tối thiểu 2.000đ) về
+                Yêu cầu rút tiền áp dụng cho toàn bộ số dư về
                 tài khoản ngân hàng chính đã đăng ký.
               </p>
             </div>

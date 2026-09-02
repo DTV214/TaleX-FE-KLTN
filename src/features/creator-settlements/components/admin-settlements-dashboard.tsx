@@ -283,9 +283,9 @@ export function AdminSettlementsDashboard() {
   return (
     <div className="flex flex-col gap-6 max-w-7xl mx-auto w-full font-sans">
       <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-        <h1 className="mt-4 text-3xl font-black tracking-tight text-slate-950 backoffice-dark:text-white">
+        <h2 className="text-3xl font-bold tracking-tight text-slate-950 backoffice-dark:text-white">
           Quyết Toán Doanh Thu
-        </h1>
+        </h2>
 
         <div className="flex items-center gap-3 shrink-0 flex-wrap sm:flex-nowrap">
           <PayoutBalanceBadge />

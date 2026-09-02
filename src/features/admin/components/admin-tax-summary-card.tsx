@@ -110,9 +110,6 @@ export function AdminTaxSummaryCard() {
               <Receipt className="w-5 h-5 text-violet-600" />
               Tổng Quan Nghĩa Vụ Thuế
             </h2>
-            <p className="mt-1 text-xs text-gray-500 backoffice-dark:text-white/60">
-              Tổng hợp số liệu thuế VAT và PIT khấu trừ năm {selectedYear}
-            </p>
           </div>
 
           {/* Controls & Export Buttons */}
@@ -382,7 +379,7 @@ export function AdminTaxSummaryCard() {
           </div>
 
           <div className="border-t border-gray-100 pt-4 mt-4 text-[11px] text-gray-400 font-medium flex items-center justify-between">
-            <span>Báo Cáo Tổng Quan Thuế Enterprise</span>
+            <span>Báo Cáo Tổng Quan Thuế</span>
             <span>Trạng thái: Hoàn tất đối soát</span>
           </div>
         </div>

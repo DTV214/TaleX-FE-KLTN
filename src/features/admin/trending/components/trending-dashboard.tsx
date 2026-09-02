@@ -761,9 +761,9 @@ export function AdminTrendingDashboard() {
   return (
     <PageShell>
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-slate-950 backoffice-dark:text-white">
-          Quản lý Xu hướng
-        </h1>
+        <h2 className="text-3xl font-bold tracking-tight text-slate-950 backoffice-dark:text-white">
+          Quản Lý Xu Hướng
+        </h2>
       </div>
 
       <Panel className="p-6">

@@ -1,5 +1,5 @@
 import { httpClient } from "@/shared/api/http-client";
-import { listSeriesByCreator } from "@/features/creator-dashboard/api/creator-content-api";
+import { listSeriesByCreator, listSeriesByCreatorAndCampaign } from "@/features/creator-dashboard/api/creator-content-api";
 import type {
     CreateEngagementOrderRequest,
     CreateEngagementOrderResponse,
@@ -83,7 +83,7 @@ export async function getCreatorCampaignPublishedSeries(
         pageSize: 6,
     },
 ): Promise<CreatorCampaignSeriesPageResponse> {
-    return listSeriesByCreator(
+    return listSeriesByCreatorAndCampaign(
         params.page ?? 1,
         params.pageSize ?? 6,
         params.statuses ?? ["PUBLISHED"],

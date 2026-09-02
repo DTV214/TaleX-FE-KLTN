@@ -74,6 +74,20 @@ export type PayoutTransaction = {
   updatedAt?: string | null;
 };
 
+export type CreatorPaymentProfile = {
+  paymentProfileId: string;
+  bankCode: string;
+  accountNumber: string;
+  accountName: string;
+  isPrimary: boolean;
+  status: string;
+  verifiedAt?: string | null;
+  verifiedNote?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+  creatorId?: string | null;
+};
+
 export type SettlementSortBy =
   | "createdAt"
   | "settlementMonth"
@@ -120,6 +134,8 @@ export type CreatorSettlementDetailResponse =
 
 export type CreatorSettlementMutationResponse =
   BaseResponse<CreatorSettlementDetail | CreatorSettlementSummary | string | null>;
+
+export type CreatorPaymentProfileResponse = BaseResponse<CreatorPaymentProfile | null>;
 
 export type RunSettlementProcessResponse =
   BaseResponse<CreatorSettlementSummary[] | null>;

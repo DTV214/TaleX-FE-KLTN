@@ -966,9 +966,9 @@ export function SubscriptionRevenueSharingDashboard() {
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-7">
       <header className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-950 backoffice-dark:text-white">
+          <h2 className="text-3xl font-bold tracking-tight text-slate-950 backoffice-dark:text-white">
             Chi Tiết Doanh Thu Premium
-          </h1>
+          </h2>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">

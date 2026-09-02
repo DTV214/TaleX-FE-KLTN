@@ -163,7 +163,7 @@ export function AdminPayoutsDashboard() {
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-8">
       {/* 1. Header */}
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-gray-100 pb-6 backoffice-dark:border-white/10">
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between  border-gray-100 backoffice-dark:border-white/10">
         <div>
           <div className="flex items-center gap-3">
             <div>
@@ -345,14 +345,13 @@ export function AdminPayoutsDashboard() {
           <table className="w-full text-left text-xs font-medium">
             <thead className="border-b border-gray-100 bg-gray-50/80 text-[11px] font-bold uppercase tracking-wider text-gray-500 backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.02] backoffice-dark:text-zinc-400">
               <tr>
-                <th className="px-5 py-4 whitespace-nowrap">Mã Yêu Cầu</th>
-                <th className="px-5 py-4 whitespace-nowrap">Creator / Account</th>
+                <th className="px-5 py-4 whitespace-nowrap">Tài Khoản</th>
                 <th className="px-5 py-4 whitespace-nowrap">Số Tiền Rút</th>
                 <th className="px-5 py-4 whitespace-nowrap">Ngân Hàng</th>
                 <th className="px-5 py-4 whitespace-nowrap">Số Tài Khoản</th>
                 <th className="px-5 py-4 whitespace-nowrap">Chủ Tài Khoản</th>
                 <th className="px-5 py-4 whitespace-nowrap">Trạng Thái</th>
-                <th className="px-5 py-4 text-center whitespace-nowrap">Thao Tác Admin</th>
+                <th className="px-5 py-4 text-center whitespace-nowrap">Thao Tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 backoffice-dark:divide-white/5">
@@ -383,22 +382,11 @@ export function AdminPayoutsDashboard() {
                       key={item.payoutRequestId}
                       className="text-gray-700 transition hover:bg-gray-50/60 backoffice-dark:text-zinc-200 backoffice-dark:hover:bg-white/[0.02]"
                     >
-                      {/* Request ID */}
-                      <td className="px-5 py-4 font-mono font-bold text-gray-900 backoffice-dark:text-white whitespace-nowrap">
-                        <span title={item.payoutRequestId}>
-                          {item.payoutRequestId.length > 12
-                            ? `${item.payoutRequestId.slice(0, 8)}...`
-                            : item.payoutRequestId}
-                        </span>
-                      </td>
-
                       {/* Account ID */}
                       <td className="px-5 py-4 whitespace-nowrap">
                         <div className="flex flex-col">
                           <span className="font-semibold text-gray-800 backoffice-dark:text-zinc-200">
-                            {item.accountId.length > 12
-                              ? `${item.accountId.slice(0, 8)}...`
-                              : item.accountId}
+                            {item.username || item.accountId}
                           </span>
                           <span className="text-[10px] text-gray-400">
                             {formatDateTime(item.createdAt)}
@@ -465,7 +453,7 @@ export function AdminPayoutsDashboard() {
                             title="Xem chi tiết giao dịch PayOS"
                           >
                             <Receipt className="h-3.5 w-3.5 text-blue-600 backoffice-dark:text-blue-400" />
-                            <span>Giao dịch PayOS</span>
+                            <span>Chi Tiết</span>
                           </button>
 
                           {/* PENDING: Approve / Reject buttons */}
@@ -587,13 +575,10 @@ export function AdminPayoutsDashboard() {
                 ? "Duyệt yêu cầu rút tiền"
                 : "Từ chối yêu cầu rút tiền (Tự động hoàn lại ví)"}
             </h4>
-            <p className="mt-1 text-xs font-semibold text-gray-500 backoffice-dark:text-zinc-400">
-              Mã yêu cầu: <span className="font-mono text-gray-800 backoffice-dark:text-zinc-200">{processingItem.id}</span>
-            </p>
 
             <label className="mt-4 block space-y-1.5">
               <span className="text-xs font-bold text-gray-500 uppercase tracking-wider backoffice-dark:text-zinc-400">
-                Ghi chú Admin (adminNote)
+                Ghi chú
               </span>
               <textarea
                 value={adminNote}

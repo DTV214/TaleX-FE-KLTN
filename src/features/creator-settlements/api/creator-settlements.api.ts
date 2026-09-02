@@ -2,10 +2,13 @@ import {
   httpClient,
   unwrapBaseResponse,
   type BasePageResponse,
+  type BaseResponse,
 } from "@/shared/api/http-client";
 import type {
   CreatorSettlementDetail,
   CreatorSettlementDetailResponse,
+  CreatorPaymentProfile,
+  CreatorPaymentProfileResponse,
   CreatorSettlementMutationResponse,
   CreatorSettlementPageResponse,
   CreatorSettlementSummary,
@@ -95,6 +98,24 @@ export const creatorSettlementsApi = {
       httpClient.patch<CreatorSettlementMutationResponse>(
         `${CREATOR_SETTLEMENT_ENDPOINT}/${settlementId}/status`,
         payload,
+      ),
+    );
+  },
+
+  primaryPaymentProfile(creatorId: string) {
+    return unwrapBaseResponse<CreatorPaymentProfile | null>(
+      httpClient.get<CreatorPaymentProfileResponse>(
+        `/api/v1/payment-profiles/${creatorId}/primary`,
+      ),
+    );
+  },
+
+  runSinglePayout(settlementId: string) {
+    return unwrapBaseResponse<unknown>(
+      httpClient.post<BaseResponse<unknown>>(
+        `/api/v1/creator-payout/single-request/${settlementId}`,
+        null,
+        { params: { isDemo: false } },
       ),
     );
   },

@@ -228,6 +228,7 @@ export type ProcessPayoutRequestRequest = {
 export type PayoutRequest = {
   payoutRequestId: string;
   accountId: string;
+  username: string | null;
   amount: number;
   status: PayoutRequestStatus;
   paymentProfileId?: string | null;

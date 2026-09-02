@@ -306,6 +306,23 @@ export async function listSeriesByCreator(
   );
 }
 
+export async function listSeriesByCreatorAndCampaign(
+  page = 0,
+  pageSize = 50,
+  statuses?: SeriesStatus[],
+) {
+  const params = new URLSearchParams();
+  params.set("page", String(page));
+  params.set("pageSize", String(pageSize));
+  statuses?.forEach((status) => params.append("statuses", status));
+
+  return unwrapBaseResponse<BasePageResponse<SeriesResponse>>(
+    httpClient.get("/api/v1/series/by-creator/campaign", {
+      params,
+    }),
+  );
+}
+
 export async function createSeries(request: SeriesRequest) {
   return unwrapBaseResponse<SeriesResponse>(
     httpClient.post("/api/v1/series", request),

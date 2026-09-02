@@ -370,9 +370,9 @@ export function AdminSeriesManagement() {
     currentPage === 0
       ? []
       : filteredSeriesList.slice(
-          (currentPage - 1) * pageSize,
-          currentPage * pageSize,
-        );
+        (currentPage - 1) * pageSize,
+        currentPage * pageSize,
+      );
   const firstItem = totalElements === 0 ? 0 : (currentPage - 1) * currentPageSize + 1;
   const lastItem = Math.min(currentPage * currentPageSize, totalElements);
   const isMutating = toggleVisibilityMutation.isPending;
@@ -466,9 +466,6 @@ export function AdminSeriesManagement() {
           <h1 className="text-3xl font-bold tracking-tight text-slate-950 backoffice-dark:text-white">
             Quản lý tác phẩm (Series)
           </h1>
-          <p className="mt-1 text-sm font-semibold text-slate-500 backoffice-dark:text-white/45">
-            Theo dõi, lọc và xử lý ép ẩn các series trong hệ thống.
-          </p>
         </div>
 
         <button
@@ -534,9 +531,8 @@ export function AdminSeriesManagement() {
                 </span>
               )}
               <ChevronDown
-                className={`h-4 w-4 shrink-0 transition-transform ${
-                  isAdvancedFilterOpen ? "rotate-180" : ""
-                }`}
+                className={`h-4 w-4 shrink-0 transition-transform ${isAdvancedFilterOpen ? "rotate-180" : ""
+                  }`}
               />
             </button>
 

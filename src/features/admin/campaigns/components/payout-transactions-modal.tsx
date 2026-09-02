@@ -160,22 +160,6 @@ export function PayoutTransactionsModal({
                   Chuyển khoản tự động
                 </span>
               </div>
-              <p
-                className={cn(
-                  "text-xs mt-0.5",
-                  isCreator ? "text-zinc-400" : "text-slate-500 backoffice-dark:text-white/60",
-                )}
-              >
-                Mã yêu cầu:{" "}
-                <span
-                  className={cn(
-                    "font-bold",
-                    isCreator ? "text-zinc-200" : "text-slate-700 backoffice-dark:text-white/90",
-                  )}
-                >
-                  {payoutRequest.payoutRequestId}
-                </span>
-              </p>
             </div>
           </div>
 
@@ -260,19 +244,19 @@ export function PayoutTransactionsModal({
                   isPaid
                     ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300"
                     : isApproved
-                    ? "border-cyan-400/30 bg-cyan-400/10 text-cyan-300"
-                    : isRejected
-                    ? "border-red-400/30 bg-red-400/10 text-red-300"
-                    : "border-yellow-400/30 bg-yellow-400/10 text-yellow-300",
+                      ? "border-cyan-400/30 bg-cyan-400/10 text-cyan-300"
+                      : isRejected
+                        ? "border-red-400/30 bg-red-400/10 text-red-300"
+                        : "border-yellow-400/30 bg-yellow-400/10 text-yellow-300",
                 )}
               >
                 {isPaid
                   ? "Đã chi trả"
                   : isApproved
-                  ? "Đã duyệt"
-                  : isRejected
-                  ? "Đã từ chối"
-                  : "Chờ duyệt"}
+                    ? "Đã duyệt"
+                    : isRejected
+                      ? "Đã từ chối"
+                      : "Chờ duyệt"}
               </span>
             </div>
           </div>
@@ -493,8 +477,8 @@ export function PayoutTransactionsModal({
                             isTxSuccess
                               ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300"
                               : isTxFailed
-                              ? "border-red-400/30 bg-red-400/10 text-red-300"
-                              : "border-yellow-400/30 bg-yellow-400/10 text-yellow-300",
+                                ? "border-red-400/30 bg-red-400/10 text-red-300"
+                                : "border-yellow-400/30 bg-yellow-400/10 text-yellow-300",
                           )}
                         >
                           {isTxSuccess ? (
@@ -507,8 +491,8 @@ export function PayoutTransactionsModal({
                           {isTxSuccess
                             ? "Thành công"
                             : isTxFailed
-                            ? "Thất bại"
-                            : "Đang xử lý"}
+                              ? "Thất bại"
+                              : "Đang xử lý"}
                         </span>
 
                         <span
