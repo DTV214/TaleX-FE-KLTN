@@ -2190,6 +2190,7 @@ function CreatorDashboardContent() {
                   errorMessage={existingVideoMedia[0]?.errorMessage}
                   contentId={existingVideoMedia[0]?.contentId}
                   hasWatermark={existingVideoMedia[0]?.hasWatermark}
+                  hlsReadyAt={existingVideoMedia[0]?.hlsReadyAt}
                   video={existingVideoMedia[0]}
                   isPublishing={publishEpisodeMutation.isPending}
                   onPublish={() =>

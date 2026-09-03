@@ -167,6 +167,7 @@ export type MediaResponse = {
   displayOrder?: number;
   contentId?: string;
   hasWatermark?: boolean;
+  hlsReadyAt?: string | null;
   status: MediaStatus;
   approvalStatus?: ContentApprovalStatus;
   approvalReviewedAt?: string;
