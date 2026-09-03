@@ -42,6 +42,7 @@ interface AIPolicyAndCopyrightProps {
   /** Kết quả THẬT của bước nhúng watermark chống đạo nhái (có thể fail âm thầm, không
    * chặn cả pipeline) — xem Media.hasWatermark ở BE. */
   hasWatermark?: boolean;
+  hlsReadyAt?: string | null;
   /** Truyền khi episode có nhiều trang (comic) — hiển thị tổng hợp thay vì bám 1 trang. */
   pages?: ComicPageSummary[];
 }
@@ -89,10 +90,11 @@ function buildSteps(params: {
   hasCensorshipResult: boolean;
   hasBlockingCopyright: boolean;
   hasWatermark?: boolean;
+  hlsReadyAt?: string | null;
   isFailed: boolean;
   isForceHidden: boolean;
 }): Step[] {
-  const { mediaId, mediaType, mediaStatus, approvalStatus, hasContentId, hasCensorshipResult, hasBlockingCopyright, hasWatermark, isFailed, isForceHidden } = params;
+  const { mediaId, mediaType, mediaStatus, approvalStatus, hasContentId, hasCensorshipResult, hasBlockingCopyright, hasWatermark, hlsReadyAt, isFailed, isForceHidden } = params;
   const steps: Step[] = [];
 
   if (!mediaId) {
@@ -129,7 +131,7 @@ function buildSteps(params: {
     // trả kết quả (bước cuối cùng, có thể mất vài phút). Trước đây check "!== HLS_PROCESSING"
     // coi PENDING cũng là "đã xong" — báo ✓ xanh ngay từ lúc mới upload dù chưa hề bắt đầu
     // convert. Phải liệt kê rõ đúng trạng thái NÀO là thật sự xong (HLS_READY/ACTIVE).
-    const transcodeDone = mediaStatus === "HLS_READY" || mediaStatus === "ACTIVE";
+    const transcodeDone = hlsReadyAt != null || mediaStatus === "HLS_READY" || mediaStatus === "ACTIVE";
     const transcodeStarted = mediaStatus === "HLS_PROCESSING" || transcodeDone;
     steps.push({
       key: "transcode",
@@ -231,6 +233,7 @@ function SingleMediaPipelinePanel({
   errorMessage,
   contentId,
   hasWatermark,
+  hlsReadyAt,
 }: AIPolicyAndCopyrightProps) {
   const queryClient = useQueryClient();
   const mediaState = { status: mediaStatus, approvalStatus };
@@ -307,6 +310,7 @@ function SingleMediaPipelinePanel({
     // khiến panel kẹt ở "active" dù toast đã báo hoàn tất (race giữa 2 nguồn dữ liệu).
     hasCensorshipResult: (violations?.censorshipResults.length ?? 0) > 0 || mediaStatus === "ACTIVE",
     hasBlockingCopyright,
+    hlsReadyAt,
     isFailed,
     isForceHidden,
   });

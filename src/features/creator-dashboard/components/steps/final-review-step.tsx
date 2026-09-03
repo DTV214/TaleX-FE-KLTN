@@ -45,6 +45,7 @@ interface FinalReviewStepProps {
   errorMessage?: string;
   contentId?: string;
   hasWatermark?: boolean;
+  hlsReadyAt?: string | null;
   video?: any; // the whole MediaResponse for processing state
   isPublishing?: boolean;
   onPublish: () => void;
@@ -73,6 +74,7 @@ export function FinalReviewStep({
   errorMessage,
   contentId,
   hasWatermark,
+  hlsReadyAt,
   video,
   isPublishing,
   onPublish,
@@ -397,6 +399,7 @@ export function FinalReviewStep({
           errorMessage={errorMessage}
           contentId={contentId}
           hasWatermark={hasWatermark}
+          hlsReadyAt={hlsReadyAt}
         />
 
         {!isPublished && !isForceHidden && (
