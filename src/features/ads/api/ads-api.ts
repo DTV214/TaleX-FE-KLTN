@@ -1,4 +1,5 @@
 import { httpClient as api } from "@/shared/api/http-client";
+import { getHardwareFingerprint } from "@/shared/utils/device-fingerprint";
 
 export interface AdCreative {
   creativeId: string;
@@ -151,14 +152,32 @@ export const adsApi = {
   serveAllAds: (slotCode: string) =>
     api.get<{ data: AdServeResponse[] }>(`/api/v1/ads/serve/all?slotCode=${slotCode}`).then((res) => res.data.data),
 
-  trackImpression: (campaignId: string, source?: string) =>
-    api.post("/api/v1/ads/track/impression", { campaignId, source }),
+  trackImpression: (campaignId: string, source?: string, customDeviceId?: string) => {
+    const deviceId = customDeviceId || getHardwareFingerprint();
+    return api.post(
+      "/api/v1/ads/track/impression",
+      { campaignId, source, deviceId },
+      { headers: { "X-Device-Id": deviceId } }
+    );
+  },
 
-  trackClick: (campaignId: string) =>
-    api.post("/api/v1/ads/track/click", { campaignId }),
+  trackClick: (campaignId: string, customDeviceId?: string) => {
+    const deviceId = customDeviceId || getHardwareFingerprint();
+    return api.post(
+      "/api/v1/ads/track/click",
+      { campaignId, deviceId },
+      { headers: { "X-Device-Id": deviceId } }
+    );
+  },
 
-  track6sView: (campaignId: string) =>
-    api.post("/api/v1/ads/track/view-6s", { campaignId }),
+  track6sView: (campaignId: string, customDeviceId?: string) => {
+    const deviceId = customDeviceId || getHardwareFingerprint();
+    return api.post(
+      "/api/v1/ads/track/view-6s",
+      { campaignId, deviceId },
+      { headers: { "X-Device-Id": deviceId } }
+    );
+  },
 
   getLabels: () =>
     api.get<{ data: AdLabel[] }>("/api/v1/ads/labels").then((res) => res.data.data),
