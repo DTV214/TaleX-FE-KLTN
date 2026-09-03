@@ -8,6 +8,8 @@ import type {
   MonthlyAccountSubscription,
   MonthlyAccountSubscriptionPageResponse,
   PagedMonthYearParams,
+  RuleXCalculationRequestDto,
+  RuleXCalculationResponseDto,
   SubscriptionCalculationResponse,
   SubscriptionRevenueLog,
   SubscriptionRevenueLogPageResponse,
@@ -115,6 +117,24 @@ export const subscriptionRevenueSharingApi = {
             isDemo: true,
           },
         },
+      ),
+    );
+  },
+
+  exportRequestData(monthYear: string) {
+    return unwrapBaseResponse<RuleXCalculationRequestDto[]>(
+      httpClient.get(
+        `${SUBSCRIPTION_CALCULATION_ENDPOINT}/export-request-data`,
+        { params: { monthYear } },
+      ),
+    );
+  },
+
+  calculateRuleX(payload: RuleXCalculationRequestDto) {
+    return unwrapBaseResponse<RuleXCalculationResponseDto>(
+      httpClient.post(
+        `${SUBSCRIPTION_CALCULATION_ENDPOINT}/calculate-rulex`,
+        payload,
       ),
     );
   },

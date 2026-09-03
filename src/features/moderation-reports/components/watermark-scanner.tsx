@@ -124,8 +124,8 @@ export function WatermarkScanner({ url, mediaType }: WatermarkScannerProps) {
           const img = new Image();
           img.crossOrigin = "anonymous";
           img.src = URL.createObjectURL(blob);
-          await new Promise((res, rej) => { 
-            img.onload = res; 
+          await new Promise((res, rej) => {
+            img.onload = res;
             img.onerror = () => rej(new Error("Lỗi tải ảnh vào bộ nhớ"));
           });
 
@@ -253,7 +253,7 @@ export function WatermarkScanner({ url, mediaType }: WatermarkScannerProps) {
               Quét lại
             </button>
           </div>
-          
+
           {result.creatorId ? (
             <div>
               <p className="text-[10px] font-bold tracking-wider text-slate-400 uppercase mb-0.5">Tác giả gốc (Creator ID)</p>

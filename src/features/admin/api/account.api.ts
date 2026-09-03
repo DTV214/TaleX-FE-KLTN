@@ -222,6 +222,15 @@ export async function getAccountByCreatorId(creatorId: string) {
   return normalizeAccount(data);
 }
 
+export async function getAccountById(accountId: string) {
+  const data = await unwrapBaseResponse<AccountApiItem>(
+    httpClient.get(`${ADMIN_ACCOUNTS_ENDPOINT}/${accountId}`),
+  );
+
+  return normalizeAccount(data);
+}
+
+
 export async function createStaff(payload: CreateStaffPayload) {
   const data = await unwrapBaseResponse<AccountApiItem>(
     httpClient.post(`${ADMIN_ACCOUNTS_ENDPOINT}/staff`, payload),

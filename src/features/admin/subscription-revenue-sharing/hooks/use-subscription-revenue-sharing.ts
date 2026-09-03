@@ -8,6 +8,7 @@ import { subscriptionRevenueSharingApi } from "../api/subscription-revenue-shari
 import type {
   MonthYearParams,
   PagedMonthYearParams,
+  RuleXCalculationRequestDto,
 } from "../types/subscription-revenue-sharing.types";
 
 export const subscriptionRevenueSharingKeys = {
@@ -42,7 +43,25 @@ export const subscriptionRevenueSharingKeys = {
       page,
       pageSize,
     ] as const,
+  exportRequestData: (monthYear: string) =>
+    [...subscriptionRevenueSharingKeys.all, "export-request-data", monthYear] as const,
 };
+
+export function useExportRequestData(monthYear: string, enabled = true) {
+  return useQuery({
+    queryKey: subscriptionRevenueSharingKeys.exportRequestData(monthYear),
+    queryFn: () => subscriptionRevenueSharingApi.exportRequestData(monthYear),
+    enabled: Boolean(monthYear) && enabled,
+    staleTime: 30 * 1000,
+  });
+}
+
+export function useCalculateRuleX() {
+  return useMutation({
+    mutationFn: (payload: RuleXCalculationRequestDto) =>
+      subscriptionRevenueSharingApi.calculateRuleX(payload),
+  });
+}
 
 export function useSubscriptionSyncMetadata() {
   return useQuery({

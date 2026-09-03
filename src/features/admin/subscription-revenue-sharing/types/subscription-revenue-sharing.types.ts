@@ -122,3 +122,37 @@ export type SyncMetadataResponse = BaseResponse<SyncMetadata | null>;
 export type SubscriptionCalculationResponse = BaseResponse<
   SubscriptionResult[] | SubscriptionResult | string | null
 >;
+
+export type ArtistEpisodeStreams = Record<string, Record<string, number>>;
+
+export type UserStreamRequest = {
+  userId: string;
+  artistEpisodeStreams: ArtistEpisodeStreams;
+};
+
+export type RuleXCalculationRequestDto = {
+  alpha: number;
+  subscriptionFee: number;
+  users: UserStreamRequest[];
+};
+
+export type UserAllocationResponse = {
+  userId: string;
+  totalStreams: number;
+  artistPayouts: Record<string, number>;
+  episodePayouts: Record<string, Record<string, number>>;
+  effectiveWeight: number;
+  perStreamWeight: number;
+  allocatedAmount: number;
+};
+
+export type RuleXCalculationResponseDto = {
+  episodePayouts: Record<string, number>;
+  gamma: number;
+  totalBudget: number;
+  targetBudget: number;
+  calculatedBudget: number;
+  artistPayouts: Record<string, number>;
+  userAllocations: UserAllocationResponse[];
+};
+

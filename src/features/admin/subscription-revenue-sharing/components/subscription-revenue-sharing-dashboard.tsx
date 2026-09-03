@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Activity,
   BarChart3,
+  Calculator,
   ChevronLeft,
   ChevronRight,
   Clock3,
@@ -21,6 +22,7 @@ import { getAccountByCreatorId } from "@/features/admin/api/account.api";
 import { getEpisodeById } from "@/features/creator-dashboard/api/creator-content-api";
 import { getApiErrorMessage } from "@/shared/api/http-client";
 import { cn } from "@/shared/utils/utils";
+import { RuleXDemoModal } from "./rulex-demo-modal";
 import {
   subscriptionRevenueSharingKeys,
   useAccountSubscriptionStats,
@@ -799,6 +801,7 @@ export function SubscriptionRevenueSharingDashboard() {
   const [logPage, setLogPage] = useState(1);
   const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
   const [isRevenueLogsModalOpen, setIsRevenueLogsModalOpen] = useState(false);
+  const [isRuleXDemoModalOpen, setIsRuleXDemoModalOpen] = useState(false);
   const [selectedAccountSubscription, setSelectedAccountSubscription] =
     useState<MonthlyAccountSubscription | null>(null);
   const [temporaryResultsByMonth, setTemporaryResultsByMonth] = useState<
@@ -1012,8 +1015,8 @@ export function SubscriptionRevenueSharingDashboard() {
       </header>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm backoffice-dark:border-white/10 backoffice-dark:bg-white/[0.04]">
-        <div className="grid gap-4 md:grid-cols-[260px_1fr] md:items-end">
-          <label className="block">
+        <div className="flex flex-wrap items-end gap-4">
+          <label className="block min-w-[240px]">
             <span className="mb-2 block text-xs font-black uppercase tracking-wide text-slate-500 backoffice-dark:text-white/45">
               Tháng chia doanh thu
             </span>
@@ -1024,6 +1027,14 @@ export function SubscriptionRevenueSharingDashboard() {
               className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-800 outline-none transition focus:border-amber-500 backoffice-dark:border-white/10 backoffice-dark:bg-black/30 backoffice-dark:text-white"
             />
           </label>
+          <button
+            type="button"
+            onClick={() => setIsRuleXDemoModalOpen(true)}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-4 text-sm font-black text-indigo-700 transition hover:bg-indigo-100 backoffice-dark:border-white/10 backoffice-dark:bg-indigo-500/10 backoffice-dark:text-indigo-300 backoffice-dark:hover:bg-indigo-500/20"
+          >
+            <Calculator className="h-4 w-4" />
+            Chi Tiết Tính Toán
+          </button>
         </div>
       </section>
 
@@ -1170,6 +1181,12 @@ export function SubscriptionRevenueSharingDashboard() {
           onPrevPage={() => setLogPage((current) => Math.max(1, current - 1))}
         />
       )}
+
+      <RuleXDemoModal
+        isOpen={isRuleXDemoModalOpen}
+        monthYear={monthValue}
+        onClose={() => setIsRuleXDemoModalOpen(false)}
+      />
     </div>
   );
 }
